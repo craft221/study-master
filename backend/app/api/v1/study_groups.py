@@ -419,5 +419,772 @@ async def delete_study_group(
     # Supprimer le groupe
     await db.delete(group)
     await db.commit()
-    
+
     return None
+
+
+# ============================================
+# SHARED NOTES
+# ============================================
+
+@router.post("/{group_id}/share-note", status_code=status.HTTP_201_CREATED)
+async def share_note_with_group(
+    group_id: int,
+    note_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Partager une note avec le groupe"""
+    from app.models.note import Note
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Vérifier que la note existe et appartient à l'utilisateur
+    note = await db.get(Note, note_data["note_id"])
+    if not note or note.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Note not found"
+        )
+
+    # Créer le partage
+    shared_content = SharedGroupContent(
+        group_id=group_id,
+        user_id=current_user.id,
+        content_type="note",
+        content_id=note.id,
+        content_data={"title": note.title, "content": note.content}
+    )
+
+    db.add(shared_content)
+
+    # XP bonus
+    current_user.total_xp += 5
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+    await db.refresh(shared_content)
+
+    return {"id": shared_content.id, "message": "Note shared successfully"}
+
+
+@router.get("/{group_id}/shared-notes")
+async def get_shared_notes(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer toutes les notes partagées dans le groupe"""
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer les notes partagées
+    query = select(SharedGroupContent).where(
+        and_(
+            SharedGroupContent.group_id == group_id,
+            SharedGroupContent.content_type == "note"
+        )
+    ).order_by(SharedGroupContent.shared_at.desc())
+
+    result = await db.execute(query)
+    shared_notes = result.scalars().all()
+
+    # Enrichir avec les infos utilisateur
+    notes_data = []
+    for shared in shared_notes:
+        user = await db.get(User, shared.user_id)
+        notes_data.append({
+            "id": shared.id,
+            "note_id": shared.content_id,
+            "note_title": shared.content_data.get("title", ""),
+            "note_content": shared.content_data.get("content", ""),
+            "shared_by_user_id": shared.user_id,
+            "shared_by_username": user.username if user else "Unknown",
+            "shared_at": shared.shared_at.isoformat(),
+            "subject_name": shared.content_data.get("subject_name")
+        })
+
+    return notes_data
+
+
+@router.delete("/{group_id}/shared-notes/{shared_note_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def unshare_note(
+    group_id: int,
+    shared_note_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retirer une note partagée"""
+    from app.models.collaboration import SharedGroupContent
+
+    shared = await db.get(SharedGroupContent, shared_note_id)
+
+    if not shared or shared.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared note not found"
+        )
+
+    if shared.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only remove your own shared notes"
+        )
+
+    await db.delete(shared)
+    await db.commit()
+
+    return None
+
+
+# ============================================
+# SHARED FLASHCARDS
+# ============================================
+
+@router.post("/{group_id}/share-flashcards", status_code=status.HTTP_201_CREATED)
+async def share_flashcards_with_group(
+    group_id: int,
+    deck_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Partager un deck de flashcards avec le groupe"""
+    from app.models.flashcard import FlashcardDeck
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Vérifier le deck
+    deck = await db.get(FlashcardDeck, deck_data["deck_id"])
+    if not deck or deck.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Flashcard deck not found"
+        )
+
+    # Créer le partage
+    shared_content = SharedGroupContent(
+        group_id=group_id,
+        user_id=current_user.id,
+        content_type="flashcard_deck",
+        content_id=deck.id,
+        content_data={"name": deck.name, "card_count": deck.card_count}
+    )
+
+    db.add(shared_content)
+
+    # XP bonus
+    current_user.total_xp += 5
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+    await db.refresh(shared_content)
+
+    return {"id": shared_content.id, "message": "Flashcards shared successfully"}
+
+
+@router.get("/{group_id}/shared-flashcards")
+async def get_shared_flashcards(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer tous les decks partagés"""
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer les decks partagés
+    query = select(SharedGroupContent).where(
+        and_(
+            SharedGroupContent.group_id == group_id,
+            SharedGroupContent.content_type == "flashcard_deck"
+        )
+    ).order_by(SharedGroupContent.shared_at.desc())
+
+    result = await db.execute(query)
+    shared_decks = result.scalars().all()
+
+    # Enrichir avec les infos utilisateur
+    decks_data = []
+    for shared in shared_decks:
+        user = await db.get(User, shared.user_id)
+        decks_data.append({
+            "id": shared.id,
+            "deck_id": shared.content_id,
+            "deck_name": shared.content_data.get("name", ""),
+            "card_count": shared.content_data.get("card_count", 0),
+            "shared_by_user_id": shared.user_id,
+            "shared_by_username": user.username if user else "Unknown",
+            "shared_at": shared.shared_at.isoformat()
+        })
+
+    return decks_data
+
+
+@router.post("/{group_id}/copy-flashcards/{shared_deck_id}")
+async def copy_shared_flashcards(
+    group_id: int,
+    shared_deck_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Copier un deck partagé dans sa collection"""
+    from app.models.flashcard import FlashcardDeck, Flashcard
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer le partage
+    shared = await db.get(SharedGroupContent, shared_deck_id)
+    if not shared or shared.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared deck not found"
+        )
+
+    # Récupérer le deck original
+    original_deck = await db.get(FlashcardDeck, shared.content_id)
+    if not original_deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original deck not found"
+        )
+
+    # Créer une copie
+    new_deck = FlashcardDeck(
+        user_id=current_user.id,
+        name=f"{original_deck.name} (copie)",
+        description=original_deck.description,
+        subject_id=original_deck.subject_id,
+        card_count=original_deck.card_count
+    )
+
+    db.add(new_deck)
+    await db.flush()
+
+    # Copier les flashcards
+    cards_query = select(Flashcard).where(Flashcard.deck_id == original_deck.id)
+    cards_result = await db.execute(cards_query)
+    original_cards = cards_result.scalars().all()
+
+    for card in original_cards:
+        new_card = Flashcard(
+            deck_id=new_deck.id,
+            question=card.question,
+            answer=card.answer,
+            difficulty=card.difficulty
+        )
+        db.add(new_card)
+
+    await db.commit()
+    await db.refresh(new_deck)
+
+    return {"message": "Deck copied successfully", "deck_id": new_deck.id}
+
+
+# ============================================
+# GROUP SESSIONS
+# ============================================
+
+@router.post("/{group_id}/sessions", status_code=status.HTTP_201_CREATED)
+async def create_group_session(
+    group_id: int,
+    session_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Créer une session d'étude de groupe"""
+    from app.models.collaboration import GroupStudySession, GroupSessionParticipant
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Créer la session
+    session = GroupStudySession(
+        group_id=group_id,
+        title=session_data["title"],
+        description=session_data.get("description"),
+        session_type=session_data["session_type"],
+        start_time=datetime.fromisoformat(session_data["start_time"].replace("Z", "+00:00")),
+        duration_minutes=session_data["duration_minutes"],
+        created_by_user_id=current_user.id,
+        status="scheduled"
+    )
+
+    db.add(session)
+    await db.flush()
+
+    # Ajouter le créateur comme participant
+    participant = GroupSessionParticipant(
+        session_id=session.id,
+        user_id=current_user.id
+    )
+    db.add(participant)
+
+    # XP bonus
+    current_user.total_xp += 10
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+    await db.refresh(session)
+
+    return {"id": session.id, "message": "Session created successfully"}
+
+
+@router.get("/{group_id}/sessions")
+async def get_group_sessions(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer toutes les sessions du groupe"""
+    from app.models.collaboration import GroupStudySession, GroupSessionParticipant
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer les sessions
+    query = select(GroupStudySession).where(
+        GroupStudySession.group_id == group_id
+    ).order_by(GroupStudySession.start_time.desc())
+
+    result = await db.execute(query)
+    sessions = result.scalars().all()
+
+    # Enrichir avec participants
+    sessions_data = []
+    for session in sessions:
+        creator = await db.get(User, session.created_by_user_id)
+
+        # Récupérer les participants
+        parts_query = select(GroupSessionParticipant).where(
+            GroupSessionParticipant.session_id == session.id
+        )
+        parts_result = await db.execute(parts_query)
+        participants = parts_result.scalars().all()
+
+        participants_data = []
+        for part in participants:
+            user = await db.get(User, part.user_id)
+            if user:
+                participants_data.append({
+                    "user_id": user.id,
+                    "username": user.username,
+                    "joined_at": part.joined_at.isoformat()
+                })
+
+        sessions_data.append({
+            "id": session.id,
+            "title": session.title,
+            "description": session.description,
+            "session_type": session.session_type,
+            "start_time": session.start_time.isoformat(),
+            "duration_minutes": session.duration_minutes,
+            "created_by_user_id": session.created_by_user_id,
+            "created_by_username": creator.username if creator else "Unknown",
+            "participants": participants_data,
+            "status": session.status
+        })
+
+    return sessions_data
+
+
+@router.post("/{group_id}/sessions/{session_id}/join")
+async def join_group_session(
+    group_id: int,
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Rejoindre une session de groupe"""
+    from app.models.collaboration import GroupStudySession, GroupSessionParticipant
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Vérifier la session
+    session = await db.get(GroupStudySession, session_id)
+    if not session or session.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+
+    # Vérifier si déjà participant
+    existing_query = select(GroupSessionParticipant).where(
+        and_(
+            GroupSessionParticipant.session_id == session_id,
+            GroupSessionParticipant.user_id == current_user.id
+        )
+    )
+    existing_result = await db.execute(existing_query)
+    existing = existing_result.scalar_one_or_none()
+
+    if existing:
+        return {"message": "Already joined"}
+
+    # Ajouter comme participant
+    participant = GroupSessionParticipant(
+        session_id=session_id,
+        user_id=current_user.id
+    )
+    db.add(participant)
+
+    # XP bonus
+    current_user.total_xp += 5
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+
+    return {"message": "Joined session successfully"}
+
+
+@router.post("/{group_id}/sessions/{session_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave_group_session(
+    group_id: int,
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Quitter une session"""
+    from app.models.collaboration import GroupSessionParticipant
+
+    part_query = select(GroupSessionParticipant).where(
+        and_(
+            GroupSessionParticipant.session_id == session_id,
+            GroupSessionParticipant.user_id == current_user.id
+        )
+    )
+    part_result = await db.execute(part_query)
+    participant = part_result.scalar_one_or_none()
+
+    if not participant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You are not a participant"
+        )
+
+    await db.delete(participant)
+    await db.commit()
+
+    return None
+
+
+@router.delete("/{group_id}/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def cancel_group_session(
+    group_id: int,
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Annuler une session (créateur seulement)"""
+    from app.models.collaboration import GroupStudySession
+
+    session = await db.get(GroupStudySession, session_id)
+
+    if not session or session.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+
+    if session.created_by_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the creator can cancel the session"
+        )
+
+    session.status = "cancelled"
+    await db.commit()
+
+    return None
+
+
+# ============================================
+# SHARED QUIZZES
+# ============================================
+
+@router.post("/{group_id}/share-quiz", status_code=status.HTTP_201_CREATED)
+async def share_quiz_with_group(
+    group_id: int,
+    quiz_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Partager un quiz avec le groupe"""
+    from app.models.quiz import Quiz
+    from app.models.collaboration import SharedGroupContent
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Vérifier le quiz
+    quiz = await db.get(Quiz, quiz_data["quiz_id"])
+    if not quiz or quiz.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found"
+        )
+
+    # Créer le partage
+    shared_content = SharedGroupContent(
+        group_id=group_id,
+        user_id=current_user.id,
+        content_type="quiz",
+        content_id=quiz.id,
+        content_data={"title": quiz.title, "question_count": quiz.question_count}
+    )
+
+    db.add(shared_content)
+
+    # XP bonus
+    current_user.total_xp += 5
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+    await db.refresh(shared_content)
+
+    return {"id": shared_content.id, "message": "Quiz shared successfully"}
+
+
+@router.get("/{group_id}/shared-quizzes")
+async def get_shared_quizzes(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer tous les quiz partagés"""
+    from app.models.collaboration import SharedGroupContent
+    from app.models.quiz import QuizAttempt
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer les quiz partagés
+    query = select(SharedGroupContent).where(
+        and_(
+            SharedGroupContent.group_id == group_id,
+            SharedGroupContent.content_type == "quiz"
+        )
+    ).order_by(SharedGroupContent.shared_at.desc())
+
+    result = await db.execute(query)
+    shared_quizzes = result.scalars().all()
+
+    # Enrichir avec infos
+    quizzes_data = []
+    for shared in shared_quizzes:
+        user = await db.get(User, shared.user_id)
+
+        # Compter combien de membres ont complété
+        attempts_query = select(func.count(func.distinct(QuizAttempt.user_id))).where(
+            QuizAttempt.quiz_id == shared.content_id
+        )
+        attempts_result = await db.execute(attempts_query)
+        completed_count = attempts_result.scalar() or 0
+
+        quizzes_data.append({
+            "id": shared.id,
+            "quiz_id": shared.content_id,
+            "quiz_title": shared.content_data.get("title", ""),
+            "question_count": shared.content_data.get("question_count", 0),
+            "shared_by_user_id": shared.user_id,
+            "shared_by_username": user.username if user else "Unknown",
+            "shared_at": shared.shared_at.isoformat(),
+            "completed_by_count": completed_count
+        })
+
+    return quizzes_data
+
+
+# ============================================
+# GROUP ACTIVITIES
+# ============================================
+
+@router.get("/{group_id}/activities")
+async def get_group_activities(
+    group_id: int,
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer les activités récentes du groupe"""
+    from app.models.collaboration import GroupActivity
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer les activités
+    query = select(GroupActivity).where(
+        GroupActivity.group_id == group_id
+    ).order_by(GroupActivity.created_at.desc()).limit(limit)
+
+    result = await db.execute(query)
+    activities = result.scalars().all()
+
+    # Enrichir avec infos utilisateur
+    activities_data = []
+    for activity in activities:
+        user = await db.get(User, activity.user_id)
+        activities_data.append({
+            "id": activity.id,
+            "activity_type": activity.activity_type,
+            "user_id": activity.user_id,
+            "username": user.username if user else "Unknown",
+            "description": activity.description,
+            "created_at": activity.created_at.isoformat(),
+            "metadata": activity.metadata
+        })
+
+    return activities_data
