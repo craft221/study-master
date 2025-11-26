@@ -65,6 +65,7 @@ export default function GroupDetailPage() {
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState('messages')
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -252,7 +253,7 @@ export default function GroupDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content with Tabs */}
         <div className="lg:col-span-2">
-          <Tabs defaultValue="messages" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="messages" className="flex items-center gap-1">
                 <MessageCircle className="h-4 w-4" />
