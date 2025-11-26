@@ -6,17 +6,23 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, desc
 from typing import Optional
+from collections import defaultdict
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.study_group import StudyGroup, StudyGroupMembership
-from app.models.group_message import GroupMessage
+from app.models.group_message import GroupMessage, MessageReaction
 from app.schemas.group_message import (
     GroupMessageCreate,
     GroupMessageUpdate,
     GroupMessageResponse,
-    GroupMessageListResponse
+    GroupMessageListResponse,
+    MessageReactionCreate,
+    MessageReactionResponse,
+    ReactionCount,
+    ReplyToMessage,
+    MentionedUser
 )
 
 router = APIRouter()
@@ -81,24 +87,70 @@ async def get_group_messages(
     result = await db.execute(query)
     messages = result.scalars().all()
 
-    # Enrichir avec les infos utilisateur
+    # Enrichir avec les infos utilisateur, réactions, réponses, et mentions
     message_responses = []
     for msg in messages:
         user = await db.get(User, msg.user_id)
-        if user:
-            message_responses.append(
-                GroupMessageResponse(
-                    id=msg.id,
-                    group_id=msg.group_id,
-                    user_id=msg.user_id,
-                    username=user.username,
-                    avatar_url=user.avatar_url,
-                    content=msg.content,
-                    is_edited=msg.is_edited,
-                    created_at=msg.created_at,
-                    updated_at=msg.updated_at
-                )
+        if not user:
+            continue
+
+        # Récupérer les réactions
+        reactions_query = select(MessageReaction).where(MessageReaction.message_id == msg.id)
+        reactions_result = await db.execute(reactions_query)
+        reactions = reactions_result.scalars().all()
+
+        # Grouper les réactions par emoji
+        reactions_by_emoji = defaultdict(list)
+        for reaction in reactions:
+            reactions_by_emoji[reaction.emoji].append(reaction.user_id)
+
+        reaction_counts = [
+            ReactionCount(emoji=emoji, count=len(user_ids), user_ids=user_ids)
+            for emoji, user_ids in reactions_by_emoji.items()
+        ]
+
+        # Récupérer les infos du message auquel on répond
+        reply_to_info = None
+        if msg.reply_to_message_id:
+            reply_msg = await db.get(GroupMessage, msg.reply_to_message_id)
+            if reply_msg:
+                reply_user = await db.get(User, reply_msg.user_id)
+                if reply_user:
+                    reply_to_info = ReplyToMessage(
+                        id=reply_msg.id,
+                        user_id=reply_msg.user_id,
+                        username=reply_user.username,
+                        content=reply_msg.content[:100]  # Limiter à 100 caractères
+                    )
+
+        # Récupérer les infos des utilisateurs mentionnés
+        mentioned_users_list = []
+        if msg.mentions:
+            for user_id in msg.mentions:
+                mentioned_user = await db.get(User, user_id)
+                if mentioned_user:
+                    mentioned_users_list.append(
+                        MentionedUser(id=mentioned_user.id, username=mentioned_user.username)
+                    )
+
+        message_responses.append(
+            GroupMessageResponse(
+                id=msg.id,
+                group_id=msg.group_id,
+                user_id=msg.user_id,
+                username=user.username,
+                avatar_url=user.avatar_url,
+                content=msg.content,
+                is_edited=msg.is_edited,
+                reply_to_message_id=msg.reply_to_message_id,
+                reply_to=reply_to_info,
+                mentions=msg.mentions,
+                mentioned_users=mentioned_users_list,
+                reactions=reaction_counts if reaction_counts else None,
+                created_at=msg.created_at,
+                updated_at=msg.updated_at
             )
+        )
 
     return GroupMessageListResponse(
         messages=message_responses,
@@ -132,12 +184,44 @@ async def create_group_message(
             detail="You must be a member of this group"
         )
 
+    # Vérifier que le message de réponse existe si spécifié
+    reply_to_info = None
+    if message_data.reply_to_message_id:
+        reply_msg = await db.get(GroupMessage, message_data.reply_to_message_id)
+        if not reply_msg or reply_msg.group_id != group_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reply message not found in this group"
+            )
+        reply_user = await db.get(User, reply_msg.user_id)
+        if reply_user:
+            reply_to_info = ReplyToMessage(
+                id=reply_msg.id,
+                user_id=reply_msg.user_id,
+                username=reply_user.username,
+                content=reply_msg.content[:100]
+            )
+
+    # Vérifier que les utilisateurs mentionnés existent et sont membres
+    mentioned_users_list = []
+    if message_data.mentions:
+        for user_id in message_data.mentions:
+            mentioned_user = await db.get(User, user_id)
+            if mentioned_user:
+                is_member = await check_group_membership(group_id, user_id, db)
+                if is_member:
+                    mentioned_users_list.append(
+                        MentionedUser(id=mentioned_user.id, username=mentioned_user.username)
+                    )
+
     # Créer le message
     new_message = GroupMessage(
         group_id=group_id,
         user_id=current_user.id,
         content=message_data.content,
-        is_edited=False
+        is_edited=False,
+        reply_to_message_id=message_data.reply_to_message_id,
+        mentions=message_data.mentions
     )
 
     db.add(new_message)
@@ -157,6 +241,11 @@ async def create_group_message(
         avatar_url=current_user.avatar_url,
         content=new_message.content,
         is_edited=new_message.is_edited,
+        reply_to_message_id=new_message.reply_to_message_id,
+        reply_to=reply_to_info,
+        mentions=new_message.mentions,
+        mentioned_users=mentioned_users_list if mentioned_users_list else None,
+        reactions=None,
         created_at=new_message.created_at,
         updated_at=new_message.updated_at
     )
@@ -244,6 +333,127 @@ async def delete_group_message(
         )
 
     await db.delete(message)
+    await db.commit()
+
+    return None
+
+
+@router.post("/{group_id}/messages/{message_id}/reactions", response_model=MessageReactionResponse, status_code=status.HTTP_201_CREATED)
+async def add_reaction_to_message(
+    group_id: int,
+    message_id: int,
+    reaction_data: MessageReactionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Ajouter une réaction à un message"""
+    # Vérifier que le message existe
+    message = await db.get(GroupMessage, message_id)
+    if not message or message.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Message not found"
+        )
+
+    # Vérifier membership
+    is_member = await check_group_membership(group_id, current_user.id, db)
+    if not is_member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be a member of this group"
+        )
+
+    # Vérifier si la réaction existe déjà
+    existing_reaction_query = select(MessageReaction).where(
+        and_(
+            MessageReaction.message_id == message_id,
+            MessageReaction.user_id == current_user.id,
+            MessageReaction.emoji == reaction_data.emoji
+        )
+    )
+    existing_reaction_result = await db.execute(existing_reaction_query)
+    existing_reaction = existing_reaction_result.scalar_one_or_none()
+
+    if existing_reaction:
+        # La réaction existe déjà, la retourner
+        return MessageReactionResponse(
+            id=existing_reaction.id,
+            message_id=existing_reaction.message_id,
+            user_id=existing_reaction.user_id,
+            username=current_user.username,
+            emoji=existing_reaction.emoji,
+            created_at=existing_reaction.created_at
+        )
+
+    # Créer la nouvelle réaction
+    new_reaction = MessageReaction(
+        message_id=message_id,
+        user_id=current_user.id,
+        emoji=reaction_data.emoji
+    )
+
+    db.add(new_reaction)
+
+    # XP bonus pour interaction
+    current_user.total_xp += 1
+    current_user.level = (current_user.total_xp // 100) + 1
+
+    await db.commit()
+    await db.refresh(new_reaction)
+
+    return MessageReactionResponse(
+        id=new_reaction.id,
+        message_id=new_reaction.message_id,
+        user_id=new_reaction.user_id,
+        username=current_user.username,
+        emoji=new_reaction.emoji,
+        created_at=new_reaction.created_at
+    )
+
+
+@router.delete("/{group_id}/messages/{message_id}/reactions/{emoji}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_reaction_from_message(
+    group_id: int,
+    message_id: int,
+    emoji: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retirer une réaction d'un message"""
+    # Vérifier que le message existe
+    message = await db.get(GroupMessage, message_id)
+    if not message or message.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Message not found"
+        )
+
+    # Vérifier membership
+    is_member = await check_group_membership(group_id, current_user.id, db)
+    if not is_member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be a member of this group"
+        )
+
+    # Trouver la réaction
+    reaction_query = select(MessageReaction).where(
+        and_(
+            MessageReaction.message_id == message_id,
+            MessageReaction.user_id == current_user.id,
+            MessageReaction.emoji == emoji
+        )
+    )
+    reaction_result = await db.execute(reaction_query)
+    reaction = reaction_result.scalar_one_or_none()
+
+    if not reaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reaction not found"
+        )
+
+    await db.delete(reaction)
     await db.commit()
 
     return None
