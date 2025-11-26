@@ -1184,7 +1184,7 @@ async def get_group_activities(
             "username": user.username if user else "Unknown",
             "description": activity.description,
             "created_at": activity.created_at.isoformat(),
-            "metadata": activity.metadata
+            "metadata": activity.activity_metadata
         })
 
     return activities_data
