@@ -1,0 +1,200 @@
+backend  |     result = context.throw(*sys.exc_info())
+backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2308, in execute
+backend  |     return self._execute_internal(
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2190, in _execute_internal
+backend  |     result: Result[Any] = compile_state_cls.orm_execute_statement(
+backend  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+backend  |     result = conn.execute(
+backend  |              ^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+backend  |     return meth(
+backend  |            ^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 517, in _execute_on_connection
+backend  |     return connection._execute_clauseelement(
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+backend  |     ret = self._execute_context(
+backend  |           ^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+backend  |     return self._exec_single_context(
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+backend  |     self._handle_dbapi_exception(
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2344, in _handle_dbapi_exception
+backend  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+backend  |     self.dialect.do_execute(
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 922, in do_execute
+backend  |     cursor.execute(statement, parameters)
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 580, in execute
+backend  |     self._adapt_connection.await_(
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 130, in await_only
+backend  |     return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 195, in greenlet_spawn
+backend  |     value = await result
+backend  |             ^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 558, in _prepare_and_execute
+backend  |     self._handle_exception(error)
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 509, in _handle_exception
+backend  |     self._adapt_connection._handle_exception(error)
+backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 797, in _handle_exception
+backend  |     raise translated_error from error
+backend  | sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedFunctionError'>: operator does not exist: integer = boolean
+backend  | HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+backend  | [SQL: SELECT count(*) AS count_1 
+backend  | FROM (SELECT subjects.id AS id, subjects.name AS name, subjects.color AS color, subjects.icon AS icon, subjects.description AS description, subjects.user_id AS user_id, subjects.is_archived AS is_archived, subjects.created_at AS created_at, subjects.updated_at AS updated_at 
+backend  | FROM subjects 
+backend  | WHERE subjects.user_id = $1::INTEGER AND subjects.is_archived = false) AS anon_1]
+backend  | [parameters: (1,)]
+backend  | (Background on this error at: https://sqlalche.me/e/20/f405)
+backend  | INFO:     Shutting down
+backend  | INFO:     Waiting for application shutdown.
+backend  | INFO:     Application shutdown complete.
+backend  | INFO:     Finished server process [1]
+backend  | 👋 Study Master API arrêtée
+backend  | INFO:     Started server process [1]
+backend  | INFO:     Waiting for application startup.
+backend  | INFO:     Application startup complete.
+backend  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+backend  | 🚀 Study Master API démarrée !
+backend  | 📚 Documentation disponible sur: http://localhost:8000/docs
+backend  | 2025-11-25 14:26:38,774 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+backend  | 2025-11-25 14:26:38,774 INFO sqlalchemy.engine.Engine [raw sql] ()
+backend  | 2025-11-25 14:26:38,779 INFO sqlalchemy.engine.Engine select current_schema()
+backend  | 2025-11-25 14:26:38,779 INFO sqlalchemy.engine.Engine [raw sql] ()
+backend  | 2025-11-25 14:26:38,782 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+backend  | 2025-11-25 14:26:38,782 INFO sqlalchemy.engine.Engine [raw sql] ()
+backend  | 2025-11-25 14:26:38,787 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+backend  | 2025-11-25 14:26:38,972 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.username, users.hashed_password, users.full_name, users.role, users.subscription_type, users.subscription_ends_at, users.avatar_url, users.bio, users.university, users.major, users.promotion, users.student_id, users.phone, users.country, users.city, users.timezone, users.language, users.theme, users.notifications_enabled, users.email_notifications, users.total_xp, users.level, users.current_streak, users.longest_streak, users.last_activity_date, users.total_study_time_minutes, users.total_notes_created, users.total_flashcards_created, users.total_flashcards_reviewed, users.total_quizzes_created, users.total_quizzes_taken, users.total_quizzes_completed, users.ai_requests_today, users.ai_requests_reset_date, users.total_ai_requests, users.is_active, users.is_verified, users.is_deleted, users.is_online, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+backend  | FROM users 
+backend  | WHERE users.id = $1::INTEGER
+backend  | 2025-11-25 14:26:38,973 INFO sqlalchemy.engine.Engine [generated in 0.00043s] (1,)
+backend  | 2025-11-25 14:26:39,006 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+backend  | FROM (SELECT subjects.id AS id, subjects.name AS name, subjects.color AS color, subjects.icon AS icon, subjects.description AS description, subjects.user_id AS user_id, subjects.is_archived AS is_archived, subjects.created_at AS created_at, subjects.updated_at AS updated_at 
+backend  | FROM subjects 
+backend  | WHERE subjects.user_id = $1::INTEGER AND subjects.is_archived = false) AS anon_1
+backend  | 2025-11-25 14:26:39,006 INFO sqlalchemy.engine.Engine [generated in 0.00036s] (1,)
+backend  | 2025-11-25 14:26:39,018 INFO sqlalchemy.engine.Engine ROLLBACK
+backend  | INFO:     172.20.0.1:55338 - "GET /api/v1/subjects/ HTTP/1.1" 500 Internal Server Error
+backend  | ERROR:    Exception in ASGI application
+backend  | Traceback (most recent call last):
+backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 419, in run_asgi
+backend  |     result = await app(  # type: ignore[func-returns-value]
+backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+backend  |     return await self.app(scope, receive, send)
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+backend  |     await super().__call__(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 123, in __call__
+backend  |     await self.middleware_stack(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+backend  |     await self.app(scope, receive, _send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+backend  |     await self.simple_response(scope, receive, send, request_headers=headers)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+backend  |     await self.app(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend  |     await app(scope, receive, sender)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+backend  |     await self.middleware_stack(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+backend  |     await route.handle(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+backend  |     await self.app(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend  |     await app(scope, receive, sender)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+backend  |     response = await func(request)
+backend  |                ^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+backend  |     raise e
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+backend  |     raw_response = await run_endpoint_function(
+backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+backend  |     return await dependant.call(**values)
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/app/app/api/v1/subjects.py", line 72, in list_subjects
+backend  |     query = query.order_by(Subject.is_favorite.desc(), Subject.created_at.desc())
+backend  |                            ^^^^^^^^^^^^^^^^^^^
+backend  | AttributeError: type object 'Subject' has no attribute 'is_favorite'
+backend  | 2025-11-25 14:26:39,070 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+backend  | 2025-11-25 14:26:39,071 INFO sqlalchemy.engine.Engine SELECT users.id, users.email, users.username, users.hashed_password, users.full_name, users.role, users.subscription_type, users.subscription_ends_at, users.avatar_url, users.bio, users.university, users.major, users.promotion, users.student_id, users.phone, users.country, users.city, users.timezone, users.language, users.theme, users.notifications_enabled, users.email_notifications, users.total_xp, users.level, users.current_streak, users.longest_streak, users.last_activity_date, users.total_study_time_minutes, users.total_notes_created, users.total_flashcards_created, users.total_flashcards_reviewed, users.total_quizzes_created, users.total_quizzes_taken, users.total_quizzes_completed, users.ai_requests_today, users.ai_requests_reset_date, users.total_ai_requests, users.is_active, users.is_verified, users.is_deleted, users.is_online, users.last_login_at, users.created_at, users.updated_at, users.deleted_at 
+backend  | FROM users 
+backend  | WHERE users.id = $1::INTEGER
+backend  | 2025-11-25 14:26:39,072 INFO sqlalchemy.engine.Engine [cached since 0.0995s ago] (1,)
+backend  | 2025-11-25 14:26:39,081 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+backend  | FROM (SELECT subjects.id AS id, subjects.name AS name, subjects.color AS color, subjects.icon AS icon, subjects.description AS description, subjects.user_id AS user_id, subjects.is_archived AS is_archived, subjects.created_at AS created_at, subjects.updated_at AS updated_at 
+backend  | FROM subjects 
+backend  | WHERE subjects.user_id = $1::INTEGER AND subjects.is_archived = false) AS anon_1
+backend  | 2025-11-25 14:26:39,082 INFO sqlalchemy.engine.Engine [cached since 0.0756s ago] (1,)
+backend  | 2025-11-25 14:26:39,084 INFO sqlalchemy.engine.Engine ROLLBACK
+backend  | INFO:     172.20.0.1:55352 - "GET /api/v1/subjects/ HTTP/1.1" 500 Internal Server Error
+backend  | ERROR:    Exception in ASGI application
+backend  | Traceback (most recent call last):
+backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 419, in run_asgi
+backend  |     result = await app(  # type: ignore[func-returns-value]
+backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+backend  |     return await self.app(scope, receive, send)
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+backend  |     await super().__call__(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 123, in __call__
+backend  |     await self.middleware_stack(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+backend  |     await self.app(scope, receive, _send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+backend  |     await self.simple_response(scope, receive, send, request_headers=headers)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+backend  |     await self.app(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend  |     await app(scope, receive, sender)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 762, in __call__
+backend  |     await self.middleware_stack(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 782, in app
+backend  |     await route.handle(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+backend  |     await self.app(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+backend  |     raise exc
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend  |     await app(scope, receive, sender)
+backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+backend  |     response = await func(request)
+backend  |                ^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 299, in app
+backend  |     raise e
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 294, in app
+backend  |     raw_response = await run_endpoint_function(
+backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+backend  |     return await dependant.call(**values)
+backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend  |   File "/app/app/api/v1/subjects.py", line 72, in list_subjects
+backend  |     query = query.order_by(Subject.is_favorite.desc(), Subject.created_at.desc())
+backend  |                            ^^^^^^^^^^^^^^^^^^^
+backend  | AttributeError: type object 'Subject' has no attribute 'is_favorite'
