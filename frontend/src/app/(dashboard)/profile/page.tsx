@@ -1,617 +1,669 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import {
-  User as UserIcon,
-  Mail,
-  Phone,
-  MapPin,
-  Building,
-  GraduationCap,
-  Lock,
-  Activity,
-  AlertTriangle,
-  Camera,
-  Save,
-  Eye,
-  EyeOff,
-} from 'lucide-react'
-import { usersService } from '@/services/users'
-import { User, UserUpdate, PasswordChange } from '@/types/user'
-import { toast } from 'react-hot-toast'
+import { useState, useEffect } from 'react'
+import { User, Mail, MapPin, GraduationCap, Calendar, Award, Trophy, Zap, BookOpen, Brain, Clock, Edit, Save, X, Lock } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Progress } from '@/components/ui/progress'
+import api from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
-type Tab = 'profile' | 'security' | 'activity' | 'danger'
+interface UserProfile {
+  id: number
+  username: string
+  email: string
+  full_name?: string
+  bio?: string
+  avatar_url?: string
+  university?: string
+  major?: string
+  promotion?: string
+  country?: string
+  city?: string
+  language?: string
+  theme?: string
+  notifications_enabled: boolean
+  email_notifications: boolean
+
+  // Gamification
+  total_xp: number
+  level: number
+  current_streak: number
+  longest_streak: number
+
+  // Stats
+  total_study_time_minutes: number
+  total_notes_created: number
+  total_flashcards_created: number
+  total_quizzes_completed: number
+
+  // AI
+  ai_requests_today: number
+  total_ai_requests: number
+
+  created_at: string
+}
+
+interface UserStats {
+  user_id: number
+  username: string
+  total_xp: number
+  level: number
+  xp_progress: number
+  xp_needed_for_next_level: number
+  current_streak: number
+  longest_streak: number
+  total_subjects: number
+  total_notes: number
+  total_flashcards: number
+  flashcards_due_today: number
+  total_flashcards_reviewed: number
+  total_quizzes: number
+  completed_quiz_attempts: number
+  average_quiz_score: number
+  notes_this_week: number
+  flashcards_reviewed_this_week: number
+  quizzes_taken_this_week: number
+  member_since: string
+  last_login: string
+}
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('profile')
-  const [user, setUser] = useState<User | null>(null)
+  const { toast } = useToast()
+
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [activities, setActivities] = useState<any[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [activeTab, setActiveTab] = useState('info')
 
-  // Profile form
-  const [profileForm, setProfileForm] = useState<UserUpdate>({})
+  // Edit form
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    bio: '',
+    university: '',
+    major: '',
+    promotion: '',
+    country: '',
+    city: '',
+    language: 'fr',
+    theme: 'light',
+    notifications_enabled: true,
+    email_notifications: true
+  })
 
-  // Password form
-  const [passwordForm, setPasswordForm] = useState<PasswordChange>({
+  // Password change
+  const [passwordForm, setPasswordForm] = useState({
     current_password: '',
     new_password: '',
-  })
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
+    confirm_password: ''
   })
 
   useEffect(() => {
-    loadProfile()
+    fetchProfile()
+    fetchStats()
   }, [])
 
-  useEffect(() => {
-    if (activeTab === 'activity' && user) {
-      loadActivity()
-    }
-  }, [activeTab, user])
-
-  const loadProfile = async () => {
+  const fetchProfile = async () => {
     try {
       setLoading(true)
-      const userData = await usersService.getMe()
-      setUser(userData)
-      setProfileForm({
-        email: userData.email,
-        full_name: userData.full_name || '',
-        bio: userData.bio || '',
-        university: userData.university || '',
-        major: userData.major || '',
-        promotion: userData.promotion || '',
-        student_id: userData.student_id || '',
-        phone: userData.phone || '',
-        country: userData.country || '',
-        city: userData.city || '',
-        language: userData.language || 'fr',
-        theme: userData.theme || 'light',
-        notifications_enabled: userData.notifications_enabled ?? true,
+      const response = await api.get('/users/me/profile')
+      setProfile(response.data)
+      setEditForm({
+        full_name: response.data.full_name || '',
+        bio: response.data.bio || '',
+        university: response.data.university || '',
+        major: response.data.major || '',
+        promotion: response.data.promotion || '',
+        country: response.data.country || '',
+        city: response.data.city || '',
+        language: response.data.language || 'fr',
+        theme: response.data.theme || 'light',
+        notifications_enabled: response.data.notifications_enabled ?? true,
+        email_notifications: response.data.email_notifications ?? true
       })
-    } catch (error: any) {
-      toast.error('Erreur lors du chargement du profil')
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger le profil',
+        variant: 'destructive'
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const loadActivity = async () => {
+  const fetchStats = async () => {
     try {
-      const response = await usersService.getActivity(30)
-      setActivities(response.activities)
-    } catch (error: any) {
-      toast.error('Erreur lors du chargement de l\'activité')
+      const response = await api.get('/users/me/stats')
+      setStats(response.data)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
     }
   }
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const response = await api.put('/users/me', editForm)
+      setProfile(response.data)
+      setEditing(false)
+      toast({
+        title: 'Profil mis à jour',
+        description: 'Vos informations ont été enregistrées',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de mettre à jour le profil',
+        variant: 'destructive'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      setSaving(true)
-      const updatedUser = await usersService.updateMe(profileForm)
-      setUser(updatedUser)
-      toast.success('Profil mis à jour avec succès')
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la mise à jour')
-    } finally {
-      setSaving(false)
-    }
-  }
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('L\'image ne doit pas dépasser 5 Mo')
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast({
+        title: 'Erreur',
+        description: 'Les mots de passe ne correspondent pas',
+        variant: 'destructive'
+      })
       return
     }
 
     try {
-      setSaving(true)
-      const updatedUser = await usersService.uploadAvatar(file)
-      setUser(updatedUser)
-      toast.success('Avatar mis à jour')
+      await api.post('/users/me/password', {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+        confirm_password: passwordForm.confirm_password
+      })
+
+      toast({
+        title: 'Mot de passe modifié',
+        description: 'Votre mot de passe a été mis à jour avec succès',
+      })
+
+      setPasswordForm({
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      })
     } catch (error: any) {
-      toast.error('Erreur lors de l\'upload de l\'avatar')
-    } finally {
-      setSaving(false)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de changer le mot de passe',
+        variant: 'destructive'
+      })
     }
   }
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (passwordForm.new_password.length < 8) {
-      toast.error('Le mot de passe doit contenir au moins 8 caractères')
-      return
-    }
-
-    try {
-      setSaving(true)
-      await usersService.changePassword(passwordForm)
-      toast.success('Mot de passe modifié avec succès')
-      setPasswordForm({ current_password: '', new_password: '' })
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors du changement de mot de passe')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDeleteAccount = async () => {
-    if (
-      !confirm(
-        'Êtes-vous absolument sûr de vouloir supprimer votre compte ? Cette action est irréversible.'
-      )
-    )
-      return
-
-    const confirmation = prompt('Tapez "SUPPRIMER" pour confirmer :')
-    if (confirmation !== 'SUPPRIMER') return
-
-    try {
-      await usersService.deleteAccount()
-      toast.success('Compte supprimé')
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      window.location.href = '/login'
-    } catch (error: any) {
-      toast.error('Erreur lors de la suppression du compte')
-    }
-  }
-
-  if (loading) {
+  if (loading || !profile) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center text-gray-500">Chargement...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-gray-600">Chargement du profil...</p>
+        </div>
       </div>
     )
   }
 
-  if (!user) return null
+  const xpProgress = stats ? (stats.xp_progress / stats.xp_needed_for_next_level) * 100 : 0
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 text-white">
-        <div className="flex items-center space-x-6">
-          <div className="relative">
-            {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.username}
-                className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center border-4 border-white shadow-lg">
-                <UserIcon className="h-12 w-12" />
-              </div>
-            )}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 bg-white text-primary-600 p-2 rounded-full shadow-lg hover:bg-gray-100 transition"
-            >
-              <Camera className="h-4 w-4" />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+            {profile.username.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-3xl font-bold">{user.username}</h1>
-            <p className="text-white/80 mt-1">{user.email}</p>
-            <div className="flex items-center space-x-4 mt-3">
-              <div className="bg-white/20 px-4 py-2 rounded-lg">
-                <span className="font-bold">Niveau {user.level}</span>
-              </div>
-              <div className="bg-white/20 px-4 py-2 rounded-lg">
-                <span className="font-bold">{user.total_xp} XP</span>
-              </div>
-              <div className="bg-white/20 px-4 py-2 rounded-lg">
-                <span className="font-bold">🔥 {user.current_streak} jours</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200">
-          <div className="flex space-x-8 px-6">
-            {[
-              { id: 'profile', label: 'Profil', icon: UserIcon },
-              { id: 'security', label: 'Sécurité', icon: Lock },
-              { id: 'activity', label: 'Activité', icon: Activity },
-              { id: 'danger', label: 'Zone de danger', icon: AlertTriangle },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
-                className={`flex items-center space-x-2 py-4 px-2 border-b-2 transition ${
-                  activeTab === tab.id
-                    ? 'border-primary-600 text-primary-600 font-semibold'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <tab.icon className="h-5 w-5" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-6">
-          {/* Profile Tab */}
-          {activeTab === 'profile' && (
-            <form onSubmit={handleProfileSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Mail className="h-4 w-4 inline mr-2" />
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={profileForm.email}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, email: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom complet
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.full_name}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, full_name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Phone className="h-4 w-4 inline mr-2" />
-                    Téléphone
-                  </label>
-                  <input
-                    type="tel"
-                    value={profileForm.phone}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, phone: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Numéro étudiant
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.student_id}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, student_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Building className="h-4 w-4 inline mr-2" />
-                    Université
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.university}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, university: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <GraduationCap className="h-4 w-4 inline mr-2" />
-                    Filière
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.major}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, major: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Promotion
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.promotion}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, promotion: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="h-4 w-4 inline mr-2" />
-                    Ville
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.city}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, city: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pays
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.country}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, country: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Langue
-                  </label>
-                  <select
-                    value={profileForm.language}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, language: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
-                </label>
-                <textarea
-                  rows={4}
-                  value={profileForm.bio}
-                  onChange={(e) =>
-                    setProfileForm({ ...profileForm, bio: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Parlez-nous de vous..."
-                />
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="notifications"
-                  checked={profileForm.notifications_enabled}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      notifications_enabled: e.target.checked,
-                    })
-                  }
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="notifications"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  Activer les notifications
-                </label>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex items-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50"
-                >
-                  <Save className="h-5 w-5" />
-                  <span>{saving ? 'Enregistrement...' : 'Enregistrer'}</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Security Tab */}
-          {activeTab === 'security' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-md">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  Changer le mot de passe
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mot de passe actuel
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.current ? 'text' : 'password'}
-                        value={passwordForm.current_password}
-                        onChange={(e) =>
-                          setPasswordForm({
-                            ...passwordForm,
-                            current_password: e.target.value,
-                          })
-                        }
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPasswords({
-                            ...showPasswords,
-                            current: !showPasswords.current,
-                          })
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                      >
-                        {showPasswords.current ? (
-                          <EyeOff className="h-5 w-5 text-gray-500" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-gray-500" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nouveau mot de passe
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.new ? 'text' : 'password'}
-                        value={passwordForm.new_password}
-                        onChange={(e) =>
-                          setPasswordForm({
-                            ...passwordForm,
-                            new_password: e.target.value,
-                          })
-                        }
-                        required
-                        minLength={8}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPasswords({
-                            ...showPasswords,
-                            new: !showPasswords.new,
-                          })
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                      >
-                        {showPasswords.new ? (
-                          <EyeOff className="h-5 w-5 text-gray-500" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-gray-500" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum 8 caractères
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50"
-                  >
-                    {saving ? 'Modification...' : 'Modifier le mot de passe'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          )}
-
-          {/* Activity Tab */}
-          {activeTab === 'activity' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Activité récente (30 derniers jours)
-              </h3>
-              {activities.length === 0 ? (
-                <p className="text-gray-500">Aucune activité récente</p>
-              ) : (
-                <div className="space-y-3">
-                  {activities.map((activity, index) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {activity.activity_type}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {activity.description}
-                          </p>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {new Date(activity.created_at).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            <h1 className="text-3xl font-bold text-gray-900">{profile.username}</h1>
+            <p className="text-gray-600">{profile.email}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="default">Niveau {profile.level}</Badge>
+              <Badge variant="secondary">{profile.total_xp} XP</Badge>
+              {profile.current_streak > 0 && (
+                <Badge variant="outline">
+                  <Zap className="h-3 w-3 mr-1 text-orange-500" />
+                  {profile.current_streak} jours
+                </Badge>
               )}
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Danger Zone Tab */}
-          {activeTab === 'danger' && (
-            <div className="space-y-6">
-              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
-                <div className="flex items-start space-x-3">
-                  <AlertTriangle className="h-6 w-6 text-red-600 mt-1" />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-red-900 mb-2">
-                      Supprimer le compte
-                    </h3>
-                    <p className="text-sm text-red-700 mb-4">
-                      Une fois votre compte supprimé, toutes vos données seront
-                      définitivement perdues. Cette action est irréversible.
-                    </p>
-                    <button
-                      onClick={handleDeleteAccount}
-                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
-                    >
-                      Supprimer mon compte
-                    </button>
+        {!editing ? (
+          <Button onClick={() => setEditing(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Modifier
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setEditing(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Annuler
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* XP Progress */}
+      {stats && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Progression vers le niveau {stats.level + 1}</span>
+                <span className="text-gray-600">
+                  {stats.xp_progress} / {stats.xp_needed_for_next_level} XP
+                </span>
+              </div>
+              <Progress value={xpProgress} className="h-3" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="info">Informations</TabsTrigger>
+          <TabsTrigger value="stats">Statistiques</TabsTrigger>
+          <TabsTrigger value="settings">Paramètres</TabsTrigger>
+        </TabsList>
+
+        {/* Info Tab */}
+        <TabsContent value="info" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations personnelles</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {editing ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="full_name">Nom complet</Label>
+                      <Input
+                        id="full_name"
+                        value={editForm.full_name}
+                        onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="university">Université</Label>
+                      <Input
+                        id="university"
+                        value={editForm.university}
+                        onChange={(e) => setEditForm({ ...editForm, university: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="major">Filière</Label>
+                      <Input
+                        id="major"
+                        value={editForm.major}
+                        onChange={(e) => setEditForm({ ...editForm, major: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="promotion">Promotion</Label>
+                      <Input
+                        id="promotion"
+                        value={editForm.promotion}
+                        onChange={(e) => setEditForm({ ...editForm, promotion: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Pays</Label>
+                      <Input
+                        id="country"
+                        value={editForm.country}
+                        onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="city">Ville</Label>
+                      <Input
+                        id="city"
+                        value={editForm.city}
+                        onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      rows={3}
+                      value={editForm.bio}
+                      onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                      placeholder="Parlez-nous de vous..."
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {profile.full_name && (
+                    <div className="flex items-center gap-3">
+                      <User className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Nom complet</p>
+                        <p className="font-medium">{profile.full_name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {profile.bio && (
+                    <div className="flex items-start gap-3">
+                      <BookOpen className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Bio</p>
+                        <p className="font-medium">{profile.bio}</p>
+                      </div>
+                    </div>
+                  )}
+                  {profile.university && (
+                    <div className="flex items-center gap-3">
+                      <GraduationCap className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Université</p>
+                        <p className="font-medium">{profile.university}</p>
+                      </div>
+                    </div>
+                  )}
+                  {profile.major && (
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Filière</p>
+                        <p className="font-medium">{profile.major}</p>
+                      </div>
+                    </div>
+                  )}
+                  {(profile.city || profile.country) && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Localisation</p>
+                        <p className="font-medium">
+                          {[profile.city, profile.country].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Membre depuis</p>
+                      <p className="font-medium">
+                        {new Date(profile.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Gamification Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gamification</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <Trophy className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
+                  <p className="text-2xl font-bold">{profile.level}</p>
+                  <p className="text-sm text-gray-600">Niveau</p>
+                </div>
+                <div className="text-center">
+                  <Award className="h-8 w-8 mx-auto text-blue-500 mb-2" />
+                  <p className="text-2xl font-bold">{profile.total_xp}</p>
+                  <p className="text-sm text-gray-600">XP Total</p>
+                </div>
+                <div className="text-center">
+                  <Zap className="h-8 w-8 mx-auto text-orange-500 mb-2" />
+                  <p className="text-2xl font-bold">{profile.current_streak}</p>
+                  <p className="text-sm text-gray-600">Série actuelle</p>
+                </div>
+                <div className="text-center">
+                  <Zap className="h-8 w-8 mx-auto text-purple-500 mb-2" />
+                  <p className="text-2xl font-bold">{profile.longest_streak}</p>
+                  <p className="text-sm text-gray-600">Meilleure série</p>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Stats Tab */}
+        <TabsContent value="stats" className="space-y-4">
+          {stats && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-blue-500" />
+                      Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.total_notes}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {stats.notes_this_week} cette semaine
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-purple-500" />
+                      Flashcards
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.total_flashcards}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {stats.flashcards_due_today} à réviser aujourd'hui
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
+                      Quiz
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.completed_quiz_attempts}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Score moyen: {stats.average_quiz_score.toFixed(1)}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Activité hebdomadaire</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Notes créées</span>
+                        <span className="font-medium">{stats.notes_this_week}</span>
+                      </div>
+                      <Progress value={(stats.notes_this_week / 10) * 100} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Flashcards révisées</span>
+                        <span className="font-medium">{stats.flashcards_reviewed_this_week}</span>
+                      </div>
+                      <Progress value={(stats.flashcards_reviewed_this_week / 50) * 100} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Quiz complétés</span>
+                        <span className="font-medium">{stats.quizzes_taken_this_week}</span>
+                      </div>
+                      <Progress value={(stats.quizzes_taken_this_week / 5) * 100} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Statistiques globales</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                      <p className="text-sm text-gray-600">Matières</p>
+                      <p className="text-2xl font-bold">{stats.total_subjects}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Révisions</p>
+                      <p className="text-2xl font-bold">{stats.total_flashcards_reviewed}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Quiz créés</p>
+                      <p className="text-2xl font-bold">{stats.total_quizzes}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Requêtes IA</p>
+                      <p className="text-2xl font-bold">{profile.total_ai_requests}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
           )}
-        </div>
-      </div>
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Préférences</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="notifications">Notifications</Label>
+                  <p className="text-sm text-gray-600">Recevoir des notifications dans l'app</p>
+                </div>
+                <Switch
+                  id="notifications"
+                  checked={editing ? editForm.notifications_enabled : profile.notifications_enabled}
+                  onCheckedChange={(checked) =>
+                    editing && setEditForm({ ...editForm, notifications_enabled: checked })
+                  }
+                  disabled={!editing}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="email_notifs">Notifications par email</Label>
+                  <p className="text-sm text-gray-600">Recevoir des emails pour les événements importants</p>
+                </div>
+                <Switch
+                  id="email_notifs"
+                  checked={editing ? editForm.email_notifications : profile.email_notifications}
+                  onCheckedChange={(checked) =>
+                    editing && setEditForm({ ...editForm, email_notifications: checked })
+                  }
+                  disabled={!editing}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Changer le mot de passe
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <Label htmlFor="current_password">Mot de passe actuel</Label>
+                  <Input
+                    id="current_password"
+                    type="password"
+                    value={passwordForm.current_password}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, current_password: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new_password">Nouveau mot de passe</Label>
+                  <Input
+                    id="new_password"
+                    type="password"
+                    minLength={8}
+                    value={passwordForm.new_password}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, new_password: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirm_password">Confirmer le mot de passe</Label>
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    value={passwordForm.confirm_password}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, confirm_password: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <Button type="submit">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Changer le mot de passe
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
