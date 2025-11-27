@@ -22,7 +22,9 @@ import {
   Target,
   Moon,
   Sun,
-  Scan
+  Scan,
+  Sparkles,
+  User
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,12 +33,14 @@ const navigation = [
   { name: 'Notes', href: '/notes', icon: FileText },
   { name: 'Flashcards', href: '/flashcards', icon: CreditCard },
   { name: 'Quiz', href: '/quizzes', icon: Brain },
+  { name: 'Hub IA', href: '/ai', icon: Sparkles },
   { name: 'OCR Upload', href: '/ocr', icon: Scan },
   { name: 'Sessions', href: '/sessions', icon: Zap },
   { name: 'Emploi du temps', href: '/schedule', icon: Calendar },
   { name: 'Matières', href: '/subjects', icon: Target },
   { name: 'Classements', href: '/leaderboard', icon: Trophy },
   { name: 'Groupes', href: '/groups', icon: Users },
+  { name: 'Profil', href: '/profile', icon: User },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
