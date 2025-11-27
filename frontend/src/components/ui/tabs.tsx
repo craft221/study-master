@@ -52,7 +52,7 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:bg-background/50'
         } ${className || ''}`}
-        onClick={() => context?.onValueChange(value)}
+        onClick={() => context?.onValueChange?.(value)}
         {...props}
       />
     )

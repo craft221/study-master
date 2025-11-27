@@ -57,6 +57,7 @@ export default function AIHubPage() {
   const [quota, setQuota] = useState<AIQuota | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [processing, setProcessing] = useState(false)
+  const [activeTab, setActiveTab] = useState('generate')
 
   // Form states
   const [selectedNoteId, setSelectedNoteId] = useState<string>('')
@@ -386,7 +387,7 @@ export default function AIHubPage() {
       )}
 
       {/* AI Features Tabs */}
-      <Tabs defaultValue="generate" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="generate">Générer</TabsTrigger>
           <TabsTrigger value="analyze">Analyser</TabsTrigger>
