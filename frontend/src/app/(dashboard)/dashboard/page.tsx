@@ -14,7 +14,8 @@ import {
   Zap,
   Calendar,
   ArrowRight,
-  Flame
+  Flame,
+  Sparkles
 } from 'lucide-react'
 import {
   pageVariants,
@@ -325,9 +326,29 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <motion.div
-        className="grid md:grid-cols-3 gap-6"
+        className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
         variants={containerVariants}
       >
+        <motion.div
+          variants={cardVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            href="/flashcards/new"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group block"
+          >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition">
+              <CreditCard className="h-6 w-6 text-blue-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Créer des flashcards</h3>
+          <p className="text-sm text-gray-600">Créez un nouveau deck de flashcards</p>
+          </Link>
+        </motion.div>
+
         <motion.div
           variants={cardVariants}
           whileHover="hover"
@@ -354,6 +375,26 @@ export default function DashboardPage() {
           whileTap="tap"
         >
           <Link
+            href="/ai"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group block"
+          >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition">
+              <Sparkles className="h-6 w-6 text-purple-600" />
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition" />
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Hub IA</h3>
+          <p className="text-sm text-gray-600">Générez du contenu avec l'intelligence artificielle</p>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          variants={cardVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
             href="/sessions/new"
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group block"
           >
@@ -365,26 +406,6 @@ export default function DashboardPage() {
           </div>
           <h3 className="font-semibold text-gray-900 mb-2">Session Pomodoro</h3>
           <p className="text-sm text-gray-600">Démarrez une session d'étude chronométrée</p>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          variants={cardVariants}
-          whileHover="hover"
-          whileTap="tap"
-        >
-          <Link
-            href="/leaderboard"
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group block"
-          >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition">
-              <Trophy className="h-6 w-6 text-orange-600" />
-            </div>
-            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition" />
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-2">Classements</h3>
-          <p className="text-sm text-gray-600">Comparez votre progression avec les autres</p>
           </Link>
         </motion.div>
       </motion.div>
