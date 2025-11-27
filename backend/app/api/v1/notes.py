@@ -48,7 +48,7 @@ async def create_note(
             select(Note).where(
                 and_(
                     Note.id == note_data.parent_id,
-                    Note.author_id == current_user.id
+                    Note.user_id == current_user.id
                 )
             )
         )
@@ -60,7 +60,7 @@ async def create_note(
             )
     
     new_note = Note(
-        author_id=current_user.id,
+        user_id=current_user.id,
         **note_data.model_dump()
     )
     
@@ -95,7 +95,7 @@ async def list_notes(
 ):
     """Récupérer la liste des notes"""
     
-    query = select(Note).where(Note.author_id == current_user.id)
+    query = select(Note).where(Note.user_id == current_user.id)
     
     if subject_id:
         query = query.where(Note.subject_id == subject_id)
@@ -147,7 +147,7 @@ async def get_note(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -184,7 +184,7 @@ async def get_note_with_children(
             select(Note).where(
                 and_(
                     Note.parent_id == note_id,
-                    Note.author_id == current_user.id
+                    Note.user_id == current_user.id
                 )
             ).order_by(Note.order, Note.created_at)
         )
@@ -199,7 +199,7 @@ async def get_note_with_children(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -229,7 +229,7 @@ async def update_note(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -268,7 +268,7 @@ async def delete_note(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -308,7 +308,7 @@ async def search_notes(
     
     query = select(Note).where(
         and_(
-            Note.author_id == current_user.id,
+            Note.user_id == current_user.id,
             or_(
                 Note.title.ilike(search_pattern),
                 Note.content.ilike(search_pattern),
@@ -350,7 +350,7 @@ async def toggle_favorite(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -381,7 +381,7 @@ async def toggle_pin(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
@@ -412,7 +412,7 @@ async def toggle_archive(
         select(Note).where(
             and_(
                 Note.id == note_id,
-                Note.author_id == current_user.id
+                Note.user_id == current_user.id
             )
         )
     )
