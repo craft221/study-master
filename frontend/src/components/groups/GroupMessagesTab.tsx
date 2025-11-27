@@ -71,6 +71,8 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isFirstLoadRef = useRef(true)
+  const previousMessageCountRef = useRef(0)
 
   useEffect(() => {
     fetchMessages()
@@ -81,7 +83,25 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
   }, [groupId])
 
   useEffect(() => {
-    scrollToBottom()
+    // Scroll to bottom only on first load or if user is already near bottom
+    const isNearBottom = () => {
+      if (!messagesContainerRef.current) return false
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      return scrollHeight - scrollTop - clientHeight < 100 // Within 100px of bottom
+    }
+
+    const hasNewMessages = messages.length > previousMessageCountRef.current
+    previousMessageCountRef.current = messages.length
+
+    if (isFirstLoadRef.current) {
+      // First load: scroll to bottom
+      scrollToBottom()
+      isFirstLoadRef.current = false
+    } else if (hasNewMessages && isNearBottom()) {
+      // New messages and user is near bottom: scroll to bottom
+      scrollToBottom()
+    }
+    // Otherwise: don't scroll (user is reading old messages)
   }, [messages])
 
   const fetchMessages = async () => {

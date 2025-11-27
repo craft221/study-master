@@ -35,12 +35,12 @@ Une plateforme complète d'étude collaborative avec gamification, génération 
 - **Génération automatique** par IA depuis vos notes
 
 ### ✨ Hub IA (Intelligence Artificielle)
-Propulsé par **Google Gemini Pro**:
-- 🎴 **Génération de flashcards** intelligentes (1-20 cartes)
-- 🧠 **Génération de quiz** complets (5-20 questions)
-- 📄 **Résumé automatique** de notes (50-1000 mots)
-- 🔑 **Extraction de mots-clés** pertinents (3-20)
-- 💡 **Explication de concepts** pédagogiques
+Propulsé par **Claude Sonnet 4.5** (Anthropic):
+- 🎴 **Génération de flashcards** intelligentes de haute qualité (1-20 cartes)
+- 🧠 **Génération de quiz** complets avec explications détaillées (5-20 questions)
+- 📄 **Résumé automatique** de notes avec synthèse pédagogique (50-1000 mots)
+- 🔑 **Extraction de mots-clés** pertinents avec analyse contextuelle (3-20)
+- 💡 **Explication de concepts** pédagogiques approfondies
 - 📊 **Quota quotidien** selon l'abonnement (10-1000 requêtes/jour)
 
 ### 👥 Groupes d'Étude Collaboratifs
@@ -102,7 +102,7 @@ Propulsé par **Google Gemini Pro**:
 - **ORM**: SQLAlchemy (async)
 - **Cache**: Redis 7
 - **Tasks async**: Celery + Flower
-- **IA**: Google Gemini Pro API
+- **IA**: Claude Sonnet 4.5 (Anthropic API)
 - **Auth**: JWT (JSON Web Tokens)
 
 #### DevOps
@@ -139,8 +139,8 @@ SECRET_KEY=your-super-secret-key-change-this-in-production
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
-# Google Gemini API (pour fonctionnalités IA)
-GOOGLE_API_KEY=your-google-gemini-api-key
+# Anthropic API (Claude Sonnet 4.5 pour fonctionnalités IA)
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
 
 # Redis
 REDIS_URL=redis://redis:6379/0
@@ -149,6 +149,17 @@ REDIS_URL=redis://redis:6379/0
 CELERY_BROKER_URL=redis://redis:6379/1
 CELERY_RESULT_BACKEND=redis://redis:6379/2
 ```
+
+**Obtenir votre clé API Anthropic**:
+1. Créez un compte sur [console.anthropic.com](https://console.anthropic.com)
+2. Accédez à la section "API Keys"
+3. Générez une nouvelle clé API
+4. Copiez-la dans le fichier `.env`
+
+**Tarification Claude** (pay-as-you-go):
+- **Input**: $3 / million de tokens (~750k mots)
+- **Output**: $15 / million de tokens (~750k mots)
+- Pas de tier gratuit, mais crédit initial de $5 offert
 
 3. **Démarrer l'application**
 ```bash
@@ -322,14 +333,37 @@ Documentation complète: http://localhost:8000/docs
 
 ---
 
-## 📊 Quotas IA par Abonnement
+## 📊 Quotas IA et Tarification
 
-| Abonnement | Requêtes/Jour | Prix |
-|------------|---------------|------|
-| FREE | 10 | Gratuit |
-| PREMIUM | 200 | - |
-| PREMIUM_PLUS | 500 | - |
-| INSTITUTIONAL | 1000 | - |
+### Quotas par Abonnement (Limites applicatives)
+
+| Abonnement | Requêtes IA/Jour | Coût Abonnement |
+|------------|------------------|-----------------|
+| FREE       | 10              | Gratuit |
+| PREMIUM    | 200             | À définir |
+| PREMIUM_PLUS | 500           | À définir |
+| INSTITUTIONAL | 1000         | À définir |
+
+**Note importante**: Ces quotas sont des limites **applicatives** pour contrôler l'usage. En plus, vous devez payer l'API Claude selon votre utilisation réelle.
+
+### Coûts API Claude (Anthropic)
+
+Les coûts suivants s'appliquent **en plus** des quotas applicatifs:
+
+| Ressource | Coût |
+|-----------|------|
+| **Input tokens** | $3 / million tokens (~750,000 mots) |
+| **Output tokens** | $15 / million tokens (~750,000 mots) |
+| **Crédit initial** | $5 offerts à l'inscription |
+
+**Estimation de coûts typiques**:
+- Génération de 1 flashcard: ~0.5¢ (input) + ~1¢ (output) = **1.5¢**
+- Génération de 1 quiz (10 questions): ~1¢ (input) + ~3¢ (output) = **4¢**
+- Résumé d'une note (500 mots): ~0.3¢ (input) + ~0.6¢ (output) = **0.9¢**
+
+**Exemple mensuel** (utilisateur PREMIUM avec 200 req/jour):
+- 100 flashcards/jour = $1.50/jour = **$45/mois** en coûts API
+- 50 quiz/jour = $2/jour = **$60/mois** en coûts API
 
 ---
 
@@ -388,6 +422,23 @@ docker-compose exec backend pytest
 
 ## 📝 Changelog
 
+### Version 1.1.0 (2025-11-27) - Migration Claude AI
+#### 🚀 Changements majeurs
+- **Migration de Gemini vers Claude Sonnet 4.5** pour toutes les fonctionnalités IA
+- Amélioration significative de la qualité des générations (flashcards, quiz, résumés)
+- Explications plus pédagogiques et contextualisées
+
+#### 🔧 Modifications techniques
+- Remplacement de `google-generativeai` par `anthropic==0.39.0`
+- Refonte complète de `ai_service.py` avec l'API Anthropic
+- Variable d'environnement: `ANTHROPIC_API_KEY` remplace `GOOGLE_API_KEY`
+- Modèle utilisé: `claude-sonnet-4-20250514`
+
+#### 📊 Tarification
+- Modèle pay-as-you-go (pas de tier gratuit)
+- Input: $3/million tokens | Output: $15/million tokens
+- Crédit initial de $5 offert par Anthropic
+
 ### Version 1.0.0 (2025-11-27)
 #### ✨ Nouvelles fonctionnalités
 - Création des pages manquantes: `/flashcards/new`, `/quizzes/new`, `/profile`
@@ -440,7 +491,7 @@ Développé avec l'aide de Claude Code (Anthropic)
 - [Next.js](https://nextjs.org/) - Framework React
 - [shadcn/ui](https://ui.shadcn.com/) - Composants UI
 - [Tailwind CSS](https://tailwindcss.com/) - Framework CSS
-- [Google Gemini](https://deepmind.google/technologies/gemini/) - IA générative
+- [Anthropic Claude](https://www.anthropic.com/claude) - IA générative de haute qualité
 - [Lucide](https://lucide.dev/) - Icônes
 
 ---

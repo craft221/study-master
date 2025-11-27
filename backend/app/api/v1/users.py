@@ -22,13 +22,21 @@ from app.schemas.user import (
 router = APIRouter()
 
 
+@router.get("/me", response_model=UserProfileResponse)
+async def get_current_user(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Récupérer l'utilisateur actuellement connecté"""
+    return current_user
+
+
 @router.get("/me/profile", response_model=UserProfileResponse)
 async def get_user_profile(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer le profil détaillé de l'utilisateur"""
-    
+
     return current_user
 
 

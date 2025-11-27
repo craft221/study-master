@@ -1,25 +1,60 @@
 """
 Service IA pour la génération de contenu pédagogique
-Utilise Google Gemini pour générer flashcards, quiz, résumés, etc.
+Utilise Claude Sonnet 4.5 (Anthropic) pour générer flashcards, quiz, résumés, etc.
 """
 
-import google.generativeai as genai
+from anthropic import Anthropic
 from typing import List, Dict, Any, Optional
 import json
 import os
 from datetime import date
 
-# Configuration de l'API Gemini
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
+# Configuration de l'API Anthropic (Claude)
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+if not ANTHROPIC_API_KEY:
+    raise ValueError("ANTHROPIC_API_KEY non configurée dans les variables d'environnement")
+
+client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
 class AIService:
-    """Service centralisé pour toutes les fonctionnalités IA"""
+    """Service centralisé pour toutes les fonctionnalités IA avec Claude Sonnet 4.5"""
 
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = "claude-sonnet-4-20250514"  # Claude Sonnet 4.5
+        self.max_tokens = 4096
+
+    def _call_claude(self, prompt: str, system_prompt: str = "") -> str:
+        """
+        Appelle l'API Claude et retourne la réponse
+
+        Args:
+            prompt: Le prompt utilisateur
+            system_prompt: Instructions système optionnelles
+
+        Returns:
+            Texte de réponse de Claude
+        """
+        try:
+            message = client.messages.create(
+                model=self.model,
+                max_tokens=self.max_tokens,
+                temperature=0.7,
+                system=system_prompt if system_prompt else "Tu es un assistant IA expert en pédagogie.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+
+            # Extraire le texte de la réponse
+            if message.content and len(message.content) > 0:
+                return message.content[0].text
+            else:
+                raise ValueError("Réponse vide de Claude")
+
+        except Exception as e:
+            print(f"Erreur lors de l'appel à Claude: {e}")
+            raise
 
     async def generate_flashcards_from_note(
         self,
@@ -41,9 +76,9 @@ class AIService:
             Liste de flashcards avec front, back, hint, explanation
         """
 
-        prompt = f"""Tu es un expert pédagogique qui crée des flashcards efficaces pour l'apprentissage basé sur la répétition espacée.
+        system_prompt = "Tu es un expert pédagogique qui crée des flashcards efficaces pour l'apprentissage basé sur la répétition espacée."
 
-À partir de cette note intitulée "{note_title}", crée exactement {count} flashcards de qualité VARIÉES et COMPLÉMENTAIRES.
+        prompt = f"""À partir de cette note intitulée "{note_title}", crée exactement {count} flashcards de qualité VARIÉES et COMPLÉMENTAIRES.
 
 INSTRUCTIONS DE QUALITÉ:
 - Varie les TYPES de questions:
@@ -88,8 +123,8 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de ```j
 }}"""
 
         try:
-            response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
+            response_text = self._call_claude(prompt, system_prompt)
+            result_text = response_text.strip()
 
             # Nettoyage du JSON
             if result_text.startswith("```json"):
@@ -145,9 +180,9 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de ```j
 
         types_str = ", ".join(question_types)
 
-        prompt = f"""Tu es un expert pédagogique qui crée des quiz de qualité pour évaluer la compréhension.
+        system_prompt = "Tu es un expert pédagogique qui crée des quiz de qualité pour évaluer la compréhension."
 
-À partir de cette note intitulée "{note_title}", crée un quiz de {question_count} questions avec les types suivants: {types_str}.
+        prompt = f"""À partir de cette note intitulée "{note_title}", crée un quiz de {question_count} questions avec les types suivants: {types_str}.
 
 RÈGLES PAR TYPE:
 
@@ -213,8 +248,8 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (pas de markdown):
 }}"""
 
         try:
-            response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
+            response_text = self._call_claude(prompt, system_prompt)
+            result_text = response_text.strip()
 
             # Nettoyage du JSON
             if result_text.startswith("```json"):
@@ -262,9 +297,9 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (pas de markdown):
             Résumé de la note
         """
 
-        prompt = f"""Tu es un expert en synthèse pédagogique.
+        system_prompt = "Tu es un expert en synthèse pédagogique."
 
-Résume cette note intitulée "{note_title}" en maximum {max_length} mots.
+        prompt = f"""Résume cette note intitulée "{note_title}" en maximum {max_length} mots.
 
 CRITÈRES:
 - Identifie les concepts clés et idées principales
@@ -279,9 +314,8 @@ CONTENU:
 IMPORTANT: Réponds UNIQUEMENT avec le résumé en texte brut (Markdown accepté, LaTeX avec $...$):"""
 
         try:
-            response = self.model.generate_content(prompt)
-            summary = response.text.strip()
-            return summary
+            summary = self._call_claude(prompt, system_prompt)
+            return summary.strip()
 
         except Exception as e:
             print(f"Erreur lors du résumé: {e}")
@@ -305,6 +339,8 @@ IMPORTANT: Réponds UNIQUEMENT avec le résumé en texte brut (Markdown accepté
             Liste de mots-clés
         """
 
+        system_prompt = "Tu es un expert en analyse de contenu pédagogique."
+
         prompt = f"""Analyse cette note intitulée "{note_title}" et extrais les {max_keywords} mots-clés les plus importants.
 
 CRITÈRES:
@@ -322,8 +358,8 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON (pas de markdown):
 }}"""
 
         try:
-            response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
+            response_text = self._call_claude(prompt, system_prompt)
+            result_text = response_text.strip()
 
             # Nettoyage du JSON
             if result_text.startswith("```json"):
@@ -369,9 +405,9 @@ IMPORTANT: Réponds UNIQUEMENT avec un JSON (pas de markdown):
             for note in notes_content
         ])
 
-        prompt = f"""Tu es un expert en planification d'études.
+        system_prompt = "Tu es un expert en planification d'études."
 
-Crée un plan d'étude réaliste jusqu'au {target_date} avec {study_time_per_day}h/jour.
+        prompt = f"""Crée un plan d'étude réaliste jusqu'au {target_date} avec {study_time_per_day}h/jour.
 
 MATIÈRES À COUVRIR:
 {notes_summary}
@@ -404,8 +440,8 @@ IMPORTANT: Réponds avec un JSON structuré:
 }}"""
 
         try:
-            response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
+            response_text = self._call_claude(prompt, system_prompt)
+            result_text = response_text.strip()
 
             # Nettoyage
             if result_text.startswith("```json"):
