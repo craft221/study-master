@@ -16,7 +16,11 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.models import user, subject, note, flashcard, quiz, study_session, collaboration, gamification
+from app.models import (
+    user, subject, note, flashcard, quiz, study_session,
+    collaboration, gamification, schedule, notification,
+    document, focus_room, group_message, study_group
+)
 from app.core.database import Base
 
 target_metadata = Base.metadata

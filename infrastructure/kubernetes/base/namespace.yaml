@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: study-master
+  labels:
+    app.kubernetes.io/name: study-master
+    app.kubernetes.io/part-of: study-master

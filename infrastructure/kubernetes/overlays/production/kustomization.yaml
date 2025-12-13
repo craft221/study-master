@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: study-master
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: production
+
+# Production-specific patches
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 5
+    target:
+      kind: Deployment
+      name: backend
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 5
+    target:
+      kind: Deployment
+      name: frontend
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 4
+    target:
+      kind: Deployment
+      name: celery-worker
+
+# Production resource limits
+patchesStrategicMerge:
+  - resources-patch.yaml
+
+images:
+  - name: ghcr.io/study-master/backend
+    newTag: latest
+  - name: ghcr.io/study-master/frontend
+    newTag: latest

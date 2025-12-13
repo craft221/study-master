@@ -4,10 +4,11 @@ Modèle StudySession (Session d'étude)
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 import enum
 
 from app.core.database import Base
+from app.core.datetime_utils import utc_now
 
 
 class SessionType(enum.Enum):
@@ -35,8 +36,8 @@ class StudySession(Base):
     notes_reviewed = Column(Integer, default=0)
     flashcards_reviewed = Column(Integer, default=0)
     quizzes_completed = Column(Integer, default=0)
-    started_at = Column(DateTime, default=datetime.utcnow)
-    ended_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+    ended_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relations
     user = relationship("User")

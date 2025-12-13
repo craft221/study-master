@@ -78,12 +78,17 @@ class LeaderboardEntry(BaseModel):
     username: str
     score: int
     avatar_url: Optional[str] = None
+    level: int = 1
+    streak: int = 0
 
 
 class LeaderboardListResponse(BaseModel):
+    leaderboard_type: str
+    period: str
     entries: List[LeaderboardEntry]
-    total: int
+    total_participants: int
     user_rank: Optional[int] = None
+    user_score: Optional[int] = None
 
 
 # Alias pour rétrocompatibilité
@@ -94,6 +99,34 @@ class DuelCreate(BaseModel):
     opponent_id: int
     subject_id: Optional[int] = None
     quiz_id: Optional[int] = None
+    stakes_xp: int = 50
+    duration_minutes: int = 30
+
+
+class DuelComplete(BaseModel):
+    """Données pour compléter un duel manuellement"""
+    challenger_score: int
+    opponent_score: int
+
+
+class UserBrief(BaseModel):
+    """Info utilisateur pour affichage"""
+    id: int
+    username: str
+    avatar_url: Optional[str] = None
+    level: int
+
+    class Config:
+        from_attributes = True
+
+
+class QuizBrief(BaseModel):
+    """Info quiz pour affichage"""
+    id: int
+    title: str
+
+    class Config:
+        from_attributes = True
 
 
 class DuelResponse(BaseModel):
@@ -106,9 +139,16 @@ class DuelResponse(BaseModel):
     challenger_score: Optional[int] = None
     opponent_score: Optional[int] = None
     winner_id: Optional[int] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    created_at: datetime
+    stakes_xp: int = 50
+    duration_minutes: int = 30
+    started_at: Optional[str] = None
+    ended_at: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    # Relations optionnelles
+    challenger: Optional[UserBrief] = None
+    opponent: Optional[UserBrief] = None
+    quiz: Optional[QuizBrief] = None
 
     class Config:
         from_attributes = True
@@ -117,3 +157,5 @@ class DuelResponse(BaseModel):
 class DuelListResponse(BaseModel):
     duels: List[DuelResponse]
     total: int
+    page: int = 1
+    page_size: int = 20

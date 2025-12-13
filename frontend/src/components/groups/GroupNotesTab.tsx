@@ -168,11 +168,6 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
                   {myNotes.map((note) => (
                     <SelectItem key={note.id} value={note.id.toString()}>
                       {note.title}
-                      {note.subject_name && (
-                        <span className="text-xs text-gray-500 ml-2">
-                          ({note.subject_name})
-                        </span>
-                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>

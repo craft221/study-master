@@ -15,6 +15,7 @@ import {
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { useSparkEventMessages } from '@/hooks/useSparkEvents'
 
 interface Flashcard {
   id: string
@@ -40,6 +41,9 @@ export default function FlashcardReviewPage() {
     hard: 0,
     again: 0,
   })
+
+  // Hook Spark pour les messages d'événements
+  const { onFlashcardDeckComplete } = useSparkEventMessages()
 
   useEffect(() => {
     fetchCardsToReview()
@@ -84,6 +88,10 @@ export default function FlashcardReviewPage() {
         setCurrentIndex(currentIndex + 1)
         setIsFlipped(false)
       } else {
+        // Calculer le score (easy + medium comptent comme correct)
+        const correctCount = newStats.easy + newStats.medium
+        const totalCards = cards.length
+        onFlashcardDeckComplete(correctCount, totalCards)
         setReviewComplete(true)
       }
     } catch (error) {
@@ -296,7 +304,7 @@ export default function FlashcardReviewPage() {
             </button>
           </div>
           <p className="text-center text-sm text-gray-500 mt-4">
-            Votre réponse détermine quand vous reverrez cette carte (algorithme SM-2)
+            Votre réponse détermine quand vous reverrez cette carte (algorithme FSRS)
           </p>
         </div>
       )}

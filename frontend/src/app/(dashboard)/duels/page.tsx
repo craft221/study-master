@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,43 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Swords, Trophy, Clock, CheckCircle2, XCircle, Play,
-  Loader2, Star, Zap, User, AlertCircle, Crown, Target
+  Loader2, Star, Zap, User, AlertCircle, Crown, Target,
+  TrendingUp, TrendingDown, Users, Link2, Copy, Share2, Sparkles
 } from 'lucide-react'
-import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
-
-interface Duel {
-  id: number
-  challenger_id: number
-  opponent_id: number
-  subject_id: number | null
-  quiz_id: number | null
-  status: string
-  challenger_score: number | null
-  opponent_score: number | null
-  winner_id: number | null
-  stakes_xp: number
-  duration_minutes: number
-  created_at: string
-  completed_at: string | null
-  challenger: {
-    id: number
-    username: string
-    avatar_url: string | null
-    level: number
-  }
-  opponent: {
-    id: number
-    username: string
-    avatar_url: string | null
-    level: number
-  }
-  quiz: {
-    id: number
-    title: string
-  } | null
-}
+import duelsService, { Duel, DuelStatus, DuelStats, RecommendedOpponent } from '@/services/duels'
+import api from '@/lib/api'
 
 interface Quiz {
   id: number
@@ -55,7 +25,7 @@ interface Quiz {
   subject_id: number
 }
 
-interface User {
+interface UserOption {
   id: number
   username: string
   level: number
@@ -67,9 +37,13 @@ export default function DuelsPage() {
   const [loading, setLoading] = useState(true)
   const [duels, setDuels] = useState<Duel[]>([])
   const [pendingDuels, setPendingDuels] = useState<Duel[]>([])
+  const [stats, setStats] = useState<DuelStats | null>(null)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserOption[]>([])
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+
+  // Recommended opponents
+  const [recommendedOpponents, setRecommendedOpponents] = useState<RecommendedOpponent[]>([])
 
   // Create duel dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -78,26 +52,33 @@ export default function DuelsPage() {
   const [stakesXP, setStakesXP] = useState(50)
   const [creating, setCreating] = useState(false)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  // Invite link dialog
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
+  const [creatingInvite, setCreatingInvite] = useState(false)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [duelsRes, pendingRes, quizzesRes, usersRes, profileRes] = await Promise.all([
-        api.get('/duels/'),
-        api.get('/duels/pending'),
+
+      // Récupérer les données en parallèle
+      const [duelsRes, pendingRes, statsRes, quizzesRes, usersRes, profileRes, recommendedRes] = await Promise.all([
+        duelsService.getAll(),
+        duelsService.getPending(),
+        duelsService.getMyStats(),
         api.get('/quizzes/'),
         api.get('/users/'),
-        api.get('/users/me')
+        api.get('/users/me'),
+        duelsService.getRecommendedOpponents(5)
       ])
 
-      setDuels(duelsRes.data)
-      setPendingDuels(pendingRes.data)
+      setDuels(duelsRes.duels)
+      setPendingDuels(pendingRes)
+      setStats(statsRes)
       setQuizzes(quizzesRes.data)
-      setUsers(usersRes.data.filter((u: User) => u.id !== profileRes.data.id))
+      setUsers(usersRes.data.filter((u: UserOption) => u.id !== profileRes.data.id))
       setCurrentUserId(profileRes.data.id)
+      setRecommendedOpponents(recommendedRes.recommendations)
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
@@ -108,7 +89,11 @@ export default function DuelsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleCreateDuel = async () => {
     if (!selectedOpponent || !selectedQuiz) {
@@ -122,14 +107,14 @@ export default function DuelsPage() {
 
     try {
       setCreating(true)
-      await api.post('/duels/', {
+      await duelsService.create({
         opponent_id: parseInt(selectedOpponent),
         quiz_id: parseInt(selectedQuiz),
         stakes_xp: stakesXP
       })
 
       toast({
-        title: 'Défi envoyé !',
+        title: 'Défi envoyé ! ⚔️',
         description: 'Votre adversaire a reçu votre défi',
       })
 
@@ -138,11 +123,11 @@ export default function DuelsPage() {
       setSelectedQuiz('')
       setStakesXP(50)
       fetchData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create duel error:', error)
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer le défi',
+        description: error.response?.data?.detail || 'Impossible de créer le défi',
         variant: 'destructive'
       })
     } finally {
@@ -152,17 +137,17 @@ export default function DuelsPage() {
 
   const handleAcceptDuel = async (duelId: number) => {
     try {
-      await api.post(`/duels/${duelId}/accept`)
+      await duelsService.accept(duelId)
       toast({
-        title: 'Défi accepté !',
+        title: 'Défi accepté ! 🎯',
         description: 'Que le meilleur gagne !',
       })
       fetchData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Accept error:', error)
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'accepter le défi',
+        description: error.response?.data?.detail || 'Impossible d\'accepter le défi',
         variant: 'destructive'
       })
     }
@@ -170,17 +155,17 @@ export default function DuelsPage() {
 
   const handleDeclineDuel = async (duelId: number) => {
     try {
-      await api.post(`/duels/${duelId}/decline`)
+      await duelsService.decline(duelId)
       toast({
         title: 'Défi refusé',
         description: 'Le défi a été décliné',
       })
       fetchData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Decline error:', error)
       toast({
         title: 'Erreur',
-        description: 'Impossible de refuser le défi',
+        description: error.response?.data?.detail || 'Impossible de refuser le défi',
         variant: 'destructive'
       })
     }
@@ -190,21 +175,86 @@ export default function DuelsPage() {
     router.push(`/quizzes/${quizId}?duel_id=${duelId}`)
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      pending: { variant: 'secondary', icon: Clock, text: 'En attente', color: 'text-yellow-600' },
-      accepted: { variant: 'default', icon: Play, text: 'Accepté', color: 'text-blue-600' },
-      in_progress: { variant: 'default', icon: Swords, text: 'En cours', color: 'text-purple-600' },
-      completed: { variant: 'outline', icon: CheckCircle2, text: 'Terminé', color: 'text-green-600' },
-      declined: { variant: 'destructive', icon: XCircle, text: 'Refusé', color: 'text-red-600' },
-      cancelled: { variant: 'secondary', icon: XCircle, text: 'Annulé', color: 'text-gray-600' }
+  // Défier un adversaire recommandé
+  const handleChallengeRecommended = (opponent: RecommendedOpponent) => {
+    setSelectedOpponent(opponent.id.toString())
+    setCreateDialogOpen(true)
+  }
+
+  // Créer un lien d'invitation
+  const handleCreateInviteLink = async () => {
+    if (!selectedQuiz) {
+      toast({
+        title: 'Attention',
+        description: 'Sélectionnez un quiz pour le duel',
+        variant: 'destructive'
+      })
+      return
     }
 
-    const config = variants[status.toLowerCase()] || variants.pending
+    try {
+      setCreatingInvite(true)
+      const result = await duelsService.createInviteLink({
+        quiz_id: parseInt(selectedQuiz),
+        stakes_xp: stakesXP
+      })
+
+      const fullUrl = `${window.location.origin}${result.invite_url}`
+      setInviteLink(fullUrl)
+      setInviteDialogOpen(true)
+
+      toast({
+        title: 'Lien créé ! 🔗',
+        description: 'Partagez-le avec votre adversaire',
+      })
+    } catch (error: any) {
+      console.error('Create invite link error:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de créer le lien',
+        variant: 'destructive'
+      })
+    } finally {
+      setCreatingInvite(false)
+    }
+  }
+
+  // Copier le lien d'invitation
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(inviteLink)
+    toast({
+      title: 'Copié ! 📋',
+      description: 'Le lien a été copié dans le presse-papiers',
+    })
+  }
+
+  // Badge de qualité du match
+  const getMatchQualityBadge = (quality: string) => {
+    const config = {
+      excellent: { className: 'bg-green-100 text-green-800', text: 'Match parfait' },
+      good: { className: 'bg-blue-100 text-blue-800', text: 'Bon match' },
+      fair: { className: 'bg-yellow-100 text-yellow-800', text: 'Match équilibré' }
+    }
+    const c = config[quality as keyof typeof config] || config.fair
+    return <Badge className={c.className}>{c.text}</Badge>
+  }
+
+  // Badge de statut avec couleurs appropriées
+  const getStatusBadge = (status: DuelStatus) => {
+    const variants: Record<DuelStatus, { variant: 'default' | 'secondary' | 'outline' | 'destructive', icon: any, text: string, className: string }> = {
+      pending: { variant: 'secondary', icon: Clock, text: 'En attente', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+      accepted: { variant: 'default', icon: CheckCircle2, text: 'Accepté', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+      in_progress: { variant: 'default', icon: Swords, text: 'En cours', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
+      completed: { variant: 'outline', icon: Trophy, text: 'Terminé', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+      declined: { variant: 'destructive', icon: XCircle, text: 'Refusé', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+      cancelled: { variant: 'secondary', icon: XCircle, text: 'Annulé', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
+    }
+
+    const config = variants[status] || variants.pending
     const Icon = config.icon
 
     return (
-      <Badge variant={config.variant} className="gap-1">
+      <Badge className={`gap-1 ${config.className}`}>
         <Icon className="h-3 w-3" />
         {config.text}
       </Badge>
@@ -221,9 +271,9 @@ export default function DuelsPage() {
     )
   }
 
-  const activeDuels = duels.filter(d => ['accepted', 'in_progress'].includes(d.status.toLowerCase()))
-  const completedDuels = duels.filter(d => d.status.toLowerCase() === 'completed')
-  const wonDuels = completedDuels.filter(d => d.winner_id === currentUserId)
+  // Filtrer les duels par statut (accepté ou en cours = actifs)
+  const activeDuels = duels.filter(d => ['accepted', 'in_progress'].includes(d.status))
+  const completedDuels = duels.filter(d => d.status === 'completed')
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -239,13 +289,14 @@ export default function DuelsPage() {
           </p>
         </div>
 
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg" className="gap-2">
-              <Target className="h-5 w-5" />
-              Lancer un défi
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="gap-2">
+                <Target className="h-5 w-5" />
+                Lancer un défi
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Créer un duel</DialogTitle>
@@ -296,7 +347,7 @@ export default function DuelsPage() {
                   max={500}
                   step={10}
                   value={stakesXP}
-                  onChange={(e) => setStakesXP(parseInt(e.target.value))}
+                  onChange={(e) => setStakesXP(parseInt(e.target.value) || 50)}
                 />
                 <p className="text-xs text-muted-foreground">
                   Le gagnant remporte {stakesXP} XP, le perdant en perd {Math.round(stakesXP / 2)}
@@ -312,9 +363,133 @@ export default function DuelsPage() {
               )}
               Envoyer le défi
             </Button>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleCreateInviteLink}
+              disabled={creatingInvite || !selectedQuiz}
+              className="w-full gap-2"
+            >
+              {creatingInvite ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Créer un lien d'invitation
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Partagez le lien pour défier n'importe qui
+            </p>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Invite Link Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-primary" />
+              Lien d'invitation créé !
+            </DialogTitle>
+            <DialogDescription>
+              Partagez ce lien avec la personne que vous voulez défier. Il expire dans 24 heures.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                value={inviteLink}
+                readOnly
+                className="font-mono text-sm"
+              />
+              <Button onClick={copyInviteLink} variant="outline" size="icon">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => {
+                  const text = `Je te défie en duel ! 🎯\n\nClique ici pour accepter: ${inviteLink}`
+                  navigator.clipboard.writeText(text)
+                  toast({ title: 'Message copié !', description: 'Prêt à partager' })
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                Copier le message
+              </Button>
+            </div>
+
+            <p className="text-sm text-muted-foreground text-center">
+              Enjeux: <span className="font-bold text-primary">{stakesXP} XP</span>
+            </p>
+          </div>
+
+          <Button onClick={() => setInviteDialogOpen(false)} className="w-full">
+            Fermer
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recommended Opponents */}
+      {recommendedOpponents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              Adversaires recommandés
+            </CardTitle>
+            <CardDescription>
+              Joueurs avec un niveau similaire au vôtre pour des matchs équilibrés
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {recommendedOpponents.map(opponent => (
+                <div
+                  key={opponent.id}
+                  className="flex flex-col items-center p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
+                >
+                  <div className="p-3 rounded-full bg-primary/10 mb-2">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-center">{opponent.username}</h4>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Star className="h-3 w-3" />
+                    Niveau {opponent.level}
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {opponent.total_xp} XP ({opponent.xp_difference > 0 ? '+' : ''}{opponent.xp_difference})
+                  </div>
+                  {getMatchQualityBadge(opponent.match_quality)}
+                  <Button
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={() => handleChallengeRecommended(opponent)}
+                    disabled={opponent.has_pending_duel}
+                  >
+                    {opponent.has_pending_duel ? 'Duel en cours' : 'Défier'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -344,21 +519,29 @@ export default function DuelsPage() {
             <Trophy className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{wonDuels.length}</div>
+            <div className="text-2xl font-bold">{stats?.wins || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Taux: {stats?.win_rate || 0}%
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de victoire</CardTitle>
-            <Star className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">XP Net</CardTitle>
+            {(stats?.net_xp || 0) >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {completedDuels.length > 0
-                ? Math.round((wonDuels.length / completedDuels.length) * 100)
-                : 0}%
+            <div className={`text-2xl font-bold ${(stats?.net_xp || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(stats?.net_xp || 0) >= 0 ? '+' : ''}{stats?.net_xp || 0}
             </div>
+            <p className="text-xs text-muted-foreground">
+              +{stats?.xp_won || 0} / -{stats?.xp_lost || 0}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -373,7 +556,7 @@ export default function DuelsPage() {
             Actifs ({activeDuels.length})
           </TabsTrigger>
           <TabsTrigger value="history">
-            Historique
+            Historique ({completedDuels.length})
           </TabsTrigger>
         </TabsList>
 
@@ -397,13 +580,13 @@ export default function DuelsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-lg">
-                          {duel.challenger.username} vous défie !
+                          {duel.challenger?.username || 'Utilisateur'} vous défie !
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Quiz: {duel.quiz?.title} • Enjeux: {duel.stakes_xp} XP
+                          Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
                         </p>
                         <div className="flex gap-2 mt-2">
-                          <Badge variant="outline">Niveau {duel.challenger.level}</Badge>
+                          <Badge variant="outline">Niveau {duel.challenger?.level || '?'}</Badge>
                           {getStatusBadge(duel.status)}
                         </div>
                       </div>
@@ -453,13 +636,13 @@ export default function DuelsPage() {
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">
-                            Duel contre {opponent.username}
+                            Duel contre {opponent?.username || 'Adversaire'}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Quiz: {duel.quiz?.title} • Enjeux: {duel.stakes_xp} XP
+                            Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
                           </p>
                           <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">Niveau {opponent.level}</Badge>
+                            <Badge variant="outline">Niveau {opponent?.level || '?'}</Badge>
                             {getStatusBadge(duel.status)}
                           </div>
                         </div>
@@ -492,18 +675,23 @@ export default function DuelsPage() {
             completedDuels.map(duel => {
               const isChallenger = duel.challenger_id === currentUserId
               const isWinner = duel.winner_id === currentUserId
+              const isDraw = duel.winner_id === null
               const opponent = isChallenger ? duel.opponent : duel.challenger
               const myScore = isChallenger ? duel.challenger_score : duel.opponent_score
               const opponentScore = isChallenger ? duel.opponent_score : duel.challenger_score
 
               return (
-                <Card key={duel.id} className={isWinner ? 'border-yellow-500/50' : ''}>
+                <Card key={duel.id} className={isWinner ? 'border-yellow-500/50' : isDraw ? 'border-blue-500/50' : ''}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         {isWinner ? (
                           <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-950">
                             <Crown className="h-6 w-6 text-yellow-600" />
+                          </div>
+                        ) : isDraw ? (
+                          <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-950">
+                            <Star className="h-6 w-6 text-blue-600" />
                           </div>
                         ) : (
                           <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-800">
@@ -512,37 +700,43 @@ export default function DuelsPage() {
                         )}
                         <div>
                           <h3 className="font-semibold text-lg flex items-center gap-2">
-                            Duel contre {opponent.username}
+                            Duel contre {opponent?.username || 'Adversaire'}
                             {isWinner && (
                               <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                                 <Crown className="h-3 w-3 mr-1" />
                                 Victoire
                               </Badge>
                             )}
+                            {isDraw && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                <Star className="h-3 w-3 mr-1" />
+                                Égalité
+                              </Badge>
+                            )}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Quiz: {duel.quiz?.title}
+                            Quiz: {duel.quiz?.title || 'Non défini'}
                           </p>
                           <div className="flex gap-4 mt-2">
                             <div className="text-sm">
                               <span className="text-muted-foreground">Votre score:</span>{' '}
-                              <span className="font-bold">{myScore}</span>
+                              <span className="font-bold">{myScore ?? '?'}</span>
                             </div>
                             <div className="text-sm">
                               <span className="text-muted-foreground">Score adverse:</span>{' '}
-                              <span className="font-bold">{opponentScore}</span>
+                              <span className="font-bold">{opponentScore ?? '?'}</span>
                             </div>
                             <div className="text-sm">
                               <span className="text-muted-foreground">XP:</span>{' '}
-                              <span className={`font-bold ${isWinner ? 'text-green-600' : 'text-red-600'}`}>
-                                {isWinner ? '+' : '-'}{isWinner ? duel.stakes_xp : Math.round(duel.stakes_xp / 2)}
+                              <span className={`font-bold ${isWinner ? 'text-green-600' : isDraw ? 'text-blue-600' : 'text-red-600'}`}>
+                                {isDraw ? '0' : (isWinner ? `+${duel.stakes_xp}` : `-${Math.round(duel.stakes_xp / 2)}`)}
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(duel.completed_at || duel.created_at).toLocaleDateString()}
+                        {new Date(duel.ended_at || duel.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </CardContent>

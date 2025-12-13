@@ -5,6 +5,7 @@ from typing import Optional
 from datetime import datetime
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.subject import Subject
@@ -15,6 +16,7 @@ from app.schemas.subject import (
     SubjectListResponse,
     SubjectStats
 )
+from app.services.xp_service import award_xp
 
 router = APIRouter()
 
@@ -26,20 +28,25 @@ async def create_subject(
     db: AsyncSession = Depends(get_db)
 ):
     """Créer une nouvelle matière"""
-    
+
     new_subject = Subject(
         user_id=current_user.id,
         **subject_data.model_dump()
     )
-    
+
     db.add(new_subject)
-    
-    # Ajouter XP
-    current_user.total_xp += 5
-    
+
+    # Ajouter XP via le service centralisé
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Création d'une matière",
+        event_type="subject_created"
+    )
+
     await db.commit()
     await db.refresh(new_subject)
-    
+
     return new_subject
 
 
@@ -204,7 +211,7 @@ async def get_subject_stats(
     
     days_until_exam = None
     if subject.exam_date:
-        days_until_exam = (subject.exam_date - datetime.now()).days
+        days_until_exam = (subject.exam_date - utc_now()).days
     
     return SubjectStats(
         subject_id=subject.id,

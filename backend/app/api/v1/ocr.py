@@ -76,17 +76,18 @@ async def upload_pdf_and_extract_text(
             content=result['full_text'],
             tags=f"pdf-import,ocr,confidence-{result['average_confidence']}"
         )
-        
+
         db.add(new_note)
-        
-        # XP bonus
-        current_user.total_xp += 15
-        current_user.level = (current_user.total_xp // 100) + 1
-        current_user.total_notes_created += 1
-        
+
+        # XP bonus - utiliser les objets sous-jacents
+        if current_user.gamification:
+            current_user.gamification.total_xp += 15
+        if current_user.stats:
+            current_user.stats.total_notes_created += 1
+
         await db.commit()
         await db.refresh(new_note)
-        
+
         note_id = new_note.id
     
     return {

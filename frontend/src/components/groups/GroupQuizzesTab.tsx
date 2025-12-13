@@ -32,7 +32,7 @@ interface GroupQuizzesTabProps {
 interface Quiz {
   id: number
   title: string
-  question_count: number
+  total_questions: number
 }
 
 export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzesTabProps) {
@@ -147,7 +147,7 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
                     <SelectItem key={quiz.id} value={quiz.id.toString()}>
                       {quiz.title}
                       <span className="text-xs text-gray-500 ml-2">
-                        ({quiz.question_count} questions)
+                        ({quiz.total_questions} questions)
                       </span>
                     </SelectItem>
                   ))}

@@ -17,16 +17,18 @@ import {
 } from 'lucide-react'
 import api from '@/lib/api'
 
+interface Subject {
+  id: string
+  name: string
+  color: string
+}
+
 interface Note {
   id: string
   title: string
   content: string
   subject_id: string
-  subject: {
-    id: string
-    name: string
-    color: string
-  }
+  subject?: Subject | null
   tags: string[]
   is_favorite: boolean
   created_at: string
@@ -47,7 +49,7 @@ export default function NotesPage() {
   const fetchNotes = async () => {
     try {
       const response = await api.get('/notes/')
-      setNotes(response.data)
+      setNotes(response.data.notes || [])
     } catch (error) {
       console.error('Erreur lors du chargement des notes:', error)
     } finally {
@@ -172,17 +174,19 @@ export default function NotesPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: `${note.subject.color}20`,
-                          color: note.subject.color,
-                        }}
-                      >
-                        {note.subject.name}
-                      </span>
-                    </div>
+                    {note.subject && (
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: `${note.subject.color}20`,
+                            color: note.subject.color,
+                          }}
+                        >
+                          {note.subject.name}
+                        </span>
+                      </div>
+                    )}
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                       {note.title}
                     </h3>

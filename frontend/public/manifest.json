@@ -1,0 +1,133 @@
+{
+  "name": "Study Master",
+  "short_name": "Study Master",
+  "description": "Plateforme d'apprentissage intelligente avec gamification, flashcards, quiz et collaboration",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tableau de bord Study Master"
+    },
+    {
+      "src": "/screenshots/flashcards.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Révision de flashcards"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mes Notes",
+      "short_name": "Notes",
+      "description": "Accéder à mes notes",
+      "url": "/notes",
+      "icons": [{ "src": "/icons/notes-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Flashcards",
+      "short_name": "Flashcards",
+      "description": "Réviser mes flashcards",
+      "url": "/flashcards",
+      "icons": [{ "src": "/icons/flashcards-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Quiz",
+      "short_name": "Quiz",
+      "description": "Faire un quiz",
+      "url": "/quiz",
+      "icons": [{ "src": "/icons/quiz-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Calendrier",
+      "short_name": "Calendrier",
+      "description": "Voir mon emploi du temps",
+      "url": "/schedule",
+      "icons": [{ "src": "/icons/calendar-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["text/*", "application/pdf", "image/*"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+studymaster",
+      "url": "/handle-protocol?url=%s"
+    }
+  ]
+}

@@ -11,36 +11,70 @@ import {
   XCircle,
   Trophy,
   Play,
-  Trash2
+  Trash2,
+  Share2,
+  Users,
+  Medal,
+  X,
+  Crown,
+  Copy,
+  ExternalLink
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 
-interface Quiz {
+interface Subject {
   id: string
+  name: string
+  color: string
+}
+
+interface Quiz {
+  id: number
   title: string
   description: string
-  subject: {
-    id: string
-    name: string
-    color: string
-  }
+  subject?: Subject | null
   total_questions: number
   time_limit_minutes: number | null
   created_at: string
-  attempts: {
-    id: string
+  attempts?: {
+    id: number
     score: number
-    completed: boolean
-    created_at: string
+    is_completed: boolean
+    created_at: string | null
   }[]
   best_score: number | null
+  share_code: string | null
+  is_public: boolean
+  total_plays: number
+}
+
+interface LeaderboardEntry {
+  rank: number
+  name: string
+  score: number
+  correct_count: number
+  is_registered: boolean
+  completed_at: string
 }
 
 export default function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // État pour le modal de classement
+  const [leaderboardModal, setLeaderboardModal] = useState<{
+    isOpen: boolean
+    quiz: Quiz | null
+    leaderboard: LeaderboardEntry[]
+    loading: boolean
+  }>({
+    isOpen: false,
+    quiz: null,
+    leaderboard: [],
+    loading: false
+  })
 
   useEffect(() => {
     fetchQuizzes()
@@ -57,7 +91,7 @@ export default function QuizzesPage() {
     }
   }
 
-  const deleteQuiz = async (quizId: string) => {
+  const deleteQuiz = async (quizId: number) => {
     if (!confirm('Supprimer ce quiz?')) return
 
     try {
@@ -69,15 +103,81 @@ export default function QuizzesPage() {
     }
   }
 
+  // Activer le partage pour un quiz
+  const enableSharing = async (quizId: number) => {
+    try {
+      const response = await api.post(`/quizzes/${quizId}/share`)
+      const shareCode = response.data.share_code
+
+      // Mettre à jour le quiz dans la liste
+      setQuizzes(quizzes.map(q =>
+        q.id === quizId ? { ...q, share_code: shareCode, is_public: true } : q
+      ))
+
+      // Copier le lien
+      const shareUrl = `${window.location.origin}/play/${shareCode}`
+      navigator.clipboard.writeText(shareUrl)
+      toast.success('Lien copié! Le quiz est maintenant public.')
+    } catch (error) {
+      toast.error('Erreur lors de l\'activation du partage')
+    }
+  }
+
+  // Copier le lien de partage
+  const copyShareLink = (shareCode: string) => {
+    const shareUrl = `${window.location.origin}/play/${shareCode}`
+    navigator.clipboard.writeText(shareUrl)
+    toast.success('Lien copié!')
+  }
+
+  // Ouvrir le modal de classement
+  const openLeaderboard = async (quiz: Quiz) => {
+    if (!quiz.share_code) return
+
+    setLeaderboardModal({
+      isOpen: true,
+      quiz,
+      leaderboard: [],
+      loading: true
+    })
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(
+        `${apiBase}/api/v1/public/quiz/${quiz.share_code}/leaderboard`
+      )
+      const data = await response.json()
+
+      setLeaderboardModal(prev => ({
+        ...prev,
+        leaderboard: data.leaderboard || [],
+        loading: false
+      }))
+    } catch (error) {
+      toast.error('Erreur lors du chargement du classement')
+      setLeaderboardModal(prev => ({ ...prev, loading: false }))
+    }
+  }
+
+  // Fermer le modal
+  const closeLeaderboard = () => {
+    setLeaderboardModal({
+      isOpen: false,
+      quiz: null,
+      leaderboard: [],
+      loading: false
+    })
+  }
+
   const filteredQuizzes = quizzes.filter((quiz) =>
     quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     quiz.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const totalAttempts = quizzes.reduce((sum, quiz) => sum + quiz.attempts.length, 0)
-  const completedQuizzes = quizzes.filter(q => q.attempts.some(a => a.completed)).length
+  const completedQuizzes = quizzes.filter(q => q.attempts.some(a => a.is_completed)).length
   const averageScore = quizzes.reduce((sum, quiz) => {
-    const completed = quiz.attempts.filter(a => a.completed)
+    const completed = quiz.attempts.filter(a => a.is_completed)
     if (completed.length === 0) return sum
     const avgQuizScore = completed.reduce((s, a) => s + a.score, 0) / completed.length
     return sum + avgQuizScore
@@ -182,7 +282,7 @@ export default function QuizzesPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredQuizzes.map((quiz) => {
-            const lastAttempt = quiz.attempts[0]
+            const lastAttempt = quiz.attempts?.[0]
             const bestScore = quiz.best_score
 
             return (
@@ -194,15 +294,17 @@ export default function QuizzesPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-medium inline-block mb-2"
-                        style={{
-                          backgroundColor: `${quiz.subject.color}20`,
-                          color: quiz.subject.color,
-                        }}
-                      >
-                        {quiz.subject.name}
-                      </span>
+                      {quiz.subject && (
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium inline-block mb-2"
+                          style={{
+                            backgroundColor: `${quiz.subject.color}20`,
+                            color: quiz.subject.color,
+                          }}
+                        >
+                          {quiz.subject.name}
+                        </span>
+                      )}
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         {quiz.title}
                       </h3>
@@ -225,7 +327,7 @@ export default function QuizzesPage() {
                       <div className="text-xs text-gray-500">Minutes</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{quiz.attempts.length}</div>
+                      <div className="text-lg font-bold text-gray-900">{quiz.attempts?.length || 0}</div>
                       <div className="text-xs text-gray-500">Tentatives</div>
                     </div>
                   </div>
@@ -252,6 +354,35 @@ export default function QuizzesPage() {
                       <Play className="h-4 w-4 mr-1" />
                       Commencer
                     </Link>
+
+                    {/* Bouton Partager / Classement */}
+                    {quiz.share_code ? (
+                      <>
+                        <button
+                          onClick={() => openLeaderboard(quiz)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                          title="Voir le classement"
+                        >
+                          <Users className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => copyShareLink(quiz.share_code!)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          title="Copier le lien"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => enableSharing(quiz.id)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                        title="Activer le partage"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => deleteQuiz(quiz.id)}
                       className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -260,16 +391,29 @@ export default function QuizzesPage() {
                     </button>
                   </div>
 
+                  {/* Badge si partagé */}
+                  {quiz.share_code && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-xs">
+                      <span className="flex items-center text-green-600">
+                        <Share2 className="h-3 w-3 mr-1" />
+                        Quiz public
+                      </span>
+                      <span className="text-gray-500">
+                        {quiz.total_plays || 0} joueurs
+                      </span>
+                    </div>
+                  )}
+
                   {/* Last Attempt */}
-                  {lastAttempt && (
+                  {lastAttempt && lastAttempt.created_at && (
                     <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 flex items-center justify-between">
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
                         {new Date(lastAttempt.created_at).toLocaleDateString('fr-FR')}
                       </span>
-                      {lastAttempt.completed && (
+                      {lastAttempt.is_completed && (
                         <span className="font-medium text-gray-700">
-                          Dernier: {lastAttempt.score}%
+                          Dernier: {lastAttempt.score.toFixed(0)}%
                         </span>
                       )}
                     </div>
@@ -278,6 +422,154 @@ export default function QuizzesPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Modal Classement */}
+      {leaderboardModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeLeaderboard}
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Trophy className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Classement</h2>
+                    <p className="text-purple-100 text-sm">{leaderboardModal.quiz?.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeLeaderboard}
+                  className="p-2 hover:bg-white/20 rounded-lg transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Lien de partage */}
+              {leaderboardModal.quiz?.share_code && (
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/play/${leaderboardModal.quiz.share_code}`}
+                    className="flex-1 px-3 py-2 bg-white/20 rounded-lg text-sm text-white placeholder-white/70 border border-white/30"
+                  />
+                  <button
+                    onClick={() => copyShareLink(leaderboardModal.quiz!.share_code!)}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <a
+                    href={`/play/${leaderboardModal.quiz.share_code}`}
+                    target="_blank"
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Leaderboard Content */}
+            <div className="p-6 overflow-y-auto max-h-[50vh]">
+              {leaderboardModal.loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                </div>
+              ) : leaderboardModal.leaderboard.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucun participant</h3>
+                  <p className="text-gray-500 text-sm">
+                    Partagez ce quiz pour voir le classement!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {leaderboardModal.leaderboard.map((entry, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-4 p-4 rounded-xl transition ${
+                        entry.rank === 1
+                          ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300'
+                          : entry.rank === 2
+                          ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-300'
+                          : entry.rank === 3
+                          ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300'
+                          : 'bg-gray-50 border border-gray-200'
+                      }`}
+                    >
+                      {/* Rang */}
+                      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+                        {entry.rank === 1 ? (
+                          <Crown className="h-8 w-8 text-yellow-500" />
+                        ) : entry.rank === 2 ? (
+                          <Medal className="h-7 w-7 text-gray-400" />
+                        ) : entry.rank === 3 ? (
+                          <Medal className="h-6 w-6 text-orange-500" />
+                        ) : (
+                          <span className="text-lg font-bold text-gray-500">#{entry.rank}</span>
+                        )}
+                      </div>
+
+                      {/* Nom */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 truncate">
+                            {entry.name}
+                          </span>
+                          {entry.is_registered && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                              Membre
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {entry.correct_count} bonnes réponses •{' '}
+                          {new Date(entry.completed_at).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+
+                      {/* Score */}
+                      <div className={`text-right font-bold text-lg ${
+                        entry.rank === 1 ? 'text-yellow-600' :
+                        entry.rank === 2 ? 'text-gray-600' :
+                        entry.rank === 3 ? 'text-orange-600' :
+                        'text-gray-700'
+                      }`}>
+                        {entry.score}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>{leaderboardModal.leaderboard.length} participant(s)</span>
+                <button
+                  onClick={() => openLeaderboard(leaderboardModal.quiz!)}
+                  className="text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  Actualiser
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

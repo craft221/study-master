@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Users, Plus, Search, Lock, Globe, Crown, MessageCircle, Calendar, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Users, Plus, Search, Lock, Globe, Crown, MessageCircle, Calendar, Loader2, Mail, Check, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,8 +12,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import studyGroupsService, { StudyGroupInvitation } from '@/services/studyGroups'
 
 interface Group {
   id: number
@@ -45,6 +48,7 @@ interface CreateGroupData {
 }
 
 export default function GroupsPage() {
+  const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -63,6 +67,10 @@ export default function GroupsPage() {
     max_members: 20,
     is_private: false
   })
+
+  // Pending invitations
+  const [pendingInvitations, setPendingInvitations] = useState<StudyGroupInvitation[]>([])
+  const [processingInvitation, setProcessingInvitation] = useState<number | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -89,6 +97,14 @@ export default function GroupsPage() {
       const myGroupsRes = await api.get('/study-groups/', { params: { only_my_groups: true } })
       const myIds = (myGroupsRes.data.groups || []).map((g: Group) => g.id)
       setMyGroupIds(myIds)
+
+      // Fetch pending invitations
+      try {
+        const invitations = await studyGroupsService.getMyInvitations()
+        setPendingInvitations(invitations)
+      } catch (err) {
+        console.error('Error fetching invitations:', err)
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
@@ -159,6 +175,55 @@ export default function GroupsPage() {
         description: error.response?.data?.detail || 'Impossible de rejoindre le groupe',
         variant: 'destructive'
       })
+    }
+  }
+
+  const handleAcceptInvitation = async (invitation: StudyGroupInvitation) => {
+    try {
+      setProcessingInvitation(invitation.id)
+      await studyGroupsService.acceptInvitation(invitation.id)
+
+      toast({
+        title: 'Invitation acceptée',
+        description: `Vous rejoignez ${invitation.group_name}...`,
+      })
+
+      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id))
+
+      // Redirect to group page
+      router.push(`/groups/${invitation.group_id}`)
+    } catch (error: any) {
+      console.error('Error accepting invitation:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Erreur lors du traitement de l\'invitation',
+        variant: 'destructive'
+      })
+    } finally {
+      setProcessingInvitation(null)
+    }
+  }
+
+  const handleDeclineInvitation = async (invitation: StudyGroupInvitation) => {
+    try {
+      setProcessingInvitation(invitation.id)
+      await studyGroupsService.declineInvitation(invitation.id)
+
+      toast({
+        title: 'Invitation refusée',
+        description: 'L\'invitation a été refusée',
+      })
+
+      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id))
+    } catch (error: any) {
+      console.error('Error declining invitation:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Erreur lors du traitement de l\'invitation',
+        variant: 'destructive'
+      })
+    } finally {
+      setProcessingInvitation(null)
     }
   }
 
@@ -307,6 +372,63 @@ export default function GroupsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Pending Invitations */}
+      {pendingInvitations.length > 0 && (
+        <Card className="border-primary-200 bg-primary-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary-600" />
+              Invitations en attente ({pendingInvitations.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={invitation.inviter_avatar || undefined} />
+                      <AvatarFallback>{invitation.inviter_username.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-gray-900">{invitation.group_name}</p>
+                      <p className="text-sm text-gray-600">Invité par {invitation.inviter_username}</p>
+                      {invitation.message && (
+                        <p className="text-sm text-gray-500 italic">"{invitation.message}"</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeclineInvitation(invitation)}
+                      disabled={processingInvitation === invitation.id}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAcceptInvitation(invitation)}
+                      disabled={processingInvitation === invitation.id}
+                    >
+                      {processingInvitation === invitation.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-6">

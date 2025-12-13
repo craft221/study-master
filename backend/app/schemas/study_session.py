@@ -79,17 +79,20 @@ class StudySessionStatsResponse(BaseModel):
 class ScheduleBase(BaseModel):
     """Schéma de base pour Schedule"""
     subject_id: Optional[int] = None
-    title: str = Field(..., min_length=1, max_length=200)
+    title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    event_type: str = Field(..., pattern="^(class|exam|homework|revision|other)$")
-    location: Optional[str] = None
+    # Types supportés: exam, class, deadline, study, meeting, other
+    event_type: str = Field(default="other", pattern="^(exam|class|deadline|study|meeting|other)$")
+    location: Optional[str] = Field(None, max_length=255)
     start_time: datetime
     end_time: datetime
-    day_of_week: Optional[str] = None
+    day_of_week: Optional[int] = Field(None, ge=0, le=6)  # 0=Monday, 6=Sunday
     is_recurring: bool = False
-    recurrence_pattern: Optional[str] = None
-    color: str = Field(default="#3B82F6", max_length=7)
-    reminder_minutes_before: Optional[int] = Field(None, ge=0, le=1440)
+    recurrence_pattern: Optional[str] = Field(None, pattern="^(daily|weekly|monthly)$")
+    color: str = Field(default="#3B82F6", max_length=20)
+    # Rappels intelligents
+    reminder_enabled: bool = True
+    reminder_minutes_before: Optional[int] = Field(None, ge=0, le=10080)  # Max 7 jours
 
 
 class ScheduleCreate(ScheduleBase):
@@ -100,26 +103,52 @@ class ScheduleCreate(ScheduleBase):
 class ScheduleUpdate(BaseModel):
     """Schéma pour mettre à jour un événement"""
     subject_id: Optional[int] = None
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
-    event_type: Optional[str] = None
+    event_type: Optional[str] = Field(None, pattern="^(exam|class|deadline|study|meeting|other)$")
     location: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    day_of_week: Optional[str] = None
+    day_of_week: Optional[int] = Field(None, ge=0, le=6)
     is_recurring: Optional[bool] = None
     recurrence_pattern: Optional[str] = None
     color: Optional[str] = None
+    reminder_enabled: Optional[bool] = None
     reminder_minutes_before: Optional[int] = None
     is_completed: Optional[bool] = None
+    is_cancelled: Optional[bool] = None
 
 
-class ScheduleResponse(ScheduleBase):
+class ReminderInfo(BaseModel):
+    """Information sur un rappel envoyé"""
+    minutes: int
+    sent_at: str
+
+
+class ScheduleResponse(BaseModel):
     """Schéma de réponse pour Schedule"""
     id: int
     user_id: int
+    subject_id: Optional[int] = None
+    title: str
+    description: Optional[str] = None
+    event_type: str
+    location: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    day_of_week: Optional[int] = None
+    is_recurring: bool
+    recurrence_pattern: Optional[str] = None
+    color: str
+    # Rappels
+    reminder_enabled: bool
+    reminder_minutes_before: Optional[int] = None
+    reminders_sent: Optional[List[ReminderInfo]] = None
+    # État
     is_completed: bool
-    completed_at: Optional[datetime]
+    completed_at: Optional[datetime] = None
+    is_cancelled: bool = False
+    # Timestamps
     created_at: datetime
     updated_at: datetime
 
@@ -132,3 +161,16 @@ class ScheduleListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class ReminderPreview(BaseModel):
+    """Aperçu d'un rappel qui sera envoyé"""
+    time_before: str
+    priority: str
+    label: str
+
+
+class ReminderStrategyResponse(BaseModel):
+    """Réponse avec les stratégies de rappels par type d'événement"""
+    strategies: dict  # {event_type: [ReminderPreview]}
+    event_types: List[dict]  # [{value, label}]

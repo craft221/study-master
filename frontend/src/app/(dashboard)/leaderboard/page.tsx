@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Trophy, Medal, Star, TrendingUp, Users, Flame, Zap, FileText, Clock, Target, Loader2 } from 'lucide-react'
+import { Trophy, Medal, Star, TrendingUp, Users, Flame, Zap, FileText, Clock, Target, Loader2, Wifi, WifiOff, Crown, ChevronUp, ChevronDown, Share2 } from 'lucide-react'
 import api from '@/lib/api'
-import { useToast } from '@/hooks/use-toast'
+import toast from 'react-hot-toast'
+import leaderboardsService, { LeaguePosition, LeagueEntry, LeagueInfo, LeagueTier } from '@/services/leaderboards'
+import ShareModal from '@/components/ShareModal'
 
 interface LeaderboardEntry {
   user_id: number
@@ -18,18 +21,231 @@ interface LeaderboardEntry {
   streak: number
 }
 
+// Configuration des icônes et couleurs par ligue
+const LEAGUE_CONFIG: Record<LeagueTier, { name: string; icon: string; color: string; bgGradient: string; borderColor: string }> = {
+  bronze: {
+    name: 'Bronze',
+    icon: '🥉',
+    color: 'text-orange-700',
+    bgGradient: 'from-orange-400 to-orange-600',
+    borderColor: 'border-orange-500'
+  },
+  silver: {
+    name: 'Argent',
+    icon: '🥈',
+    color: 'text-gray-400',
+    bgGradient: 'from-gray-300 to-gray-500',
+    borderColor: 'border-gray-400'
+  },
+  gold: {
+    name: 'Or',
+    icon: '🥇',
+    color: 'text-yellow-500',
+    bgGradient: 'from-yellow-400 to-yellow-600',
+    borderColor: 'border-yellow-500'
+  },
+  diamond: {
+    name: 'Diamant',
+    icon: '💎',
+    color: 'text-cyan-400',
+    bgGradient: 'from-cyan-400 to-blue-500',
+    borderColor: 'border-cyan-400'
+  },
+  master: {
+    name: 'Maître',
+    icon: '👑',
+    color: 'text-purple-500',
+    bgGradient: 'from-purple-500 to-pink-600',
+    borderColor: 'border-purple-500'
+  }
+}
+
 export default function LeaderboardPage() {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardType, setLeaderboardType] = useState('xp')
   const [period, setPeriod] = useState('weekly')
   const [scope, setScope] = useState('global')
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardEntry | null>(null)
+  const [wsConnected, setWsConnected] = useState(false)
+  const [recentUpdates, setRecentUpdates] = useState<any[]>([])
+  const wsRef = useRef<WebSocket | null>(null)
+
+  // État pour les ligues
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'leagues'>('leaderboard')
+  const [myLeaguePosition, setMyLeaguePosition] = useState<LeaguePosition | null>(null)
+  const [leagueEntries, setLeagueEntries] = useState<LeagueEntry[]>([])
+  const [allLeagues, setAllLeagues] = useState<LeagueInfo[]>([])
+  const [selectedLeagueTier, setSelectedLeagueTier] = useState<LeagueTier | null>(null)
+  const [leagueLoading, setLeagueLoading] = useState(false)
+
+  // État pour le partage
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareData, setShareData] = useState<{ type: 'league_promotion' | 'weekly_stats'; data: any } | null>(null)
+
+  // WebSocket pour le temps réel
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    // Utiliser variable d'environnement pour l'URL WebSocket
+    const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL ||
+      (typeof window !== 'undefined' && window.location.protocol === 'https:'
+        ? `wss://${window.location.host}`
+        : 'ws://localhost:8000')
+    const wsUrl = `${wsBaseUrl}/api/v1/ws/main-leaderboard${token ? `?token=${token}` : ''}`
+
+    let pingInterval: NodeJS.Timeout | null = null
+
+    const connect = () => {
+      try {
+        const ws = new WebSocket(wsUrl)
+        wsRef.current = ws
+
+        ws.onopen = () => {
+          console.log('WebSocket classement connecté')
+          setWsConnected(true)
+
+          // S'abonner au type de classement actuel
+          ws.send(JSON.stringify({
+            type: 'subscribe',
+            leaderboard_type: leaderboardType,
+            period: period,
+            scope: scope
+          }))
+
+          // Ping toutes les 30 secondes
+          pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }))
+            }
+          }, 30000)
+        }
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+
+            if (data.type === 'ranking_update') {
+              // Mise à jour en temps réel
+              const { user, data: updateData } = data
+
+              // Ajouter aux updates récentes
+              setRecentUpdates(prev => [{
+                id: Date.now(),
+                username: user.username,
+                xp_gained: updateData.xp_gained,
+                reason: updateData.reason,
+                level_up: updateData.level_up
+              }, ...prev].slice(0, 5))
+
+              // Toast notification
+              toast(`⚡ ${user.username} +${updateData.xp_gained} XP`, {
+                icon: updateData.level_up ? '🎉' : '⬆️',
+                duration: 3000
+              })
+
+              // Rafraîchir le classement après un court délai
+              setTimeout(() => fetchLeaderboard(), 500)
+            }
+          } catch (e) {
+            console.error('Erreur parsing WS:', e)
+          }
+        }
+
+        ws.onclose = () => {
+          setWsConnected(false)
+          if (pingInterval) clearInterval(pingInterval)
+          // Reconnexion après 5 secondes
+          setTimeout(connect, 5000)
+        }
+
+        ws.onerror = () => {
+          setWsConnected(false)
+        }
+      } catch (e) {
+        console.error('Erreur connexion WS:', e)
+      }
+    }
+
+    connect()
+
+    return () => {
+      if (pingInterval) clearInterval(pingInterval)
+      if (wsRef.current) wsRef.current.close()
+    }
+  }, [])
+
+  // Mettre à jour l'abonnement quand les filtres changent
+  useEffect(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'subscribe',
+        leaderboard_type: leaderboardType,
+        period: period,
+        scope: scope
+      }))
+    }
+  }, [leaderboardType, period, scope])
 
   useEffect(() => {
     fetchLeaderboard()
   }, [leaderboardType, period, scope])
+
+  // Charger les données de la ligue quand on passe sur l'onglet Ligues
+  useEffect(() => {
+    if (activeTab === 'leagues') {
+      fetchLeagueData()
+    }
+  }, [activeTab])
+
+  // Charger le classement d'une ligue spécifique
+  useEffect(() => {
+    if (selectedLeagueTier) {
+      fetchLeagueLeaderboard(selectedLeagueTier)
+    }
+  }, [selectedLeagueTier])
+
+  const fetchLeagueData = async () => {
+    setLeagueLoading(true)
+    try {
+      const [positionData, leaguesData] = await Promise.all([
+        leaderboardsService.getMyLeaguePosition(),
+        leaderboardsService.getAllLeagues()
+      ])
+      setMyLeaguePosition(positionData)
+      setAllLeagues(leaguesData)
+      // Définir la ligue sélectionnée par défaut
+      if (!selectedLeagueTier && positionData.tier) {
+        setSelectedLeagueTier(positionData.tier)
+      }
+    } catch (error) {
+      console.error('Erreur chargement ligues:', error)
+      toast.error('Impossible de charger les données de ligue')
+    } finally {
+      setLeagueLoading(false)
+    }
+  }
+
+  const fetchLeagueLeaderboard = async (tier: LeagueTier) => {
+    try {
+      const response = await leaderboardsService.getLeagueLeaderboard(tier, 50)
+      setLeagueEntries(response.entries)
+    } catch (error) {
+      console.error('Erreur chargement classement ligue:', error)
+    }
+  }
+
+  const handleShareLeague = () => {
+    if (myLeaguePosition) {
+      setShareData({
+        type: 'league_promotion',
+        data: {
+          new_tier: myLeaguePosition.tier,
+          previous_tier: myLeaguePosition.previous_tier || 'bronze'
+        }
+      })
+      setShowShareModal(true)
+    }
+  }
 
   const fetchLeaderboard = async () => {
     try {
@@ -53,11 +269,7 @@ export default function LeaderboardPage() {
       setCurrentUserRank(myEntry || null)
     } catch (error) {
       console.error('Error fetching leaderboard:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger le classement',
-        variant: 'destructive'
-      })
+      toast.error('Impossible de charger le classement')
     } finally {
       setLoading(false)
     }
@@ -119,12 +331,110 @@ export default function LeaderboardPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
           <Trophy className="h-8 w-8 text-yellow-500" />
-          Classements
+          Classements & Ligues
+          {/* Indicateur temps réel */}
+          <div className={`ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+            wsConnected
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+          }`}>
+            {wsConnected ? (
+              <>
+                <Wifi className="h-3 w-3" />
+                <span>En direct</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3 w-3" />
+                <span>Hors ligne</span>
+              </>
+            )}
+          </div>
         </h1>
         <p className="text-muted-foreground">
           Comparez votre progression avec les autres étudiants
         </p>
       </div>
+
+      {/* Onglets Classement / Ligues */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 gap-1">
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+              activeTab === 'leaderboard'
+                ? 'bg-white dark:bg-gray-700 shadow-md text-purple-600 dark:text-purple-400'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Classement
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('leagues')}
+            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+              activeTab === 'leagues'
+                ? 'bg-white dark:bg-gray-700 shadow-md text-purple-600 dark:text-purple-400'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Crown className="w-4 h-4" />
+              Ligues
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ===== ONGLET CLASSEMENT ===== */}
+      {activeTab === 'leaderboard' && (
+        <>
+          {/* Activité en temps réel */}
+          {recentUpdates.length > 0 && (
+            <Card className="border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative">
+                <Zap className="h-5 w-5 text-green-600" />
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-ping"></span>
+              </div>
+              <span className="font-semibold text-green-700 dark:text-green-400">Activité en direct</span>
+            </div>
+            <div className="space-y-2">
+              {recentUpdates.map((update, index) => (
+                <div
+                  key={update.id}
+                  className={`flex items-center justify-between p-2 rounded-lg bg-white/70 dark:bg-gray-900/50 transition-all ${
+                    index === 0 ? 'animate-pulse ring-2 ring-green-400' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-sm font-bold text-green-600">
+                      {update.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium text-sm">{update.username}</span>
+                      <p className="text-xs text-muted-foreground">{update.reason}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {update.level_up && (
+                      <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                        🎉 Level Up!
+                      </span>
+                    )}
+                    <span className="font-bold text-green-600 dark:text-green-400">
+                      +{update.xp_gained} XP
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 justify-center">
@@ -309,57 +619,359 @@ export default function LeaderboardPage() {
         </CardContent>
       </Card>
 
-      {/* Current User Position */}
-      {currentUserRank && (
-        <Card className="bg-gradient-to-r from-primary to-purple-600 text-white border-none">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary font-bold text-2xl">
-                  #{currentUserRank.rank}
-                </div>
-                <div>
-                  <h3 className="font-bold text-xl mb-1">Votre position</h3>
-                  <p className="text-white/80">Niveau {currentUserRank.level}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold mb-1">
-                  {currentUserRank.score.toLocaleString()}
-                </div>
-                <div className="text-white/80">{getTypeLabel(leaderboardType)}</div>
-                <div className="mt-2 flex items-center justify-end gap-4">
-                  <div className="flex items-center">
-                    <Flame className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{currentUserRank.streak} jours</span>
+          {/* Current User Position */}
+          {currentUserRank && (
+            <Card className="bg-gradient-to-r from-primary to-purple-600 text-white border-none">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary font-bold text-2xl">
+                      #{currentUserRank.rank}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-xl mb-1">Votre position</h3>
+                      <p className="text-white/80">Niveau {currentUserRank.level}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold mb-1">
+                      {currentUserRank.score.toLocaleString()}
+                    </div>
+                    <div className="text-white/80">{getTypeLabel(leaderboardType)}</div>
+                    <div className="mt-2 flex items-center justify-end gap-4">
+                      <div className="flex items-center">
+                        <Flame className="h-4 w-4 mr-1" />
+                        <span className="text-sm">{currentUserRank.streak} jours</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Info Card */}
+          <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Comment monter dans le classement?</h3>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li>• Complétez des quiz et obtenez de bons scores</li>
+                    <li>• Révisez vos flashcards quotidiennement</li>
+                    <li>• Créez et partagez des notes de qualité</li>
+                    <li>• Maintenez votre série d'apprentissage</li>
+                    <li>• Participez aux sessions d'étude en groupe</li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {/* Info Card */}
-      <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      {/* ===== ONGLET LIGUES ===== */}
+      {activeTab === 'leagues' && (
+        <>
+          {leagueLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
-            <div>
-              <h3 className="font-semibold mb-2">Comment monter dans le classement?</h3>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• Complétez des quiz et obtenez de bons scores</li>
-                <li>• Révisez vos flashcards quotidiennement</li>
-                <li>• Créez et partagez des notes de qualité</li>
-                <li>• Maintenez votre série d'apprentissage</li>
-                <li>• Participez aux sessions d'étude en groupe</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          ) : (
+            <>
+              {/* Ma position dans la ligue */}
+              {myLeaguePosition && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Card className={`border-2 ${LEAGUE_CONFIG[myLeaguePosition.tier].borderColor} overflow-hidden`}>
+                    <div className={`bg-gradient-to-r ${LEAGUE_CONFIG[myLeaguePosition.tier].bgGradient} p-6 text-white`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="text-5xl">{LEAGUE_CONFIG[myLeaguePosition.tier].icon}</div>
+                          <div>
+                            <h2 className="text-2xl font-bold">Ligue {LEAGUE_CONFIG[myLeaguePosition.tier].name}</h2>
+                            <p className="text-white/80">Semaine {myLeaguePosition.weeks_in_tier} dans cette ligue</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleShareLeague}
+                          className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          Partager
+                        </button>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="grid md:grid-cols-4 gap-6">
+                        {/* Rang actuel */}
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-purple-600">#{myLeaguePosition.rank}</div>
+                          <div className="text-sm text-muted-foreground">Rang actuel</div>
+                          <div className="text-xs text-gray-400">sur {myLeaguePosition.total_in_league}</div>
+                        </div>
+
+                        {/* XP hebdomadaire */}
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-green-600">{myLeaguePosition.weekly_xp.toLocaleString()}</div>
+                          <div className="text-sm text-muted-foreground">XP cette semaine</div>
+                        </div>
+
+                        {/* Zone de promotion/rétrogradation */}
+                        <div className="text-center">
+                          {myLeaguePosition.is_promotion_zone ? (
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center gap-1 text-2xl font-bold text-green-500">
+                                <ChevronUp className="w-6 h-6" />
+                                Promotion
+                              </div>
+                              <div className="text-sm text-green-600">Zone de promotion!</div>
+                              {myLeaguePosition.next_tier && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Vers {LEAGUE_CONFIG[myLeaguePosition.next_tier].name} {LEAGUE_CONFIG[myLeaguePosition.next_tier].icon}
+                                </div>
+                              )}
+                            </div>
+                          ) : myLeaguePosition.is_demotion_zone ? (
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center gap-1 text-2xl font-bold text-red-500">
+                                <ChevronDown className="w-6 h-6" />
+                                Rétrogradation
+                              </div>
+                              <div className="text-sm text-red-600">Zone de danger!</div>
+                              {myLeaguePosition.previous_tier && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Vers {LEAGUE_CONFIG[myLeaguePosition.previous_tier].name} {LEAGUE_CONFIG[myLeaguePosition.previous_tier].icon}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <div className="text-2xl font-bold text-gray-500">—</div>
+                              <div className="text-sm text-muted-foreground">Zone stable</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Meilleur rang */}
+                        <div className="text-center">
+                          <div className="text-2xl">{LEAGUE_CONFIG[myLeaguePosition.highest_tier].icon}</div>
+                          <div className="text-sm text-muted-foreground">Meilleure ligue</div>
+                          <div className="text-xs font-medium">{LEAGUE_CONFIG[myLeaguePosition.highest_tier].name}</div>
+                        </div>
+                      </div>
+
+                      {/* Barre de progression vers promotion/rétrogradation */}
+                      <div className="mt-6">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-red-500">Zone de rétrogradation</span>
+                          <span className="text-green-500">Zone de promotion</span>
+                        </div>
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{
+                              width: `${Math.min(100, Math.max(0, (myLeaguePosition.rank / myLeaguePosition.total_in_league) * 100))}%`
+                            }}
+                            className={`h-full ${
+                              myLeaguePosition.is_promotion_zone
+                                ? 'bg-gradient-to-r from-green-400 to-green-600'
+                                : myLeaguePosition.is_demotion_zone
+                                ? 'bg-gradient-to-r from-red-400 to-red-600'
+                                : 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                            }`}
+                            style={{ marginLeft: `${100 - (myLeaguePosition.rank / myLeaguePosition.total_in_league) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                          <span>#{myLeaguePosition.total_in_league}</span>
+                          <span>Votre position: #{myLeaguePosition.rank}</span>
+                          <span>#1</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Sélecteur de ligue */}
+              <div className="flex justify-center">
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {(['bronze', 'silver', 'gold', 'diamond', 'master'] as LeagueTier[]).map((tier) => (
+                    <button
+                      key={tier}
+                      onClick={() => setSelectedLeagueTier(tier)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        selectedLeagueTier === tier
+                          ? `bg-gradient-to-r ${LEAGUE_CONFIG[tier].bgGradient} text-white shadow-lg scale-105`
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <span>{LEAGUE_CONFIG[tier].icon}</span>
+                      <span>{LEAGUE_CONFIG[tier].name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Classement de la ligue sélectionnée */}
+              {selectedLeagueTier && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <span className="text-2xl">{LEAGUE_CONFIG[selectedLeagueTier].icon}</span>
+                      Classement Ligue {LEAGUE_CONFIG[selectedLeagueTier].name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {leagueEntries.map((entry, index) => {
+                        const isCurrentUser = myLeaguePosition?.user_id === entry.user_id
+                        const tierConfig = LEAGUE_CONFIG[selectedLeagueTier]
+
+                        return (
+                          <motion.div
+                            key={entry.user_id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                            className={`p-4 rounded-lg transition-all ${
+                              isCurrentUser
+                                ? `bg-gradient-to-r ${tierConfig.bgGradient} text-white`
+                                : entry.is_promotion_zone
+                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800'
+                                : entry.is_demotion_zone
+                                ? 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'
+                                : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              {/* Rank */}
+                              <div className="flex-shrink-0 w-12 flex items-center justify-center">
+                                {entry.rank === 1 ? (
+                                  <Trophy className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-yellow-500'}`} />
+                                ) : entry.rank === 2 ? (
+                                  <Medal className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-gray-400'}`} />
+                                ) : entry.rank === 3 ? (
+                                  <Medal className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-orange-600'}`} />
+                                ) : (
+                                  <span className={`text-lg font-bold ${isCurrentUser ? 'text-white' : 'text-gray-600'}`}>
+                                    #{entry.rank}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Avatar */}
+                              <div className="flex-shrink-0">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                                  isCurrentUser ? 'bg-white text-gray-900' : 'bg-primary text-primary-foreground'
+                                }`}>
+                                  {entry.username.charAt(0).toUpperCase()}
+                                </div>
+                              </div>
+
+                              {/* User Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className={`font-semibold ${isCurrentUser ? 'text-white' : ''}`}>
+                                    {entry.username}
+                                  </h3>
+                                  {isCurrentUser && (
+                                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">Vous</span>
+                                  )}
+                                  {entry.is_promotion_zone && !isCurrentUser && (
+                                    <ChevronUp className="w-4 h-4 text-green-500" />
+                                  )}
+                                  {entry.is_demotion_zone && !isCurrentUser && (
+                                    <ChevronDown className="w-4 h-4 text-red-500" />
+                                  )}
+                                </div>
+                                <p className={`text-sm ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
+                                  Niveau {entry.level}
+                                </p>
+                              </div>
+
+                              {/* Stats */}
+                              <div className="hidden md:flex items-center gap-6">
+                                <div className="text-center">
+                                  <div className={`text-lg font-bold flex items-center gap-1 ${isCurrentUser ? 'text-white' : ''}`}>
+                                    <Zap className="h-4 w-4" />
+                                    {entry.weekly_xp.toLocaleString()}
+                                  </div>
+                                  <div className={`text-xs ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
+                                    XP semaine
+                                  </div>
+                                </div>
+
+                                {entry.current_streak > 0 && (
+                                  <div className="text-center">
+                                    <div className={`text-lg font-bold flex items-center gap-1 ${isCurrentUser ? 'text-white' : 'text-orange-600'}`}>
+                                      <Flame className="h-4 w-4" />
+                                      {entry.current_streak}
+                                    </div>
+                                    <div className={`text-xs ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
+                                      Série
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+
+                    {leagueEntries.length === 0 && (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Crown className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                        <p>Aucun joueur dans cette ligue pour le moment</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Info sur les ligues */}
+              <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                      <Crown className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">Comment fonctionnent les ligues?</h3>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Gagnez de l'XP chaque semaine pour monter dans le classement</li>
+                        <li>• Les top 3 de chaque ligue sont promus à la ligue supérieure</li>
+                        <li>• Les derniers du classement risquent la rétrogradation</li>
+                        <li>• Le classement se réinitialise chaque lundi à minuit</li>
+                        <li>• Plus votre ligue est élevée, plus vous gagnez de bonus!</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Modal de partage */}
+      {shareData && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareType={shareData.type}
+          title={shareData.type === 'league_promotion' ? 'Partagez votre ligue!' : 'Partagez vos stats!'}
+          subtitle={myLeaguePosition ? `Ligue ${LEAGUE_CONFIG[myLeaguePosition.tier].name}` : undefined}
+          data={shareData.data}
+        />
+      )}
     </div>
   )
 }

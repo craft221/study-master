@@ -46,12 +46,9 @@ export default function FlashcardsPage() {
 
   const fetchDecks = async () => {
     try {
-      // Utiliser le trailing slash pour éviter la redirection 307
-      const response = await api.get('/flashcards/')
-      console.log('✅ Flashcards loaded:', response.data)
-      // L'API retourne probablement un tableau directement ou {flashcards: []}
-      const flashcardsData = Array.isArray(response.data) ? response.data : (response.data.flashcards || [])
-      setDecks(flashcardsData)
+      const response = await api.get('/flashcards/decks')
+      console.log('✅ Flashcard decks loaded:', response.data)
+      setDecks(response.data || [])
     } catch (error: any) {
       console.error('❌ Error loading flashcards:', error)
       toast.error('Erreur lors du chargement des flashcards')
@@ -203,15 +200,17 @@ export default function FlashcardsPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-medium inline-block mb-2"
-                        style={{
-                          backgroundColor: `${deck.subject.color}20`,
-                          color: deck.subject.color,
-                        }}
-                      >
-                        {deck.subject.name}
-                      </span>
+                      {deck.subject && (
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium inline-block mb-2"
+                          style={{
+                            backgroundColor: `${deck.subject.color}20`,
+                            color: deck.subject.color,
+                          }}
+                        >
+                          {deck.subject.name}
+                        </span>
+                      )}
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         {deck.title}
                       </h3>

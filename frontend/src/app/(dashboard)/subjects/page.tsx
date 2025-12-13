@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, BookOpen, FileText, CreditCard, Brain } from 'lucide-react'
+import { Plus, Edit, Trash2, BookOpen, FileText, CreditCard, Brain, FolderOpen } from 'lucide-react'
+import Link from 'next/link'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 
@@ -13,6 +14,7 @@ interface Subject {
   notes_count: number
   flashcards_count: number
   quizzes_count: number
+  total_documents_count: number
 }
 
 const PRESET_COLORS = [
@@ -44,7 +46,7 @@ export default function SubjectsPage() {
   const fetchSubjects = async () => {
     try {
       const response = await api.get('/subjects/')
-      setSubjects(response.data)
+      setSubjects(response.data.subjects || [])
     } catch (error) {
       toast.error('Erreur lors du chargement des matières')
     } finally {
@@ -249,30 +251,39 @@ export default function SubjectsPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 py-4 border-t border-b border-gray-200 mb-4">
+                <div className="grid grid-cols-4 gap-3 py-4 border-t border-b border-gray-200 mb-4">
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <FileText className="h-5 w-5 text-blue-600" />
+                      <FileText className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900">
                       {subject.notes_count}
                     </div>
                     <div className="text-xs text-gray-600">Notes</div>
                   </div>
-                  <div className="text-center border-l border-r border-gray-200">
+                  <div className="text-center border-l border-gray-200">
                     <div className="flex items-center justify-center mb-1">
-                      <CreditCard className="h-5 w-5 text-purple-600" />
+                      <FolderOpen className="h-4 w-4 text-amber-600" />
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900">
+                      {subject.total_documents_count || 0}
+                    </div>
+                    <div className="text-xs text-gray-600">Docs</div>
+                  </div>
+                  <div className="text-center border-l border-gray-200">
+                    <div className="flex items-center justify-center mb-1">
+                      <CreditCard className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="text-base font-bold text-gray-900">
                       {subject.flashcards_count}
                     </div>
-                    <div className="text-xs text-gray-600">Flashcards</div>
+                    <div className="text-xs text-gray-600">Cards</div>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center border-l border-gray-200">
                     <div className="flex items-center justify-center mb-1">
-                      <Brain className="h-5 w-5 text-green-600" />
+                      <Brain className="h-4 w-4 text-green-600" />
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900">
                       {subject.quizzes_count}
                     </div>
                     <div className="text-xs text-gray-600">Quiz</div>
@@ -281,12 +292,18 @@ export default function SubjectsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2">
+                  <Link
+                    href={`/documents?subject=${subject.id}`}
+                    className="flex-1 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium flex items-center justify-center"
+                  >
+                    <FolderOpen className="h-4 w-4 mr-1" />
+                    Documents
+                  </Link>
                   <button
                     onClick={() => handleEdit(subject)}
-                    className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium flex items-center justify-center"
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                   >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Modifier
+                    <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(subject.id)}

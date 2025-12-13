@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Send, Loader2, MessageCircle, Smile, Reply, X, AtSign } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Send, Loader2, MessageCircle, Smile, Reply, X, AtSign, Wifi, WifiOff } from 'lucide-react'
+// Card components removed - using plain div for better scroll control
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { EmojiPicker } from '@/components/ui/emoji-picker'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import { useWebSocketContext } from '@/components/providers/WebSocketProvider'
+import { useRoom, usePresence } from '@/hooks/useWebSocket'
 
 interface ReactionCount {
   emoji: string
@@ -58,6 +60,7 @@ interface GroupMessagesTabProps {
 
 export default function GroupMessagesTab({ groupId, currentUserId, members }: GroupMessagesTabProps) {
   const { toast } = useToast()
+  const { isConnected } = useWebSocketContext()
 
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -74,13 +77,34 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
   const isFirstLoadRef = useRef(true)
   const previousMessageCountRef = useRef(0)
 
+  // Real-time room for WebSocket
+  const roomId = `group_${groupId}`
+  const { messages: wsMessages, typingUsers, setTyping } = useRoom(isConnected ? roomId : null)
+  const { presence, onlineCount } = usePresence(isConnected ? roomId : null)
+
+  // Merge WebSocket messages with fetched messages
+  useEffect(() => {
+    if (wsMessages.length > 0) {
+      setMessages(prev => {
+        const existingIds = new Set(prev.map(m => m.id))
+        const newMessages = wsMessages.filter(m => !existingIds.has(m.id))
+        if (newMessages.length > 0) {
+          return [...prev, ...newMessages]
+        }
+        return prev
+      })
+    }
+  }, [wsMessages])
+
   useEffect(() => {
     fetchMessages()
 
-    // Poll messages every 5 seconds
-    const interval = setInterval(fetchMessages, 5000)
-    return () => clearInterval(interval)
-  }, [groupId])
+    // Only poll if WebSocket is not connected (fallback)
+    if (!isConnected) {
+      const interval = setInterval(fetchMessages, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [groupId, isConnected])
 
   useEffect(() => {
     // Scroll to bottom only on first load or if user is already near bottom
@@ -222,12 +246,30 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
     }, 0)
   }
 
+  // Debounced typing indicator
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     const cursorPos = e.target.selectionStart || 0
 
     setNewMessage(value)
     setCursorPosition(cursorPos)
+
+    // Send typing indicator (if connected)
+    if (isConnected && value.length > 0) {
+      setTyping(true)
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+
+      // Stop typing after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        setTyping(false)
+      }, 2000)
+    }
 
     // Check for @ mention
     const textBeforeCursor = value.substring(0, cursorPos)
@@ -273,30 +315,91 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
       return content
     }
 
-    let processedContent = content
+    // Sécurisé: on divise le texte par les mentions et on reconstruit avec des composants React
+    const parts: (string | JSX.Element)[] = []
+    let lastIndex = 0
+    let keyIndex = 0
+
     mentionedUsers.forEach(user => {
       const mentionRegex = new RegExp(`@${user.username}`, 'gi')
-      processedContent = processedContent.replace(
-        mentionRegex,
-        `<span class="bg-blue-100 text-blue-700 px-1 rounded font-medium">@${user.username}</span>`
-      )
+      let match
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        // Ajouter le texte avant la mention
+        if (match.index > lastIndex) {
+          parts.push(content.substring(lastIndex, match.index))
+        }
+        // Ajouter la mention stylisée (sécurisé, pas de dangerouslySetInnerHTML)
+        parts.push(
+          <span key={`mention-${keyIndex++}`} className="bg-blue-100 text-blue-700 px-1 rounded font-medium">
+            @{user.username}
+          </span>
+        )
+        lastIndex = match.index + match[0].length
+      }
     })
 
-    return <span dangerouslySetInnerHTML={{ __html: processedContent }} />
+    // Ajouter le reste du texte
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex))
+    }
+
+    return <>{parts}</>
   }
 
   const filteredMembers = mentionSearch
     ? members.filter(m => m.username.toLowerCase().includes(mentionSearch.toLowerCase()))
     : members
 
+  // Get typing usernames
+  const getTypingNames = () => {
+    const typingMemberNames = typingUsers
+      .filter(id => id !== currentUserId)
+      .map(id => members.find(m => m.user_id === id)?.username)
+      .filter(Boolean)
+
+    if (typingMemberNames.length === 0) return null
+    if (typingMemberNames.length === 1) return `${typingMemberNames[0]} est en train d'écrire...`
+    if (typingMemberNames.length === 2) return `${typingMemberNames[0]} et ${typingMemberNames[1]} écrivent...`
+    return `${typingMemberNames.length} personnes écrivent...`
+  }
+
+  const typingMessage = getTypingNames()
+
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages */}
-        <div
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4"
-        >
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm h-[500px] flex flex-col overflow-hidden">
+      {/* Real-time status header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b bg-gray-50 rounded-t-lg">
+        <div className="flex items-center gap-2">
+          {isConnected ? (
+            <div className="flex items-center gap-1 text-green-600 text-xs">
+              <Wifi className="h-3 w-3" />
+              <span>Temps réel</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-orange-500 text-xs">
+              <WifiOff className="h-3 w-3" />
+              <span>Hors ligne</span>
+            </div>
+          )}
+          {onlineCount > 0 && (
+            <span className="text-xs text-gray-500 ml-2">
+              {onlineCount} en ligne
+            </span>
+          )}
+        </div>
+        {typingMessage && (
+          <span className="text-xs text-gray-500 italic animate-pulse">
+            {typingMessage}
+          </span>
+        )}
+      </div>
+
+      {/* Messages - container avec scroll et HAUTEUR FIXE */}
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
+      >
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 py-12">
               <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -425,8 +528,8 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input */}
-        <div className="border-t p-4">
+      {/* Message Input - zone fixe en bas */}
+      <div className="flex-shrink-0 border-t p-4 bg-white rounded-b-lg">
           {/* Replying To Indicator */}
           {replyingTo && (
             <div className="mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-start justify-between">
@@ -455,7 +558,7 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
                 value={newMessage}
                 onChange={handleTextareaChange}
                 placeholder="Écrivez votre message... (utilisez @ pour mentionner)"
-                className="resize-none"
+                className="resize-none max-h-32 overflow-y-auto"
                 rows={2}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -500,7 +603,6 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
             Appuyez sur Entrée pour envoyer, Shift + Entrée pour une nouvelle ligne, @ pour mentionner
           </p>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

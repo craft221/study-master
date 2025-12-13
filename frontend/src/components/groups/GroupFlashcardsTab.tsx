@@ -35,9 +35,9 @@ interface GroupFlashcardsTabProps {
 }
 
 interface Deck {
-  id: number
-  name: string
-  card_count: number
+  id: number | string
+  title: string
+  total_cards: number
 }
 
 export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlashcardsTabProps) {
@@ -80,7 +80,8 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
 
     try {
       setSharing(true)
-      await shareFlashcardsWithGroup(groupId, parseInt(selectedDeckId))
+      // selectedDeckId is the deck_name (string), not a numeric ID
+      await shareFlashcardsWithGroup(groupId, selectedDeckId)
 
       toast({
         title: 'Deck partagé',
@@ -173,10 +174,10 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
                 </SelectTrigger>
                 <SelectContent>
                   {myDecks.map((deck) => (
-                    <SelectItem key={deck.id} value={deck.id.toString()}>
-                      {deck.name}
+                    <SelectItem key={deck.id.toString()} value={deck.id.toString()}>
+                      {deck.title}
                       <span className="text-xs text-gray-500 ml-2">
-                        ({deck.card_count} cartes)
+                        ({deck.total_cards} cartes)
                       </span>
                     </SelectItem>
                   ))}

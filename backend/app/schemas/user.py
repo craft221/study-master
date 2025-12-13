@@ -12,10 +12,10 @@ class UserRoleEnum(str, Enum):
 
 
 class SubscriptionTypeEnum(str, Enum):
-    FREE = "free"
-    PREMIUM = "premium"
-    PREMIUM_PLUS = "premium_plus"
-    INSTITUTIONAL = "institutional"
+    FREE = "FREE"
+    PREMIUM = "PREMIUM"
+    PREMIUM_PLUS = "PREMIUM_PLUS"
+    INSTITUTIONAL = "INSTITUTIONAL"
 
 
 # Auth Schemas
@@ -79,6 +79,18 @@ class UserUpdate(BaseModel):
     language: Optional[str] = None
     theme: Optional[str] = None
     notifications_enabled: Optional[bool] = None
+
+
+class LanguageUpdate(BaseModel):
+    """Mise à jour de la langue de l'utilisateur"""
+    language: str
+
+    @validator('language')
+    def validate_language(cls, v):
+        from app.core.i18n import SUPPORTED_LANGUAGES
+        if v not in SUPPORTED_LANGUAGES:
+            raise ValueError(f"Langue non supportée. Langues supportées: {', '.join(SUPPORTED_LANGUAGES)}")
+        return v
 
 
 class UserResponse(UserBase):
@@ -169,6 +181,9 @@ class UserStats(BaseModel):
     university_rank: Optional[int] = None
     promotion_rank: Optional[int] = None
 
+    class Config:
+        from_attributes = True
+
 
 class PasswordChange(BaseModel):
     current_password: str
@@ -230,6 +245,10 @@ class UserStatsResponse(BaseModel):
     total_quizzes: int
     completed_quiz_attempts: int
     average_quiz_score: float
+
+    # Study Time
+    total_study_time_minutes: int
+    study_time_this_month: int
 
     # Weekly Activity
     notes_this_week: int

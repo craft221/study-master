@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now, utc_date
 from app.core.security import get_current_user
 from app.models.user import User
-from app.models.schedule import Schedule
+from app.models.schedule import Schedule, EventType, REMINDER_STRATEGIES
 from app.models.subject import Subject
 from app.schemas.study_session import (
     ScheduleCreate,
@@ -17,6 +18,46 @@ from app.schemas.study_session import (
 )
 
 router = APIRouter()
+
+
+# =============================================================================
+# Endpoints pour les rappels intelligents
+# =============================================================================
+
+@router.get("/reminder-strategies", response_model=Dict[str, Any])
+async def get_reminder_strategies(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Récupère les stratégies de rappels pour chaque type d'événement.
+    Utile pour afficher à l'utilisateur quels rappels il recevra.
+    """
+    from app.services.smart_reminder_service import smart_reminder_service
+
+    strategies = {}
+    for event_type in EventType:
+        strategies[event_type.value] = smart_reminder_service.get_reminder_preview(event_type.value)
+
+    return {
+        "strategies": strategies,
+        "event_types": [
+            {"value": et.value, "label": get_event_type_label(et.value)}
+            for et in EventType
+        ]
+    }
+
+
+def get_event_type_label(event_type: str) -> str:
+    """Retourne le label français pour un type d'événement"""
+    labels = {
+        "exam": "Examen",
+        "class": "Cours",
+        "deadline": "Date limite",
+        "study": "Session d'étude",
+        "meeting": "Réunion",
+        "other": "Autre"
+    }
+    return labels.get(event_type, "Événement")
 
 
 @router.post("/", response_model=ScheduleResponse, status_code=status.HTTP_201_CREATED)
@@ -78,8 +119,14 @@ async def get_schedule_events(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer l'emploi du temps de l'utilisateur"""
+    # Convertir les datetimes avec timezone en naive datetimes (pour compatibilité PostgreSQL)
+    if start_date and start_date.tzinfo:
+        start_date = start_date.replace(tzinfo=None)
+    if end_date and end_date.tzinfo:
+        end_date = end_date.replace(tzinfo=None)
+
     query = select(Schedule).where(Schedule.user_id == current_user.id)
-    
+
     # Filtres
     if start_date and end_date:
         query = query.where(
@@ -140,7 +187,7 @@ async def get_week_schedule(
 ):
     """Récupérer l'emploi du temps de la semaine"""
     if not start_of_week:
-        today = datetime.utcnow().date()
+        today = utc_date()
         start_of_week = datetime.combine(today - timedelta(days=today.weekday()), datetime.min.time())
     
     end_of_week = start_of_week + timedelta(days=7)
@@ -171,7 +218,7 @@ async def get_upcoming_events(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer les prochains événements"""
-    now = datetime.utcnow()
+    now = utc_now()
     
     query = select(Schedule).where(
         and_(
@@ -247,7 +294,7 @@ async def update_schedule_event(
     
     # Marquer comme complété si demandé
     if event_data.is_completed and not event.completed_at:
-        event.completed_at = datetime.utcnow()
+        event.completed_at = utc_now()
     
     await db.commit()
     await db.refresh(event)

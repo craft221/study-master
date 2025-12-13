@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Clock, CheckCircle, XCircle, Award } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Clock, CheckCircle, XCircle, Award, Shield } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
+import { useAntiCheat } from '@/hooks/use-anti-cheat'
+import { AntiCheatMonitor, AntiCheatResult } from '@/components/anti-cheat-monitor'
+import { ValidateQuizResponse } from '@/services/anti-cheat'
+import { useSparkEventMessages } from '@/hooks/useSparkEvents'
 
 interface Question {
   id: string
@@ -28,7 +32,9 @@ interface Quiz {
 export default function TakeQuizPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const quizId = params.id as string
+  const duelId = searchParams.get('duel_id')
 
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,6 +44,29 @@ export default function TakeQuizPage() {
   const [showResults, setShowResults] = useState(false)
   const [score, setScore] = useState(0)
   const [attemptId, setAttemptId] = useState<string | null>(null)
+  const [antiCheatResult, setAntiCheatResult] = useState<ValidateQuizResponse | null>(null)
+
+  // Hook Spark pour les messages d'événements
+  const { onQuizComplete } = useSparkEventMessages()
+
+  // Timing pour chaque question
+  const questionStartTime = useRef<number>(Date.now())
+  const quizStartTime = useRef<number>(Date.now())
+
+  // Anti-triche hook
+  const antiCheat = useAntiCheat({
+    quizId: parseInt(quizId),
+    duelId: duelId ? parseInt(duelId) : undefined,
+    onViolation: (violation) => {
+      if (violation.severity === 'high' || violation.severity === 'critical') {
+        toast.error(violation.message, { duration: 4000 })
+      }
+    },
+    onWarning: (message) => {
+      toast(message, { icon: '⚠️', duration: 5000 })
+    },
+    enabled: true
+  })
 
   useEffect(() => {
     fetchQuiz()
@@ -66,10 +95,15 @@ export default function TakeQuizPage() {
       if (response.data.time_limit_minutes) {
         setTimeLeft(response.data.time_limit_minutes * 60)
       }
-      
+
       // Create attempt
-      const attemptResponse = await api.post(`/quizzes/${quizId}/attempts`)
+      const attemptResponse = await api.post(`/quizzes/${quizId}/attempt`)
       setAttemptId(attemptResponse.data.id)
+
+      // Démarrer la session anti-triche
+      await antiCheat.startSession()
+      quizStartTime.current = Date.now()
+      questionStartTime.current = Date.now()
     } catch (error) {
       toast.error('Erreur lors du chargement du quiz')
       router.push('/quizzes')
@@ -78,24 +112,69 @@ export default function TakeQuizPage() {
     }
   }
 
-  const handleAnswer = (questionId: string, answer: string) => {
+  const handleAnswer = async (questionId: string, answer: string, answerIndex: number) => {
+    // Calculer le temps de réponse
+    const timeTakenMs = Date.now() - questionStartTime.current
+
     setAnswers({ ...answers, [questionId]: answer })
+
+    // Enregistrer la réponse pour l'anti-triche
+    await antiCheat.recordAnswer(
+      parseInt(questionId),
+      answerIndex,
+      timeTakenMs,
+      currentQuestion
+    )
+
+    // Réinitialiser le timer pour la prochaine question
+    questionStartTime.current = Date.now()
   }
 
   const handleSubmit = async () => {
     if (!quiz || !attemptId) return
 
     try {
-      const response = await api.post(`/quizzes/attempts/${attemptId}/submit`, {
+      const totalTimeSeconds = Math.round((Date.now() - quizStartTime.current) / 1000)
+
+      const response = await api.put(`/quizzes/attempt/${attemptId}`, {
         answers: Object.entries(answers).map(([question_id, user_answer]) => ({
-          question_id,
+          question_id: parseInt(question_id),
           user_answer,
+          time_spent_seconds: 0
         })),
       })
 
-      setScore(response.data.score)
+      const quizScore = response.data.score
+
+      // Valider avec le système anti-triche
+      const acResult = await antiCheat.validateAndEnd(
+        quiz.questions.length,
+        quizScore,
+        totalTimeSeconds
+      )
+
+      setAntiCheatResult(acResult)
+
+      // Utiliser le score ajusté si disponible
+      const finalScore = acResult?.adjusted_score ?? quizScore
+      setScore(Math.round(finalScore))
       setShowResults(true)
-      toast.success(`Quiz terminé! Score: ${response.data.score}%`)
+
+      // Message de Spark selon le score
+      if (!acResult?.is_disqualified) {
+        const correctCount = quiz.questions.filter(
+          (q) => answers[q.id] === q.correct_answer
+        ).length
+        onQuizComplete(correctCount, quiz.questions.length, quiz.title)
+      }
+
+      if (acResult?.is_disqualified) {
+        toast.error('Résultat invalidé pour comportement suspect')
+      } else if (acResult && acResult.violations_count > 0) {
+        toast(`Quiz terminé avec ${acResult.violations_count} avertissement(s)`, { icon: '⚠️' })
+      } else {
+        toast.success(`Quiz terminé! Score: ${Math.round(finalScore)}%`)
+      }
     } catch (error) {
       toast.error('Erreur lors de la soumission')
     }
@@ -124,29 +203,60 @@ export default function TakeQuizPage() {
 
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-100 rounded-full mb-6">
-            <Award className="h-10 w-10 text-primary-600" />
+        {/* Résultat Anti-Triche */}
+        {antiCheatResult && (
+          <AntiCheatResult
+            isValid={antiCheatResult.is_valid}
+            violationsCount={antiCheatResult.violations_count}
+            penaltyXp={antiCheatResult.penalty_xp}
+            isDisqualified={antiCheatResult.is_disqualified}
+            warningMessage={antiCheatResult.warning_message}
+            adjustedScore={antiCheatResult.adjusted_score}
+            originalScore={score}
+          />
+        )}
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${
+            antiCheatResult?.is_disqualified ? 'bg-red-100 dark:bg-red-900/30' : 'bg-primary-100 dark:bg-primary-900/30'
+          }`}>
+            {antiCheatResult?.is_disqualified ? (
+              <XCircle className="h-10 w-10 text-red-600" />
+            ) : (
+              <Award className="h-10 w-10 text-primary-600" />
+            )}
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Quiz terminé!</h2>
-          <p className="text-gray-600 mb-8">Voici vos résultats</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {antiCheatResult?.is_disqualified ? 'Résultat invalidé' : 'Quiz terminé!'}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Voici vos résultats</p>
 
           <div className="grid grid-cols-3 gap-6 mb-8">
-            <div className="p-6 bg-blue-50 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600">{score}%</div>
-              <div className="text-sm text-gray-600">Score final</div>
+            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className={`text-3xl font-bold ${antiCheatResult?.is_disqualified ? 'text-gray-400 line-through' : 'text-blue-600'}`}>
+                {score}%
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Score final</div>
             </div>
-            <div className="p-6 bg-green-50 rounded-lg">
+            <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="text-3xl font-bold text-green-600">{correctCount}</div>
-              <div className="text-sm text-gray-600">Réponses correctes</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Réponses correctes</div>
             </div>
-            <div className="p-6 bg-red-50 rounded-lg">
+            <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <div className="text-3xl font-bold text-red-600">
                 {quiz.questions.length - correctCount}
               </div>
-              <div className="text-sm text-gray-600">Réponses incorrectes</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Réponses incorrectes</div>
             </div>
           </div>
+
+          {antiCheatResult?.penalty_xp && antiCheatResult.penalty_xp > 0 && !antiCheatResult.is_disqualified && (
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <p className="text-yellow-800 dark:text-yellow-300 font-semibold">
+                Pénalité appliquée: -{antiCheatResult.penalty_xp} XP
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -255,14 +365,24 @@ export default function TakeQuizPage() {
             Question {currentQuestion + 1} sur {quiz.questions.length}
           </p>
         </div>
-        {timeLeft !== null && (
-          <div className="flex items-center space-x-2 px-4 py-2 bg-orange-100 rounded-lg">
-            <Clock className="h-5 w-5 text-orange-600" />
-            <span className="font-mono font-bold text-orange-900">
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {/* Moniteur Anti-Triche */}
+          <AntiCheatMonitor
+            isActive={antiCheat.isActive}
+            violations={antiCheat.violations}
+            tabSwitchCount={antiCheat.tabSwitchCount}
+            focusLossCount={antiCheat.focusLossCount}
+          />
+
+          {timeLeft !== null && (
+            <div className="flex items-center space-x-2 px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <span className="font-mono font-bold text-orange-900 dark:text-orange-300">
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Progress */}
@@ -282,17 +402,17 @@ export default function TakeQuizPage() {
         </h3>
 
         <div className="space-y-3">
-          {question.options.map((option) => (
+          {question.options.map((option, index) => (
             <button
               key={option}
-              onClick={() => handleAnswer(question.id, option)}
+              onClick={() => handleAnswer(question.id, option, index)}
               className={`w-full p-4 text-left rounded-lg border-2 transition ${
                 answers[question.id] === option
-                  ? 'border-primary-600 bg-primary-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
+                  ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
-              <span className="font-medium text-gray-900">{option}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{option}</span>
             </button>
           ))}
         </div>

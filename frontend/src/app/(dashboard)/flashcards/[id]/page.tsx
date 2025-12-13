@@ -27,16 +27,19 @@ interface Flashcard {
   interval: number
   repetitions: number
   next_review_at: string
+  mastery_percentage: number
+}
+
+interface Subject {
+  name: string
+  color: string
 }
 
 interface Deck {
   id: string
   title: string
   description: string
-  subject: {
-    name: string
-    color: string
-  }
+  subject?: Subject | null
   cards: Flashcard[]
   total_cards: number
   cards_due: number
@@ -131,17 +134,19 @@ export default function FlashcardDeckPage() {
           <ArrowLeft className="h-6 w-6 text-gray-700" />
         </button>
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-1">
-            <span
-              className="px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                backgroundColor: `${deck.subject.color}20`,
-                color: deck.subject.color,
-              }}
-            >
-              {deck.subject.name}
-            </span>
-          </div>
+          {deck.subject && (
+            <div className="flex items-center space-x-2 mb-1">
+              <span
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{
+                  backgroundColor: `${deck.subject.color}20`,
+                  color: deck.subject.color,
+                }}
+              >
+                {deck.subject.name}
+              </span>
+            </div>
+          )}
           <h1 className="text-3xl font-bold text-gray-900">{deck.title}</h1>
           <p className="text-gray-600 mt-1">{deck.description}</p>
         </div>
@@ -254,12 +259,13 @@ export default function FlashcardDeckPage() {
         <div className="divide-y divide-gray-200">
           {deck.cards && deck.cards.length > 0 ? (
             deck.cards.map((card) => {
-              const isDue = new Date(card.next_review_at) <= new Date()
-              const difficultyColor = 
-                card.difficulty === 0 ? 'bg-red-100 text-red-700' :
-                card.difficulty === 1 ? 'bg-orange-100 text-orange-700' :
-                card.difficulty === 2 ? 'bg-blue-100 text-blue-700' :
-                'bg-green-100 text-green-700'
+              const isMastered = card.mastery_percentage >= 80
+              const isDue = !card.next_review_at || new Date(card.next_review_at) <= new Date()
+
+              // Determine status label and color
+              const statusLabel = isMastered ? 'Maîtrisée' : (isDue ? 'À réviser' : 'En cours')
+              const statusColor = isMastered ? 'bg-green-100 text-green-700' :
+                                  (isDue ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700')
 
               return (
                 <div key={card.id} className="p-6 hover:bg-gray-50 transition">
@@ -275,8 +281,8 @@ export default function FlashcardDeckPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${difficultyColor}`}>
-                        {isDue ? 'À réviser' : 'Maîtrisée'}
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
+                        {statusLabel}
                       </span>
                       <button
                         onClick={() => deleteCard(card.id)}
@@ -290,8 +296,11 @@ export default function FlashcardDeckPage() {
                     <span>Répétitions: {card.repetitions}</span>
                     <span>Intervalle: {card.interval} jours</span>
                     <span>Facteur: {card.easiness_factor.toFixed(2)}</span>
+                    <span className={card.mastery_percentage >= 80 ? 'text-green-600 font-medium' : ''}>
+                      Maîtrise: {Math.round(card.mastery_percentage)}%
+                    </span>
                     <span>
-                      Prochaine révision: {new Date(card.next_review_at).toLocaleDateString('fr-FR')}
+                      Prochaine révision: {card.next_review_at ? new Date(card.next_review_at).toLocaleDateString('fr-FR') : 'Maintenant'}
                     </span>
                   </div>
                 </div>

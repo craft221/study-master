@@ -42,10 +42,15 @@ export default function SessionsPage() {
 
   const handleSessionComplete = async () => {
     setIsRunning(false)
-    
-    // Play notification sound
+
+    // Play notification sound (with fallback if file doesn't exist)
     if (audioRef.current) {
-      audioRef.current.play()
+      try {
+        await audioRef.current.play()
+      } catch (e) {
+        // Audio file may not exist, ignore silently
+        console.log('Audio notification not available')
+      }
     }
 
     toast.success(`${sessionType === 'work' ? 'Pomodoro' : 'Pause'} terminé!`)
@@ -116,7 +121,8 @@ export default function SessionsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <audio ref={audioRef} src="/notification.mp3" />
+      {/* TODO: Ajouter notification.mp3 dans /public pour activer le son */}
+      {/* <audio ref={audioRef} src="/notification.mp3" /> */}
       
       {/* Header */}
       <div className="text-center">

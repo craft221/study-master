@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.study_session import StudySession, SessionType, SessionStatus
@@ -16,6 +17,7 @@ from app.schemas.study_session import (
     StudySessionListResponse,
     StudySessionStatsResponse
 )
+from app.services.xp_service import award_xp
 
 router = APIRouter()
 
@@ -45,7 +47,7 @@ async def create_study_session(
         notes=session_data.notes,
         tags=session_data.tags,
         status=SessionStatus.PLANNED,
-        started_at=datetime.utcnow() if session_data.session_type != SessionType.SCHEDULED else None
+        started_at=utc_now() if session_data.session_type != SessionType.SCHEDULED else None
     )
     
     if new_session.started_at:
@@ -109,7 +111,7 @@ async def get_study_session_stats(
     db: AsyncSession = Depends(get_db)
 ):
     """Statistiques des sessions d'étude"""
-    since_date = datetime.utcnow() - timedelta(days=days)
+    since_date = utc_now() - timedelta(days=days)
     
     query = select(StudySession).where(
         and_(
@@ -228,7 +230,7 @@ async def start_study_session(
         )
     
     session.status = SessionStatus.ACTIVE
-    session.started_at = datetime.utcnow()
+    session.started_at = utc_now()
     
     await db.commit()
     await db.refresh(session)
@@ -257,7 +259,7 @@ async def complete_study_session(
         session.actual_duration_minutes = session_update.actual_duration_minutes
     elif session.started_at:
         # Calculer la durée automatiquement
-        duration = datetime.utcnow() - session.started_at
+        duration = utc_now() - session.started_at
         session.actual_duration_minutes = int(duration.total_seconds() / 60)
     
     if session_update.productivity_rating:
@@ -277,17 +279,25 @@ async def complete_study_session(
     productivity_bonus = (session.productivity_rating or 0) * 5 if session.productivity_rating else 0
     
     session.xp_earned = base_xp + duration_bonus + productivity_bonus
-    
+
     # Mettre à jour XP utilisateur
-    current_user.total_xp += session.xp_earned
-    current_user.level = (current_user.total_xp // 100) + 1
-    
+    await award_xp(
+        user=current_user,
+        amount=session.xp_earned,
+        reason="Session d'étude terminée",
+        event_type="study_session_completed"
+    )
+
+    # Mettre à jour le temps d'étude total via stats
+    if session.actual_duration_minutes and current_user.stats:
+        current_user.stats.total_study_time_minutes = (current_user.stats.total_study_time_minutes or 0) + session.actual_duration_minutes
+
     session.status = SessionStatus.COMPLETED
-    session.ended_at = datetime.utcnow()
-    
+    session.ended_at = utc_now()
+
     await db.commit()
     await db.refresh(session)
-    
+
     return session
 
 

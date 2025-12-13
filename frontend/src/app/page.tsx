@@ -85,7 +85,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Flashcards Intelligentes</h3>
             <p className="text-gray-600">
-              Algorithme de répétition espacée (SM-2) pour mémoriser efficacement
+              Algorithme FSRS (Free Spaced Repetition Scheduler) pour mémoriser efficacement
             </p>
           </div>
 

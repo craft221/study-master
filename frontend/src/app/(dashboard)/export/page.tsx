@@ -38,17 +38,22 @@ export default function ExportPage() {
   const [exporting, setExporting] = useState(false)
 
   // Notes
-  const [notes, setNotes] = useState<Note[]>([])
+  const [notesData, setNotesData] = useState<Note[]>([])
   const [selectedNotes, setSelectedNotes] = useState<number[]>([])
   const [selectedSubjectForNotes, setSelectedSubjectForNotes] = useState<string>('')
 
   // Flashcards
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const [flashcardsData, setFlashcardsData] = useState<Flashcard[]>([])
   const [selectedFlashcards, setSelectedFlashcards] = useState<number[]>([])
   const [selectedSubjectForFlashcards, setSelectedSubjectForFlashcards] = useState<string>('')
 
   // Subjects
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [subjectsData, setSubjectsData] = useState<Subject[]>([])
+
+  // Safe array accessors
+  const notes = Array.isArray(notesData) ? notesData : []
+  const flashcards = Array.isArray(flashcardsData) ? flashcardsData : []
+  const subjects = Array.isArray(subjectsData) ? subjectsData : []
 
   // Options
   const [includeMetadata, setIncludeMetadata] = useState(true)
@@ -66,9 +71,10 @@ export default function ExportPage() {
         api.get('/flashcards/')
       ])
 
-      setNotes(notesRes.data)
-      setSubjects(subjectsRes.data)
-      setFlashcards(flashcardsRes.data)
+      // API returns paginated objects, extract the arrays
+      setNotesData(notesRes.data.notes || notesRes.data || [])
+      setSubjectsData(subjectsRes.data.subjects || subjectsRes.data || [])
+      setFlashcardsData(flashcardsRes.data.flashcards || flashcardsRes.data || [])
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
-from app.models.study_group import MembershipRole
+from app.models.study_group import MembershipRole, InvitationStatus
 
 
 # ========== STUDY GROUP SCHEMAS ==========
@@ -41,7 +41,7 @@ class StudyGroupMemberResponse(BaseModel):
     username: str
     avatar_url: Optional[str]
     role: MembershipRole
-    joined_at: datetime
+    joined_at: Optional[datetime] = None  # Peut être None pour les anciennes entrées
     contribution_score: int
 
     model_config = ConfigDict(from_attributes=True)
@@ -54,7 +54,7 @@ class StudyGroupMembershipResponse(BaseModel):
     username: str
     avatar_url: Optional[str]
     role: MembershipRole
-    joined_at: datetime
+    joined_at: Optional[datetime] = None  # Peut être None pour les anciennes entrées
     contribution_score: int
 
     model_config = ConfigDict(from_attributes=True)
@@ -85,6 +85,33 @@ class StudyGroupListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# ========== STUDY GROUP INVITATION SCHEMAS ==========
+
+class StudyGroupInvitationCreate(BaseModel):
+    """Créer une invitation"""
+    invitee_id: int
+    message: Optional[str] = Field(None, max_length=500)
+
+
+class StudyGroupInvitationResponse(BaseModel):
+    """Réponse invitation"""
+    id: int
+    group_id: int
+    group_name: str
+    inviter_id: int
+    inviter_username: str
+    inviter_avatar: Optional[str]
+    invitee_id: int
+    invitee_username: str
+    status: InvitationStatus
+    message: Optional[str]
+    created_at: datetime
+    expires_at: datetime
+    responded_at: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ========== NOTE SHARING SCHEMAS ==========

@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Study Master",
+    "slug": "studymaster",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "studymaster",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0ea5e9"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.studymaster.mobile",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "app.studymaster.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0ea5e9"
+      },
+      "newArchEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

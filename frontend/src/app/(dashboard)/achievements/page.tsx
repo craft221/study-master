@@ -31,9 +31,21 @@ interface UserAchievement {
   achievement: Achievement
 }
 
+interface UserStats {
+  total_notes: number
+  total_flashcards: number
+  total_flashcards_reviewed: number
+  total_quizzes: number
+  completed_quiz_attempts: number
+  current_streak: number
+  total_xp: number
+  level: number
+}
+
 export default function AchievementsPage() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([])
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
@@ -44,13 +56,26 @@ export default function AchievementsPage() {
   const fetchAchievements = async () => {
     try {
       setLoading(true)
-      const [userAchsRes, allAchsRes] = await Promise.all([
+
+      // D'abord vérifier et débloquer les nouveaux achievements
+      try {
+        await api.post('/achievements/check-progress')
+      } catch (e) {
+        // Ignorer les erreurs de check-progress
+        console.log('Check progress:', e)
+      }
+
+      // Puis récupérer les données
+      const [userAchsRes, allAchsRes, statsRes] = await Promise.all([
         api.get('/achievements/user/me'),
-        api.get('/achievements/')
+        api.get('/achievements/'),
+        api.get('/users/me/stats')
       ])
 
-      setUserAchievements(userAchsRes.data)
-      setAllAchievements(allAchsRes.data)
+      // L'API retourne { achievements: [...], total: ... }
+      setUserAchievements(userAchsRes.data.achievements || [])
+      setAllAchievements(allAchsRes.data.achievements || [])
+      setUserStats(statsRes.data)
     } catch (error) {
       console.error('Error fetching achievements:', error)
     } finally {
@@ -95,9 +120,44 @@ export default function AchievementsPage() {
     return userAchievements.some(ua => ua.achievement_id === achievementId)
   }
 
-  const getUserProgress = (achievementId: number) => {
-    const userAch = userAchievements.find(ua => ua.achievement_id === achievementId)
-    return userAch ? userAch.progress : 0
+  const getUserProgress = (achievement: Achievement) => {
+    // Si déjà débloqué, retourner 100%
+    const userAch = userAchievements.find(ua => ua.achievement_id === achievement.id)
+    if (userAch) return achievement.requirement_value
+
+    // Sinon calculer la progression réelle basée sur les stats
+    if (!userStats) return 0
+
+    const reqType = achievement.requirement_type
+    let currentValue = 0
+
+    switch (reqType) {
+      case 'notes_created':
+        currentValue = userStats.total_notes || 0
+        break
+      case 'flashcards_created':
+        currentValue = userStats.total_flashcards || 0
+        break
+      case 'flashcards_reviewed':
+        currentValue = userStats.total_flashcards_reviewed || 0
+        break
+      case 'quizzes_taken':
+        currentValue = userStats.completed_quiz_attempts || 0
+        break
+      case 'streak_days':
+        currentValue = userStats.current_streak || 0
+        break
+      case 'xp':
+        currentValue = userStats.total_xp || 0
+        break
+      case 'level':
+        currentValue = userStats.level || 1
+        break
+      default:
+        currentValue = 0
+    }
+
+    return Math.min(currentValue, achievement.requirement_value)
   }
 
   const categories = [
@@ -111,11 +171,11 @@ export default function AchievementsPage() {
 
   const filteredAchievements = selectedCategory === 'all'
     ? allAchievements
-    : allAchievements.filter(a => a.category.toLowerCase() === selectedCategory)
+    : allAchievements.filter(a => a.category?.toLowerCase() === selectedCategory.toLowerCase())
 
   const unlockedCount = userAchievements.length
   const totalCount = allAchievements.length
-  const totalXP = userAchievements.reduce((sum, ua) => sum + ua.achievement.xp_reward, 0)
+  const totalXP = userAchievements.reduce((sum, ua) => sum + (ua.achievement?.xp_reward || 0), 0)
 
   if (loading) {
     return (
@@ -151,9 +211,9 @@ export default function AchievementsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{unlockedCount} / {totalCount}</div>
-            <Progress value={(unlockedCount / totalCount) * 100} className="mt-2" />
+            <Progress value={totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              {Math.round((unlockedCount / totalCount) * 100)}% complété
+              {totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0}% complété
             </p>
           </CardContent>
         </Card>
@@ -180,7 +240,7 @@ export default function AchievementsPage() {
             <div className="flex gap-2 mt-1">
               {['common', 'rare', 'epic', 'legendary'].map(rarity => {
                 const count = userAchievements.filter(
-                  ua => ua.achievement.rarity.toLowerCase() === rarity
+                  ua => ua.achievement?.rarity?.toLowerCase() === rarity
                 ).length
                 return (
                   <Badge key={rarity} variant="outline" className={getRarityColor(rarity)}>
@@ -212,7 +272,7 @@ export default function AchievementsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredAchievements.map(achievement => {
               const unlocked = isUnlocked(achievement.id)
-              const progress = getUserProgress(achievement.id)
+              const progress = getUserProgress(achievement)
               const progressPercent = (progress / achievement.requirement_value) * 100
               const Icon = getCategoryIcon(achievement.category)
 

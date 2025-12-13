@@ -3,8 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.note import Note
@@ -13,6 +15,18 @@ from app.models.subject import Subject
 from app.services.pdf_export_service import pdf_export_service
 
 router = APIRouter()
+
+
+# Pydantic schemas for batch export
+class BatchNotesExportRequest(BaseModel):
+    note_ids: List[int]
+    include_metadata: bool = True
+    title: str = "Compilation de Notes"
+
+
+class BatchFlashcardsExportRequest(BaseModel):
+    flashcard_ids: List[int]
+    title: str = "Flashcards"
 
 
 @router.get("/note/{note_id}")
@@ -69,12 +83,14 @@ async def export_note_to_pdf(
 
 @router.post("/notes/batch")
 async def export_multiple_notes_to_pdf(
-    note_ids: List[int],
-    title: str = Query("Compilation de Notes", description="PDF document title"),
+    request: BatchNotesExportRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Exporter plusieurs notes dans un seul PDF"""
+    note_ids = request.note_ids
+    title = request.title
+
     if not note_ids:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -126,7 +142,7 @@ async def export_multiple_notes_to_pdf(
         title=title
     )
     
-    filename = f"compilation_{len(notes)}_notes_{datetime.now().strftime('%Y%m%d')}.pdf"
+    filename = f"compilation_{len(notes)}_notes_{utc_now().strftime('%Y%m%d')}.pdf"
     
     return Response(
         content=pdf_bytes,
@@ -187,7 +203,7 @@ async def export_subject_notes_to_pdf(
         title=title
     )
     
-    filename = f"notes_{subject.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    filename = f"notes_{subject.name.replace(' ', '_')}_{utc_now().strftime('%Y%m%d')}.pdf"
     
     return Response(
         content=pdf_bytes,
@@ -247,7 +263,7 @@ async def export_flashcards_to_pdf(
         title=title
     )
     
-    filename = f"flashcards_{subject.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    filename = f"flashcards_{subject.name.replace(' ', '_')}_{utc_now().strftime('%Y%m%d')}.pdf"
     
     return Response(
         content=pdf_bytes,
@@ -260,12 +276,14 @@ async def export_flashcards_to_pdf(
 
 @router.post("/flashcards/batch")
 async def export_flashcard_batch_to_pdf(
-    flashcard_ids: List[int],
-    title: str = Query("Flashcards", description="PDF title"),
+    request: BatchFlashcardsExportRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Exporter une sélection de flashcards en PDF"""
+    flashcard_ids = request.flashcard_ids
+    title = request.title
+
     if not flashcard_ids:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -304,7 +322,7 @@ async def export_flashcard_batch_to_pdf(
         title=title
     )
     
-    filename = f"flashcards_{len(flashcards)}cards_{datetime.now().strftime('%Y%m%d')}.pdf"
+    filename = f"flashcards_{len(flashcards)}cards_{utc_now().strftime('%Y%m%d')}.pdf"
     
     return Response(
         content=pdf_bytes,

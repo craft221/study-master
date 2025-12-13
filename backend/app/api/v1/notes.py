@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
+from sqlalchemy.orm import selectinload
 from typing import Optional, List
 
 from app.core.database import get_db
@@ -15,6 +16,7 @@ from app.schemas.note import (
     NoteListResponse,
     NoteWithChildren
 )
+from app.services.xp_service import award_xp
 
 router = APIRouter()
 
@@ -59,23 +61,32 @@ async def create_note(
                 detail="Note parente non trouvée"
             )
     
+    # Exclude fields that don't exist in the Note model
+    note_dict = note_data.model_dump(exclude={"note_type", "visibility"})
     new_note = Note(
         user_id=current_user.id,
-        **note_data.model_dump()
+        **note_dict
     )
-    
-    new_note.word_count = new_note.calculate_word_count()
-    new_note.read_time_minutes = new_note.calculate_read_time()
-    
+
     db.add(new_note)
-    
+
     subject.total_notes_count += 1
-    current_user.total_xp += 10
-    current_user.total_notes_created += 1
-    
+
+    # Ajouter XP via le service centralisé
+    await award_xp(
+        user=current_user,
+        amount=10,
+        reason="Création d'une note",
+        event_type="note_created"
+    )
+
+    # Incrémenter le compteur de notes via stats
+    if current_user.stats:
+        current_user.stats.total_notes_created += 1
+
     await db.commit()
-    await db.refresh(new_note)
-    
+    await db.refresh(new_note, ["subject"])
+
     return new_note
 
 
@@ -95,8 +106,10 @@ async def list_notes(
 ):
     """Récupérer la liste des notes"""
     
-    query = select(Note).where(Note.user_id == current_user.id)
-    
+    query = select(Note).where(Note.user_id == current_user.id).options(
+        selectinload(Note.subject)
+    )
+
     if subject_id:
         query = query.where(Note.subject_id == subject_id)
     if note_type:
@@ -112,18 +125,36 @@ async def list_notes(
         query = query.where(Note.is_archived == is_archived)
     if parent_id is not None:
         query = query.where(Note.parent_id == parent_id)
-    
-    count_query = select(func.count()).select_from(query.subquery())
+
+    # Count query sans le selectinload
+    count_base = select(Note).where(Note.user_id == current_user.id)
+    if subject_id:
+        count_base = count_base.where(Note.subject_id == subject_id)
+    if note_type:
+        count_base = count_base.where(Note.note_type == note_type)
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",")]
+        count_base = count_base.where(Note.tags.overlap(tag_list))
+    if is_pinned is not None:
+        count_base = count_base.where(Note.is_pinned == is_pinned)
+    if is_favorite is not None:
+        count_base = count_base.where(Note.is_favorite == is_favorite)
+    if is_archived is not None:
+        count_base = count_base.where(Note.is_archived == is_archived)
+    if parent_id is not None:
+        count_base = count_base.where(Note.parent_id == parent_id)
+
+    count_query = select(func.count()).select_from(count_base.subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar()
-    
+
     query = query.offset((page - 1) * page_size).limit(page_size)
     query = query.order_by(
         Note.is_pinned.desc(),
         Note.is_favorite.desc(),
         Note.updated_at.desc()
     )
-    
+
     result = await db.execute(query)
     notes = result.scalars().all()
     
@@ -142,28 +173,23 @@ async def get_note(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer les détails d'une note"""
-    
+
     result = await db.execute(
         select(Note).where(
             and_(
                 Note.id == note_id,
                 Note.user_id == current_user.id
             )
-        )
+        ).options(selectinload(Note.subject))
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
-    note.views_count += 1
-    note.last_viewed_at = func.now()
-    await db.commit()
-    await db.refresh(note)
-    
+
     return note
 
 
@@ -224,35 +250,32 @@ async def update_note(
     db: AsyncSession = Depends(get_db)
 ):
     """Mettre à jour une note"""
-    
+
     result = await db.execute(
         select(Note).where(
             and_(
                 Note.id == note_id,
                 Note.user_id == current_user.id
             )
-        )
+        ).options(selectinload(Note.subject))
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
-    update_data = note_data.model_dump(exclude_unset=True)
+
+    # Exclure les champs qui n'existent pas dans le modèle
+    update_data = note_data.model_dump(exclude_unset=True, exclude={"note_type", "visibility"})
     for field, value in update_data.items():
-        setattr(note, field, value)
-    
-    if 'content' in update_data:
-        note.word_count = note.calculate_word_count()
-        note.read_time_minutes = note.calculate_read_time()
-        note.version += 1
-    
+        if hasattr(note, field):
+            setattr(note, field, value)
+
     await db.commit()
-    await db.refresh(note)
-    
+    await db.refresh(note, ["subject"])
+
     return note
 
 
@@ -303,9 +326,9 @@ async def search_notes(
     db: AsyncSession = Depends(get_db)
 ):
     """Rechercher dans les notes"""
-    
+
     search_pattern = f"%{q}%"
-    
+
     query = select(Note).where(
         and_(
             Note.user_id == current_user.id,
@@ -315,21 +338,35 @@ async def search_notes(
                 Note.tags.any(q)
             )
         )
-    )
-    
+    ).options(selectinload(Note.subject))
+
     if subject_id:
         query = query.where(Note.subject_id == subject_id)
-    
-    count_query = select(func.count()).select_from(query.subquery())
+
+    # Count query sans selectinload
+    count_base = select(Note).where(
+        and_(
+            Note.user_id == current_user.id,
+            or_(
+                Note.title.ilike(search_pattern),
+                Note.content.ilike(search_pattern),
+                Note.tags.any(q)
+            )
+        )
+    )
+    if subject_id:
+        count_base = count_base.where(Note.subject_id == subject_id)
+
+    count_query = select(func.count()).select_from(count_base.subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar()
-    
+
     query = query.offset((page - 1) * page_size).limit(page_size)
     query = query.order_by(Note.updated_at.desc())
-    
+
     result = await db.execute(query)
     notes = result.scalars().all()
-    
+
     return {
         "notes": notes,
         "total": total,
@@ -345,27 +382,27 @@ async def toggle_favorite(
     db: AsyncSession = Depends(get_db)
 ):
     """Marquer/Démarquer une note comme favorite"""
-    
+
     result = await db.execute(
         select(Note).where(
             and_(
                 Note.id == note_id,
                 Note.user_id == current_user.id
             )
-        )
+        ).options(selectinload(Note.subject))
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
+
     note.is_favorite = not note.is_favorite
     await db.commit()
-    await db.refresh(note)
-    
+    await db.refresh(note, ["subject"])
+
     return note
 
 
@@ -376,27 +413,27 @@ async def toggle_pin(
     db: AsyncSession = Depends(get_db)
 ):
     """Épingler/Désépingler une note"""
-    
+
     result = await db.execute(
         select(Note).where(
             and_(
                 Note.id == note_id,
                 Note.user_id == current_user.id
             )
-        )
+        ).options(selectinload(Note.subject))
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
+
     note.is_pinned = not note.is_pinned
     await db.commit()
-    await db.refresh(note)
-    
+    await db.refresh(note, ["subject"])
+
     return note
 
 
@@ -407,25 +444,25 @@ async def toggle_archive(
     db: AsyncSession = Depends(get_db)
 ):
     """Archiver/Désarchiver une note"""
-    
+
     result = await db.execute(
         select(Note).where(
             and_(
                 Note.id == note_id,
                 Note.user_id == current_user.id
             )
-        )
+        ).options(selectinload(Note.subject))
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
+
     note.is_archived = not note.is_archived
     await db.commit()
-    await db.refresh(note)
-    
+    await db.refresh(note, ["subject"])
+
     return note

@@ -3,6 +3,7 @@ Tâches asynchrones pour l'export PDF
 """
 from celery import Task
 from app.celery_app import celery_app
+from app.core.datetime_utils import utc_now
 from typing import Dict, Any, List
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -94,7 +95,7 @@ def export_notes_to_pdf(
         # Page de titre
         story.append(Paragraph(f"Notes de {subject_name}", title_style))
         story.append(Paragraph(
-            f"Par {user_name} - {datetime.now().strftime('%d/%m/%Y')}",
+            f"Par {user_name} - {utc_now().strftime('%d/%m/%Y')}",
             subtitle_style
         ))
         story.append(Spacer(1, 2*cm))

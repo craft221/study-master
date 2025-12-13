@@ -22,16 +22,18 @@ import { toast } from 'react-hot-toast'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import LaTeXEditor from '@/components/LaTeXEditor'
 
+interface Subject {
+  id: string
+  name: string
+  color: string
+}
+
 interface Note {
   id: string
   title: string
   content: string
   subject_id: string
-  subject: {
-    id: string
-    name: string
-    color: string
-  }
+  subject?: Subject | null
   tags: string[]
   is_favorite: boolean
   created_at: string
@@ -178,15 +180,17 @@ export default function NoteDetailPage() {
               <h1 className="text-3xl font-bold text-gray-900">{note.title}</h1>
             )}
             <div className="flex items-center space-x-3 mt-3">
-              <span
-                className="px-3 py-1 rounded-full text-sm font-medium"
-                style={{
-                  backgroundColor: `${note.subject.color}20`,
-                  color: note.subject.color,
-                }}
-              >
-                {note.subject.name}
-              </span>
+              {note.subject && (
+                <span
+                  className="px-3 py-1 rounded-full text-sm font-medium"
+                  style={{
+                    backgroundColor: `${note.subject.color}20`,
+                    color: note.subject.color,
+                  }}
+                >
+                  {note.subject.name}
+                </span>
+              )}
               <span className="text-sm text-gray-500 flex items-center">
                 <Clock className="h-4 w-4 mr-1" />
                 {new Date(note.updated_at).toLocaleDateString('fr-FR', {

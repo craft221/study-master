@@ -89,8 +89,10 @@ export async function unshareNote(groupId: number, sharedNoteId: number) {
 
 /**
  * Share a flashcard deck with the group
+ * @param groupId - The ID of the study group
+ * @param deckId - The deck name/ID (string) to share
  */
-export async function shareFlashcardsWithGroup(groupId: number, deckId: number) {
+export async function shareFlashcardsWithGroup(groupId: number, deckId: string | number) {
   const response = await api.post(`/study-groups/${groupId}/share-flashcards`, {
     deck_id: deckId
   })

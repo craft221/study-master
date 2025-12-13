@@ -24,6 +24,7 @@ from app.schemas.group_message import (
     ReplyToMessage,
     MentionedUser
 )
+from app.services.xp_service import award_xp
 
 router = APIRouter()
 
@@ -227,8 +228,12 @@ async def create_group_message(
     db.add(new_message)
 
     # XP bonus pour participation
-    current_user.total_xp += 2
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=2,
+        reason="Envoi d'un message dans un groupe",
+        event_type="group_message_sent"
+    )
 
     await db.commit()
     await db.refresh(new_message)
@@ -395,8 +400,12 @@ async def add_reaction_to_message(
     db.add(new_reaction)
 
     # XP bonus pour interaction
-    current_user.total_xp += 1
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=1,
+        reason="Réaction à un message",
+        event_type="message_reaction"
+    )
 
     await db.commit()
     await db.refresh(new_reaction)

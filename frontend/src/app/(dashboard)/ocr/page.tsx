@@ -16,6 +16,7 @@ import {
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface Subject {
   id: number
@@ -32,6 +33,7 @@ interface OCRResult {
 export default function OCRPage() {
   const { toast } = useToast()
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState<string>('')
@@ -50,7 +52,7 @@ export default function OCRPage() {
   const fetchSubjects = async () => {
     try {
       const response = await api.get('/subjects/')
-      setSubjects(response.data)
+      setSubjects(response.data.subjects || [])
     } catch (error) {
       console.error('Error fetching subjects:', error)
     }
@@ -88,8 +90,8 @@ export default function OCRPage() {
 
     if (!isPDF && !isImage) {
       toast({
-        title: 'Format non supporté',
-        description: 'Veuillez uploader un PDF ou une image (JPG, PNG, etc.)',
+        title: t('ocr.unsupportedFormat'),
+        description: t('ocr.pleaseUploadPdfOrImage'),
         variant: 'destructive'
       })
       return
@@ -132,20 +134,20 @@ export default function OCRPage() {
       if (response.data.note_id) {
         setCreatedNoteId(response.data.note_id)
         toast({
-          title: 'Succès',
-          description: `Texte extrait avec ${Math.round(response.data.confidence * 100)}% de confiance. Note créée !`,
+          title: t('ocr.success'),
+          description: t('ocr.textExtractedWithConfidence', { percent: Math.round(response.data.confidence * 100) }),
         })
       } else {
         toast({
-          title: 'Extraction réussie',
-          description: `Texte extrait avec ${Math.round(response.data.confidence * 100)}% de confiance`,
+          title: t('ocr.extractionSuccess'),
+          description: t('ocr.textExtractedConfidence', { percent: Math.round(response.data.confidence * 100) }),
         })
       }
     } catch (error: any) {
       console.error('OCR error:', error)
       toast({
-        title: 'Erreur d\'extraction',
-        description: error.response?.data?.detail || 'Impossible d\'extraire le texte',
+        title: t('ocr.extractionError'),
+        description: error.response?.data?.detail || t('ocr.cannotExtractText'),
         variant: 'destructive'
       })
     } finally {
@@ -165,10 +167,10 @@ export default function OCRPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-purple-500" />
-          OCR - Extraction de texte
+          {t('ocr.title')}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Uploadez des PDF ou images pour extraire le texte automatiquement
+          {t('ocr.subtitle')}
         </p>
       </div>
 
@@ -178,10 +180,10 @@ export default function OCRPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
-              Upload de fichier
+              {t('ocr.fileUpload')}
             </CardTitle>
             <CardDescription>
-              PDF (max 50 MB) ou Images (max 10 MB)
+              {t('ocr.fileUploadDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -213,10 +215,10 @@ export default function OCRPage() {
                     <FileUp className="h-12 w-12 text-muted-foreground" />
                   )}
                   <p className="text-lg font-medium">
-                    {loading ? 'Extraction en cours...' : 'Cliquez ou glissez un fichier'}
+                    {loading ? t('ocr.extracting') : t('ocr.clickOrDrag')}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    PDF, JPG, PNG, BMP, TIFF, GIF
+                    {t('ocr.supportedFiles')}
                   </p>
                 </div>
               </label>
@@ -224,15 +226,15 @@ export default function OCRPage() {
 
             {/* Language Selection */}
             <div className="space-y-2">
-              <Label>Langue du document</Label>
+              <Label>{t('ocr.documentLanguage')}</Label>
               <Select value={language} onValueChange={setLanguage} disabled={loading}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fra">Français</SelectItem>
-                  <SelectItem value="eng">Anglais</SelectItem>
-                  <SelectItem value="fra+eng">Français + Anglais</SelectItem>
+                  <SelectItem value="fra">{t('ocr.french')}</SelectItem>
+                  <SelectItem value="eng">{t('ocr.english')}</SelectItem>
+                  <SelectItem value="fra+eng">{t('ocr.frenchEnglish')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -247,17 +249,17 @@ export default function OCRPage() {
                   disabled={loading}
                 />
                 <Label htmlFor="create-note" className="cursor-pointer">
-                  Créer automatiquement une note
+                  {t('ocr.createNoteAuto')}
                 </Label>
               </div>
 
               {createNote && (
                 <div className="space-y-3 pl-6">
                   <div className="space-y-2">
-                    <Label htmlFor="note-title">Titre de la note</Label>
+                    <Label htmlFor="note-title">{t('ocr.noteTitle')}</Label>
                     <Input
                       id="note-title"
-                      placeholder="Titre automatique depuis le nom du fichier"
+                      placeholder={t('ocr.noteTitlePlaceholder')}
                       value={noteTitle}
                       onChange={(e) => setNoteTitle(e.target.value)}
                       disabled={loading}
@@ -265,14 +267,14 @@ export default function OCRPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="subject">Matière</Label>
+                    <Label htmlFor="subject">{t('ocr.subject')}</Label>
                     <Select
                       value={selectedSubject}
                       onValueChange={setSelectedSubject}
                       disabled={loading}
                     >
                       <SelectTrigger id="subject">
-                        <SelectValue placeholder="Sélectionner une matière" />
+                        <SelectValue placeholder={t('ocr.selectSubject')} />
                       </SelectTrigger>
                       <SelectContent>
                         {subjects.map(subject => (
@@ -294,11 +296,11 @@ export default function OCRPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Texte extrait
+              {t('ocr.extractedText')}
             </CardTitle>
             {confidence > 0 && (
               <CardDescription className="flex items-center gap-2">
-                <span>Confiance: {Math.round(confidence * 100)}%</span>
+                <span>{t('ocr.confidence')}: {Math.round(confidence * 100)}%</span>
                 {confidence > 0.8 ? (
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                 ) : confidence > 0.5 ? (
@@ -313,7 +315,7 @@ export default function OCRPage() {
             <Textarea
               value={extractedText}
               onChange={(e) => setExtractedText(e.target.value)}
-              placeholder="Le texte extrait apparaîtra ici..."
+              placeholder={t('ocr.textPlaceholder')}
               className="min-h-[400px] font-mono text-sm"
               disabled={loading}
             />
@@ -324,15 +326,15 @@ export default function OCRPage() {
                   <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <div>
                     <p className="font-medium text-green-900 dark:text-green-100">
-                      Note créée avec succès !
+                      {t('ocr.noteCreatedSuccess')}
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      +15 XP gagné
+                      {t('ocr.xpGained')}
                     </p>
                   </div>
                 </div>
                 <Button onClick={goToNote} variant="outline" size="sm">
-                  Voir la note
+                  {t('ocr.viewNote')}
                 </Button>
               </div>
             )}
@@ -349,15 +351,15 @@ export default function OCRPage() {
                   }).then(res => {
                     setCreatedNoteId(res.data.id)
                     toast({
-                      title: 'Note créée',
-                      description: 'Note créée à partir du texte extrait'
+                      title: t('ocr.noteCreated'),
+                      description: t('ocr.noteCreatedFromText')
                     })
                   })
                 }}
                 className="w-full"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Créer une note maintenant
+                {t('ocr.createNoteNow')}
               </Button>
             )}
           </CardContent>
@@ -368,7 +370,7 @@ export default function OCRPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Formats supportés</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('ocr.supportedFormats')}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -380,24 +382,24 @@ export default function OCRPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taille maximale</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('ocr.maxSize')}</CardTitle>
             <ImageIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
-              PDF: 50 MB • Images: 10 MB
+              {t('ocr.pdfMaxSize')} • {t('ocr.imageMaxSize')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Langues supportées</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('ocr.supportedLanguages')}</CardTitle>
             <Sparkles className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
-              Français • Anglais • Multi-langue
+              {t('ocr.french')} • {t('ocr.english')} • {t('ocr.multiLanguage')}
             </p>
           </CardContent>
         </Card>

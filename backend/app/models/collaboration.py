@@ -30,7 +30,7 @@ class SharedGroupContent(Base):
     content_type = Column(String(50), nullable=False)  # note, flashcard_deck, quiz
     content_id = Column(Integer, nullable=False)  # ID de la note/deck/quiz
     content_data = Column(JSON, nullable=True)  # Métadonnées (titre, description, etc.)
-    shared_at = Column(DateTime, nullable=False, server_default=func.now())
+    shared_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # Relationships
     group = relationship("StudyGroup", backref="shared_contents")
@@ -46,12 +46,12 @@ class GroupStudySession(Base):
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     session_type = Column(String(50), nullable=False)  # pomodoro, study, revision, exam_prep
-    start_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime(timezone=True), nullable=False)
     duration_minutes = Column(Integer, nullable=False)
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     status = Column(String(50), nullable=False, default="scheduled")  # scheduled, active, completed, cancelled
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     group = relationship("StudyGroup", backref="study_sessions")
@@ -66,7 +66,7 @@ class GroupSessionParticipant(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("group_study_sessions.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    joined_at = Column(DateTime, nullable=False, server_default=func.now())
+    joined_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # Relationships
     session = relationship("GroupStudySession", back_populates="participants")
@@ -83,7 +83,7 @@ class GroupActivity(Base):
     activity_type = Column(String(50), nullable=False)  # note_shared, flashcard_shared, session_created, quiz_shared, member_joined
     description = Column(Text, nullable=False)
     activity_metadata = Column(JSON, nullable=True)  # Données supplémentaires
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # Relationships
     group = relationship("StudyGroup", backref="activities")

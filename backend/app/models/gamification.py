@@ -4,10 +4,11 @@ Modèles Gamification (Achievements et Récompenses)
 
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 import enum
 
 from app.core.database import Base
+from app.core.datetime_utils import utc_now
 
 
 class AchievementCategory(enum.Enum):
@@ -38,7 +39,7 @@ class Achievement(Base):
     requirement_value = Column(Integer, nullable=False)
     requirement_type = Column(String, nullable=False)  # e.g., "notes_created", "streak_days"
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relations
     user_achievements = relationship("UserAchievement", back_populates="achievement", cascade="all, delete-orphan")
@@ -52,8 +53,8 @@ class UserAchievement(Base):
     achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
     progress = Column(Integer, default=0)
     is_unlocked = Column(Boolean, default=False)
-    unlocked_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    unlocked_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relations
     user = relationship("User")
@@ -84,10 +85,10 @@ class Leaderboard(Base):
     period = Column(Enum(LeaderboardPeriod), nullable=False)
     score = Column(Integer, default=0)
     rank = Column(Integer, nullable=True)
-    period_start = Column(DateTime, nullable=False)
-    period_end = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relations
     user = relationship("User")
@@ -106,17 +107,26 @@ class Duel(Base):
     __tablename__ = "duels"
 
     id = Column(Integer, primary_key=True, index=True)
-    challenger_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    opponent_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    challenger_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    opponent_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=True)
-    status = Column(Enum(DuelStatus), default=DuelStatus.PENDING)
+    status = Column(Enum(DuelStatus), default=DuelStatus.PENDING, index=True)
+
+    # Scores
     challenger_score = Column(Integer, nullable=True)
     opponent_score = Column(Integer, nullable=True)
     winner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Enjeux
+    stakes_xp = Column(Integer, default=50)  # XP misés
+    duration_minutes = Column(Integer, default=30)  # Durée du duel
+
+    # Timestamps
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    ended_at = Column(DateTime(timezone=True), nullable=True)  # Renommé de completed_at
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relations
     challenger = relationship("User", foreign_keys=[challenger_id])

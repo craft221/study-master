@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
+from sqlalchemy.orm import selectinload
 from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel, Field
+from datetime import timedelta
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.subject import Subject
@@ -17,10 +20,520 @@ from app.schemas.flashcard import (
     FlashcardReviewRequest,
     FlashcardReviewResponse,
     FlashcardStatsResponse,
-    FlashcardReviewHistoryResponse
+    FlashcardReviewHistoryResponse,
+    FlashcardDeckResponse
+)
+from app.services.fsrs_service import (
+    FSRSScheduler,
+    FSRSCard,
+    FSRSParameters,
+    Rating,
+    State,
+    create_fsrs_card_from_flashcard,
+    format_interval_display
 )
 
 router = APIRouter()
+
+# Instance globale du scheduler FSRS avec paramètres optimisés
+fsrs_scheduler = FSRSScheduler(FSRSParameters.default())
+
+
+@router.get("/decks", response_model=List[FlashcardDeckResponse])
+async def list_flashcard_decks(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer la liste des decks de flashcards avec statistiques"""
+
+    # Récupérer toutes les flashcards de l'utilisateur avec leurs subjects préchargés
+    result = await db.execute(
+        select(Flashcard)
+        .where(Flashcard.user_id == current_user.id)
+        .options(selectinload(Flashcard.subject))
+        .order_by(Flashcard.created_at.desc())
+    )
+    all_flashcards = result.scalars().all()
+
+    # Grouper par deck_name
+    decks_dict = {}
+    for card in all_flashcards:
+        deck_name = card.deck_name or "Sans deck"
+
+        if deck_name not in decks_dict:
+            decks_dict[deck_name] = {
+                "cards": [],
+                "subject_id": card.subject_id,
+                "subject": card.subject,  # Déjà chargé via selectinload
+                "created_at": card.created_at,
+                "last_reviewed_at": card.last_reviewed_at
+            }
+
+        decks_dict[deck_name]["cards"].append(card)
+
+        # Mettre à jour la date de dernière révision
+        if card.last_reviewed_at:
+            if not decks_dict[deck_name]["last_reviewed_at"] or card.last_reviewed_at > decks_dict[deck_name]["last_reviewed_at"]:
+                decks_dict[deck_name]["last_reviewed_at"] = card.last_reviewed_at
+
+    # Construire la réponse (plus de N+1 queries!)
+    decks_response = []
+    for deck_name, deck_data in decks_dict.items():
+        cards = deck_data["cards"]
+        total_cards = len(cards)
+
+        # Calculer les cartes à réviser (cards_due)
+        now = utc_now()
+        cards_due = sum(1 for card in cards if not card.next_review_at or card.next_review_at <= now)
+
+        # Calculer les cartes maîtrisées (mastery >= 80%)
+        mastered_cards = sum(1 for card in cards if card.mastery_percentage >= 80)
+
+        # Subject déjà chargé
+        subject = None
+        subject_obj = deck_data["subject"]
+        if subject_obj:
+            subject = {
+                "id": subject_obj.id,
+                "name": subject_obj.name,
+                "color": subject_obj.color
+            }
+
+        decks_response.append({
+            "id": deck_name,
+            "title": deck_name,
+            "description": f"{total_cards} carte{'s' if total_cards > 1 else ''}",
+            "subject_id": deck_data["subject_id"],
+            "subject": subject,
+            "total_cards": total_cards,
+            "cards_due": cards_due,
+            "mastered_cards": mastered_cards,
+            "created_at": deck_data["created_at"],
+            "last_reviewed_at": deck_data["last_reviewed_at"]
+        })
+
+    return decks_response
+
+
+@router.get("/decks/{deck_name}")
+async def get_flashcard_deck(
+    deck_name: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer un deck spécifique avec toutes ses cartes"""
+
+    # Récupérer toutes les flashcards du deck
+    result = await db.execute(
+        select(Flashcard)
+        .where(
+            and_(
+                Flashcard.user_id == current_user.id,
+                Flashcard.deck_name == deck_name
+            )
+        )
+        .order_by(Flashcard.created_at.desc())
+    )
+    cards = result.scalars().all()
+
+    if not cards:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck non trouvé"
+        )
+
+    # Statistiques
+    total_cards = len(cards)
+    now = utc_now()
+    # Inclut les nouvelles cartes (next_review_at NULL ou <= maintenant)
+    cards_due = sum(1 for card in cards if not card.next_review_at or card.next_review_at <= now)
+    mastered_cards = sum(1 for card in cards if card.mastery_percentage >= 80)
+
+    # Charger le subject de la première carte
+    subject_data = None
+    if cards[0].subject_id:
+        subject_result = await db.execute(
+            select(Subject).where(Subject.id == cards[0].subject_id)
+        )
+        subject = subject_result.scalar_one_or_none()
+        if subject:
+            subject_data = {
+                "id": subject.id,
+                "name": subject.name,
+                "color": subject.color
+            }
+
+    # Construire la réponse avec métriques FSRS
+    return {
+        "id": deck_name,
+        "title": deck_name,
+        "description": f"{total_cards} carte{'s' if total_cards > 1 else ''}",
+        "subject": subject_data,
+        "algorithm": "FSRS",
+        "cards": [
+            {
+                "id": card.id,
+                "front": card.front,
+                "back": card.back,
+                "hint": card.hint,
+                "explanation": card.explanation,
+                "difficulty": card.difficulty if hasattr(card, 'difficulty') else None,
+                "easiness_factor": card.ease_factor,
+                "interval": card.interval,
+                "repetitions": card.repetitions,
+                "next_review_at": card.next_review_at,
+                "mastery_percentage": card.mastery_percentage,
+                "status": card.status.value if card.status else "new",
+                # FSRS metrics
+                "stability": getattr(card, 'stability', 0) or 0,
+                "fsrs_difficulty": getattr(card, 'fsrs_difficulty', 5) or 5,
+                "lapses": getattr(card, 'lapses', 0) or 0
+            }
+            for card in cards
+        ],
+        "total_cards": total_cards,
+        "cards_due": cards_due,
+        "mastered_cards": mastered_cards,
+        "created_at": cards[0].created_at,
+        "last_reviewed_at": max((card.last_reviewed_at for card in cards if card.last_reviewed_at), default=None)
+    }
+
+
+@router.post("/decks/{deck_name}/cards", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
+async def add_card_to_deck(
+    deck_name: str,
+    card_data: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Ajouter une carte à un deck existant"""
+
+    # Récupérer une carte du deck pour obtenir le subject_id
+    result = await db.execute(
+        select(Flashcard)
+        .where(
+            and_(
+                Flashcard.user_id == current_user.id,
+                Flashcard.deck_name == deck_name
+            )
+        )
+        .limit(1)
+    )
+    existing_card = result.scalar_one_or_none()
+
+    subject_id = existing_card.subject_id if existing_card else None
+
+    if not subject_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Impossible de déterminer la matière du deck"
+        )
+
+    # Créer la nouvelle flashcard
+    now = utc_now()
+    new_flashcard = Flashcard(
+        user_id=current_user.id,
+        subject_id=subject_id,
+        deck_name=deck_name,
+        front=card_data.get("front", ""),
+        back=card_data.get("back", ""),
+        hint=card_data.get("hint"),
+        explanation=card_data.get("explanation"),
+        next_review_at=now,  # Disponible immédiatement pour révision
+        due_date=now
+    )
+
+    db.add(new_flashcard)
+
+    # Mettre à jour les statistiques
+    result = await db.execute(
+        select(Subject).where(Subject.id == subject_id)
+    )
+    subject = result.scalar_one_or_none()
+    if subject:
+        subject.total_flashcards_count += 1
+
+    if current_user.gamification:
+        current_user.gamification.total_xp += 5
+    if current_user.stats:
+        current_user.stats.total_flashcards_created += 1
+
+    await db.commit()
+    await db.refresh(new_flashcard)
+
+    return new_flashcard
+
+
+@router.delete("/decks/{deck_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_deck(
+    deck_name: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Supprimer un deck et toutes ses cartes"""
+
+    # Récupérer toutes les flashcards du deck
+    # Cas spécial: "Sans deck" correspond aux cartes avec deck_name NULL
+    if deck_name == "Sans deck":
+        deck_condition = or_(
+            Flashcard.deck_name == None,
+            Flashcard.deck_name == "Sans deck"
+        )
+    else:
+        deck_condition = Flashcard.deck_name == deck_name
+
+    result = await db.execute(
+        select(Flashcard)
+        .where(
+            and_(
+                Flashcard.user_id == current_user.id,
+                deck_condition
+            )
+        )
+    )
+    cards = result.scalars().all()
+
+    if not cards:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck non trouvé"
+        )
+
+    # Récupérer le subject pour mettre à jour les stats
+    subject_id = cards[0].subject_id
+    result = await db.execute(
+        select(Subject).where(Subject.id == subject_id)
+    )
+    subject = result.scalar_one_or_none()
+
+    # Supprimer toutes les cartes
+    cards_count = len(cards)
+    for card in cards:
+        await db.delete(card)
+
+    # Mettre à jour les stats de la matière
+    if subject:
+        subject.total_flashcards_count = max(0, subject.total_flashcards_count - cards_count)
+
+    await db.commit()
+
+    return None
+
+
+@router.get("/decks/{deck_name}/due")
+async def get_deck_due_cards(
+    deck_name: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer les cartes à réviser d'un deck"""
+
+    now = utc_now()
+
+    # Récupérer les flashcards à réviser du deck
+    result = await db.execute(
+        select(Flashcard)
+        .where(
+            and_(
+                Flashcard.user_id == current_user.id,
+                Flashcard.deck_name == deck_name,
+                or_(
+                    Flashcard.next_review_at.is_(None),
+                    Flashcard.next_review_at <= now
+                )
+            )
+        )
+        .order_by(Flashcard.next_review_at.asc().nulls_first())
+    )
+    cards = result.scalars().all()
+
+    return [
+        {
+            "id": card.id,
+            "front": card.front,
+            "back": card.back,
+            "hint": card.hint,
+            "explanation": card.explanation,
+            "difficulty": card.difficulty if hasattr(card, 'difficulty') else 0,
+            "next_review_at": card.next_review_at,
+            "mastery_percentage": card.mastery_percentage,
+            "status": card.status.value if card.status else "new",
+            # FSRS metrics
+            "stability": getattr(card, 'stability', 0) or 0,
+            "fsrs_difficulty": getattr(card, 'fsrs_difficulty', 5) or 5,
+            "lapses": getattr(card, 'lapses', 0) or 0
+        }
+        for card in cards
+    ]
+
+
+class ReviewRequest(BaseModel):
+    quality: int = Field(..., ge=0, le=3, description="0=Again, 1=Hard, 2=Good, 3=Easy")
+    review_date: Optional[str] = None
+    response_time_seconds: Optional[float] = None
+
+
+@router.post("/{card_id}/review")
+async def review_flashcard(
+    card_id: int,
+    review_data: ReviewRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Soumettre une révision de flashcard avec algorithme FSRS.
+
+    L'algorithme FSRS (Free Spaced Repetition Scheduler) est un système
+    moderne de répétition espacée qui offre ~30% moins de révisions
+    pour le même taux de rétention comparé à SM-2.
+
+    Quality ratings:
+    - 0 (Again): Échec complet, la carte sera revue très bientôt
+    - 1 (Hard): Difficile mais correct, intervalle court
+    - 2 (Good): Correct avec effort normal, intervalle standard
+    - 3 (Easy): Facile, intervalle plus long
+    """
+
+    quality = review_data.quality
+
+    # Récupérer la flashcard
+    result = await db.execute(
+        select(Flashcard).where(
+            and_(
+                Flashcard.id == card_id,
+                Flashcard.user_id == current_user.id
+            )
+        )
+    )
+    card = result.scalar_one_or_none()
+
+    if not card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Flashcard non trouvée"
+        )
+
+    now = utc_now()
+
+    # ============== FSRS Algorithm ==============
+
+    # Convertir l'état de la carte vers FSRS
+    status_map = {
+        FlashcardStatus.NEW: "new",
+        FlashcardStatus.LEARNING: "learning",
+        FlashcardStatus.REVIEW: "review",
+        FlashcardStatus.RELEARNING: "relearning"
+    }
+
+    # Créer une FSRSCard à partir des données actuelles
+    fsrs_card = create_fsrs_card_from_flashcard(
+        ease_factor=card.ease_factor,
+        interval=card.interval,
+        repetitions=card.repetitions,
+        status=status_map.get(card.status, "new"),
+        last_reviewed_at=card.last_reviewed_at,
+        next_review_at=card.next_review_at,
+        stability=getattr(card, 'stability', None),
+        difficulty=getattr(card, 'fsrs_difficulty', None)
+    )
+
+    # Convertir la qualité en Rating FSRS
+    rating = Rating(quality)
+
+    # Exécuter l'algorithme FSRS
+    new_fsrs_card, review_log = fsrs_scheduler.schedule(fsrs_card, rating, now)
+
+    # ============== Mise à jour de la carte ==============
+
+    # Mettre à jour les compteurs de révision
+    card.total_reviews += 1
+    if quality >= 2:
+        card.correct_reviews += 1
+    else:
+        card.incorrect_reviews += 1
+
+    # Mettre à jour les compteurs par difficulté
+    if quality == 0:
+        card.times_seen_as_again += 1
+    elif quality == 1:
+        card.times_seen_as_hard += 1
+    elif quality == 2:
+        card.times_seen_as_good += 1
+    elif quality == 3:
+        card.times_seen_as_easy += 1
+
+    # Appliquer les résultats FSRS
+    card.stability = new_fsrs_card.stability
+    card.fsrs_difficulty = new_fsrs_card.difficulty
+    card.interval = new_fsrs_card.scheduled_days
+    card.repetitions = new_fsrs_card.reps
+    card.lapses = new_fsrs_card.lapses
+
+    # Mettre à jour le statut
+    state_to_status = {
+        State.NEW: FlashcardStatus.NEW,
+        State.LEARNING: FlashcardStatus.LEARNING,
+        State.REVIEW: FlashcardStatus.REVIEW,
+        State.RELEARNING: FlashcardStatus.RELEARNING
+    }
+    card.status = state_to_status.get(new_fsrs_card.state, FlashcardStatus.REVIEW)
+
+    # Calculer ease_factor de compatibilité à partir de la stabilité FSRS
+    # (pour rétrocompatibilité avec l'ancien système)
+    card.ease_factor = max(1.3, min(3.0, 1.3 + (new_fsrs_card.stability / 100)))
+
+    # Mettre à jour les dates
+    card.next_review_at = new_fsrs_card.due
+    card.last_reviewed_at = now
+
+    # Calculer le mastery percentage (basé sur taux de succès et stabilité)
+    if card.total_reviews > 0:
+        success_rate = card.correct_reviews / card.total_reviews
+        stability_factor = min(1.0, new_fsrs_card.stability / 365)  # Normaliser sur 1 an
+        card.mastery_percentage = min(100, (success_rate * 0.7 + stability_factor * 0.3) * 100)
+
+    # Créer un enregistrement de révision enrichi
+    review_record = FlashcardReview(
+        flashcard_id=card.id,
+        user_id=current_user.id,
+        quality=quality,
+        reviewed_at=now,
+        time_taken=int(review_data.response_time_seconds) if review_data.response_time_seconds else None
+    )
+    db.add(review_record)
+
+    # XP reward - bonus pour cartes difficiles bien répondues
+    base_xp = 5 if quality >= 2 else 2
+    difficulty_bonus = int(card.fsrs_difficulty / 3) if quality >= 2 else 0
+    xp_reward = base_xp + difficulty_bonus
+
+    if current_user.gamification:
+        current_user.gamification.total_xp += xp_reward
+    if current_user.stats:
+        current_user.stats.total_flashcards_reviewed += 1
+
+    await db.commit()
+    await db.refresh(card)
+
+    # Obtenir les prévisions pour toutes les options (pour le frontend)
+    scheduling_preview = fsrs_scheduler.get_scheduling_cards(fsrs_card, now)
+
+    return {
+        "success": True,
+        "algorithm": "FSRS",
+        "xp_earned": xp_reward,
+        "next_review_in_days": card.interval,
+        "next_review_at": card.next_review_at.isoformat() if card.next_review_at else None,
+        "interval_display": format_interval_display(card.interval),
+        "mastery_percentage": round(card.mastery_percentage, 1),
+        "stability": round(new_fsrs_card.stability, 2),
+        "difficulty": round(new_fsrs_card.difficulty, 2),
+        "retrievability": round(new_fsrs_card.retrievability * 100, 1),
+        "state": card.status.value,
+        "lapses": card.lapses,
+        "scheduling_preview": scheduling_preview,
+        "message": "Révision enregistrée avec FSRS!"
+    }
 
 
 @router.post("/", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
@@ -49,21 +562,26 @@ async def create_flashcard(
         )
     
     # Créer la flashcard
+    now = utc_now()
     new_flashcard = Flashcard(
         user_id=current_user.id,
+        next_review_at=now,  # Disponible immédiatement pour révision
+        due_date=now,
         **flashcard_data.model_dump()
     )
-    
+
     db.add(new_flashcard)
-    
+
     # Mettre à jour les statistiques utilisateur et matière
     subject.total_flashcards_count += 1
-    current_user.total_xp += 5
-    current_user.total_flashcards_created += 1
-    
+    if current_user.gamification:
+        current_user.gamification.total_xp += 5
+    if current_user.stats:
+        current_user.stats.total_flashcards_created += 1
+
     await db.commit()
     await db.refresh(new_flashcard)
-    
+
     return new_flashcard
 
 
@@ -127,8 +645,8 @@ async def get_due_flashcards(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer les flashcards à réviser aujourd'hui"""
-    
-    now = datetime.now()
+
+    now = utc_now()
     
     query = select(Flashcard).where(
         and_(
@@ -190,16 +708,18 @@ async def get_flashcard(
     return flashcard
 
 
-@router.post("/{flashcard_id}/review", response_model=FlashcardReviewResponse)
-async def review_flashcard(
+@router.get("/{flashcard_id}/preview")
+async def get_review_preview(
     flashcard_id: int,
-    review_data: FlashcardReviewRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Réviser une flashcard avec l'algorithme SM-2"""
-    
-    # Récupérer la flashcard
+    """
+    Obtenir une prévisualisation des intervalles FSRS pour chaque option de réponse.
+
+    Cette endpoint permet au frontend d'afficher à l'utilisateur ce qui se passera
+    selon sa réponse (Again/Hard/Good/Easy) AVANT qu'il ne choisisse.
+    """
     result = await db.execute(
         select(Flashcard).where(
             and_(
@@ -209,60 +729,69 @@ async def review_flashcard(
         )
     )
     flashcard = result.scalar_one_or_none()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard non trouvée"
         )
-    
-    # Sauvegarder l'état avant révision
-    ease_factor_before = flashcard.ease_factor
-    interval_before = flashcard.interval
-    
-    # Mettre à jour la flashcard avec l'algorithme SM-2
-    flashcard.update_after_review(review_data.quality, review_data.response_time_seconds)
-    
-    # Créer l'enregistrement de révision
-    review_record = FlashcardReview(
-        user_id=current_user.id,
-        flashcard_id=flashcard.id,
-        quality=review_data.quality,
-        response_time_seconds=review_data.response_time_seconds,
-        ease_factor_before=ease_factor_before,
-        interval_before=interval_before,
-        ease_factor_after=flashcard.ease_factor,
-        interval_after=flashcard.interval,
-        next_review_at=flashcard.next_review_at
-    )
-    db.add(review_record)
-    
-    # Attribuer des XP
-    xp_earned = 2  # XP de base pour révision
-    if review_data.quality >= 2:  # GOOD ou EASY
-        xp_earned = 3
-    if review_data.quality == 3:  # EASY
-        xp_earned = 4
-    
-    current_user.total_xp += xp_earned
-    current_user.total_flashcards_reviewed += 1
-    
-    await db.commit()
-    await db.refresh(flashcard)
-    
-    # Message de feedback
-    quality_messages = {
-        0: "À revoir bientôt !",
-        1: "C'était difficile, mais tu progresses !",
-        2: "Bien joué !",
-        3: "Excellent ! Carte maîtrisée !"
+
+    now = utc_now()
+
+    # Convertir vers FSRSCard
+    status_map = {
+        FlashcardStatus.NEW: "new",
+        FlashcardStatus.LEARNING: "learning",
+        FlashcardStatus.REVIEW: "review",
+        FlashcardStatus.RELEARNING: "relearning"
     }
-    
+
+    fsrs_card = create_fsrs_card_from_flashcard(
+        ease_factor=flashcard.ease_factor,
+        interval=flashcard.interval,
+        repetitions=flashcard.repetitions,
+        status=status_map.get(flashcard.status, "new"),
+        last_reviewed_at=flashcard.last_reviewed_at,
+        next_review_at=flashcard.next_review_at,
+        stability=getattr(flashcard, 'stability', None),
+        difficulty=getattr(flashcard, 'fsrs_difficulty', None)
+    )
+
+    # Obtenir les prévisions pour toutes les options
+    scheduling_preview = fsrs_scheduler.get_scheduling_cards(fsrs_card, now)
+
+    # Calculer la récupérabilité actuelle
+    current_retrievability = fsrs_card.get_retrievability(now)
+
     return {
-        "flashcard": flashcard,
-        "xp_earned": xp_earned,
-        "message": quality_messages.get(review_data.quality, "Révision terminée"),
-        "next_review_in_days": flashcard.interval
+        "flashcard_id": flashcard.id,
+        "algorithm": "FSRS",
+        "current_state": flashcard.status.value,
+        "current_stability": round(getattr(flashcard, 'stability', 0) or 0, 2),
+        "current_difficulty": round(getattr(flashcard, 'fsrs_difficulty', 5) or 5, 2),
+        "current_retrievability": round(current_retrievability * 100, 1),
+        "scheduling_options": {
+            "again": {
+                **scheduling_preview["again"],
+                "display": format_interval_display(scheduling_preview["again"]["interval_days"]),
+                "description": "Échec - réapprendre immédiatement"
+            },
+            "hard": {
+                **scheduling_preview["hard"],
+                "display": format_interval_display(scheduling_preview["hard"]["interval_days"]),
+                "description": "Difficile mais correct"
+            },
+            "good": {
+                **scheduling_preview["good"],
+                "display": format_interval_display(scheduling_preview["good"]["interval_days"]),
+                "description": "Correct avec effort normal"
+            },
+            "easy": {
+                **scheduling_preview["easy"],
+                "display": format_interval_display(scheduling_preview["easy"]["interval_days"]),
+                "description": "Parfaitement mémorisé"
+            }
+        }
     }
 
 
@@ -272,8 +801,8 @@ async def get_flashcard_stats(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Récupérer les statistiques détaillées d'une flashcard"""
-    
+    """Récupérer les statistiques détaillées d'une flashcard (avec métriques FSRS)"""
+
     # Récupérer la flashcard
     result = await db.execute(
         select(Flashcard).where(
@@ -284,18 +813,18 @@ async def get_flashcard_stats(
         )
     )
     flashcard = result.scalar_one_or_none()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard non trouvée"
         )
-    
+
     # Calculer le taux de succès
     success_rate = 0.0
     if flashcard.total_reviews > 0:
         success_rate = (flashcard.correct_reviews / flashcard.total_reviews) * 100
-    
+
     # Récupérer les 10 dernières révisions
     result = await db.execute(
         select(FlashcardReview)
@@ -304,18 +833,18 @@ async def get_flashcard_stats(
         .limit(10)
     )
     recent_reviews = result.scalars().all()
-    
+
     # Formater l'historique des révisions
     reviews_list = [
         {
             "id": r.id,
             "quality": r.quality,
-            "response_time_seconds": r.response_time_seconds,
+            "response_time_seconds": getattr(r, 'time_taken', None),
             "reviewed_at": r.reviewed_at.isoformat()
         }
         for r in recent_reviews
     ]
-    
+
     # Répartition des difficultés
     difficulty_breakdown = {
         "again": flashcard.times_seen_as_again,
@@ -323,7 +852,28 @@ async def get_flashcard_stats(
         "good": flashcard.times_seen_as_good,
         "easy": flashcard.times_seen_as_easy
     }
-    
+
+    # Calculer la récupérabilité actuelle via FSRS
+    now = utc_now()
+    status_map = {
+        FlashcardStatus.NEW: "new",
+        FlashcardStatus.LEARNING: "learning",
+        FlashcardStatus.REVIEW: "review",
+        FlashcardStatus.RELEARNING: "relearning"
+    }
+
+    fsrs_card = create_fsrs_card_from_flashcard(
+        ease_factor=flashcard.ease_factor,
+        interval=flashcard.interval,
+        repetitions=flashcard.repetitions,
+        status=status_map.get(flashcard.status, "new"),
+        last_reviewed_at=flashcard.last_reviewed_at,
+        next_review_at=flashcard.next_review_at,
+        stability=getattr(flashcard, 'stability', None),
+        difficulty=getattr(flashcard, 'fsrs_difficulty', None)
+    )
+    current_retrievability = fsrs_card.get_retrievability(now)
+
     return {
         "flashcard_id": flashcard.id,
         "total_reviews": flashcard.total_reviews,
@@ -338,7 +888,15 @@ async def get_flashcard_stats(
         "repetitions": flashcard.repetitions,
         "next_review_at": flashcard.next_review_at,
         "difficulty_breakdown": difficulty_breakdown,
-        "recent_reviews": reviews_list
+        "recent_reviews": reviews_list,
+        # FSRS specific metrics
+        "fsrs_metrics": {
+            "stability": round(getattr(flashcard, 'stability', 0) or 0, 2),
+            "difficulty": round(getattr(flashcard, 'fsrs_difficulty', 5) or 5, 2),
+            "retrievability": round(current_retrievability * 100, 1),
+            "lapses": getattr(flashcard, 'lapses', 0) or 0,
+            "stability_display": format_interval_display(int(getattr(flashcard, 'stability', 0) or 0))
+        }
     }
 
 

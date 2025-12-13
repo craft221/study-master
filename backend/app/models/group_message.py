@@ -4,9 +4,10 @@ Modèle pour les messages dans les groupes d'étude
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 
 from app.core.database import Base
+from app.core.datetime_utils import utc_now
 
 
 class GroupMessage(Base):
@@ -20,8 +21,8 @@ class GroupMessage(Base):
     is_edited = Column(Boolean, default=False)
     reply_to_message_id = Column(Integer, ForeignKey("group_messages.id", ondelete="SET NULL"), nullable=True, index=True)
     mentions = Column(JSON, nullable=True)  # List of user IDs mentioned in the message
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     # Relations
     group = relationship("StudyGroup", back_populates="messages")
@@ -38,7 +39,7 @@ class MessageReaction(Base):
     message_id = Column(Integer, ForeignKey("group_messages.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     emoji = Column(String(10), nullable=False)  # Emoji unicode character
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relations
     message = relationship("GroupMessage", back_populates="reactions")

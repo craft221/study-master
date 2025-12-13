@@ -1,514 +1,504 @@
-# 📚 Study Master
+# Study Master
 
-**L'application ultime d'apprentissage avec Intelligence Artificielle**
+**Plateforme d'apprentissage collaborative avec Intelligence Artificielle**
 
-Une plateforme complète d'étude collaborative avec gamification, génération de contenu par IA, gestion de notes, flashcards, quiz, et bien plus.
+Une application complete d'etude avec gamification, generation de contenu par IA (Claude Sonnet 4.5), gestion de notes, flashcards FSRS, quiz, assistant pedagogique Spark, duels entre etudiants, Focus Rooms (body doubling virtuel), groupes d'etude, paiements multi-providers, et bien plus.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![Next.js](https://img.shields.io/badge/next.js-14-black)
+![Claude](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-purple)
 
 ---
 
-## ✨ Fonctionnalités Principales
+## Table des Matieres
 
-### 📝 Gestion de Notes
-- **Création et organisation** de notes avec support Markdown
-- **Hiérarchie de notes** (notes parents/enfants)
-- **Tags et favoris** pour une organisation optimale
-- **Recherche avancée** dans le contenu
-- **Épinglage** et archivage de notes
-
-### 🎴 Flashcards (Répétition Espacée)
-- **Création de decks** personnalisés
-- **Système de révision** basé sur l'algorithme de répétition espacée
-- **Indices et explications** pour chaque carte
-- **Statistiques de progression** par deck
-- **Génération automatique** par IA depuis vos notes
-
-### 🧠 Quiz Interactifs
-- **Trois types de questions**: QCM, Vrai/Faux, Réponse courte
-- **Mode chronométré** avec limite de temps configurable
-- **Correction instantanée** avec explications
-- **Historique des tentatives** et progression
-- **Génération automatique** par IA depuis vos notes
-
-### ✨ Hub IA (Intelligence Artificielle)
-Propulsé par **Claude Sonnet 4.5** (Anthropic):
-- 🎴 **Génération de flashcards** intelligentes de haute qualité (1-20 cartes)
-- 🧠 **Génération de quiz** complets avec explications détaillées (5-20 questions)
-- 📄 **Résumé automatique** de notes avec synthèse pédagogique (50-1000 mots)
-- 🔑 **Extraction de mots-clés** pertinents avec analyse contextuelle (3-20)
-- 💡 **Explication de concepts** pédagogiques approfondies
-- 📊 **Quota quotidien** selon l'abonnement (10-1000 requêtes/jour)
-
-### 👥 Groupes d'Étude Collaboratifs
-- **Création de groupes** publics ou privés
-- **Chat en temps réel** avec réactions emoji
-- **Mentions** (@utilisateur) et réponses aux messages
-- **Partage de ressources**: notes, flashcards, quiz, sessions
-- **Onglets organisés**: Messages, Notes, Flashcards, Sessions, Quiz, Activité
-
-### ⏱️ Sessions Pomodoro
-- **Timer Pomodoro** configurable (25/5 min par défaut)
-- **Suivi automatique** du temps d'étude
-- **Pause automatique** entre sessions
-- **Statistiques** d'étude détaillées
-
-### 🏆 Gamification
-- **Système XP et Niveaux** (100 XP par niveau)
-- **Séries quotidiennes** (streaks)
-- **Succès et badges** à débloquer
-- **Classements** globaux et par matière
-- **Duels** entre étudiants
-
-### 👤 Profil Utilisateur
-- **Informations personnelles** éditables
-- **Statistiques détaillées**: XP, niveau, streak, temps d'étude
-- **Activité hebdomadaire**: notes, flashcards, quiz
-- **Paramètres de notifications**
-- **Changement de mot de passe**
-
-### 📸 OCR (Reconnaissance de Texte)
-- **Upload d'images** de documents
-- **Extraction automatique** du texte
-- **Conversion en notes** enrichies
-- Support de multiples formats d'image
-
-### 📅 Emploi du Temps
-- **Gestion de l'emploi du temps** hebdomadaire
-- **Création d'événements** et rappels
-- **Synchronisation** avec les matières
+- [Fonctionnalites Principales](#fonctionnalites-principales)
+- [Nouveautes v3.0](#nouveautes-v30)
+- [Architecture Technique](#architecture-technique)
+- [Installation](#installation-et-demarrage)
+- [Plans et Tarification](#plans-et-tarification)
+- [API Endpoints](#api-endpoints)
+- [Changelog](#changelog)
 
 ---
 
-## 🏗️ Architecture Technique
+## Fonctionnalites Principales
 
-### Stack Technologique
+### Gestion de Notes
+- **Markdown complet** avec support LaTeX (`$...$` et `$$...$$`)
+- **Hierarchie** de notes (parent/enfants jusqu'a 5 niveaux)
+- **Tags, favoris, epinglage, archivage**
+- **Recherche avancee** (titre, contenu, tags)
+- **Galerie d'images** integree
+- **Compteur de mots** et temps de lecture
 
-#### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **Langage**: TypeScript
-- **UI**: Tailwind CSS + shadcn/ui
-- **Animations**: Framer Motion
-- **État**: React Hooks (useState, useEffect)
-- **HTTP**: Axios
-- **Icônes**: Lucide React
+### Flashcards avec FSRS (Free Spaced Repetition Scheduler)
+**Algorithme moderne ~30% plus efficace que SM-2**
 
-#### Backend
-- **Framework**: FastAPI (Python 3.11)
-- **Base de données**: PostgreSQL 15
-- **ORM**: SQLAlchemy (async)
-- **Cache**: Redis 7
-- **Tasks async**: Celery + Flower
-- **IA**: Claude Sonnet 4.5 (Anthropic API)
-- **Auth**: JWT (JSON Web Tokens)
+- **4 ratings**: Again (0), Hard (1), Good (2), Easy (3)
+- **Etats**: NEW, LEARNING, REVIEW, RELEARNING
+- **Stabilite** et **difficulte** calculees dynamiquement
+- **Statistiques detaillees**: maitrise %, temps de reponse moyen
+- **Decks** par matiere avec stats agregees
+- **Generation IA** depuis vos notes
+- **Suspension** et **favoris** de cartes
 
-#### DevOps
-- **Containerisation**: Docker + Docker Compose
-- **Proxy inversé**: Nginx (optionnel)
-- **Monitoring**: Flower (Celery)
+### Quiz Interactifs
+- **3 types de questions**: QCM, Vrai/Faux, Reponse courte
+- **Difficulte**: Facile, Moyen, Difficile
+- **Mode chronometre** configurable
+- **Feedback IA** apres chaque tentative (forces, faiblesses, recommandations)
+- **Partage viral** avec codes uniques
+- **Quiz publics** sans compte (conversion invites)
+- **Leaderboard** par quiz
+- **Generation IA** avec taxonomie de Bloom
+
+### Hub IA (Claude Sonnet 4.5)
+Propulse par **Claude Sonnet 4.5** avec prompts optimises:
+
+| Fonctionnalite | Version | Details |
+|----------------|---------|---------|
+| Generation Flashcards | v2.1 | 40% definitions, 30% applications, 20% comparaisons, 10% analyse |
+| Generation Quiz | v2.0 | Taxonomie Bloom, distracteurs plausibles |
+| Resume Automatique | v2.0 | Markdown structure, preservation LaTeX |
+| Extraction Mots-cles | v1.0 | 3-20 mots-cles |
+| Explication Concepts | v1.0 | 3 niveaux: debutant/intermediaire/avance |
+
+**Quotas IA par abonnement** (avec cache 70% hit rate):
+| Plan | Requetes/jour | Prix |
+|------|---------------|------|
+| FREE | 5 | $0 |
+| PREMIUM | 30 | $5.99/mois |
+| PREMIUM+ | 60 | $11.99/mois |
+| INSTITUTIONAL | 200 | $39.99/mois |
+
+### Focus Rooms (Body Doubling Virtuel)
+**Salles d'etude virtuelles pour etudier ensemble en temps reel**
+
+- **Types**: Public, Sujet, Universite, Prive, Evenement
+- **Categories**: Sciences, Humanites, Langues, Business, Tech, Medecine, Droit
+- **Statuts participants**: FOCUSING, DEEP_WORK, BREAK, IDLE, AWAY
+- **Milestones automatiques**: 30min, 1h, 2h, 3h (+XP bonus)
+- **Deep Work Mode**: Sessions 90min sans distractions
+- **XP Bonus Room**: +20% sur tout l'XP gagne
+- **Feed d'activites** en temps reel (WebSocket)
+- **Pokes** entre participants
+- **Invitations** avec codes uniques
+- **Leaderboard** temps de focus
+- **Stats personnelles**: total minutes, sessions, streak focus
+
+### Assistant Spark (Mascotte IA)
+Spark est un ecureuil intelligent qui accompagne l'apprentissage:
+
+- **5 Niveaux**: Baby (0-100 XP), Junior (100-500), Expert (500-1000), Sage (1000-5000), Legendary (5000+)
+- **Humeurs dynamiques**: Happy, Excited, Sad, Thinking, Encouraging, Helpful
+- **20+ Animations**: idle, wave, celebration, jump, sleep, explain
+- **Accessoires deblocables**: chapeaux, lunettes, capes, glands dores
+- **Conversations persistantes** avec memoire long-terme
+- **Daily Briefing** personnalise chaque matin
+- **Mode Tuteur** socratique
+- **Insights proactifs** sur vos patterns d'etude
+- **Notifications personnalisees**
+
+### Groupes d'Etude Collaboratifs
+- **Creation** de groupes publics/prives
+- **Roles**: Owner, Admin, Member
+- **Partage**: Notes, Flashcards, Quiz, Sessions
+- **Messagerie temps reel** (WebSocket)
+- **Reactions emoji** et **mentions** (@user)
+- **Feed d'activite** du groupe
+
+### Gamification Complete
+
+#### XP et Niveaux
+**Formule**: `Niveau = sqrt(XP_total / 100)`
+
+| Action | XP |
+|--------|-----|
+| Creation note | +10 |
+| Creation flashcard | +5 |
+| Revision (Good/Easy) | +5 |
+| Revision (Again/Hard) | +2 |
+| Quiz complete | +20 base |
+| Quiz reussi (>70%) | +10 bonus |
+| Quiz parfait (>90%) | +20 bonus |
+| Focus Room session | +XP selon duree + 20% bonus |
+| Victoire duel | +mise XP |
+| Defaite duel | -50% mise |
+
+#### Streaks
+- **Streak actuel**: jours consecutifs d'activite
+- **Record de streak**: plus longue serie
+- **Reset automatique** si inactivite 24h
+
+#### Achievements
+- **5 Categories**: Learning, Streak, Mastery, Social, Special
+- **4 Raretes**: Common, Rare, Epic, Legendary
+- **Deblocage automatique** + recompenses XP
+
+### Duels PvP
+- **Defier** n'importe quel utilisateur
+- **Mise XP**: 10-500 XP
+- **Quiz selectionne** par le challenger
+- **Liens d'invitation** (expiration 24h)
+- **Statistiques**: taux victoire, XP gagne/perdu
+- **Adversaires recommandes** par niveau
+
+### Classements
+- **6 Types**: XP, Streak, Notes, Flashcards, Quiz, Focus Time
+- **4 Periodes**: Daily, Weekly, Monthly, All-time
+- **3 Portees**: Global, Universite, Promotion
+- **Mise a jour temps reel** (WebSocket)
+
+### Paiements Multi-Providers
+**Support international complet**
+
+#### Providers
+| Provider | Methodes | Regions |
+|----------|----------|---------|
+| **Stripe** | Visa, Mastercard, Amex | International |
+| **PayPal** | PayPal Balance, Cards | International |
+| **Flutterwave** | Orange Money, Wave, MTN MoMo, M-Pesa | Afrique |
+
+#### Devises Supportees
+- **Internationales**: EUR, USD, GBP
+- **Afrique Ouest (FCFA)**: XOF (Senegal, Cote d'Ivoire, Mali, etc.)
+- **Afrique Centrale (FCFA)**: XAF (Cameroun, Gabon, Congo)
+- **Autres**: NGN, GHS, KES, ZAR, MAD, TND, EGP
+
+#### Securite Paiements
+- Verification signatures webhook (HMAC-SHA256)
+- Rate limiting (5 tentatives / 5 minutes)
+- Detection anti-fraude (transactions dupliquees, activite suspecte)
+- Logging securise (masquage donnees sensibles)
+- Codes promo avec validation
+
+### Autres Fonctionnalites
+
+#### OCR (Reconnaissance de Texte)
+- Upload images (JPG, PNG) et PDF
+- Extraction texte automatique
+- Creation note directe
+
+#### Export PDF
+- Notes individuelles ou par lot
+- Flashcards par matiere
+- Mise en forme professionnelle
+
+#### Emploi du Temps
+- Vues mois/semaine
+- Types: Cours, Examen, Devoir, Revision
+- Rappels intelligents automatiques
+- Evenements recurrents
+
+#### Mode Hors Ligne
+- Detection automatique connexion
+- Cache IndexedDB
+- Synchronisation au retour online
+
+#### Anti-Triche
+- Monitoring quiz/duels
+- Detection changements onglet
+- Detection copy/paste, F12
+- Validation timestamps
 
 ---
 
-## 🚀 Installation et Démarrage
+## Nouveautes v3.0
 
-### Prérequis
+### Focus Rooms
+Systeme complet de salles d'etude virtuelles avec:
+- 7 modeles de donnees (FocusRoom, Participant, Session, Activity, Invitation, Poke, UserStats)
+- WebSocket temps reel
+- Deep Work mode 90min
+- Milestones automatiques
+- XP bonus room (+20%)
+
+### Algorithme FSRS
+Remplacement de SM-2 par FSRS pour les flashcards:
+- ~30% moins de revisions necessaires
+- Meilleure retention long-terme
+- Parametres ajustables
+
+### Paiements Multi-Providers
+- Stripe (cartes internationales)
+- PayPal
+- Flutterwave (Mobile Money Afrique)
+- 12 devises supportees
+- Codes promo
+
+### Spark Intelligence
+- Conversations persistantes
+- Memoire long-terme
+- Daily Briefing personnalise
+- Insights proactifs
+- Notifications intelligentes
+
+### Optimisation Couts IA
+- Cache Redis avec 70% hit rate
+- Quotas ajustes pour 55% marge
+- Prix en USD
+
+---
+
+## Architecture Technique
+
+### Stack Frontend
+| Technologie | Version | Usage |
+|-------------|---------|-------|
+| Next.js | 14.2.15 | Framework React SSR |
+| React | 18.3.1 | UI Library |
+| TypeScript | 5.3.3 | Type Safety |
+| Tailwind CSS | 3.4.1 | Styling |
+| Shadcn/ui | - | Composants UI |
+| Zustand | 4.5.0 | State Management |
+| Framer Motion | 11.0.5 | Animations |
+| Axios | 1.6.7 | HTTP Client |
+
+### Stack Backend
+| Technologie | Version | Usage |
+|-------------|---------|-------|
+| FastAPI | 0.109+ | Framework API |
+| Python | 3.11 | Runtime |
+| PostgreSQL | 15 | Database |
+| SQLAlchemy | 2.0 | ORM (async) |
+| Redis | 7 | Cache |
+| Celery | - | Tasks async |
+| Alembic | - | Migrations |
+
+### Services Externes
+| Service | Usage |
+|---------|-------|
+| Claude Sonnet 4.5 | Generation IA |
+| Stripe | Paiements cartes |
+| PayPal | Paiements PayPal |
+| Flutterwave | Mobile Money Afrique |
+
+### Architecture Donnees
+```
+16 modeles principaux
+30+ sous-modeles
+22 migrations Alembic
+150+ endpoints API
+```
+
+---
+
+## Installation et Demarrage
+
+### Prerequis
 - Docker Desktop
 - Docker Compose
 - Git
 
 ### Installation Rapide
 
-1. **Cloner le repository**
 ```bash
+# 1. Cloner
 git clone <repository-url>
 cd study-master
-```
 
-2. **Configuration de l'environnement**
-
-Créer un fichier `.env` dans `backend/`:
-```env
-# Database
+# 2. Configuration backend/.env
 DATABASE_URL=postgresql+asyncpg://studymaster:studymaster123@postgres:5432/studymaster_db
-
-# Security
 SECRET_KEY=your-super-secret-key-change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
-
-# Anthropic API (Claude Sonnet 4.5 pour fonctionnalités IA)
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
-
-# Redis
+ANTHROPIC_API_KEY=your-anthropic-api-key
 REDIS_URL=redis://redis:6379/0
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+PAYPAL_CLIENT_ID=...
+PAYPAL_CLIENT_SECRET=...
+FLUTTERWAVE_SECRET_KEY=...
 
-# Celery
-CELERY_BROKER_URL=redis://redis:6379/1
-CELERY_RESULT_BACKEND=redis://redis:6379/2
-```
-
-**Obtenir votre clé API Anthropic**:
-1. Créez un compte sur [console.anthropic.com](https://console.anthropic.com)
-2. Accédez à la section "API Keys"
-3. Générez une nouvelle clé API
-4. Copiez-la dans le fichier `.env`
-
-**Tarification Claude** (pay-as-you-go):
-- **Input**: $3 / million de tokens (~750k mots)
-- **Output**: $15 / million de tokens (~750k mots)
-- Pas de tier gratuit, mais crédit initial de $5 offert
-
-3. **Démarrer l'application**
-```bash
+# 3. Demarrer
 docker-compose up -d
+
+# 4. Acceder
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
 
-4. **Accéder à l'application**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Documentation API**: http://localhost:8000/docs
-- **Flower (monitoring)**: http://localhost:5555
-
-### Identifiants de Test
-**Email**: `demo@example.com`
-**Mot de passe**: `Demo123!`
+### Identifiants Test
+- **Email**: `demo@example.com`
+- **Mot de passe**: `Demo123!`
 
 ---
 
-## 📁 Structure du Projet
+## Plans et Tarification
+
+### Grille Tarifaire (Option 3 - 55% marge)
+
+| Plan | Prix USD | Prix EUR | Prix XOF | Requetes IA/jour | Stockage |
+|------|----------|----------|----------|------------------|----------|
+| **FREE** | $0 | 0 | 0 | 5 | 100 MB |
+| **PREMIUM** | $5.99/mois | 5.49 | 3,500 FCFA | 30 | 1 GB |
+| **PREMIUM+** | $11.99/mois | 10.99 | 7,000 FCFA | 60 | 5 GB |
+| **INSTITUTIONAL** | $39.99/mois | 36.99 | 24,000 FCFA | 200 | 50 GB |
+| **PREMIUM ANNUEL** | $59.90/an | 54.90 | 35,000 FCFA | 30 | 1 GB |
+
+### Fonctionnalites par Plan
+
+| Fonctionnalite | FREE | PREMIUM | PREMIUM+ | INSTITUTIONAL |
+|----------------|------|---------|----------|---------------|
+| Notes | 50 max | Illimite | Illimite | Illimite |
+| Flashcards | 500 max | Illimite | Illimite | Illimite |
+| Quiz | 20 max | Illimite | Illimite | Illimite |
+| Publicites | Oui | Non | Non | Non |
+| Support | Standard | Prioritaire | VIP 24/7 | Dedie |
+| Analytics | - | - | Avances | Avances |
+| API Access | - | - | - | Oui |
+| Export | Oui | Oui | Oui | Oui |
+| Collaboration | - | Oui | Oui | Oui |
+
+### Codes Promo Actifs
+- `WELCOME20` - 20% reduction bienvenue
+- `STUDENT10` - 10% reduction etudiant
+- `LAUNCH50` - 50% reduction lancement
+
+---
+
+## API Endpoints
+
+### Resume
+| Domaine | Endpoints |
+|---------|-----------|
+| Auth | 4 |
+| Users | 11 |
+| Notes | 11 |
+| Flashcards | 15 |
+| Quiz | 13 |
+| AI | 6 |
+| Focus Rooms | 20+ |
+| Study Groups | 20+ |
+| Duels | 14 |
+| Leaderboards | 3 |
+| Achievements | 6 |
+| Spark/Mascot | 15+ |
+| Sessions | 7 |
+| Schedules | 8 |
+| Notifications | 8 |
+| Payments | 15+ |
+| Export | 6 |
+| **Total** | **150+** |
+
+### Documentation Interactive
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+---
+
+## Structure du Projet
 
 ```
 study-master/
-├── frontend/                    # Application Next.js
+├── frontend/                    # Next.js 14
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── (auth)/         # Pages authentification
-│   │   │   │   ├── login/
-│   │   │   │   └── register/
-│   │   │   ├── (dashboard)/    # Pages dashboard
-│   │   │   │   ├── dashboard/  # Page d'accueil
-│   │   │   │   ├── notes/      # Gestion des notes
-│   │   │   │   ├── flashcards/ # Flashcards
-│   │   │   │   ├── quizzes/    # Quiz
-│   │   │   │   ├── ai/         # Hub IA
-│   │   │   │   ├── profile/    # Profil utilisateur
-│   │   │   │   ├── groups/     # Groupes d'étude
-│   │   │   │   ├── sessions/   # Sessions Pomodoro
-│   │   │   │   ├── subjects/   # Matières
-│   │   │   │   ├── leaderboard/# Classements
-│   │   │   │   ├── schedule/   # Emploi du temps
-│   │   │   │   └── ocr/        # OCR
-│   │   │   └── layout.tsx      # Layout avec navigation
-│   │   ├── components/         # Composants React
-│   │   │   ├── ui/             # Composants UI (shadcn)
-│   │   │   └── groups/         # Composants groupes
-│   │   ├── lib/                # Utilitaires
-│   │   │   └── api.ts          # Client API Axios
-│   │   └── hooks/              # Custom hooks
-│   ├── public/                 # Assets statiques
-│   └── package.json
+│   │   │   ├── (auth)/         # Login, Register
+│   │   │   ├── (dashboard)/    # 35+ pages
+│   │   │   │   ├── dashboard/
+│   │   │   │   ├── notes/
+│   │   │   │   ├── flashcards/
+│   │   │   │   ├── quizzes/
+│   │   │   │   ├── ai/
+│   │   │   │   ├── focus-rooms/
+│   │   │   │   ├── groups/
+│   │   │   │   ├── duels/
+│   │   │   │   ├── pricing/
+│   │   │   │   └── ...
+│   │   │   └── play/[shareCode]/
+│   │   ├── components/
+│   │   │   ├── ui/             # Shadcn/ui
+│   │   │   ├── focus-room/     # Focus Room components
+│   │   │   ├── groups/         # Group components
+│   │   │   └── Spark*.tsx      # Mascotte
+│   │   ├── services/           # 21 API services
+│   │   ├── hooks/              # 15+ custom hooks
+│   │   ├── contexts/           # SparkContext, etc.
+│   │   └── lib/                # Utils, API config
 │
-├── backend/                     # API FastAPI
+├── backend/                     # FastAPI
 │   ├── app/
-│   │   ├── api/
-│   │   │   └── v1/             # Endpoints API v1
-│   │   │       ├── auth.py     # Authentification
-│   │   │       ├── users.py    # Utilisateurs
-│   │   │       ├── subjects.py # Matières
-│   │   │       ├── notes.py    # Notes
-│   │   │       ├── flashcards.py # Flashcards
-│   │   │       ├── quizzes.py  # Quiz
-│   │   │       ├── ai.py       # IA (Gemini)
-│   │   │       ├── study_groups.py # Groupes
-│   │   │       ├── group_messages.py # Messages
-│   │   │       ├── study_sessions.py # Sessions
-│   │   │       ├── schedules.py # Emploi du temps
-│   │   │       ├── leaderboards.py # Classements
-│   │   │       ├── achievements.py # Succès
-│   │   │       ├── duels.py    # Duels
-│   │   │       ├── ocr.py      # OCR
-│   │   │       └── export.py   # Export PDF
-│   │   ├── models/             # Modèles SQLAlchemy
-│   │   ├── schemas/            # Schémas Pydantic
-│   │   ├── core/               # Configuration
-│   │   │   ├── config.py       # Settings
-│   │   │   ├── database.py     # DB connection
-│   │   │   └── security.py     # JWT auth
-│   │   ├── services/           # Services métier
-│   │   │   └── ai_service.py   # Service IA
-│   │   └── main.py             # Point d'entrée
-│   └── requirements.txt
+│   │   ├── api/v1/             # 25+ routers
+│   │   ├── models/             # 16 modeles + sous-modeles
+│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── services/           # 18 services metier
+│   │   └── core/               # Config, DB, Security
+│   └── alembic/                # 22 migrations
 │
-├── docker-compose.yml           # Configuration Docker
-└── README.md                    # Ce fichier
+├── docker-compose.yml
+└── README.md
 ```
 
 ---
 
-## 🔌 API Endpoints Principaux
+## Changelog
 
-### Authentification
-- `POST /api/v1/auth/register` - Inscription
-- `POST /api/v1/auth/login` - Connexion
-- `POST /api/v1/auth/refresh` - Refresh token
+### Version 3.0.0 (Decembre 2024)
+**Major Release - Focus Rooms & Payments**
 
-### Notes
-- `GET /api/v1/notes/` - Liste des notes
-- `POST /api/v1/notes/` - Créer une note
-- `GET /api/v1/notes/{id}` - Détails d'une note
-- `PUT /api/v1/notes/{id}` - Modifier une note
-- `DELETE /api/v1/notes/{id}` - Supprimer une note
+- **Focus Rooms**: Systeme complet de body doubling virtuel
+  - 7 modeles de donnees
+  - WebSocket temps reel
+  - Deep Work mode
+  - Milestones et XP bonus
+- **FSRS**: Nouvel algorithme de repetition espacee (~30% plus efficace)
+- **Paiements Multi-Providers**: Stripe, PayPal, Flutterwave
+  - 12 devises supportees
+  - Mobile Money Afrique
+  - Codes promo
+- **Spark Intelligence**: Conversations, memoire, briefing quotidien
+- **Optimisation Couts**: Cache 70%, quotas ajustes, 55% marge
+- **Securite Renforcee**: Anti-fraude, rate limiting, audit logs
 
-### Flashcards
-- `GET /api/v1/flashcards/` - Liste des flashcards
-- `POST /api/v1/flashcards/` - Créer une flashcard
-- `POST /api/v1/flashcards/{id}/review` - Réviser une carte
+### Version 2.0.0 (Decembre 2024)
+- Documentation complete
+- 150+ endpoints API
+- Gamification complete
+- Mascotte Spark
+- Export PDF
+- Anti-triche
 
-### Quiz
-- `GET /api/v1/quizzes/` - Liste des quiz
-- `POST /api/v1/quizzes/` - Créer un quiz
-- `POST /api/v1/quizzes/{id}/submit` - Soumettre les réponses
-
-### Intelligence Artificielle
-- `GET /api/v1/ai/quota` - Quota IA disponible
-- `POST /api/v1/ai/generate-flashcards` - Générer flashcards
-- `POST /api/v1/ai/generate-quiz` - Générer quiz
-- `POST /api/v1/ai/summarize-note` - Résumer note
-- `POST /api/v1/ai/extract-keywords` - Extraire mots-clés
-- `POST /api/v1/ai/explain-concept` - Expliquer concept
-
-### Groupes d'Étude
-- `GET /api/v1/study-groups/` - Liste des groupes
-- `POST /api/v1/study-groups/` - Créer un groupe
-- `POST /api/v1/study-groups/{id}/join` - Rejoindre
-- `GET /api/v1/study-groups/{id}/messages` - Messages du groupe
-- `POST /api/v1/study-groups/{id}/messages` - Envoyer message
-- `POST /api/v1/study-groups/{id}/messages/{msg_id}/reactions` - Ajouter réaction
-
-### Utilisateur
-- `GET /api/v1/users/me` - Profil actuel
-- `PUT /api/v1/users/me` - Modifier profil
-- `POST /api/v1/users/me/password` - Changer mot de passe
-- `GET /api/v1/users/me/stats` - Statistiques utilisateur
-
-Documentation complète: http://localhost:8000/docs
+### Version 1.0.0 (Novembre 2024)
+- Version initiale
+- Notes, Flashcards, Quiz
+- Hub IA
+- Groupes d'etude
 
 ---
 
-## 🎮 Système de Gamification
+## Contribution
 
-### XP et Niveaux
-- **+10 XP** : Créer une note
-- **+5 XP** : Créer une flashcard
-- **+2 XP** : Envoyer un message
-- **+1 XP** : Réagir à un message
-- **+15 XP** : Générer un quiz IA
-- **+10 XP** : Générer des flashcards IA
-- **+50 XP** : Compléter un quiz avec 100%
-
-**Niveau** = XP Total ÷ 100
-
-### Streaks (Séries)
-- Connexion quotidienne pour maintenir le streak
-- Bonus XP pour les longues séries
-- Affichage du streak actuel et record
-
-### Succès (En développement)
-- Badges à débloquer
-- Objectifs variés (XP, notes, quiz, etc.)
-
----
-
-## 🔒 Sécurité
-
-- **JWT Authentication** avec refresh tokens
-- **Hashing bcrypt** pour les mots de passe
-- **CORS configuré** pour localhost
-- **Rate limiting** sur les endpoints sensibles
-- **Validation Pydantic** sur toutes les entrées
-- **SQL injection protection** via SQLAlchemy ORM
-
----
-
-## 📊 Quotas IA et Tarification
-
-### Quotas par Abonnement (Limites applicatives)
-
-| Abonnement | Requêtes IA/Jour | Coût Abonnement |
-|------------|------------------|-----------------|
-| FREE       | 10              | Gratuit |
-| PREMIUM    | 200             | À définir |
-| PREMIUM_PLUS | 500           | À définir |
-| INSTITUTIONAL | 1000         | À définir |
-
-**Note importante**: Ces quotas sont des limites **applicatives** pour contrôler l'usage. En plus, vous devez payer l'API Claude selon votre utilisation réelle.
-
-### Coûts API Claude (Anthropic)
-
-Les coûts suivants s'appliquent **en plus** des quotas applicatifs:
-
-| Ressource | Coût |
-|-----------|------|
-| **Input tokens** | $3 / million tokens (~750,000 mots) |
-| **Output tokens** | $15 / million tokens (~750,000 mots) |
-| **Crédit initial** | $5 offerts à l'inscription |
-
-**Estimation de coûts typiques**:
-- Génération de 1 flashcard: ~0.5¢ (input) + ~1¢ (output) = **1.5¢**
-- Génération de 1 quiz (10 questions): ~1¢ (input) + ~3¢ (output) = **4¢**
-- Résumé d'une note (500 mots): ~0.3¢ (input) + ~0.6¢ (output) = **0.9¢**
-
-**Exemple mensuel** (utilisateur PREMIUM avec 200 req/jour):
-- 100 flashcards/jour = $1.50/jour = **$45/mois** en coûts API
-- 50 quiz/jour = $2/jour = **$60/mois** en coûts API
-
----
-
-## 🛠️ Commandes Utiles
-
-### Docker
 ```bash
-# Démarrer tous les services
-docker-compose up -d
-
-# Arrêter tous les services
-docker-compose down
-
-# Voir les logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
-
-# Rebuild après changement de code
-docker-compose up -d --build
-
-# Accéder au shell backend
-docker-compose exec backend bash
-
-# Exécuter les migrations
-docker-compose exec backend alembic upgrade head
-```
-
-### Backend (dans le conteneur)
-```bash
-# Shell interactif Python
-docker-compose exec backend python
-
-# Créer une migration
-docker-compose exec backend alembic revision --autogenerate -m "description"
-
-# Tests
-docker-compose exec backend pytest
+# 1. Fork
+# 2. Branch
+git checkout -b feature/AmazingFeature
+# 3. Commit
+git commit -m 'feat: Add AmazingFeature'
+# 4. Push
+git push origin feature/AmazingFeature
+# 5. Pull Request
 ```
 
 ---
 
-## 🎯 Fonctionnalités Futures
+## License
 
-- [ ] Mode hors ligne (PWA)
-- [ ] Export PDF avancé avec templates
-- [ ] Import depuis Notion, OneNote
-- [ ] Synchronisation calendrier (Google Calendar, Outlook)
-- [ ] Application mobile (React Native)
-- [ ] Intégration avec GPT-4 en plus de Gemini
-- [ ] Générateur de plans d'étude personnalisés
-- [ ] Système de récompenses et challenges
-- [ ] Marketplace de contenus éducatifs
-- [ ] Analytics avancés avec graphiques
+MIT License
 
 ---
 
-## 📝 Changelog
-
-### Version 1.1.0 (2025-11-27) - Migration Claude AI
-#### 🚀 Changements majeurs
-- **Migration de Gemini vers Claude Sonnet 4.5** pour toutes les fonctionnalités IA
-- Amélioration significative de la qualité des générations (flashcards, quiz, résumés)
-- Explications plus pédagogiques et contextualisées
-
-#### 🔧 Modifications techniques
-- Remplacement de `google-generativeai` par `anthropic==0.39.0`
-- Refonte complète de `ai_service.py` avec l'API Anthropic
-- Variable d'environnement: `ANTHROPIC_API_KEY` remplace `GOOGLE_API_KEY`
-- Modèle utilisé: `claude-sonnet-4-20250514`
-
-#### 📊 Tarification
-- Modèle pay-as-you-go (pas de tier gratuit)
-- Input: $3/million tokens | Output: $15/million tokens
-- Crédit initial de $5 offert par Anthropic
-
-### Version 1.0.0 (2025-11-27)
-#### ✨ Nouvelles fonctionnalités
-- Création des pages manquantes: `/flashcards/new`, `/quizzes/new`, `/profile`
-- Hub IA complet avec génération de contenu
-- Composant Switch pour les toggles
-- Quick Actions sur le dashboard
-- Navigation mise à jour avec Hub IA et Profil
-
-#### 🐛 Corrections
-- Fix erreur Tabs `onValueChange is not a function`
-- Fix AttributeError `author_id` → `user_id` dans l'API notes
-- Amélioration du chaînage optionnel dans les composants
-
-#### 📚 Documentation
-- README complet créé
-- Identifiants de test ajoutés
-- Documentation API enrichie
-
----
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues!
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/AmazingFeature`)
-3. Commit vos changements (`git commit -m 'feat: Add AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
-
----
-
-## 📄 License
-
-Distribué sous licence MIT. Voir `LICENSE` pour plus d'informations.
-
----
-
-## 👨‍💻 Auteurs
+## Auteurs
 
 **Study Master Team**
 
-Développé avec l'aide de Claude Code (Anthropic)
-
----
-
-## 🙏 Remerciements
-
-- [FastAPI](https://fastapi.tiangolo.com/) - Framework backend
-- [Next.js](https://nextjs.org/) - Framework React
-- [shadcn/ui](https://ui.shadcn.com/) - Composants UI
-- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS
-- [Anthropic Claude](https://www.anthropic.com/claude) - IA générative de haute qualité
-- [Lucide](https://lucide.dev/) - Icônes
-
----
-
-## 📞 Support
-
-Pour toute question ou problème:
-- 📧 Email: support@studymaster.com
-- 💬 Discord: [Rejoindre](https://discord.gg/studymaster)
-- 🐛 Issues: [GitHub Issues](https://github.com/studymaster/issues)
+Developpe avec Claude Code (Anthropic)
 
 ---
 
 <p align="center">
-  Fait avec ❤️ par l'équipe Study Master
-</p>
-
-<p align="center">
-  🤖 Generated with <a href="https://claude.com/claude-code">Claude Code</a>
+  <strong>Study Master v3.0</strong><br>
+  La plateforme d'apprentissage intelligente
 </p>

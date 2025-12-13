@@ -10,6 +10,14 @@ export const metadata: Metadata = {
   title: 'Study Master - Votre assistant d\'apprentissage intelligent',
   description: 'Application d\'apprentissage avec IA, flashcards, quiz et gamification',
   keywords: ['étude', 'apprentissage', 'IA', 'flashcards', 'quiz', 'notes'],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

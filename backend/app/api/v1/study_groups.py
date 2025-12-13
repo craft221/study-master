@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
-from app.models.study_group import StudyGroup, StudyGroupMembership, MembershipRole
+from app.core.datetime_utils import utc_now
+from app.models.user import User, UserProfile
+from app.models.study_group import StudyGroup, StudyGroupMembership, MembershipRole, StudyGroupInvitation, InvitationStatus
 from app.models.subject import Subject
 from app.schemas.collaboration import (
     StudyGroupCreate,
@@ -16,8 +17,12 @@ from app.schemas.collaboration import (
     StudyGroupDetailResponse,
     StudyGroupListResponse,
     StudyGroupMembershipResponse,
-    StudyGroupMemberResponse
+    StudyGroupMemberResponse,
+    StudyGroupInvitationCreate,
+    StudyGroupInvitationResponse
 )
+from app.services.xp_service import award_xp
+from app.services.notification_service import NotificationService
 
 router = APIRouter()
 
@@ -39,13 +44,17 @@ async def create_study_group(
             )
     
     # Créer le groupe
+    # Accéder aux données du profil via le sous-modèle
+    user_university = current_user.profile.university if current_user.profile else None
+    user_promotion = current_user.profile.promotion if current_user.profile else None
+
     new_group = StudyGroup(
         creator_id=current_user.id,
         name=group_data.name,
         description=group_data.description,
         subject_id=group_data.subject_id,
-        university=group_data.university or current_user.university,
-        promotion=group_data.promotion or current_user.promotion,
+        university=group_data.university or user_university,
+        promotion=group_data.promotion or user_promotion,
         max_members=group_data.max_members,
         is_private=group_data.is_private,
         cover_image_url=group_data.cover_image_url,
@@ -64,11 +73,15 @@ async def create_study_group(
     )
     
     db.add(creator_member)
-    
+
     # XP bonus pour création de groupe
-    current_user.total_xp += 50
-    current_user.level = (current_user.total_xp // 100) + 1
-    
+    await award_xp(
+        user=current_user,
+        amount=50,
+        reason="Création d'un groupe d'étude",
+        event_type="study_group_created"
+    )
+
     await db.commit()
     await db.refresh(new_group)
     
@@ -192,12 +205,13 @@ async def get_study_group(
     for member in members:
         user = await db.get(User, member.user_id)
         if user:
+            user_avatar = user.profile.avatar_url if user.profile else None
             member_responses.append(
                 StudyGroupMembershipResponse(
                     id=member.id,
                     user_id=member.user_id,
                     username=user.username,
-                    avatar_url=user.avatar_url,
+                    avatar_url=user_avatar,
                     role=member.role,
                     joined_at=member.joined_at,
                     contribution_score=member.contribution_score
@@ -314,27 +328,46 @@ async def join_study_group(
         )
     
     # Ajouter comme membre
+    from app.core.datetime_utils import utc_now
+    from app.models.collaboration import GroupActivity
+
     new_member = StudyGroupMembership(
         group_id=group_id,
         user_id=current_user.id,
-        role=MembershipRole.MEMBER
+        role=MembershipRole.MEMBER,
+        joined_at=utc_now()
     )
-    
+
     db.add(new_member)
     group.current_members += 1
-    
+
+    # Créer l'activité du groupe
+    activity = GroupActivity(
+        group_id=group_id,
+        user_id=current_user.id,
+        activity_type="member_joined",
+        description=f"{current_user.username} a rejoint le groupe",
+        activity_metadata={"member_id": current_user.id}
+    )
+    db.add(activity)
+
     # XP bonus
-    current_user.total_xp += 10
-    current_user.level = (current_user.total_xp // 100) + 1
-    
+    await award_xp(
+        user=current_user,
+        amount=10,
+        reason="Rejoindre un groupe d'étude",
+        event_type="study_group_joined"
+    )
+
     await db.commit()
     await db.refresh(new_member)
-    
+
+    current_user_avatar = current_user.profile.avatar_url if current_user.profile else None
     return StudyGroupMembershipResponse(
         id=new_member.id,
         user_id=new_member.user_id,
         username=current_user.username,
-        avatar_url=current_user.avatar_url,
+        avatar_url=current_user_avatar,
         role=new_member.role,
         joined_at=new_member.joined_at,
         contribution_score=new_member.contribution_score
@@ -436,7 +469,7 @@ async def share_note_with_group(
 ):
     """Partager une note avec le groupe"""
     from app.models.note import Note
-    from app.models.collaboration import SharedGroupContent
+    from app.models.collaboration import SharedGroupContent, GroupActivity
 
     # Vérifier membership
     member_query = select(StudyGroupMembership).where(
@@ -462,6 +495,9 @@ async def share_note_with_group(
             detail="Note not found"
         )
 
+    # Récupérer le groupe pour mettre à jour les stats
+    group = await db.get(StudyGroup, group_id)
+
     # Créer le partage
     shared_content = SharedGroupContent(
         group_id=group_id,
@@ -470,12 +506,31 @@ async def share_note_with_group(
         content_id=note.id,
         content_data={"title": note.title, "content": note.content}
     )
-
     db.add(shared_content)
 
+    # Mettre à jour les statistiques du groupe
+    group.total_shared_notes = (group.total_shared_notes or 0) + 1
+
+    # Créer l'activité du groupe
+    activity = GroupActivity(
+        group_id=group_id,
+        user_id=current_user.id,
+        activity_type="note_shared",
+        description=f"{current_user.username} a partagé une note: {note.title}",
+        activity_metadata={"note_id": note.id, "note_title": note.title}
+    )
+    db.add(activity)
+
+    # Mettre à jour le score de contribution du membre
+    member.contribution_score = (member.contribution_score or 0) + 5
+
     # XP bonus
-    current_user.total_xp += 5
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Partage d'une note dans un groupe",
+        event_type="note_shared"
+    )
 
     await db.commit()
     await db.refresh(shared_content)
@@ -579,8 +634,8 @@ async def share_flashcards_with_group(
     db: AsyncSession = Depends(get_db)
 ):
     """Partager un deck de flashcards avec le groupe"""
-    from app.models.flashcard import FlashcardDeck
-    from app.models.collaboration import SharedGroupContent
+    from app.models.flashcard import Flashcard
+    from app.models.collaboration import SharedGroupContent, GroupActivity
 
     # Vérifier membership
     member_query = select(StudyGroupMembership).where(
@@ -598,28 +653,63 @@ async def share_flashcards_with_group(
             detail="You are not a member of this group"
         )
 
-    # Vérifier le deck
-    deck = await db.get(FlashcardDeck, deck_data["deck_id"])
-    if not deck or deck.user_id != current_user.id:
+    # Le deck_id est en fait le deck_name (string)
+    deck_name = str(deck_data["deck_id"])
+
+    # Vérifier que le deck existe (au moins une carte avec ce deck_name)
+    cards_query = select(Flashcard).where(
+        and_(
+            Flashcard.user_id == current_user.id,
+            Flashcard.deck_name == deck_name
+        )
+    )
+    cards_result = await db.execute(cards_query)
+    cards = cards_result.scalars().all()
+
+    if not cards:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard deck not found"
         )
+
+    card_count = len(cards)
+
+    # Récupérer le groupe pour mettre à jour les stats
+    group = await db.get(StudyGroup, group_id)
 
     # Créer le partage
     shared_content = SharedGroupContent(
         group_id=group_id,
         user_id=current_user.id,
         content_type="flashcard_deck",
-        content_id=deck.id,
-        content_data={"name": deck.name, "card_count": deck.card_count}
+        content_id=0,  # Pas d'ID car ce n'est pas une entité avec ID
+        content_data={"name": deck_name, "card_count": card_count}
     )
-
     db.add(shared_content)
 
+    # Mettre à jour les statistiques du groupe
+    group.total_shared_notes = (group.total_shared_notes or 0) + 1
+
+    # Créer l'activité du groupe
+    activity = GroupActivity(
+        group_id=group_id,
+        user_id=current_user.id,
+        activity_type="flashcard_shared",
+        description=f"{current_user.username} a partagé un deck: {deck_name} ({card_count} cartes)",
+        activity_metadata={"deck_name": deck_name, "card_count": card_count}
+    )
+    db.add(activity)
+
+    # Mettre à jour le score de contribution du membre
+    member.contribution_score = (member.contribution_score or 0) + 5
+
     # XP bonus
-    current_user.total_xp += 5
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Partage de flashcards dans un groupe",
+        event_type="flashcards_shared"
+    )
 
     await db.commit()
     await db.refresh(shared_content)
@@ -688,7 +778,7 @@ async def copy_shared_flashcards(
     db: AsyncSession = Depends(get_db)
 ):
     """Copier un deck partagé dans sa collection"""
-    from app.models.flashcard import FlashcardDeck, Flashcard
+    from app.models.flashcard import Flashcard
     from app.models.collaboration import SharedGroupContent
 
     # Vérifier membership
@@ -715,44 +805,51 @@ async def copy_shared_flashcards(
             detail="Shared deck not found"
         )
 
-    # Récupérer le deck original
-    original_deck = await db.get(FlashcardDeck, shared.content_id)
-    if not original_deck:
+    # Récupérer le deck_name depuis content_data
+    original_deck_name = shared.content_data.get("name")
+    if not original_deck_name:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Original deck not found"
         )
 
-    # Créer une copie
-    new_deck = FlashcardDeck(
-        user_id=current_user.id,
-        name=f"{original_deck.name} (copie)",
-        description=original_deck.description,
-        subject_id=original_deck.subject_id,
-        card_count=original_deck.card_count
+    # Récupérer les cartes originales de l'utilisateur qui a partagé
+    original_cards_query = select(Flashcard).where(
+        and_(
+            Flashcard.user_id == shared.user_id,
+            Flashcard.deck_name == original_deck_name
+        )
     )
+    original_cards_result = await db.execute(original_cards_query)
+    original_cards = original_cards_result.scalars().all()
 
-    db.add(new_deck)
-    await db.flush()
+    if not original_cards:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original deck cards not found"
+        )
+
+    # Créer un nouveau deck_name pour l'utilisateur courant
+    new_deck_name = f"{original_deck_name} (copie)"
 
     # Copier les flashcards
-    cards_query = select(Flashcard).where(Flashcard.deck_id == original_deck.id)
-    cards_result = await db.execute(cards_query)
-    original_cards = cards_result.scalars().all()
-
     for card in original_cards:
         new_card = Flashcard(
-            deck_id=new_deck.id,
-            question=card.question,
-            answer=card.answer,
-            difficulty=card.difficulty
+            user_id=current_user.id,
+            deck_name=new_deck_name,
+            front=card.front,
+            back=card.back,
+            hint=card.hint,
+            explanation=card.explanation,
+            subject_id=card.subject_id,
+            tags=card.tags,
+            is_ai_generated=card.is_ai_generated
         )
         db.add(new_card)
 
     await db.commit()
-    await db.refresh(new_deck)
 
-    return {"message": "Deck copied successfully", "deck_id": new_deck.id}
+    return {"message": "Deck copied successfully", "deck_name": new_deck_name}
 
 
 # ============================================
@@ -808,8 +905,12 @@ async def create_group_session(
     db.add(participant)
 
     # XP bonus
-    current_user.total_xp += 10
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=10,
+        reason="Création d'une session de groupe",
+        event_type="group_session_created"
+    )
 
     await db.commit()
     await db.refresh(session)
@@ -943,8 +1044,12 @@ async def join_group_session(
     db.add(participant)
 
     # XP bonus
-    current_user.total_xp += 5
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Participation à une session de groupe",
+        event_type="group_session_joined"
+    )
 
     await db.commit()
 
@@ -1063,8 +1168,12 @@ async def share_quiz_with_group(
     db.add(shared_content)
 
     # XP bonus
-    current_user.total_xp += 5
-    current_user.level = (current_user.total_xp // 100) + 1
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Partage d'un quiz dans un groupe",
+        event_type="quiz_shared"
+    )
 
     await db.commit()
     await db.refresh(shared_content)
@@ -1188,3 +1297,345 @@ async def get_group_activities(
         })
 
     return activities_data
+
+
+# ============================================
+# GROUP INVITATIONS
+# ============================================
+
+@router.post("/{group_id}/invite", response_model=StudyGroupInvitationResponse)
+async def invite_user_to_group(
+    group_id: int,
+    invitation_data: StudyGroupInvitationCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Inviter un utilisateur à rejoindre le groupe"""
+    # Vérifier que le groupe existe
+    group = await db.get(StudyGroup, group_id)
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Study group not found"
+        )
+
+    # Vérifier que l'utilisateur actuel est membre du groupe
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be a member to invite others"
+        )
+
+    # Vérifier que l'invité existe
+    invitee = await db.get(User, invitation_data.invitee_id)
+    if not invitee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Vérifier que l'invité n'est pas déjà membre
+    existing_member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == invitation_data.invitee_id
+        )
+    )
+    existing_member_result = await db.execute(existing_member_query)
+    if existing_member_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is already a member of this group"
+        )
+
+    # Vérifier qu'il n'y a pas déjà une invitation en attente
+    existing_inv_query = select(StudyGroupInvitation).where(
+        and_(
+            StudyGroupInvitation.group_id == group_id,
+            StudyGroupInvitation.invitee_id == invitation_data.invitee_id,
+            StudyGroupInvitation.status == "pending"
+        )
+    )
+    existing_inv_result = await db.execute(existing_inv_query)
+    if existing_inv_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An invitation is already pending for this user"
+        )
+
+    # Vérifier la capacité du groupe
+    if group.current_members >= group.max_members:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group is full"
+        )
+
+    # Créer l'invitation
+    now = utc_now()
+    invitation = StudyGroupInvitation(
+        group_id=group_id,
+        inviter_id=current_user.id,
+        invitee_id=invitation_data.invitee_id,
+        message=invitation_data.message,
+        status="pending",
+        created_at=now,
+        expires_at=now + timedelta(days=7)
+    )
+
+    db.add(invitation)
+    await db.flush()
+
+    # Envoyer une notification à l'invité
+    notification_service = NotificationService(db)
+    await notification_service.create_notification(
+        user_id=invitation_data.invitee_id,
+        notification_type="group_invitation",
+        title=f"Invitation au groupe {group.name}",
+        message=f"{current_user.username} vous invite à rejoindre le groupe d'étude {group.name}",
+        data={
+            "invitation_id": invitation.id,
+            "group_id": group_id,
+            "group_name": group.name,
+            "inviter_username": current_user.username
+        },
+        priority="high"
+    )
+
+    await db.commit()
+    await db.refresh(invitation)
+
+    current_user_avatar = current_user.profile.avatar_url if current_user.profile else None
+
+    return StudyGroupInvitationResponse(
+        id=invitation.id,
+        group_id=group_id,
+        group_name=group.name,
+        inviter_id=current_user.id,
+        inviter_username=current_user.username,
+        inviter_avatar=current_user_avatar,
+        invitee_id=invitation_data.invitee_id,
+        invitee_username=invitee.username,
+        status=invitation.status,
+        message=invitation.message,
+        created_at=invitation.created_at,
+        expires_at=invitation.expires_at,
+        responded_at=invitation.responded_at
+    )
+
+
+@router.get("/invitations/received", response_model=List[StudyGroupInvitationResponse])
+async def get_my_group_invitations(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupérer mes invitations reçues en attente"""
+    now = utc_now()
+
+    query = select(StudyGroupInvitation).where(
+        and_(
+            StudyGroupInvitation.invitee_id == current_user.id,
+            StudyGroupInvitation.status == "pending",
+            StudyGroupInvitation.expires_at > now
+        )
+    ).order_by(StudyGroupInvitation.created_at.desc())
+
+    result = await db.execute(query)
+    invitations = result.scalars().all()
+
+    # Enrichir avec les infos
+    invitations_data = []
+    for inv in invitations:
+        group = await db.get(StudyGroup, inv.group_id)
+        inviter = await db.get(User, inv.inviter_id)
+        inviter_avatar = inviter.profile.avatar_url if inviter and inviter.profile else None
+
+        invitations_data.append(StudyGroupInvitationResponse(
+            id=inv.id,
+            group_id=inv.group_id,
+            group_name=group.name if group else "Unknown",
+            inviter_id=inv.inviter_id,
+            inviter_username=inviter.username if inviter else "Unknown",
+            inviter_avatar=inviter_avatar,
+            invitee_id=inv.invitee_id,
+            invitee_username=current_user.username,
+            status=inv.status,
+            message=inv.message,
+            created_at=inv.created_at,
+            expires_at=inv.expires_at,
+            responded_at=inv.responded_at
+        ))
+
+    return invitations_data
+
+
+@router.post("/invitations/{invitation_id}/accept", response_model=StudyGroupMembershipResponse)
+async def accept_group_invitation(
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Accepter une invitation à rejoindre un groupe"""
+    invitation = await db.get(StudyGroupInvitation, invitation_id)
+
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invitation not found"
+        )
+
+    if invitation.invitee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This invitation is not for you"
+        )
+
+    if invitation.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation has already been processed"
+        )
+
+    now = utc_now()
+    if invitation.expires_at < now:
+        invitation.status = "expired"
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation has expired"
+        )
+
+    # Vérifier que le groupe existe toujours
+    group = await db.get(StudyGroup, invitation.group_id)
+    if not group or group.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group is no longer available"
+        )
+
+    # Vérifier la capacité
+    if group.current_members >= group.max_members:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Group is full"
+        )
+
+    # Vérifier si déjà membre
+    existing_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == invitation.group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    existing_result = await db.execute(existing_query)
+    if existing_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already a member of this group"
+        )
+
+    # Mettre à jour l'invitation
+    invitation.status = "accepted"
+    invitation.responded_at = now
+
+    # Créer le membership
+    from app.models.collaboration import GroupActivity
+
+    new_member = StudyGroupMembership(
+        group_id=invitation.group_id,
+        user_id=current_user.id,
+        role=MembershipRole.MEMBER,
+        joined_at=now
+    )
+
+    db.add(new_member)
+    group.current_members += 1
+
+    # Créer l'activité du groupe
+    activity = GroupActivity(
+        group_id=invitation.group_id,
+        user_id=current_user.id,
+        activity_type="member_joined",
+        description=f"{current_user.username} a rejoint le groupe via invitation",
+        activity_metadata={"member_id": current_user.id, "invited_by": invitation.inviter_id}
+    )
+    db.add(activity)
+
+    # XP bonus
+    await award_xp(
+        user=current_user,
+        amount=10,
+        reason="Rejoindre un groupe d'étude via invitation",
+        event_type="study_group_joined"
+    )
+
+    # Notifier l'inviteur
+    notification_service = NotificationService(db)
+    await notification_service.create_notification(
+        user_id=invitation.inviter_id,
+        notification_type="invitation_accepted",
+        title="Invitation acceptée",
+        message=f"{current_user.username} a accepté votre invitation et a rejoint {group.name}",
+        data={
+            "group_id": invitation.group_id,
+            "group_name": group.name,
+            "new_member_username": current_user.username
+        }
+    )
+
+    await db.commit()
+    await db.refresh(new_member)
+
+    current_user_avatar = current_user.profile.avatar_url if current_user.profile else None
+    return StudyGroupMembershipResponse(
+        id=new_member.id,
+        user_id=new_member.user_id,
+        username=current_user.username,
+        avatar_url=current_user_avatar,
+        role=new_member.role,
+        joined_at=new_member.joined_at,
+        contribution_score=new_member.contribution_score
+    )
+
+
+@router.post("/invitations/{invitation_id}/decline", status_code=status.HTTP_204_NO_CONTENT)
+async def decline_group_invitation(
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Refuser une invitation"""
+    invitation = await db.get(StudyGroupInvitation, invitation_id)
+
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invitation not found"
+        )
+
+    if invitation.invitee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This invitation is not for you"
+        )
+
+    if invitation.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation has already been processed"
+        )
+
+    invitation.status = "declined"
+    invitation.responded_at = utc_now()
+
+    await db.commit()
+
+    return None

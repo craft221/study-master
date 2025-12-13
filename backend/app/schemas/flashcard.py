@@ -48,14 +48,22 @@ class FlashcardUpdate(BaseModel):
 
 
 class FlashcardResponse(FlashcardBase):
-    """Schéma de réponse pour Flashcard"""
+    """Schéma de réponse pour Flashcard (avec métriques FSRS)"""
     id: int
     user_id: int
     status: FlashcardStatus
+
+    # FSRS Core Parameters
+    stability: Optional[float] = 0.0  # Durée estimée avant oubli (jours)
+    fsrs_difficulty: Optional[float] = 5.0  # Difficulté intrinsèque (1-10)
+
+    # Legacy SM-2 fields (pour rétrocompatibilité)
     ease_factor: float
     interval: int
     repetitions: int
-    due_date: datetime
+    lapses: Optional[int] = 0  # Nombre d'échecs
+
+    due_date: Optional[datetime]
     last_reviewed_at: Optional[datetime]
     next_review_at: Optional[datetime]
     total_reviews: int
@@ -98,8 +106,17 @@ class FlashcardReviewResponse(BaseModel):
     next_review_in_days: int
 
 
+class FSRSMetrics(BaseModel):
+    """Métriques FSRS spécifiques"""
+    stability: float  # Durée estimée avant oubli (jours)
+    difficulty: float  # Difficulté intrinsèque (1-10)
+    retrievability: float  # Probabilité de rappel actuelle (%)
+    lapses: int  # Nombre d'échecs
+    stability_display: str  # Affichage formaté de la stabilité
+
+
 class FlashcardStatsResponse(BaseModel):
-    """Schéma pour les statistiques d'une flashcard"""
+    """Schéma pour les statistiques d'une flashcard (avec métriques FSRS)"""
     flashcard_id: int
     total_reviews: int
     correct_reviews: int
@@ -114,6 +131,8 @@ class FlashcardStatsResponse(BaseModel):
     next_review_at: Optional[datetime]
     difficulty_breakdown: dict
     recent_reviews: List[dict]
+    # FSRS metrics
+    fsrs_metrics: Optional[FSRSMetrics] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -134,3 +153,26 @@ class FlashcardReviewHistoryResponse(BaseModel):
     reviewed_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ========== DECK SCHEMAS ==========
+
+class SubjectInfo(BaseModel):
+    """Info basique d'une matière"""
+    id: int
+    name: str
+    color: str
+
+
+class FlashcardDeckResponse(BaseModel):
+    """Schéma de réponse pour un deck de flashcards"""
+    id: str  # deck_name utilisé comme id
+    title: str  # deck_name
+    description: str
+    subject_id: Optional[int]
+    subject: Optional[SubjectInfo]
+    total_cards: int
+    cards_due: int
+    mastered_cards: int
+    created_at: Optional[datetime]  # Peut être None pour les anciennes flashcards
+    last_reviewed_at: Optional[datetime]

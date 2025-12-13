@@ -5,6 +5,8 @@ Utilise ReportLab pour générer des PDFs formatés
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import io
+
+from app.core.datetime_utils import utc_now
 from reportlab.lib.pagesizes import A4, letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
@@ -213,7 +215,7 @@ class PDFExportService:
         # Pied de page
         story.append(Spacer(1, 0.5*inch))
         story.append(Paragraph(
-            f"Exporté le {datetime.now().strftime('%d/%m/%Y à %H:%M')} | Study Master",
+            f"Exporté le {utc_now().strftime('%d/%m/%Y à %H:%M')} | Study Master",
             self.styles['Metadata']
         ))
         
@@ -259,7 +261,7 @@ class PDFExportService:
         story.append(Paragraph(title, self.styles['CustomTitle']))
         story.append(Spacer(1, 0.3*inch))
         story.append(Paragraph(
-            f"{len(notes)} note(s) • Exporté le {datetime.now().strftime('%d/%m/%Y')}",
+            f"{len(notes)} note(s) • Exporté le {utc_now().strftime('%d/%m/%Y')}",
             self.styles['Metadata']
         ))
         story.append(PageBreak())

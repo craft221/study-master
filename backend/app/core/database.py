@@ -26,6 +26,9 @@ AsyncSessionLocal = sessionmaker(
     autoflush=False,
 )
 
+# Alias pour compatibilité avec les tasks Celery
+async_session_maker = AsyncSessionLocal
+
 # Base pour les modèles
 Base = declarative_base()
 

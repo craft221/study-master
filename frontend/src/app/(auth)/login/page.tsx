@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -19,6 +20,7 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,26 +43,24 @@ export default function LoginPage() {
         password: data.password
       })
 
-      console.log('🔑 Login successful, saving token:', {
-        access_token: response.data.access_token.substring(0, 20) + '...'
-      })
-
+      // Sauvegarder les tokens (ne pas logger les valeurs en production)
       localStorage.setItem('access_token', response.data.access_token)
+      localStorage.setItem('refresh_token', response.data.refresh_token)
 
-      // Vérifier que le token est bien sauvegardé
-      const savedToken = localStorage.getItem('access_token')
-      console.log('✅ Token saved in localStorage:', !!savedToken)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 Login successful, tokens saved')
+      }
 
-      toast.success('Connexion réussie!')
+      toast.success(t('auth.loginSuccess'))
 
       // Petit délai pour s'assurer que le localStorage est bien synchronisé
+      const REDIRECT_DELAY_MS = 100
       setTimeout(() => {
-        console.log('🚀 Redirecting to dashboard...')
         router.push('/dashboard')
-      }, 100)
+      }, REDIRECT_DELAY_MS)
     } catch (err: any) {
       console.error('Login error:', err)
-      let message = 'Erreur de connexion'
+      let message = t('auth.invalidCredentials')
 
       if (err.response?.data?.detail) {
         // Si detail est un objet, convertir en string
@@ -83,10 +83,10 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6">
             <BookOpen className="h-10 w-10 text-primary-600" />
-            <span className="text-3xl font-bold text-gray-900">Study Master</span>
+            <span className="text-3xl font-bold text-gray-900">{t('common.appName')}</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bon retour!</h1>
-          <p className="text-gray-600">Connectez-vous pour continuer votre apprentissage</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2" suppressHydrationWarning>{t('dashboard.welcomeBack')}!</h1>
+          <p className="text-gray-600">{t('auth.login')}</p>
         </div>
 
         {/* Form Card */}
@@ -102,7 +102,7 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -111,7 +111,7 @@ export default function LoginPage() {
                   type="email"
                   id="email"
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="votre@email.com"
+                  placeholder="email@example.com"
                 />
               </div>
               {errors.email && (
@@ -122,7 +122,7 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -140,16 +140,9 @@ export default function LoginPage() {
             </div>
 
             {/* Remember & Forgot */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
-              </label>
+            <div className="flex items-center justify-end">
               <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
-                Mot de passe oublié?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
 
@@ -160,10 +153,10 @@ export default function LoginPage() {
               className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <span>Connexion...</span>
+                <span>{t('common.loading')}</span>
               ) : (
                 <>
-                  <span>Se connecter</span>
+                  <span>{t('auth.login')}</span>
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -176,26 +169,18 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Ou</span>
+              <span className="px-2 bg-white text-gray-500">{t('common.or')}</span>
             </div>
           </div>
 
           {/* Register Link */}
           <p className="text-center text-gray-600">
-            Pas encore de compte?{' '}
+            {t('auth.noAccount')}{' '}
             <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold">
-              S'inscrire gratuitement
+              {t('auth.register')}
             </Link>
           </p>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          En vous connectant, vous acceptez nos{' '}
-          <Link href="/terms" className="text-primary-600 hover:underline">
-            Conditions d'utilisation
-          </Link>
-        </p>
       </div>
     </div>
   )

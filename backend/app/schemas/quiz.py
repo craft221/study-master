@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from app.models.quiz import QuizDifficulty, QuizType, QuestionType
 
@@ -100,22 +100,36 @@ class QuizListResponse(BaseModel):
     page_size: int
 
 
+class SubjectInfo(BaseModel):
+    """Info basique d'une matière"""
+    id: int
+    name: str
+    color: str
+
+
+class AttemptInfo(BaseModel):
+    """Info basique d'une tentative"""
+    id: int
+    score: float
+    is_completed: bool
+    created_at: Optional[Union[datetime, str]] = None  # datetime ou ISO string, peut être None
+
+
 class QuizSummaryResponse(BaseModel):
     """Schéma résumé pour Quiz (sans les questions complètes)"""
     id: int
     title: str
     description: Optional[str]
-    quiz_type: QuizType
-    difficulty: QuizDifficulty
-    questions_count: int
-    total_points: int
-    passing_score: int
+    subject: Optional[SubjectInfo] = None  # Peut être None si matière supprimée
+    total_questions: int
     time_limit_minutes: Optional[int]
-    total_attempts: int
-    average_score: float
-    highest_score: float
-    is_published: bool
-    created_at: datetime
+    attempts: List[AttemptInfo]
+    best_score: Optional[float]
+    created_at: Optional[Union[datetime, str]] = None  # datetime ou ISO string
+    # Champs viraux
+    share_code: Optional[str] = None
+    is_public: bool = False
+    total_plays: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -137,6 +151,7 @@ class QuizAttemptCreate(BaseModel):
 class QuizAttemptSubmit(BaseModel):
     """Schéma pour soumettre les réponses d'un quiz"""
     answers: List[AnswerSchema] = Field(..., min_items=1)
+    total_time_seconds: Optional[int] = Field(None, ge=0, description="Temps total passé en secondes")
 
 
 class QuizAttemptResponse(BaseModel):

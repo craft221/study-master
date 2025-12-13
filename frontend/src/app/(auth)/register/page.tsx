@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 const registerSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -27,6 +28,7 @@ type RegisterForm = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -50,10 +52,10 @@ export default function RegisterPage() {
       localStorage.setItem('access_token', response.data.access_token)
       localStorage.setItem('refresh_token', response.data.refresh_token)
       
-      toast.success('Compte créé avec succès!')
+      toast.success(t('auth.registerSuccess'))
       router.push('/dashboard')
     } catch (err: any) {
-      const message = err.response?.data?.detail || 'Erreur lors de l\'inscription'
+      const message = err.response?.data?.detail || t('errors.generic')
       setError(message)
       toast.error(message)
     } finally {
@@ -68,10 +70,10 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6">
             <BookOpen className="h-10 w-10 text-primary-600" />
-            <span className="text-3xl font-bold text-gray-900">Study Master</span>
+            <span className="text-3xl font-bold text-gray-900">{t('common.appName')}</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Créer un compte</h1>
-          <p className="text-gray-600">Rejoignez des milliers d'étudiants qui réussissent</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.register')}</h1>
+          <p className="text-gray-600">{t('dashboard.welcome')}</p>
         </div>
 
         {/* Form Card */}
@@ -88,7 +90,7 @@ export default function RegisterPage() {
               {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
+                  {t('auth.email')} *
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -97,7 +99,7 @@ export default function RegisterPage() {
                     type="email"
                     id="email"
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="votre@email.com"
+                    placeholder="email@example.com"
                   />
                 </div>
                 {errors.email && (
@@ -108,7 +110,7 @@ export default function RegisterPage() {
               {/* Username */}
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom d'utilisateur *
+                  {t('auth.username')} *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -129,7 +131,7 @@ export default function RegisterPage() {
             {/* Full Name */}
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
-                Nom complet *
+                {t('auth.fullName')} *
               </label>
               <input
                 {...register('full_name')}
@@ -147,7 +149,7 @@ export default function RegisterPage() {
               {/* Password */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mot de passe *
+                  {t('auth.password')} *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -167,7 +169,7 @@ export default function RegisterPage() {
               {/* Confirm Password */}
               <div>
                 <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmer mot de passe *
+                  {t('auth.confirmPassword')} *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -189,7 +191,7 @@ export default function RegisterPage() {
               {/* University */}
               <div>
                 <label htmlFor="university" className="block text-sm font-medium text-gray-700 mb-2">
-                  Université (optionnel)
+                  {t('profile.university')}
                 </label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -198,7 +200,7 @@ export default function RegisterPage() {
                     type="text"
                     id="university"
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Université de..."
+                    placeholder=""
                   />
                 </div>
               </div>
@@ -206,35 +208,16 @@ export default function RegisterPage() {
               {/* Major */}
               <div>
                 <label htmlFor="major" className="block text-sm font-medium text-gray-700 mb-2">
-                  Filière (optionnel)
+                  {t('profile.major')}
                 </label>
                 <input
                   {...register('major')}
                   type="text"
                   id="major"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Informatique, Médecine..."
+                  placeholder=""
                 />
               </div>
-            </div>
-
-            {/* Terms */}
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                required
-                className="w-4 h-4 mt-1 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <label className="ml-3 text-sm text-gray-600">
-                J'accepte les{' '}
-                <Link href="/terms" className="text-primary-600 hover:underline">
-                  conditions d'utilisation
-                </Link>{' '}
-                et la{' '}
-                <Link href="/privacy" className="text-primary-600 hover:underline">
-                  politique de confidentialité
-                </Link>
-              </label>
             </div>
 
             {/* Submit Button */}
@@ -244,10 +227,10 @@ export default function RegisterPage() {
               className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <span>Création du compte...</span>
+                <span>{t('common.loading')}</span>
               ) : (
                 <>
-                  <span>Créer mon compte</span>
+                  <span>{t('auth.register')}</span>
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -260,15 +243,15 @@ export default function RegisterPage() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Ou</span>
+              <span className="px-2 bg-white text-gray-500">{t('common.or')}</span>
             </div>
           </div>
 
           {/* Login Link */}
           <p className="text-center text-gray-600">
-            Déjà un compte?{' '}
+            {t('auth.hasAccount')}{' '}
             <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-              Se connecter
+              {t('auth.login')}
             </Link>
           </p>
         </div>

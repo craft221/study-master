@@ -15,7 +15,14 @@ import {
   AlertCircle,
   Loader2,
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  Crown,
+  Star,
+  Building,
+  Gift,
+  Clock,
+  BarChart3,
+  ArrowUpRight
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,13 +35,45 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/contexts/LanguageContext'
 
-interface AIQuota {
-  subscription_type: string
+interface SubscriptionInfo {
+  name: string
+  description: string
+  features: string[]
+  color: string
+  icon: string
+  is_premium: boolean
+  starts_at: string | null
+  ends_at: string | null
+  auto_renew: boolean
+}
+
+interface QuotaInfo {
   max_requests_per_day: number
   requests_used_today: number
   requests_remaining: number
+  usage_percentage: number
+  can_use: boolean
+}
+
+interface UsageStats {
+  quiz_generations: number
+  flashcard_generations: number
+  note_summaries: number
+  explanations: number
+}
+
+interface AIQuota {
+  subscription_type: string
+  subscription_info: SubscriptionInfo
+  quota: QuotaInfo
+  usage_stats: UsageStats
   total_requests_all_time: number
+  // Rétrocompatibilité
+  max_requests_per_day: number
+  requests_used_today: number
+  requests_remaining: number
   can_use: boolean
 }
 
@@ -52,6 +91,7 @@ type KnowledgeLevel = 'beginner' | 'intermediate' | 'advanced'
 export default function AIHubPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t, locale } = useTranslation()
 
   const [loading, setLoading] = useState(true)
   const [quota, setQuota] = useState<AIQuota | null>(null)
@@ -82,13 +122,14 @@ export default function AIHubPage() {
         api.get('/notes/', { params: { page: 1, page_size: 100 } })
       ])
 
+      console.log('[AI Hub] Quota data:', quotaRes.data)
       setQuota(quotaRes.data)
       setNotes(notesRes.data.notes || [])
     } catch (error: any) {
       console.error('Error fetching data:', error)
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les données',
+        title: t('common.error'),
+        description: t('ai.loadError'),
         variant: 'destructive'
       })
     } finally {
@@ -99,8 +140,8 @@ export default function AIHubPage() {
   const handleGenerateFlashcards = async () => {
     if (!selectedNoteId) {
       toast({
-        title: 'Note manquante',
-        description: 'Veuillez sélectionner une note',
+        title: t('ai.missingNote'),
+        description: t('ai.pleaseSelectNote'),
         variant: 'destructive'
       })
       return
@@ -115,8 +156,8 @@ export default function AIHubPage() {
       })
 
       toast({
-        title: 'Flashcards générées',
-        description: `${response.data.count} flashcards créées avec succès! +10 XP`,
+        title: t('ai.flashcardsGenerated'),
+        description: t('ai.flashcardsCreatedSuccess', { count: response.data.count }),
       })
 
       // Rafraîchir le quota
@@ -126,8 +167,8 @@ export default function AIHubPage() {
       router.push('/flashcards')
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de la génération',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('ai.generationError'),
         variant: 'destructive'
       })
     } finally {
@@ -138,8 +179,8 @@ export default function AIHubPage() {
   const handleGenerateQuiz = async () => {
     if (!selectedNoteId) {
       toast({
-        title: 'Note manquante',
-        description: 'Veuillez sélectionner une note',
+        title: t('ai.missingNote'),
+        description: t('ai.pleaseSelectNote'),
         variant: 'destructive'
       })
       return
@@ -155,8 +196,8 @@ export default function AIHubPage() {
       })
 
       toast({
-        title: 'Quiz généré',
-        description: `Quiz créé avec succès! +15 XP`,
+        title: t('ai.quizGenerated'),
+        description: t('ai.quizCreatedSuccess'),
       })
 
       // Rafraîchir le quota
@@ -166,8 +207,8 @@ export default function AIHubPage() {
       router.push(`/quizzes/${response.data.quiz.id}`)
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de la génération',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('ai.generationError'),
         variant: 'destructive'
       })
     } finally {
@@ -178,8 +219,8 @@ export default function AIHubPage() {
   const handleSummarizeNote = async () => {
     if (!selectedNoteId) {
       toast({
-        title: 'Note manquante',
-        description: 'Veuillez sélectionner une note',
+        title: t('ai.missingNote'),
+        description: t('ai.pleaseSelectNote'),
         variant: 'destructive'
       })
       return
@@ -193,20 +234,20 @@ export default function AIHubPage() {
       })
 
       toast({
-        title: 'Résumé généré',
-        description: `Résumé de ${response.data.word_count} mots créé`,
+        title: t('ai.summaryGenerated'),
+        description: t('ai.summaryCreatedWords', { count: response.data.word_count }),
       })
 
       // Afficher le résumé dans une alerte
-      alert(`Résumé de "${response.data.note_title}":\n\n${response.data.summary}`)
+      alert(`${t('ai.summaryOf', { title: response.data.note_title })}:\n\n${response.data.summary}`)
 
       // Rafraîchir le quota
       const quotaRes = await api.get('/ai/quota')
       setQuota(quotaRes.data)
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors du résumé',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('ai.summaryError'),
         variant: 'destructive'
       })
     } finally {
@@ -217,8 +258,8 @@ export default function AIHubPage() {
   const handleExtractKeywords = async () => {
     if (!selectedNoteId) {
       toast({
-        title: 'Note manquante',
-        description: 'Veuillez sélectionner une note',
+        title: t('ai.missingNote'),
+        description: t('ai.pleaseSelectNote'),
         variant: 'destructive'
       })
       return
@@ -232,20 +273,20 @@ export default function AIHubPage() {
       })
 
       toast({
-        title: 'Mots-clés extraits',
-        description: `${response.data.keywords.length} mots-clés trouvés`,
+        title: t('ai.keywordsExtracted'),
+        description: t('ai.keywordsFound', { count: response.data.keywords.length }),
       })
 
       // Afficher les mots-clés
-      alert(`Mots-clés de "${response.data.note_title}":\n\n${response.data.keywords.join(', ')}`)
+      alert(`${t('ai.keywordsOf', { title: response.data.note_title })}:\n\n${response.data.keywords.join(', ')}`)
 
       // Rafraîchir le quota
       const quotaRes = await api.get('/ai/quota')
       setQuota(quotaRes.data)
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de l\'extraction',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('ai.extractionError'),
         variant: 'destructive'
       })
     } finally {
@@ -256,8 +297,8 @@ export default function AIHubPage() {
   const handleExplainConcept = async () => {
     if (!concept.trim()) {
       toast({
-        title: 'Concept manquant',
-        description: 'Veuillez entrer un concept à expliquer',
+        title: t('ai.missingConcept'),
+        description: t('ai.pleaseEnterConcept'),
         variant: 'destructive'
       })
       return
@@ -272,19 +313,19 @@ export default function AIHubPage() {
       })
 
       toast({
-        title: 'Explication générée',
+        title: t('ai.explanationGenerated'),
       })
 
       // Afficher l'explication
-      alert(`Explication de "${response.data.concept}":\n\n${response.data.explanation}`)
+      alert(`${t('ai.explanationOf', { concept: response.data.concept })}:\n\n${response.data.explanation}`)
 
       // Rafraîchir le quota
       const quotaRes = await api.get('/ai/quota')
       setQuota(quotaRes.data)
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de l\'explication',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('ai.explanationError'),
         variant: 'destructive'
       })
     } finally {
@@ -294,12 +335,45 @@ export default function AIHubPage() {
 
   const getSubscriptionColor = (type: string) => {
     const colors: Record<string, string> = {
-      free: 'bg-gray-100 text-gray-800',
-      premium: 'bg-blue-100 text-blue-800',
-      premium_plus: 'bg-purple-100 text-purple-800',
-      institutional: 'bg-green-100 text-green-800'
+      free: 'bg-gray-100 text-gray-800 border-gray-300',
+      premium: 'bg-blue-100 text-blue-800 border-blue-300',
+      premium_plus: 'bg-purple-100 text-purple-800 border-purple-300',
+      institutional: 'bg-green-100 text-green-800 border-green-300'
     }
     return colors[type.toLowerCase()] || colors.free
+  }
+
+  const getSubscriptionIcon = (icon: string) => {
+    switch (icon) {
+      case 'crown':
+        return <Crown className="h-5 w-5" />
+      case 'star':
+        return <Star className="h-5 w-5" />
+      case 'building':
+        return <Building className="h-5 w-5" />
+      default:
+        return <Gift className="h-5 w-5" />
+    }
+  }
+
+  const getSubscriptionGradient = (type: string) => {
+    const gradients: Record<string, string> = {
+      free: 'from-gray-50 to-gray-100 border-gray-200',
+      premium: 'from-blue-50 to-indigo-100 border-blue-200',
+      premium_plus: 'from-purple-50 to-pink-100 border-purple-200',
+      institutional: 'from-green-50 to-emerald-100 border-green-200'
+    }
+    return gradients[type.toLowerCase()] || gradients.free
+  }
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return null
+    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' }
+    return new Date(dateStr).toLocaleDateString(localeMap[locale] || 'fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
   }
 
   if (loading) {
@@ -323,75 +397,199 @@ export default function AIHubPage() {
             <Sparkles className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Hub IA</h1>
-            <p className="text-gray-600">Transformez vos notes avec l'intelligence artificielle</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('ai.title')}</h1>
+            <p className="text-gray-600">{t('ai.subtitle')}</p>
           </div>
         </div>
       </div>
 
-      {/* Quota Card */}
+      {/* Subscription & Quota Section */}
       {quota && (
-        <Card className="mb-6 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-purple-600" />
-                  Quota IA
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Subscription Card */}
+          <Card className={`border-2 bg-gradient-to-br ${getSubscriptionGradient(quota.subscription_type)}`}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  {quota.subscription_info && getSubscriptionIcon(quota.subscription_info.icon)}
+                  {t('ai.mySubscription')}
                 </CardTitle>
-                <CardDescription>Utilisation quotidienne de l'IA</CardDescription>
               </div>
-              <Badge className={getSubscriptionColor(quota.subscription_type)}>
-                {quota.subscription_type.toUpperCase()}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">
-                  {quota.requests_used_today} / {quota.max_requests_per_day} requêtes utilisées
-                </span>
-                <span className="font-semibold text-purple-600">
-                  {quota.requests_remaining} restantes
-                </span>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Badge className={`${getSubscriptionColor(quota.subscription_type)} text-base px-3 py-1 border`}>
+                  {quota.subscription_info?.name || quota.subscription_type.toUpperCase()}
+                </Badge>
+                {quota.subscription_info?.is_premium && (
+                  <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {t('ai.active')}
+                  </span>
+                )}
               </div>
-              <Progress value={quotaPercentage} className="h-3" />
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="text-center p-3 bg-white rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {quota.total_requests_all_time}
-                </div>
-                <div className="text-xs text-gray-600">Requêtes totales</div>
-              </div>
-              <div className="text-center p-3 bg-white rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {quota.requests_remaining}
-                </div>
-                <div className="text-xs text-gray-600">Restantes aujourd'hui</div>
-              </div>
-            </div>
+              {quota.subscription_info && (
+                <p className="text-sm text-gray-600">
+                  {quota.subscription_info.description}
+                </p>
+              )}
 
-            {!quota.can_use && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <span className="text-sm text-red-700">
-                  Quota quotidien atteint. Revenez demain ou passez à Premium!
-                </span>
+              {quota.subscription_info?.features && (
+                <ul className="space-y-1">
+                  {quota.subscription_info.features.slice(0, 3).map((feature, idx) => (
+                    <li key={idx} className="text-xs text-gray-600 flex items-center gap-2">
+                      <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {quota.subscription_info?.ends_at && (
+                <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t">
+                  <Clock className="h-3 w-3" />
+                  {t('ai.expiresOn', { date: formatDate(quota.subscription_info.ends_at) || '' })}
+                </div>
+              )}
+
+              {/* Bouton Upgrade - TRÈS VISIBLE */}
+              <div className="pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => router.push('/pricing')}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+                >
+                  ⭐ {t('ai.upgradeToPremium')} ⭐
+                </button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Quota Card */}
+          <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Zap className="h-5 w-5 text-purple-600" />
+                {t('ai.dailyQuota')}
+              </CardTitle>
+              <CardDescription>{t('ai.usageToday')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-600">
+                    {quota.quota?.requests_used_today || quota.requests_used_today} / {quota.quota?.max_requests_per_day || quota.max_requests_per_day}
+                  </span>
+                  <span className="font-semibold text-purple-600">
+                    {quota.quota?.requests_remaining || quota.requests_remaining} {t('ai.remaining')}
+                  </span>
+                </div>
+                <Progress
+                  value={quota.quota?.usage_percentage || quotaPercentage}
+                  className="h-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-white rounded-lg">
+                  <div className="text-xl font-bold text-purple-600">
+                    {quota.quota?.max_requests_per_day || quota.max_requests_per_day}
+                  </div>
+                  <div className="text-xs text-gray-600">{t('ai.limitPerDay')}</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg">
+                  <div className="text-xl font-bold text-green-600">
+                    {quota.quota?.requests_remaining || quota.requests_remaining}
+                  </div>
+                  <div className="text-xs text-gray-600">{t('ai.available')}</div>
+                </div>
+              </div>
+
+              {!(quota.quota?.can_use ?? quota.can_use) && (
+                <div
+                  onClick={() => router.push('/pricing')}
+                  className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
+                >
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                  <span className="text-xs text-red-700">
+                    {t('ai.quotaReached')} <span className="underline font-semibold">{t('ai.goToPremium')} →</span>
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Usage Stats Card */}
+          <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BarChart3 className="h-5 w-5 text-indigo-600" />
+                {t('ai.usageStats')}
+              </CardTitle>
+              <CardDescription>{t('ai.totalRequests', { count: quota.total_requests_all_time })}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-100 rounded">
+                      <CreditCard className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{t('nav.flashcards')}</span>
+                  </div>
+                  <span className="font-semibold text-blue-600">
+                    {quota.usage_stats?.flashcard_generations || 0}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-green-100 rounded">
+                      <Brain className="h-4 w-4 text-green-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{t('nav.quizzes')}</span>
+                  </div>
+                  <span className="font-semibold text-green-600">
+                    {quota.usage_stats?.quiz_generations || 0}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-yellow-100 rounded">
+                      <FileText className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{t('ai.summaries')}</span>
+                  </div>
+                  <span className="font-semibold text-yellow-600">
+                    {quota.usage_stats?.note_summaries || 0}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-indigo-100 rounded">
+                      <Lightbulb className="h-4 w-4 text-indigo-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{t('ai.explanations')}</span>
+                  </div>
+                  <span className="font-semibold text-indigo-600">
+                    {quota.usage_stats?.explanations || 0}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* AI Features Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="generate">Générer</TabsTrigger>
-          <TabsTrigger value="analyze">Analyser</TabsTrigger>
-          <TabsTrigger value="explain">Expliquer</TabsTrigger>
+          <TabsTrigger value="generate">{t('ai.generate')}</TabsTrigger>
+          <TabsTrigger value="analyze">{t('ai.analyze')}</TabsTrigger>
+          <TabsTrigger value="explain">{t('ai.explain')}</TabsTrigger>
         </TabsList>
 
         {/* Generate Tab */}
@@ -406,18 +604,18 @@ export default function AIHubPage() {
                       <CreditCard className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <CardTitle>Générer des Flashcards</CardTitle>
-                      <CardDescription>Créez des flashcards depuis vos notes</CardDescription>
+                      <CardTitle>{t('ai.generateFlashcards')}</CardTitle>
+                      <CardDescription>{t('ai.createFlashcardsFromNotes')}</CardDescription>
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Note source</Label>
+                  <Label>{t('ai.sourceNote')}</Label>
                   <Select value={selectedNoteId} onValueChange={setSelectedNoteId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une note" />
+                      <SelectValue placeholder={t('ai.selectNote')} />
                     </SelectTrigger>
                     <SelectContent>
                       {notes.map((note) => (
@@ -430,7 +628,7 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Nombre de flashcards (1-20)</Label>
+                  <Label>{t('ai.flashcardCount')}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -441,15 +639,15 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Difficulté</Label>
+                  <Label>{t('ai.difficulty')}</Label>
                   <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Facile</SelectItem>
-                      <SelectItem value="medium">Moyen</SelectItem>
-                      <SelectItem value="hard">Difficile</SelectItem>
+                      <SelectItem value="easy">{t('ai.easy')}</SelectItem>
+                      <SelectItem value="medium">{t('ai.medium')}</SelectItem>
+                      <SelectItem value="hard">{t('ai.hard')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -462,12 +660,12 @@ export default function AIHubPage() {
                   {processing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Génération en cours...
+                      {t('ai.generating')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Générer les Flashcards
+                      {t('ai.generateFlashcardsBtn')}
                     </>
                   )}
                 </Button>
@@ -483,18 +681,18 @@ export default function AIHubPage() {
                       <Brain className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <CardTitle>Générer un Quiz</CardTitle>
-                      <CardDescription>Créez un quiz depuis vos notes</CardDescription>
+                      <CardTitle>{t('ai.generateQuiz')}</CardTitle>
+                      <CardDescription>{t('ai.createQuizFromNotes')}</CardDescription>
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Note source</Label>
+                  <Label>{t('ai.sourceNote')}</Label>
                   <Select value={selectedNoteId} onValueChange={setSelectedNoteId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une note" />
+                      <SelectValue placeholder={t('ai.selectNote')} />
                     </SelectTrigger>
                     <SelectContent>
                       {notes.map((note) => (
@@ -507,7 +705,7 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Nombre de questions (5-20)</Label>
+                  <Label>{t('ai.questionCount')}</Label>
                   <Input
                     type="number"
                     min="5"
@@ -518,15 +716,15 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Difficulté</Label>
+                  <Label>{t('ai.difficulty')}</Label>
                   <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Facile</SelectItem>
-                      <SelectItem value="medium">Moyen</SelectItem>
-                      <SelectItem value="hard">Difficile</SelectItem>
+                      <SelectItem value="easy">{t('ai.easy')}</SelectItem>
+                      <SelectItem value="medium">{t('ai.medium')}</SelectItem>
+                      <SelectItem value="hard">{t('ai.hard')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -539,12 +737,12 @@ export default function AIHubPage() {
                   {processing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Génération en cours...
+                      {t('ai.generating')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Générer le Quiz
+                      {t('ai.generateQuizBtn')}
                     </>
                   )}
                 </Button>
@@ -564,17 +762,17 @@ export default function AIHubPage() {
                     <FileText className="h-6 w-6 text-yellow-600" />
                   </div>
                   <div>
-                    <CardTitle>Résumer une Note</CardTitle>
-                    <CardDescription>Créez un résumé concis</CardDescription>
+                    <CardTitle>{t('ai.summarizeNote')}</CardTitle>
+                    <CardDescription>{t('ai.createConciseSummary')}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Note à résumer</Label>
+                  <Label>{t('ai.noteToSummarize')}</Label>
                   <Select value={selectedNoteId} onValueChange={setSelectedNoteId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une note" />
+                      <SelectValue placeholder={t('ai.selectNote')} />
                     </SelectTrigger>
                     <SelectContent>
                       {notes.map((note) => (
@@ -587,7 +785,7 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Longueur max (mots): {summaryMaxLength}</Label>
+                  <Label>{t('ai.maxLength', { count: summaryMaxLength })}</Label>
                   <Input
                     type="range"
                     min="50"
@@ -606,12 +804,12 @@ export default function AIHubPage() {
                   {processing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Résumé en cours...
+                      {t('ai.summarizing')}
                     </>
                   ) : (
                     <>
                       <FileText className="h-4 w-4 mr-2" />
-                      Résumer la Note
+                      {t('ai.summarizeBtn')}
                     </>
                   )}
                 </Button>
@@ -626,17 +824,17 @@ export default function AIHubPage() {
                     <Key className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <CardTitle>Extraire des Mots-clés</CardTitle>
-                    <CardDescription>Identifiez les concepts clés</CardDescription>
+                    <CardTitle>{t('ai.extractKeywords')}</CardTitle>
+                    <CardDescription>{t('ai.identifyKeyConcepts')}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Note source</Label>
+                  <Label>{t('ai.sourceNote')}</Label>
                   <Select value={selectedNoteId} onValueChange={setSelectedNoteId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une note" />
+                      <SelectValue placeholder={t('ai.selectNote')} />
                     </SelectTrigger>
                     <SelectContent>
                       {notes.map((note) => (
@@ -649,7 +847,7 @@ export default function AIHubPage() {
                 </div>
 
                 <div>
-                  <Label>Nombre de mots-clés (3-20)</Label>
+                  <Label>{t('ai.keywordCount')}</Label>
                   <Input
                     type="number"
                     min="3"
@@ -667,12 +865,12 @@ export default function AIHubPage() {
                   {processing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Extraction en cours...
+                      {t('ai.extracting')}
                     </>
                   ) : (
                     <>
                       <Key className="h-4 w-4 mr-2" />
-                      Extraire les Mots-clés
+                      {t('ai.extractBtn')}
                     </>
                   )}
                 </Button>
@@ -690,25 +888,25 @@ export default function AIHubPage() {
                   <Lightbulb className="h-6 w-6 text-indigo-600" />
                 </div>
                 <div>
-                  <CardTitle>Expliquer un Concept</CardTitle>
-                  <CardDescription>Obtenez une explication pédagogique</CardDescription>
+                  <CardTitle>{t('ai.explainConcept')}</CardTitle>
+                  <CardDescription>{t('ai.getPedagogicalExplanation')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Concept à expliquer</Label>
+                <Label>{t('ai.conceptToExplain')}</Label>
                 <Input
-                  placeholder="Ex: La photosynthèse, Les intégrales, etc."
+                  placeholder={t('ai.conceptPlaceholder')}
                   value={concept}
                   onChange={(e) => setConcept(e.target.value)}
                 />
               </div>
 
               <div>
-                <Label>Contexte (optionnel)</Label>
+                <Label>{t('ai.context')}</Label>
                 <Textarea
-                  placeholder="Ajoutez du contexte pour une explication plus précise..."
+                  placeholder={t('ai.contextPlaceholder')}
                   value={conceptContext}
                   onChange={(e) => setConceptContext(e.target.value)}
                   rows={3}
@@ -716,15 +914,15 @@ export default function AIHubPage() {
               </div>
 
               <div>
-                <Label>Niveau de connaissance</Label>
+                <Label>{t('ai.knowledgeLevel')}</Label>
                 <Select value={conceptLevel} onValueChange={(v) => setConceptLevel(v as KnowledgeLevel)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Débutant</SelectItem>
-                    <SelectItem value="intermediate">Intermédiaire</SelectItem>
-                    <SelectItem value="advanced">Avancé</SelectItem>
+                    <SelectItem value="beginner">{t('ai.beginner')}</SelectItem>
+                    <SelectItem value="intermediate">{t('ai.intermediate')}</SelectItem>
+                    <SelectItem value="advanced">{t('ai.advanced')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -737,12 +935,12 @@ export default function AIHubPage() {
                 {processing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Explication en cours...
+                    {t('ai.explaining')}
                   </>
                 ) : (
                   <>
                     <Lightbulb className="h-4 w-4 mr-2" />
-                    Expliquer le Concept
+                    {t('ai.explainBtn')}
                   </>
                 )}
               </Button>
@@ -756,7 +954,7 @@ export default function AIHubPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Fonctionnalités IA Disponibles
+            {t('ai.availableFeatures')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -764,43 +962,43 @@ export default function AIHubPage() {
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Génération de Flashcards</div>
-                <div className="text-xs text-gray-600">1-20 cartes par note</div>
+                <div className="font-semibold text-sm">{t('ai.flashcardGeneration')}</div>
+                <div className="text-xs text-gray-600">{t('ai.flashcardGenerationDesc')}</div>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Génération de Quiz</div>
-                <div className="text-xs text-gray-600">5-20 questions variées</div>
+                <div className="font-semibold text-sm">{t('ai.quizGeneration')}</div>
+                <div className="text-xs text-gray-600">{t('ai.quizGenerationDesc')}</div>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Résumé de Notes</div>
-                <div className="text-xs text-gray-600">Résumés concis et précis</div>
+                <div className="font-semibold text-sm">{t('ai.noteSummary')}</div>
+                <div className="text-xs text-gray-600">{t('ai.noteSummaryDesc')}</div>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Extraction de Mots-clés</div>
-                <div className="text-xs text-gray-600">3-20 mots-clés pertinents</div>
+                <div className="font-semibold text-sm">{t('ai.keywordExtraction')}</div>
+                <div className="text-xs text-gray-600">{t('ai.keywordExtractionDesc')}</div>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Explication de Concepts</div>
-                <div className="text-xs text-gray-600">Explications pédagogiques</div>
+                <div className="font-semibold text-sm">{t('ai.conceptExplanation')}</div>
+                <div className="text-xs text-gray-600">{t('ai.conceptExplanationDesc')}</div>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">Support LaTeX</div>
-                <div className="text-xs text-gray-600">Formules mathématiques</div>
+                <div className="font-semibold text-sm">{t('ai.latexSupport')}</div>
+                <div className="text-xs text-gray-600">{t('ai.latexSupportDesc')}</div>
               </div>
             </div>
           </div>

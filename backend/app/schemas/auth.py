@@ -14,6 +14,7 @@ class LoginRequest(BaseModel):
     """Requête de connexion"""
     email: EmailStr
     password: str
+    mfa_code: Optional[str] = Field(None, min_length=6, max_length=20, description="Code MFA (TOTP ou backup code)")
 
 
 class RegisterRequest(BaseModel):
@@ -27,11 +28,20 @@ class RegisterRequest(BaseModel):
 class LoginResponse(BaseModel):
     """Réponse de connexion avec token et info utilisateur"""
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
+    mfa_required: bool = False  # True si le compte a MFA mais pas de code fourni
 
     class Config:
         from_attributes = True
+
+
+class MFARequiredResponse(BaseModel):
+    """Réponse quand MFA est requis mais pas fourni"""
+    mfa_required: bool = True
+    message: str = "MFA code required"
+    temp_token: str  # Token temporaire pour soumettre le code MFA
 
 
 class RefreshTokenRequest(BaseModel):

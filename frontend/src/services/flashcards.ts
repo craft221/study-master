@@ -58,7 +58,7 @@ export const flashcardsService = {
     return response.data
   },
 
-  // Review flashcard (SM-2 algorithm)
+  // Review flashcard (FSRS algorithm - Free Spaced Repetition Scheduler)
   review: async (
     id: number,
     quality: number,
@@ -68,6 +68,25 @@ export const flashcardsService = {
       quality,
       response_time_seconds: responseTime,
     })
+    return response.data
+  },
+
+  // Get scheduling preview (shows what will happen for each rating option)
+  getSchedulingPreview: async (id: number): Promise<{
+    flashcard_id: number
+    algorithm: string
+    current_state: string
+    current_stability: number
+    current_difficulty: number
+    current_retrievability: number
+    scheduling_options: {
+      again: { interval_days: number; display: string; description: string }
+      hard: { interval_days: number; display: string; description: string }
+      good: { interval_days: number; display: string; description: string }
+      easy: { interval_days: number; display: string; description: string }
+    }
+  }> => {
+    const response = await api.get(`/flashcards/${id}/preview`)
     return response.data
   },
 

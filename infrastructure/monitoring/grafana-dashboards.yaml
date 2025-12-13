@@ -1,0 +1,241 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  study-master-overview.json: |
+    {
+      "dashboard": {
+        "title": "Study Master - Overview",
+        "uid": "study-master-overview",
+        "timezone": "browser",
+        "refresh": "10s",
+        "panels": [
+          {
+            "title": "Active Users",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(study_master_active_users)",
+                "legendFormat": "Active Users"
+              }
+            ]
+          },
+          {
+            "title": "Request Rate",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 6, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{namespace=\"study-master\"}[5m]))",
+                "legendFormat": "Requests/sec"
+              }
+            ]
+          },
+          {
+            "title": "Response Time (p95)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"study-master\"}[5m])) by (le))",
+                "legendFormat": "p95 Latency"
+              }
+            ]
+          },
+          {
+            "title": "Error Rate",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{namespace=\"study-master\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{namespace=\"study-master\"}[5m])) * 100",
+                "legendFormat": "Error %"
+              }
+            ]
+          },
+          {
+            "title": "WebSocket Connections",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 4},
+            "targets": [
+              {
+                "expr": "sum(study_master_websocket_connections)",
+                "legendFormat": "WS Connections"
+              }
+            ]
+          },
+          {
+            "title": "Focus Room Sessions",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(study_master_focus_room_active_sessions)",
+                "legendFormat": "Focus Sessions"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  study-master-backend.json: |
+    {
+      "dashboard": {
+        "title": "Study Master - Backend",
+        "uid": "study-master-backend",
+        "timezone": "browser",
+        "refresh": "10s",
+        "panels": [
+          {
+            "title": "CPU Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"study-master\",container=\"backend\"}[5m])) by (pod)",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "title": "Memory Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(container_memory_usage_bytes{namespace=\"study-master\",container=\"backend\"}) by (pod) / 1024 / 1024",
+                "legendFormat": "{{pod}} (MB)"
+              }
+            ]
+          },
+          {
+            "title": "Database Connections",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{datname=\"studymaster\"}",
+                "legendFormat": "Active Connections"
+              }
+            ]
+          },
+          {
+            "title": "Redis Operations",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total[5m])",
+                "legendFormat": "Commands/sec"
+              }
+            ]
+          },
+          {
+            "title": "Celery Task Queue",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+            "targets": [
+              {
+                "expr": "celery_queue_length",
+                "legendFormat": "{{queue}}"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  study-master-business.json: |
+    {
+      "dashboard": {
+        "title": "Study Master - Business Metrics",
+        "uid": "study-master-business",
+        "timezone": "browser",
+        "refresh": "1m",
+        "panels": [
+          {
+            "title": "Daily Active Users",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "study_master_daily_active_users",
+                "legendFormat": "DAU"
+              }
+            ]
+          },
+          {
+            "title": "New Registrations Today",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+            "targets": [
+              {
+                "expr": "increase(study_master_user_registrations_total[24h])",
+                "legendFormat": "New Users"
+              }
+            ]
+          },
+          {
+            "title": "Quizzes Completed Today",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "increase(study_master_quizzes_completed_total[24h])",
+                "legendFormat": "Quizzes"
+              }
+            ]
+          },
+          {
+            "title": "Focus Minutes Today",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(increase(study_master_focus_minutes_total[24h]))",
+                "legendFormat": "Focus Minutes"
+              }
+            ]
+          },
+          {
+            "title": "User Activity Over Time",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+            "targets": [
+              {
+                "expr": "study_master_active_users",
+                "legendFormat": "Active Users"
+              }
+            ]
+          },
+          {
+            "title": "Feature Usage",
+            "type": "piechart",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+            "targets": [
+              {
+                "expr": "sum by (feature) (increase(study_master_feature_usage_total[24h]))",
+                "legendFormat": "{{feature}}"
+              }
+            ]
+          },
+          {
+            "title": "XP Distribution",
+            "type": "histogram",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.5, study_master_user_xp_bucket)",
+                "legendFormat": "Median XP"
+              }
+            ]
+          }
+        ]
+      }
+    }

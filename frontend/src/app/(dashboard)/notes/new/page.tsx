@@ -32,7 +32,7 @@ export default function NewNotePage() {
   const fetchSubjects = async () => {
     try {
       const response = await api.get('/subjects/')
-      setSubjects(response.data)
+      setSubjects(response.data.subjects || [])
     } catch (error) {
       console.error('Erreur lors du chargement des matières:', error)
     }
