@@ -5,7 +5,7 @@
 Une application complete d'etude avec gamification, generation de contenu par IA (Claude Sonnet 4.5), gestion de notes, flashcards FSRS, quiz, assistant pedagogique Spark, duels entre etudiants, Focus Rooms (body doubling virtuel), groupes d'etude, paiements multi-providers, et bien plus.
 
 ![Version](https://img.shields.io/badge/version-3.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Proprietary-red)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![Next.js](https://img.shields.io/badge/next.js-14-black)
 ![Claude](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-purple)
@@ -469,24 +469,13 @@ study-master/
 
 ---
 
-## Contribution
-
-```bash
-# 1. Fork
-# 2. Branch
-git checkout -b feature/AmazingFeature
-# 3. Commit
-git commit -m 'feat: Add AmazingFeature'
-# 4. Push
-git push origin feature/AmazingFeature
-# 5. Pull Request
-```
-
----
-
 ## License
 
-MIT License
+**Proprietary License - All Rights Reserved**
+
+Copyright (c) 2024 Study Master. Tous droits réservés.
+
+Ce logiciel est la propriété exclusive de Study Master. Toute reproduction, distribution, modification ou utilisation non autorisée est strictement interdite.
 
 ---
 
