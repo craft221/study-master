@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { BookOpen, Mail, Lock, User, ArrowRight, AlertCircle, Building2 } from 'lucide-react'
+import { BookOpen, Mail, Lock, User, ArrowRight, AlertCircle, Building2, GraduationCap } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -31,6 +31,8 @@ export default function RegisterPage() {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [university, setUniversity] = useState('')
+  const [major, setMajor] = useState('')
 
   const {
     register,
@@ -45,15 +47,29 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      const { password_confirm, ...registerData } = data
-      
+      const { password_confirm, ...rest } = data
+      const registerData = {
+        ...rest,
+        university: university || undefined,
+        major: major || undefined,
+      }
+
       const response = await api.post('/auth/register', registerData)
 
-      localStorage.setItem('access_token', response.data.access_token)
-      localStorage.setItem('refresh_token', response.data.refresh_token)
-      
-      toast.success(t('auth.registerSuccess'))
-      router.push('/dashboard')
+      // Si vérification email requise, rediriger vers la page de vérification
+      if (response.data.requires_verification) {
+        toast.success(response.data.message || t('auth.verificationSent'))
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`)
+        return
+      }
+
+      // Si pas de vérification requise (ne devrait pas arriver normalement)
+      if (response.data.access_token) {
+        localStorage.setItem('access_token', response.data.access_token)
+        localStorage.setItem('refresh_token', response.data.refresh_token)
+        toast.success(t('auth.registerSuccess'))
+        router.push('/dashboard')
+      }
     } catch (err: any) {
       const message = err.response?.data?.detail || t('errors.generic')
       setError(message)
@@ -191,31 +207,36 @@ export default function RegisterPage() {
               {/* University */}
               <div>
                 <label htmlFor="university" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('profile.university')}
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-gray-400" />
+                    {t('profile.university')}
+                  </div>
                 </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    {...register('university')}
-                    type="text"
-                    id="university"
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder=""
-                  />
-                </div>
+                <input
+                  type="text"
+                  id="university"
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
+                  placeholder="Ex: Université de Paris..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
               </div>
 
               {/* Major */}
               <div>
                 <label htmlFor="major" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('profile.major')}
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-gray-400" />
+                    {t('profile.major')}
+                  </div>
                 </label>
                 <input
-                  {...register('major')}
                   type="text"
                   id="major"
+                  value={major}
+                  onChange={(e) => setMajor(e.target.value)}
+                  placeholder="Ex: Informatique, Médecine, Droit..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder=""
                 />
               </div>
             </div>

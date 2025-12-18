@@ -1,5 +1,6 @@
 /**
  * Service de Synchronisation - Gère la sync entre IndexedDB et le serveur
+ * Supporte la création offline avec IDs temporaires et résolution
  */
 
 import { offlineStorage, STORES, SyncAction } from '@/lib/offlineStorage';
@@ -8,8 +9,28 @@ import api from '@/lib/api';
 // Configuration
 const MAX_RETRIES = 3;
 const SYNC_INTERVAL = 30000; // 30 secondes
+const TEMP_ID_PREFIX = 'temp_';
 
 type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
+
+/**
+ * Générer un ID temporaire unique pour les créations offline
+ */
+export function generateTempId(): string {
+  return `${TEMP_ID_PREFIX}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Vérifier si un ID est temporaire
+ */
+export function isTempId(id: string | number): boolean {
+  return String(id).startsWith(TEMP_ID_PREFIX);
+}
+
+// Map pour stocker les correspondances tempId -> realId
+interface IdMapping {
+  [tempId: string]: number | string;
+}
 
 interface SyncResult {
   success: boolean;
@@ -30,6 +51,8 @@ class SyncService {
   private isSyncing: boolean = false;
   private syncInterval: NodeJS.Timeout | null = null;
   private listeners: Set<(event: SyncEventDetail) => void> = new Set();
+  // Mapping des IDs temporaires vers les IDs réels après sync
+  private idMappings: IdMapping = {};
 
   constructor() {
     this.setupEventListeners();
@@ -209,26 +232,130 @@ class SyncService {
 
   /**
    * Exécuter une action de synchronisation
+   * Retourne l'ID réel pour les créations
    */
-  private async executeAction(action: SyncAction): Promise<void> {
-    const { endpoint, method, data } = action;
+  private async executeAction(action: SyncAction): Promise<{ realId?: number | string }> {
+    const { endpoint, method, data, store } = action;
+    let response;
+
+    // Remplacer les IDs temporaires dans les données si nécessaire
+    const processedData = this.replaceTemporaryIds(data);
 
     switch (method.toUpperCase()) {
       case 'POST':
-        await api.post(endpoint, data);
+        response = await api.post(endpoint, processedData);
         break;
       case 'PUT':
-        await api.put(endpoint, data);
+        response = await api.put(endpoint, processedData);
         break;
       case 'PATCH':
-        await api.patch(endpoint, data);
+        response = await api.patch(endpoint, processedData);
         break;
       case 'DELETE':
         await api.delete(endpoint);
-        break;
+        return {};
       default:
         throw new Error(`Méthode non supportée: ${method}`);
     }
+
+    // Pour les créations, capturer l'ID réel retourné
+    if (action.action === 'create' && response?.data?.id) {
+      const realId = response.data.id;
+      const tempId = data._tempId || data.id;
+
+      if (tempId && isTempId(tempId)) {
+        this.idMappings[tempId] = realId;
+        console.log(`[SyncService] ID mapping: ${tempId} -> ${realId}`);
+
+        // Mettre à jour le cache local avec le vrai ID
+        await this.updateLocalCacheWithRealId(store, tempId, realId, response.data);
+      }
+
+      return { realId };
+    }
+
+    return {};
+  }
+
+  /**
+   * Remplacer les IDs temporaires par les IDs réels dans les données
+   */
+  private replaceTemporaryIds(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const processed = { ...data };
+
+    // Supprimer le champ _tempId avant l'envoi
+    delete processed._tempId;
+
+    // Remplacer les références aux IDs temporaires
+    for (const key of Object.keys(processed)) {
+      const value = processed[key];
+      if (typeof value === 'string' && isTempId(value) && this.idMappings[value]) {
+        processed[key] = this.idMappings[value];
+      }
+    }
+
+    return processed;
+  }
+
+  /**
+   * Mettre à jour le cache local avec le vrai ID après synchronisation
+   */
+  private async updateLocalCacheWithRealId(
+    store: string,
+    tempId: string,
+    realId: number | string,
+    serverData: any
+  ): Promise<void> {
+    try {
+      switch (store) {
+        case STORES.NOTES:
+          // Supprimer l'entrée avec l'ID temporaire
+          await offlineStorage.delete(STORES.NOTES, tempId);
+          // Sauvegarder avec les données du serveur (incluant le vrai ID)
+          await offlineStorage.saveNote(serverData);
+          break;
+        case STORES.FLASHCARD_DECKS:
+          await offlineStorage.delete(STORES.FLASHCARD_DECKS, tempId);
+          await offlineStorage.saveDeck(serverData);
+          break;
+        case STORES.FLASHCARDS:
+          await offlineStorage.delete(STORES.FLASHCARDS, tempId);
+          await offlineStorage.put(STORES.FLASHCARDS, serverData);
+          break;
+        case STORES.SCHEDULES:
+          await offlineStorage.delete(STORES.SCHEDULES, tempId);
+          await offlineStorage.put(STORES.SCHEDULES, serverData);
+          break;
+        case STORES.SUBJECTS:
+          await offlineStorage.delete(STORES.SUBJECTS, tempId);
+          await offlineStorage.put(STORES.SUBJECTS, serverData);
+          break;
+        case STORES.EXAM_SESSIONS:
+          await offlineStorage.delete(STORES.EXAM_SESSIONS, tempId);
+          await offlineStorage.saveExamSession(serverData);
+          break;
+        case STORES.EXAM_TASKS:
+          await offlineStorage.delete(STORES.EXAM_TASKS, tempId);
+          await offlineStorage.saveExamTask(serverData);
+          break;
+      }
+      console.log(`[SyncService] Cache local mis à jour: ${store} ${tempId} -> ${realId}`);
+    } catch (error) {
+      console.error('[SyncService] Erreur mise à jour cache local:', error);
+    }
+  }
+
+  /**
+   * Obtenir l'ID réel à partir d'un ID (temporaire ou non)
+   */
+  getRealId(id: string | number): string | number {
+    const strId = String(id);
+    if (isTempId(strId) && this.idMappings[strId]) {
+      return this.idMappings[strId];
+    }
+    return id;
   }
 
   /**

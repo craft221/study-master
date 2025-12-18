@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, X, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, CloudOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService, generateTempId } from '@/services/syncService'
 
 interface Subject {
   id: number
@@ -28,6 +31,7 @@ interface FlashcardInput {
 export default function NewFlashcardDeckPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { isOnline } = useOfflineContext()
 
   const [loading, setLoading] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -46,10 +50,24 @@ export default function NewFlashcardDeckPage() {
 
   const fetchSubjects = async () => {
     try {
-      const response = await api.get('/subjects/')
-      setSubjects(response.data.subjects || [])
+      if (isOnline) {
+        const response = await api.get('/subjects/')
+        const subjectsData = response.data.subjects || []
+        setSubjects(subjectsData)
+        // Sauvegarder en cache
+        await offlineStorage.saveSubjects(subjectsData)
+      } else {
+        // Charger depuis le cache
+        const cachedSubjects = await offlineStorage.getSubjects()
+        setSubjects(cachedSubjects || [])
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des matières:', error)
+      // Essayer le cache en cas d'erreur
+      const cachedSubjects = await offlineStorage.getSubjects()
+      if (cachedSubjects && cachedSubjects.length > 0) {
+        setSubjects(cachedSubjects)
+      }
     }
   }
 
@@ -111,27 +129,105 @@ export default function NewFlashcardDeckPage() {
 
     setLoading(true)
     try {
-      // Créer chaque flashcard individuellement
-      const promises = validCards.map(card =>
-        api.post('/flashcards/', {
-          subject_id: parseInt(selectedSubject),
-          deck_name: deckName,
-          front: card.front,
-          back: card.back,
-          hint: card.hint || null,
-          explanation: card.explanation || null,
-          tags: tags || null,
-          is_ai_generated: false
+      if (isOnline) {
+        // Mode en ligne: créer directement sur le serveur
+        const promises = validCards.map(card =>
+          api.post('/flashcards/', {
+            subject_id: parseInt(selectedSubject),
+            deck_name: deckName,
+            front: card.front,
+            back: card.back,
+            hint: card.hint || null,
+            explanation: card.explanation || null,
+            tags: tags || null,
+            is_ai_generated: false
+          })
+        )
+
+        await Promise.all(promises)
+
+        toast({
+          title: 'Deck créé',
+          description: `${validCards.length} carte(s) ajoutée(s) avec succès au deck "${deckName}"`,
         })
-      )
+        router.push('/flashcards')
+      } else {
+        // Mode hors-ligne: créer localement avec des IDs temporaires
+        const now = new Date().toISOString()
+        const subject = subjects.find(s => s.id.toString() === selectedSubject)
+        const deckTempId = generateTempId()
 
-      await Promise.all(promises)
+        // Créer un deck local
+        const offlineDeck = {
+          id: deckTempId,
+          _tempId: deckTempId,
+          name: deckName,
+          subject_id: parseInt(selectedSubject),
+          subject: subject ? { id: subject.id, name: subject.name, color: subject.color } : null,
+          card_count: validCards.length,
+          mastered_count: 0,
+          tags: tags || null,
+          created_at: now,
+          updated_at: now,
+          _isOffline: true,
+        }
 
-      toast({
-        title: 'Deck créé',
-        description: `${validCards.length} carte(s) ajoutée(s) avec succès au deck "${deckName}"`,
-      })
-      router.push('/flashcards')
+        // Sauvegarder le deck dans IndexedDB
+        await offlineStorage.saveDeck(offlineDeck)
+
+        // Créer chaque flashcard localement
+        for (const card of validCards) {
+          const cardTempId = generateTempId()
+          const offlineCard = {
+            id: cardTempId,
+            _tempId: cardTempId,
+            deck_id: deckTempId,
+            deck_name: deckName,
+            subject_id: parseInt(selectedSubject),
+            front: card.front,
+            back: card.back,
+            hint: card.hint || null,
+            explanation: card.explanation || null,
+            tags: tags || null,
+            is_ai_generated: false,
+            ease_factor: 2.5,
+            interval: 0,
+            repetitions: 0,
+            next_review: now,
+            created_at: now,
+            updated_at: now,
+            _isOffline: true,
+          }
+
+          // Sauvegarder la carte
+          await offlineStorage.put(STORES.FLASHCARDS, offlineCard)
+
+          // Ajouter à la queue de synchronisation
+          await syncService.queueAction(
+            STORES.FLASHCARDS,
+            'create',
+            '/api/v1/flashcards/',
+            'POST',
+            {
+              subject_id: parseInt(selectedSubject),
+              deck_name: deckName,
+              front: card.front,
+              back: card.back,
+              hint: card.hint || null,
+              explanation: card.explanation || null,
+              tags: tags || null,
+              is_ai_generated: false,
+              _tempId: cardTempId,
+            }
+          )
+        }
+
+        toast({
+          title: 'Deck créé localement',
+          description: `${validCards.length} carte(s) seront synchronisées quand vous serez reconnecté`,
+        })
+        router.push('/flashcards')
+      }
     } catch (error: any) {
       console.error('Erreur:', error)
       toast({
@@ -146,11 +242,36 @@ export default function NewFlashcardDeckPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div>
+              <p className="font-medium text-orange-900 dark:text-orange-100">
+                Mode hors-ligne
+              </p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Votre deck sera sauvegardé localement et synchronisé automatiquement quand vous serez reconnecté.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nouveau Deck de Flashcards</h1>
-          <p className="text-gray-600 mt-1">Créez un nouveau deck et ajoutez vos cartes</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Nouveau Deck de Flashcards</h1>
+            <p className="text-gray-600 mt-1">Créez un nouveau deck et ajoutez vos cartes</p>
+          </div>
+          {!isOnline && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              <CloudOff className="w-3 h-3 mr-1" />
+              Hors-ligne
+            </span>
+          )}
         </div>
         <Button
           variant="outline"

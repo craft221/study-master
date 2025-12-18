@@ -1,7 +1,12 @@
 /**
  * Shared fixtures and helpers for E2E tests
  */
-import { test as base, expect } from '@playwright/test'
+import { test as base, expect, Page } from '@playwright/test'
+
+// Type for custom fixtures
+type CustomFixtures = {
+  authenticatedPage: Page
+}
 
 // Test data
 export const testUser = {
@@ -11,7 +16,7 @@ export const testUser = {
 }
 
 // Extended test with authentication
-export const test = base.extend({
+export const test = base.extend<CustomFixtures>({
   // Authenticated page fixture
   authenticatedPage: async ({ page }, use) => {
     // Skip if no credentials

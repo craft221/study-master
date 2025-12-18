@@ -109,19 +109,22 @@ async def get_my_achievements(
 
     print(f"❌ Cache MISS: {cache_key}")
 
+    # OPTIMISATION: Utiliser selectinload pour éviter N+1 queries
     query = select(UserAchievement).where(
         UserAchievement.user_id == current_user.id
+    ).options(
+        selectinload(UserAchievement.achievement)
     ).order_by(UserAchievement.unlocked_at.desc())
 
     result = await db.execute(query)
     user_achievements = result.scalars().all()
 
-    # Charger les achievements associés
+    # Les achievements sont maintenant déjà chargés via selectinload
     achievements_data = []
     total_xp = 0
 
     for ua in user_achievements:
-        achievement = await db.get(Achievement, ua.achievement_id)
+        achievement = ua.achievement  # Déjà chargé, pas de query supplémentaire
         if achievement:
             total_xp += achievement.xp_reward
             achievements_data.append({
@@ -183,19 +186,22 @@ async def get_user_achievements(
 
     print(f"❌ Cache MISS: {cache_key}")
 
+    # OPTIMISATION: Utiliser selectinload pour éviter N+1 queries
     query = select(UserAchievement).where(
         UserAchievement.user_id == user_id
+    ).options(
+        selectinload(UserAchievement.achievement)
     ).order_by(UserAchievement.unlocked_at.desc())
 
     result = await db.execute(query)
     user_achievements = result.scalars().all()
 
-    # Charger les achievements
+    # Les achievements sont maintenant déjà chargés via selectinload
     achievements_data = []
     total_xp = 0
 
     for ua in user_achievements:
-        achievement = await db.get(Achievement, ua.achievement_id)
+        achievement = ua.achievement  # Déjà chargé, pas de query supplémentaire
         if achievement:
             total_xp += achievement.xp_reward
             achievements_data.append({

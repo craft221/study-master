@@ -13,10 +13,16 @@ import {
   Edit,
   Trash2,
   Play,
-  BarChart3
+  BarChart3,
+  CloudOff,
+  RefreshCw
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
+import { useOfflineDecks } from '@/hooks/useOffline'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService } from '@/services/syncService'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
 
 interface FlashcardDeck {
   id: string
@@ -36,26 +42,18 @@ interface FlashcardDeck {
 }
 
 export default function FlashcardsPage() {
+  // Utiliser le hook offline pour les decks
+  const { data: decksData, loading, error, isFromCache, refetch } = useOfflineDecks()
+  const { isOnline } = useOfflineContext()
   const [decks, setDecks] = useState<FlashcardDeck[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Mettre à jour les decks quand les données arrivent
   useEffect(() => {
-    fetchDecks()
-  }, [])
-
-  const fetchDecks = async () => {
-    try {
-      const response = await api.get('/flashcards/decks')
-      console.log('✅ Flashcard decks loaded:', response.data)
-      setDecks(response.data || [])
-    } catch (error: any) {
-      console.error('❌ Error loading flashcards:', error)
-      toast.error('Erreur lors du chargement des flashcards')
-    } finally {
-      setLoading(false)
+    if (decksData) {
+      setDecks(Array.isArray(decksData) ? decksData : [])
     }
-  }
+  }, [decksData])
 
   const filteredDecks = decks.filter((deck) =>
     deck.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,11 +67,29 @@ export default function FlashcardsPage() {
   const deleteDeck = async (deckId: string) => {
     if (!confirm('Supprimer ce deck et toutes ses cartes?')) return
 
+    const deckToDelete = decks.find(d => d.id === deckId)
+    // Mise à jour optimiste
+    setDecks(decks.filter(d => d.id !== deckId))
+
     try {
-      await api.delete(`/flashcards/decks/${deckId}`)
-      setDecks(decks.filter(d => d.id !== deckId))
-      toast.success('Deck supprimé')
+      if (isOnline) {
+        await api.delete(`/flashcards/decks/${deckId}`)
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.FLASHCARD_DECKS,
+          'delete',
+          `/api/v1/flashcards/decks/${deckId}`,
+          'DELETE',
+          { id: deckId }
+        )
+      }
+      toast.success(isOnline ? 'Deck supprimé' : 'Deck supprimé (sera synchronisé)')
     } catch (error) {
+      // Rollback en cas d'erreur
+      if (deckToDelete) {
+        setDecks([...decks, deckToDelete])
+      }
       toast.error('Erreur lors de la suppression')
     }
   }
@@ -91,16 +107,38 @@ export default function FlashcardsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Flashcards</h1>
-          <p className="text-gray-600 mt-1">{decks.length} decks • {totalCards} cartes</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Flashcards</h1>
+            {isFromCache && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <CloudOff className="w-3 h-3 mr-1" />
+                Cache
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {decks.length} decks • {totalCards} cartes
+            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+          </p>
         </div>
-        <Link
-          href="/flashcards/new"
-          className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nouveau deck
-        </Link>
+        <div className="flex items-center gap-2">
+          {isFromCache && isOnline && (
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              title="Actualiser les données"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          <Link
+            href="/flashcards/new"
+            className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Nouveau deck
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}

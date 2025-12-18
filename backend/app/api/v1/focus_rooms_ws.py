@@ -461,24 +461,46 @@ async def handle_message(room_id: int, user_id: int, message: dict):
 
         elif msg_type == "claim_reward":
             # Récompense aléatoire réclamée par l'utilisateur
+            # SÉCURITÉ: Les valeurs XP sont calculées côté serveur uniquement
+            # Le client ne peut PAS spécifier de valeurs arbitraires
             reward_type = message.get("reward_type")  # 'xp', 'multiplier', 'streak_saver', 'badge', 'mystery'
-            reward_value = message.get("value", 0)
-            reward_name = message.get("name", "Reward")
             reward_rarity = message.get("rarity", "common")
 
-            # Calculer l'XP en fonction du type et de la rareté
-            xp_amount = 0
-            if reward_type == "xp":
-                xp_amount = reward_value  # La valeur est directement l'XP
-            elif reward_type == "multiplier":
-                # Les multiplicateurs donnent un bonus XP fixe
-                xp_amount = reward_value * 5  # x2 = 10 XP, x3 = 15 XP
-            elif reward_type == "mystery":
-                # Coffre mystère = XP aléatoire basé sur la rareté
-                xp_amount = {"common": 10, "rare": 25, "epic": 50, "legendary": 100}.get(reward_rarity, 10)
-            elif reward_type in ["badge", "streak_saver"]:
-                # Ces types donnent un petit bonus XP
-                xp_amount = {"common": 5, "rare": 10, "epic": 20, "legendary": 50}.get(reward_rarity, 5)
+            # Valider le type de récompense
+            valid_reward_types = {"xp", "multiplier", "streak_saver", "badge", "mystery"}
+            if reward_type not in valid_reward_types:
+                await focus_room_manager.send_to_user(
+                    user_id,
+                    {"type": "error", "message": "Type de récompense invalide"}
+                )
+                return
+
+            # Valider la rareté
+            valid_rarities = {"common", "rare", "epic", "legendary"}
+            if reward_rarity not in valid_rarities:
+                reward_rarity = "common"  # Fallback sécurisé
+
+            # Vérifier le temps de focus minimum pour réclamer (anti-abus)
+            min_focus_minutes = 5  # Minimum 5 minutes de focus pour réclamer
+            if participant.get_today_total_minutes() < min_focus_minutes:
+                await focus_room_manager.send_to_user(
+                    user_id,
+                    {"type": "error", "message": f"Focus minimum de {min_focus_minutes} minutes requis"}
+                )
+                return
+
+            # SÉCURITÉ: XP calculé côté SERVEUR uniquement avec valeurs fixes
+            # Les valeurs du client sont IGNORÉES pour éviter la manipulation
+            REWARD_XP_TABLE = {
+                "xp": {"common": 5, "rare": 15, "epic": 30, "legendary": 50},
+                "multiplier": {"common": 10, "rare": 15, "epic": 25, "legendary": 40},
+                "mystery": {"common": 10, "rare": 25, "epic": 50, "legendary": 100},
+                "badge": {"common": 5, "rare": 10, "epic": 20, "legendary": 50},
+                "streak_saver": {"common": 5, "rare": 10, "epic": 20, "legendary": 50},
+            }
+
+            xp_amount = REWARD_XP_TABLE.get(reward_type, {}).get(reward_rarity, 5)
+            reward_name = f"{reward_rarity.capitalize()} {reward_type.replace('_', ' ').title()}"
 
             if xp_amount > 0 and user:
                 await award_xp(
@@ -489,7 +511,8 @@ async def handle_message(room_id: int, user_id: int, message: dict):
                         "room_id": room_id,
                         "reward_name": reward_name,
                         "reward_rarity": reward_rarity
-                    }
+                    },
+                    db=db
                 )
                 # Mettre à jour aussi les stats Focus Room (bonus XP)
                 await focus_room_service._update_user_focus_stats(

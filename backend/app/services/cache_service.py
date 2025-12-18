@@ -37,6 +37,12 @@ class CachePrefix(str, Enum):
     AI_EXPLAIN = "ai:explain"
     AI_STUDY_PLAN = "ai:study_plan"
 
+    # Exam Mode IA
+    EXAM_KEY_POINTS = "exam:key_points"
+    EXAM_WEAK_POINTS = "exam:weak_points"
+    EXAM_ADVICE = "exam:advice"
+    EXAM_PRACTICE = "exam:practice"
+
     # Mascotte
     MASCOT = "mascot"
     MASCOT_STATE = "mascot:state"

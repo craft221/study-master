@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'StudyMasterDB';
-const DB_VERSION = 1;
+const DB_VERSION = 3; // Incrémenté pour ajouter le store exam_sessions
 
 // Stores (tables) de la base de données
 const STORES = {
@@ -17,6 +17,9 @@ const STORES = {
   GAMIFICATION: 'gamification',
   SUBJECTS: 'subjects',
   STUDY_GROUPS: 'study_groups',
+  DOCUMENTS: 'documents',
+  EXAM_SESSIONS: 'exam_sessions',
+  EXAM_TASKS: 'exam_tasks',
   PENDING_SYNC: 'pending_sync',
   METADATA: 'metadata',
 } as const;
@@ -137,6 +140,30 @@ class OfflineStorage {
     if (!db.objectStoreNames.contains(STORES.STUDY_GROUPS)) {
       const groupsStore = db.createObjectStore(STORES.STUDY_GROUPS, { keyPath: 'id' });
       groupsStore.createIndex('is_member', 'is_member', { unique: false });
+    }
+
+    // Documents (métadonnées uniquement, pas les fichiers binaires)
+    if (!db.objectStoreNames.contains(STORES.DOCUMENTS)) {
+      const docsStore = db.createObjectStore(STORES.DOCUMENTS, { keyPath: 'id' });
+      docsStore.createIndex('user_id', 'user_id', { unique: false });
+      docsStore.createIndex('subject_id', 'subject_id', { unique: false });
+      docsStore.createIndex('file_type', 'file_type', { unique: false });
+    }
+
+    // Exam Sessions (Mode Examen)
+    if (!db.objectStoreNames.contains(STORES.EXAM_SESSIONS)) {
+      const examStore = db.createObjectStore(STORES.EXAM_SESSIONS, { keyPath: 'id' });
+      examStore.createIndex('user_id', 'user_id', { unique: false });
+      examStore.createIndex('status', 'status', { unique: false });
+      examStore.createIndex('exam_date', 'exam_date', { unique: false });
+    }
+
+    // Exam Tasks (Tâches du Mode Examen)
+    if (!db.objectStoreNames.contains(STORES.EXAM_TASKS)) {
+      const tasksStore = db.createObjectStore(STORES.EXAM_TASKS, { keyPath: 'id' });
+      tasksStore.createIndex('session_id', 'session_id', { unique: false });
+      tasksStore.createIndex('study_day_id', 'study_day_id', { unique: false });
+      tasksStore.createIndex('status', 'status', { unique: false });
     }
 
     // Pending Sync Actions
@@ -428,6 +455,88 @@ class OfflineStorage {
 
   async getStudyGroup(id: number): Promise<any> {
     return this.get(STORES.STUDY_GROUPS, id);
+  }
+
+  // --- Documents (métadonnées) ---
+  async saveDocuments(documents: any[]): Promise<void> {
+    await this.putMany(STORES.DOCUMENTS, documents);
+    await this.updateMetadata(STORES.DOCUMENTS);
+  }
+
+  async getDocuments(): Promise<any[]> {
+    return this.getAll(STORES.DOCUMENTS);
+  }
+
+  async getDocument(id: number): Promise<any> {
+    return this.get(STORES.DOCUMENTS, id);
+  }
+
+  async saveDocument(document: any): Promise<any> {
+    return this.put(STORES.DOCUMENTS, document);
+  }
+
+  async deleteDocument(id: number): Promise<void> {
+    return this.delete(STORES.DOCUMENTS, id);
+  }
+
+  async getDocumentsBySubject(subjectId: number): Promise<any[]> {
+    return this.getByIndex(STORES.DOCUMENTS, 'subject_id', subjectId);
+  }
+
+  // --- Exam Sessions (Mode Examen) ---
+  async saveExamSessions(sessions: any[]): Promise<void> {
+    await this.putMany(STORES.EXAM_SESSIONS, sessions);
+    await this.updateMetadata(STORES.EXAM_SESSIONS);
+  }
+
+  async getExamSessions(): Promise<any[]> {
+    return this.getAll(STORES.EXAM_SESSIONS);
+  }
+
+  async getExamSession(id: number): Promise<any> {
+    return this.get(STORES.EXAM_SESSIONS, id);
+  }
+
+  async saveExamSession(session: any): Promise<any> {
+    return this.put(STORES.EXAM_SESSIONS, session);
+  }
+
+  async deleteExamSession(id: number): Promise<void> {
+    return this.delete(STORES.EXAM_SESSIONS, id);
+  }
+
+  async getActiveExamSession(): Promise<any | null> {
+    const sessions = await this.getAll<any>(STORES.EXAM_SESSIONS);
+    return sessions.find(s => s.status === 'active') || null;
+  }
+
+  // --- Exam Tasks (Tâches Mode Examen) ---
+  async saveExamTasks(tasks: any[]): Promise<void> {
+    await this.putMany(STORES.EXAM_TASKS, tasks);
+  }
+
+  async getExamTasks(sessionId?: number): Promise<any[]> {
+    if (sessionId) {
+      return this.getByIndex(STORES.EXAM_TASKS, 'session_id', sessionId);
+    }
+    return this.getAll(STORES.EXAM_TASKS);
+  }
+
+  async getExamTask(id: number): Promise<any> {
+    return this.get(STORES.EXAM_TASKS, id);
+  }
+
+  async saveExamTask(task: any): Promise<any> {
+    return this.put(STORES.EXAM_TASKS, task);
+  }
+
+  async getTodayExamTasks(sessionId: number): Promise<any[]> {
+    const tasks = await this.getByIndex<any>(STORES.EXAM_TASKS, 'session_id', sessionId);
+    const today = new Date().toISOString().split('T')[0];
+    return tasks.filter(t => {
+      const taskDate = t.scheduled_date || t.study_date;
+      return taskDate && taskDate.startsWith(today);
+    });
   }
 
   // ============================================

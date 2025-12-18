@@ -23,6 +23,7 @@ from app.schemas.collaboration import (
 )
 from app.services.xp_service import award_xp
 from app.services.notification_service import NotificationService
+from app.core.sql_utils import escape_like_pattern
 
 router = APIRouter()
 
@@ -123,10 +124,12 @@ async def get_study_groups(
     query = query.where(StudyGroup.status == "active")
     
     if search:
+        # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+        safe_search = escape_like_pattern(search)
         query = query.where(
             or_(
-                StudyGroup.name.ilike(f"%{search}%"),
-                StudyGroup.description.ilike(f"%{search}%")
+                StudyGroup.name.ilike(f"%{safe_search}%"),
+                StudyGroup.description.ilike(f"%{safe_search}%")
             )
         )
     

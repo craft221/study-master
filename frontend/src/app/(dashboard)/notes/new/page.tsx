@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, X, Tag, Sparkles } from 'lucide-react'
+import { Save, X, Tag, Sparkles, Globe, Lock, CloudOff, Wifi } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import LaTeXEditor from '@/components/LaTeXEditor'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService, generateTempId } from '@/services/syncService'
 
 interface Subject {
   id: string
@@ -15,6 +18,7 @@ interface Subject {
 
 export default function NewNotePage() {
   const router = useRouter()
+  const { isOnline } = useOfflineContext()
   const [loading, setLoading] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [formData, setFormData] = useState({
@@ -22,6 +26,7 @@ export default function NewNotePage() {
     content: '',
     subject_id: '',
     tags: [] as string[],
+    visibility: 'private' as 'private' | 'public',
   })
   const [tagInput, setTagInput] = useState('')
 
@@ -31,16 +36,30 @@ export default function NewNotePage() {
 
   const fetchSubjects = async () => {
     try {
-      const response = await api.get('/subjects/')
-      setSubjects(response.data.subjects || [])
+      if (isOnline) {
+        const response = await api.get('/subjects/')
+        const subjectsData = response.data.subjects || []
+        setSubjects(subjectsData)
+        // Sauvegarder en cache
+        await offlineStorage.saveSubjects(subjectsData)
+      } else {
+        // Charger depuis le cache
+        const cachedSubjects = await offlineStorage.getSubjects()
+        setSubjects(cachedSubjects || [])
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des matières:', error)
+      // Essayer le cache en cas d'erreur
+      const cachedSubjects = await offlineStorage.getSubjects()
+      if (cachedSubjects && cachedSubjects.length > 0) {
+        setSubjects(cachedSubjects)
+      }
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.content || !formData.subject_id) {
       toast.error('Veuillez remplir tous les champs obligatoires')
       return
@@ -48,9 +67,51 @@ export default function NewNotePage() {
 
     setLoading(true)
     try {
-      const response = await api.post('/notes/', formData)
-      toast.success('Note créée avec succès!')
-      router.push(`/notes/${response.data.id}`)
+      if (isOnline) {
+        // Mode en ligne: créer directement sur le serveur
+        const response = await api.post('/notes/', formData)
+        toast.success('Note créée avec succès!')
+        router.push(`/notes/${response.data.id}`)
+      } else {
+        // Mode hors-ligne: créer localement avec un ID temporaire
+        const tempId = generateTempId()
+        const now = new Date().toISOString()
+
+        // Trouver les infos du subject pour l'affichage local
+        const subject = subjects.find(s => s.id === formData.subject_id)
+
+        const offlineNote = {
+          id: tempId,
+          _tempId: tempId, // Marqueur pour la sync
+          title: formData.title,
+          content: formData.content,
+          subject_id: formData.subject_id,
+          subject: subject ? { id: subject.id, name: subject.name, color: subject.color } : null,
+          tags: formData.tags,
+          visibility: formData.visibility,
+          is_favorite: false,
+          created_at: now,
+          updated_at: now,
+          _isOffline: true, // Marqueur visuel
+        }
+
+        // Sauvegarder dans IndexedDB
+        await offlineStorage.saveNote(offlineNote)
+
+        // Ajouter à la queue de synchronisation
+        await syncService.queueAction(
+          STORES.NOTES,
+          'create',
+          '/api/v1/notes/',
+          'POST',
+          { ...formData, _tempId: tempId }
+        )
+
+        toast.success('Note créée localement (sera synchronisée)', {
+          icon: '📦',
+        })
+        router.push('/notes')
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Erreur lors de la création')
     } finally {
@@ -95,9 +156,34 @@ export default function NewNotePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div>
+              <p className="font-medium text-orange-900 dark:text-orange-100">
+                Mode hors-ligne
+              </p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Votre note sera sauvegardée localement et synchronisée automatiquement quand vous serez reconnecté.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Nouvelle Note</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Nouvelle Note</h1>
+          {!isOnline && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              <CloudOff className="w-3 h-3 mr-1" />
+              Hors-ligne
+            </span>
+          )}
+        </div>
         <button
           onClick={() => router.back()}
           className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition flex items-center space-x-2"
@@ -206,6 +292,51 @@ export default function NewNotePage() {
                   </span>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Visibilité
+            </label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, visibility: 'private' })}
+                className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-lg border-2 transition ${
+                  formData.visibility === 'private'
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <Lock className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Privée</div>
+                  <div className="text-xs opacity-75">Visible uniquement par vous</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, visibility: 'public' })}
+                className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-lg border-2 transition ${
+                  formData.visibility === 'public'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <Globe className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Publique</div>
+                  <div className="text-xs opacity-75">Visible dans Explore</div>
+                </div>
+              </button>
+            </div>
+            {formData.visibility === 'public' && (
+              <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                <Globe className="h-4 w-4" />
+                Cette note sera visible par tous les utilisateurs dans la page Explore
+              </p>
             )}
           </div>
         </div>

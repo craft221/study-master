@@ -1,10 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, BookOpen, FileText, CreditCard, Brain, FolderOpen } from 'lucide-react'
+import { Plus, Edit, Trash2, BookOpen, FileText, CreditCard, Brain, FolderOpen, CloudOff, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
+import { useOfflineSubjects } from '@/hooks/useOffline'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService } from '@/services/syncService'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
 
 interface Subject {
   id: string
@@ -29,8 +33,10 @@ const PRESET_COLORS = [
 ]
 
 export default function SubjectsPage() {
+  // Utiliser le hook offline pour les matières
+  const { data: subjectsData, loading, error, isFromCache, refetch } = useOfflineSubjects()
+  const { isOnline } = useOfflineContext()
   const [subjects, setSubjects] = useState<Subject[]>([])
-  const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
   const [formData, setFormData] = useState({
@@ -39,20 +45,13 @@ export default function SubjectsPage() {
     color: PRESET_COLORS[0],
   })
 
+  // Mettre à jour les subjects quand les données arrivent
   useEffect(() => {
-    fetchSubjects()
-  }, [])
-
-  const fetchSubjects = async () => {
-    try {
-      const response = await api.get('/subjects/')
-      setSubjects(response.data.subjects || [])
-    } catch (error) {
-      toast.error('Erreur lors du chargement des matières')
-    } finally {
-      setLoading(false)
+    if (subjectsData) {
+      const data = Array.isArray(subjectsData) ? subjectsData : (subjectsData.subjects || [])
+      setSubjects(data)
     }
-  }
+  }, [subjectsData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,18 +62,40 @@ export default function SubjectsPage() {
     }
 
     try {
-      if (editingSubject) {
-        await api.put(`/subjects/${editingSubject.id}`, formData)
-        toast.success('Matière mise à jour')
+      if (isOnline) {
+        if (editingSubject) {
+          await api.put(`/subjects/${editingSubject.id}`, formData)
+          toast.success('Matière mise à jour')
+        } else {
+          await api.post('/subjects/', formData)
+          toast.success('Matière créée')
+        }
       } else {
-        await api.post('/subjects/', formData)
-        toast.success('Matière créée')
+        // Queue pour sync offline
+        if (editingSubject) {
+          await syncService.queueAction(
+            STORES.SUBJECTS,
+            'update',
+            `/api/v1/subjects/${editingSubject.id}`,
+            'PUT',
+            formData
+          )
+        } else {
+          await syncService.queueAction(
+            STORES.SUBJECTS,
+            'create',
+            '/api/v1/subjects/',
+            'POST',
+            formData
+          )
+        }
+        toast.success(editingSubject ? 'Matière mise à jour (sera synchronisée)' : 'Matière créée (sera synchronisée)')
       }
-      
+
       setFormData({ name: '', description: '', color: PRESET_COLORS[0] })
       setShowAddForm(false)
       setEditingSubject(null)
-      fetchSubjects()
+      refetch()
     } catch (error) {
       toast.error('Erreur lors de l\'enregistrement')
     }
@@ -93,11 +114,30 @@ export default function SubjectsPage() {
   const handleDelete = async (subjectId: string) => {
     if (!confirm('Supprimer cette matière et tout son contenu associé?')) return
 
+    const subjectToDelete = subjects.find(s => s.id === subjectId)
+    // Mise à jour optimiste
+    setSubjects(subjects.filter(s => s.id !== subjectId))
+
     try {
-      await api.delete(`/subjects/${subjectId}`)
-      toast.success('Matière supprimée')
-      fetchSubjects()
+      if (isOnline) {
+        await api.delete(`/subjects/${subjectId}`)
+        toast.success('Matière supprimée')
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.SUBJECTS,
+          'delete',
+          `/api/v1/subjects/${subjectId}`,
+          'DELETE',
+          { id: subjectId }
+        )
+        toast.success('Matière supprimée (sera synchronisée)')
+      }
     } catch (error) {
+      // Rollback en cas d'erreur
+      if (subjectToDelete) {
+        setSubjects([...subjects, subjectToDelete])
+      }
       toast.error('Erreur lors de la suppression')
     }
   }
@@ -121,18 +161,40 @@ export default function SubjectsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Matières</h1>
-          <p className="text-gray-600 mt-1">{subjects.length} matières</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Matières</h1>
+            {isFromCache && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <CloudOff className="w-3 h-3 mr-1" />
+                Cache
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {subjects.length} matières
+            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+          </p>
         </div>
-        {!showAddForm && (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Nouvelle matière
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isFromCache && isOnline && (
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              title="Actualiser les données"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          {!showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Nouvelle matière
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add/Edit Form */}

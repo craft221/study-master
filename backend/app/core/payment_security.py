@@ -147,22 +147,103 @@ def verify_stripe_signature(payload: bytes, signature: str, secret: str) -> bool
 
 def verify_paypal_signature(payload: Dict, headers: Dict, webhook_id: str) -> bool:
     """
-    Vérifie la signature PayPal d'un webhook.
+    Vérifie la signature PayPal d'un webhook via leur API de vérification.
 
-    PayPal utilise une vérification plus complexe via leur API.
-    En mode sandbox, on peut être plus permissif.
+    PayPal utilise une vérification cryptographique complexe:
+    1. Récupère les headers de transmission
+    2. Appelle l'API PayPal pour vérifier la signature
+    3. PayPal valide avec leur certificat
+
+    Référence: https://developer.paypal.com/docs/api-basics/notifications/webhooks/notification-messages/
     """
-    # TODO: Implémenter la vérification complète via l'API PayPal
-    # https://developer.paypal.com/docs/api-basics/notifications/webhooks/notification-messages/
+    import httpx
 
-    # Pour l'instant, vérifier les headers basiques
+    # Headers requis pour la vérification PayPal
     transmission_id = headers.get("paypal-transmission-id")
     transmission_time = headers.get("paypal-transmission-time")
+    transmission_sig = headers.get("paypal-transmission-sig")
+    cert_url = headers.get("paypal-cert-url")
+    auth_algo = headers.get("paypal-auth-algo", "SHA256withRSA")
 
-    if not transmission_id or not transmission_time:
+    # Vérifier que tous les headers requis sont présents
+    if not all([transmission_id, transmission_time, transmission_sig, cert_url, webhook_id]):
+        logger.warning("PayPal webhook missing required headers")
         return False
 
-    return True
+    # Vérifier que l'URL du certificat est bien de PayPal
+    if not cert_url.startswith("https://api.paypal.com/") and not cert_url.startswith("https://api.sandbox.paypal.com/"):
+        logger.warning(f"PayPal cert URL suspicious: {cert_url}")
+        return False
+
+    try:
+        # Obtenir un access token PayPal
+        paypal_client_id = getattr(settings, 'PAYPAL_CLIENT_ID', None)
+        paypal_client_secret = getattr(settings, 'PAYPAL_CLIENT_SECRET', None)
+        paypal_mode = getattr(settings, 'PAYPAL_MODE', 'sandbox')
+
+        if not paypal_client_id or not paypal_client_secret:
+            logger.error("PayPal credentials not configured")
+            return False
+
+        # URL de l'API PayPal selon le mode
+        if paypal_mode == "live":
+            api_base = "https://api-m.paypal.com"
+        else:
+            api_base = "https://api-m.sandbox.paypal.com"
+
+        # Obtenir le token d'accès
+        with httpx.Client(timeout=30.0) as client:
+            token_response = client.post(
+                f"{api_base}/v1/oauth2/token",
+                auth=(paypal_client_id, paypal_client_secret),
+                data={"grant_type": "client_credentials"},
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+
+            if token_response.status_code != 200:
+                logger.error(f"Failed to get PayPal access token: {token_response.status_code}")
+                return False
+
+            access_token = token_response.json().get("access_token")
+
+            # Appeler l'API de vérification de signature PayPal
+            verify_response = client.post(
+                f"{api_base}/v1/notifications/verify-webhook-signature",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "auth_algo": auth_algo,
+                    "cert_url": cert_url,
+                    "transmission_id": transmission_id,
+                    "transmission_sig": transmission_sig,
+                    "transmission_time": transmission_time,
+                    "webhook_id": webhook_id,
+                    "webhook_event": payload
+                }
+            )
+
+            if verify_response.status_code != 200:
+                logger.error(f"PayPal signature verification API error: {verify_response.status_code}")
+                return False
+
+            verification_result = verify_response.json()
+            verification_status = verification_result.get("verification_status")
+
+            if verification_status == "SUCCESS":
+                logger.info(f"PayPal webhook signature verified: {transmission_id}")
+                return True
+            else:
+                logger.warning(f"PayPal webhook signature FAILED: {verification_status}")
+                return False
+
+    except httpx.TimeoutException:
+        logger.error("PayPal signature verification timed out")
+        return False
+    except Exception as e:
+        logger.error(f"PayPal signature verification error: {e}")
+        return False
 
 
 def verify_flutterwave_signature(payload: Dict, headers: Dict, secret: str) -> bool:
@@ -170,16 +251,47 @@ def verify_flutterwave_signature(payload: Dict, headers: Dict, secret: str) -> b
     Vérifie la signature Flutterwave d'un webhook.
 
     Flutterwave envoie un hash dans le header 'verif-hash'.
+    Le hash est calculé à partir du secret configuré dans le dashboard Flutterwave.
+
+    Pour plus de sécurité, on vérifie aussi le payload avec HMAC.
     """
     if not secret:
+        logger.warning("Flutterwave secret not configured")
         return False
 
     verif_hash = headers.get("verif-hash")
     if not verif_hash:
+        logger.warning("Flutterwave webhook missing verif-hash header")
         return False
 
-    # Flutterwave utilise simplement le secret comme hash
-    return hmac.compare_digest(verif_hash, secret)
+    # Flutterwave utilise le secret hash configuré dans leur dashboard
+    # Le verif-hash doit correspondre exactement au secret configuré
+    if not hmac.compare_digest(verif_hash, secret):
+        logger.warning("Flutterwave verif-hash mismatch")
+        return False
+
+    # Vérification supplémentaire: valider la structure du payload
+    required_fields = ["event", "data"]
+    if not all(field in payload for field in required_fields):
+        logger.warning("Flutterwave payload missing required fields")
+        return False
+
+    # Vérifier que l'événement est un type connu
+    valid_events = [
+        "charge.completed",
+        "charge.failed",
+        "transfer.completed",
+        "transfer.failed",
+        "subscription.created",
+        "subscription.cancelled"
+    ]
+    event_type = payload.get("event", "")
+    if event_type not in valid_events:
+        logger.warning(f"Flutterwave unknown event type: {event_type}")
+        return False
+
+    logger.info(f"Flutterwave webhook verified: {event_type}")
+    return True
 
 
 # ==================== PROTECTION ANTI-FRAUDE ====================

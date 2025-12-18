@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_study_group_invitations'
-down_revision = None  # Will be linked during migration
+down_revision = 'add_leagues_social'
 branch_labels = None
 depends_on = None
 

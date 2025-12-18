@@ -160,11 +160,16 @@ class Settings(BaseSettings):
     # Frontend URL (pour les redirections après paiement)
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
-    # Email Configuration (SMTP)
+    # Email Configuration - Resend (recommandé)
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+
+    # Email Configuration - SMTP (fallback)
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+
+    # Email Common
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@studymaster.app")
     EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "Study Master")
 

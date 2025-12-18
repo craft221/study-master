@@ -57,8 +57,8 @@ class Subject(Base):
     mastery_percentage = Column(Float, default=0.0)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relations
     user = relationship("User", back_populates="subjects")
@@ -66,3 +66,4 @@ class Subject(Base):
     flashcards = relationship("Flashcard", back_populates="subject", cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="subject", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="subject", cascade="all, delete-orphan")
+    exam_sessions = relationship("ExamSession", back_populates="subject")

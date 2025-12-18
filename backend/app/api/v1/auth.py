@@ -3,6 +3,7 @@ Routes d'authentification avec rate limiting
 """
 
 import logging
+import secrets
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import redis.asyncio as redis
 
 from app.core.database import get_db
 from app.core.security import (
@@ -23,16 +25,20 @@ from app.core.security import (
     get_current_active_user
 )
 from app.core.config import settings
-from app.models.user import User
+from app.models.user import User, create_user_with_defaults
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
     RegisterRequest,
     UserResponse,
     RefreshTokenRequest,
-    RefreshTokenResponse
+    RefreshTokenResponse,
+    VerifyEmailRequest,
+    ResendVerificationRequest,
+    RegisterResponse
 )
 from app.services.mfa_service import mfa_service
+from app.services.email_service import email_service
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
@@ -42,6 +48,22 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
+
+# Redis connection pour les codes de vérification
+_redis_client = None
+
+
+async def get_redis():
+    """Obtenir une connexion Redis"""
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    return _redis_client
+
+
+def generate_verification_code() -> str:
+    """Génère un code de vérification à 6 chiffres"""
+    return ''.join([str(secrets.randbelow(10)) for _ in range(6)])
 
 
 @router.post("/login")
@@ -78,6 +100,27 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Compte désactivé"
+        )
+
+    # Vérifier si l'email est vérifié
+    if not user.is_verified:
+        # Renvoyer automatiquement un code de vérification
+        code = generate_verification_code()
+        redis_client = await get_redis()
+        await redis_client.setex(
+            f"email_verification:{login_data.email}",
+            600,  # 10 minutes
+            code
+        )
+        await email_service.send_verification_code(
+            to_email=login_data.email,
+            username=user.username,
+            code=code
+        )
+        logger.warning(f"Connexion refusée - email non vérifié: {login_data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email non vérifié. Un nouveau code de vérification a été envoyé."
         )
 
     # Vérifier MFA si activé
@@ -153,7 +196,7 @@ async def login(
     }
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=RegisterResponse)
 @limiter.limit("5/minute")  # Plus strict pour l'inscription
 async def register(
     request: Request,
@@ -161,10 +204,14 @@ async def register(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Inscription utilisateur.
+    Inscription utilisateur avec vérification par email.
 
-    Rate limited à 5 inscriptions par minute par IP
-    pour prévenir les créations de comptes en masse.
+    Rate limited à 5 inscriptions par minute par IP.
+
+    Flow:
+    1. Crée le compte (is_verified=False)
+    2. Envoie un code à 6 chiffres par email
+    3. L'utilisateur doit vérifier avec POST /verify-email
     """
     logger.info(f"Tentative d'inscription: {register_data.email}")
 
@@ -173,6 +220,31 @@ async def register(
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
+        # Si le compte existe mais n'est pas vérifié, on peut renvoyer le code
+        if not existing_user.is_verified:
+            # Générer et envoyer un nouveau code
+            code = generate_verification_code()
+            redis_client = await get_redis()
+            await redis_client.setex(
+                f"email_verification:{register_data.email}",
+                600,  # 10 minutes
+                code
+            )
+
+            # Envoyer l'email
+            await email_service.send_verification_code(
+                to_email=register_data.email,
+                username=existing_user.username,
+                code=code
+            )
+
+            logger.info(f"Code de vérification renvoyé pour compte non vérifié: {register_data.email}")
+            return RegisterResponse(
+                message="Un nouveau code de vérification a été envoyé à votre adresse email",
+                email=register_data.email,
+                requires_verification=True
+            )
+
         logger.warning(f"Tentative d'inscription avec email existant: {register_data.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -190,13 +262,14 @@ async def register(
             detail="Ce nom d'utilisateur est déjà utilisé"
         )
 
-    # Créer le nouvel utilisateur
-    new_user = User(
+    # Créer le nouvel utilisateur (non vérifié)
+    new_user = create_user_with_defaults(
         email=register_data.email,
         username=register_data.username,
         hashed_password=get_password_hash(register_data.password),
         full_name=register_data.full_name
     )
+    new_user.is_verified = False  # Explicitement non vérifié
 
     db.add(new_user)
     await db.commit()
@@ -204,7 +277,34 @@ async def register(
 
     logger.info(f"Nouvel utilisateur créé: {new_user.id} ({new_user.email})")
 
-    return new_user
+    # Générer le code de vérification
+    code = generate_verification_code()
+
+    # Stocker dans Redis (expire après 10 minutes)
+    redis_client = await get_redis()
+    await redis_client.setex(
+        f"email_verification:{register_data.email}",
+        600,  # 10 minutes
+        code
+    )
+
+    # Envoyer l'email de vérification
+    email_sent = await email_service.send_verification_code(
+        to_email=register_data.email,
+        username=new_user.username,
+        code=code
+    )
+
+    if email_sent:
+        logger.info(f"Email de vérification envoyé à {register_data.email}")
+    else:
+        logger.warning(f"Échec d'envoi de l'email de vérification à {register_data.email}")
+
+    return RegisterResponse(
+        message="Compte créé ! Vérifiez votre email pour le code de vérification",
+        email=register_data.email,
+        requires_verification=True
+    )
 
 
 @router.post("/refresh", response_model=RefreshTokenResponse)
@@ -277,3 +377,129 @@ async def logout(
         logger.info(f"Utilisateur {current_user.id} déconnecté, token révoqué")
 
     return {"message": "Déconnexion réussie"}
+
+
+@router.post("/verify-email")
+@limiter.limit("10/minute")
+async def verify_email(
+    request: Request,
+    verify_data: VerifyEmailRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Vérifie l'email avec le code à 6 chiffres.
+
+    Après vérification réussie, retourne les tokens d'accès.
+    """
+    logger.info(f"Tentative de vérification email: {verify_data.email}")
+
+    # Récupérer le code depuis Redis
+    redis_client = await get_redis()
+    stored_code = await redis_client.get(f"email_verification:{verify_data.email}")
+
+    if not stored_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code expiré ou invalide. Demandez un nouveau code."
+        )
+
+    if stored_code != verify_data.code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code incorrect"
+        )
+
+    # Trouver l'utilisateur
+    result = await db.execute(select(User).where(User.email == verify_data.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur non trouvé"
+        )
+
+    # Marquer comme vérifié
+    user.is_verified = True
+    await db.commit()
+
+    # Supprimer le code de Redis
+    await redis_client.delete(f"email_verification:{verify_data.email}")
+
+    # Générer les tokens
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    refresh_token = create_refresh_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    )
+
+    logger.info(f"Email vérifié pour utilisateur {user.id}")
+
+    # Envoyer email de bienvenue
+    await email_service.send_welcome(
+        to_email=user.email,
+        username=user.username
+    )
+
+    return {
+        "message": "Email vérifié avec succès !",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user": user
+    }
+
+
+@router.post("/resend-verification")
+@limiter.limit("3/minute")  # Strict pour éviter le spam
+async def resend_verification_code(
+    request: Request,
+    resend_data: ResendVerificationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Renvoie le code de vérification par email.
+
+    Limité à 3 demandes par minute pour éviter les abus.
+    """
+    logger.info(f"Demande de renvoi de code pour: {resend_data.email}")
+
+    # Trouver l'utilisateur
+    result = await db.execute(select(User).where(User.email == resend_data.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Ne pas révéler si l'email existe ou non (sécurité)
+        return {"message": "Si cet email est enregistré, un nouveau code sera envoyé"}
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cet email est déjà vérifié"
+        )
+
+    # Générer un nouveau code
+    code = generate_verification_code()
+
+    # Stocker dans Redis
+    redis_client = await get_redis()
+    await redis_client.setex(
+        f"email_verification:{resend_data.email}",
+        600,  # 10 minutes
+        code
+    )
+
+    # Envoyer l'email
+    await email_service.send_verification_code(
+        to_email=resend_data.email,
+        username=user.username,
+        code=code
+    )
+
+    logger.info(f"Nouveau code envoyé à {resend_data.email}")
+
+    return {"message": "Un nouveau code de vérification a été envoyé"}

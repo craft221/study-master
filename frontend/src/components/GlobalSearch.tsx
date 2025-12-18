@@ -38,7 +38,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen])
 
-  // Debounced search
+  // OPTIMISÉ: Utilise les endpoints de recherche côté serveur
+  // au lieu de charger TOUT le contenu et filtrer côté client
   const searchAll = useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 2) {
       setResults([])
@@ -47,51 +48,55 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
 
     setIsLoading(true)
     try {
+      // Utiliser les endpoints de recherche serveur - beaucoup plus efficace!
       const [notesRes, decksRes, quizzesRes] = await Promise.allSettled([
-        api.get('/notes/'),
-        api.get('/flashcards/decks/'),
-        api.get('/quizzes/')
+        api.get('/notes/search', { params: { q: searchQuery, page_size: 5 } }),
+        api.get('/flashcards/decks/', { params: { search: searchQuery, page_size: 5 } }),
+        api.get('/quizzes/', { params: { page_size: 10 } }) // Quiz n'a pas de search, on filtre
       ])
 
       const allResults: SearchResult[] = []
       const lowerQuery = searchQuery.toLowerCase()
 
-      // Filter notes
+      // Notes - déjà filtrées par le serveur
       if (notesRes.status === 'fulfilled') {
-        const notes = notesRes.value.data.filter((n: any) =>
-          n.title.toLowerCase().includes(lowerQuery) ||
-          n.content.toLowerCase().includes(lowerQuery)
-        )
+        const notes = notesRes.value.data.notes || notesRes.value.data || []
         notes.slice(0, 5).forEach((n: any) => {
           allResults.push({
             id: n.id,
             title: n.title,
             type: 'note',
-            description: n.content.substring(0, 80) + '...'
+            description: n.content ? n.content.substring(0, 80) + '...' : ''
           })
         })
       }
 
-      // Filter flashcard decks
+      // Flashcard decks - filtrage serveur si disponible, sinon client
       if (decksRes.status === 'fulfilled') {
-        const decks = decksRes.value.data.filter((d: any) =>
-          d.title.toLowerCase().includes(lowerQuery) ||
-          (d.description && d.description.toLowerCase().includes(lowerQuery))
-        )
+        let decks = decksRes.value.data.decks || decksRes.value.data || []
+        // Filtrage client de secours si le serveur ne supporte pas le search
+        if (!decksRes.value.config?.params?.search) {
+          decks = decks.filter((d: any) =>
+            d.title?.toLowerCase().includes(lowerQuery) ||
+            d.deck_name?.toLowerCase().includes(lowerQuery) ||
+            (d.description && d.description.toLowerCase().includes(lowerQuery))
+          )
+        }
         decks.slice(0, 5).forEach((d: any) => {
           allResults.push({
-            id: d.id,
-            title: d.title,
+            id: d.id || d.deck_name,
+            title: d.title || d.deck_name,
             type: 'flashcard',
             description: d.description || `${d.card_count || 0} cartes`
           })
         })
       }
 
-      // Filter quizzes
+      // Quizzes - filtrage client (pas d'endpoint search dédié)
       if (quizzesRes.status === 'fulfilled') {
-        const quizzes = quizzesRes.value.data.filter((q: any) =>
-          q.title.toLowerCase().includes(lowerQuery) ||
+        const allQuizzes = quizzesRes.value.data || []
+        const quizzes = allQuizzes.filter((q: any) =>
+          q.title?.toLowerCase().includes(lowerQuery) ||
           (q.description && q.description.toLowerCase().includes(lowerQuery))
         )
         quizzes.slice(0, 5).forEach((q: any) => {
@@ -99,7 +104,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
             id: q.id,
             title: q.title,
             type: 'quiz',
-            description: q.description || `${q.question_count || 0} questions`
+            description: q.description || `${q.total_questions || 0} questions`
           })
         })
       }

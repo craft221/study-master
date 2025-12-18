@@ -19,10 +19,11 @@ from fastapi import Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, UserSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -324,7 +325,9 @@ async def get_current_user(
         raise credentials_exception
 
     result = await db.execute(
-        select(User).where(
+        select(User)
+        .options(selectinload(User.subscription))  # Charger la subscription pour subscription_type
+        .where(
             User.id == int(user_id),
             User.is_deleted == False  # Ne pas retourner les users supprimés
         )
@@ -380,7 +383,9 @@ async def get_current_user_optional(
             return None
 
         result = await db.execute(
-            select(User).where(
+            select(User)
+            .options(selectinload(User.subscription))  # Charger la subscription
+            .where(
                 User.id == int(user_id),
                 User.is_deleted == False
             )

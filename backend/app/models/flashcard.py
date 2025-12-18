@@ -29,6 +29,31 @@ class FlashcardDifficulty(enum.Enum):
     HARD = "hard"
 
 
+class FlashcardDeck(Base):
+    """Groupe de flashcards (paquet/deck)"""
+    __tablename__ = "flashcard_decks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
+
+    # Metadata
+    is_ai_generated = Column(Boolean, default=False)
+    is_public = Column(Boolean, default=False)
+    card_count = Column(Integer, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), default=utc_now, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=utc_now, server_default=func.now(), onupdate=utc_now)
+
+    # Relations
+    user = relationship("User", backref="flashcard_decks")
+    flashcards = relationship("Flashcard", back_populates="deck", cascade="all, delete-orphan")
+
+
 class Flashcard(Base):
     __tablename__ = "flashcards"
 
@@ -40,7 +65,8 @@ class Flashcard(Base):
     subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     source_note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
-    deck_name = Column(String, nullable=True)
+    deck_id = Column(Integer, ForeignKey("flashcard_decks.id"), nullable=True)
+    deck_name = Column(String, nullable=True)  # Legacy field
 
     # Media URLs
     front_image_url = Column(String, nullable=True)
@@ -100,12 +126,13 @@ class Flashcard(Base):
     is_public = Column(Boolean, default=False)  # Visible dans la page Explore
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=utc_now, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=utc_now, server_default=func.now(), onupdate=utc_now)
 
     # Relations
     user = relationship("User", back_populates="flashcards")
     subject = relationship("Subject", back_populates="flashcards")
+    deck = relationship("FlashcardDeck", back_populates="flashcards")
     reviews = relationship("FlashcardReview", back_populates="flashcard", cascade="all, delete-orphan")
 
 

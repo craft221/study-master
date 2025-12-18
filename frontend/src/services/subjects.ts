@@ -138,4 +138,16 @@ export const subjectsService = {
     const response = await api.post(`/subjects/${id}/archive`)
     return response.data
   },
+
+  // Alias for getAll (compatibility)
+  getSubjects: async (params?: {
+    is_active?: boolean
+    is_archived?: boolean
+    semester?: string
+  }): Promise<Subject[]> => {
+    const response = await api.get('/subjects/', { params })
+    return response.data.subjects || response.data
+  },
 }
+
+export default subjectsService

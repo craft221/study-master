@@ -32,6 +32,7 @@ from app.schemas.document import (
     format_file_size
 )
 from app.services.xp_service import award_xp
+from app.core.sql_utils import escape_like_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +264,9 @@ async def list_documents(
         query = query.where(Document.is_archived == is_archived)
 
     if search:
-        search_filter = f"%{search}%"
+        # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+        safe_search = escape_like_pattern(search)
+        search_filter = f"%{safe_search}%"
         query = query.where(
             (Document.title.ilike(search_filter)) |
             (Document.original_filename.ilike(search_filter)) |

@@ -9,6 +9,42 @@ from app.models.user import User
 logger = logging.getLogger(__name__)
 
 
+# Import lazy pour éviter les imports circulaires
+_leaderboard_service = None
+
+
+def get_leaderboard_service():
+    """Import lazy du service leaderboard"""
+    global _leaderboard_service
+    if _leaderboard_service is None:
+        from app.services.leaderboard_service import leaderboard_service
+        _leaderboard_service = leaderboard_service
+    return _leaderboard_service
+
+
+async def update_weekly_xp(user_id: int, xp_amount: int, db=None):
+    """
+    Met à jour les XP hebdomadaires pour le système de ligues.
+    Si pas de session db fournie, utilise une tâche Celery.
+
+    Args:
+        user_id: ID de l'utilisateur
+        xp_amount: Montant d'XP à ajouter
+        db: Session de base de données (optionnel)
+    """
+    if db is not None:
+        # Mise à jour directe avec la session fournie
+        leaderboard_svc = get_leaderboard_service()
+        await leaderboard_svc.add_weekly_xp(db, user_id, xp_amount)
+    else:
+        # Utiliser une tâche Celery pour la mise à jour asynchrone
+        try:
+            from app.tasks.gamification_tasks import add_user_weekly_xp
+            add_user_weekly_xp.delay(user_id, xp_amount)
+        except Exception as e:
+            logger.warning(f"Could not queue weekly XP update task: {e}")
+
+
 def xp_for_next_level(level: int) -> int:
     """
     Calcule l'XP nécessaire pour passer du niveau actuel au suivant.
@@ -100,7 +136,8 @@ async def award_xp(
     amount: int,
     reason: str,
     event_type: str = "xp_gained",
-    extra_data: Optional[dict] = None
+    extra_data: Optional[dict] = None,
+    db=None
 ):
     """
     Attribuer des XP à un utilisateur et broadcaster la mise à jour
@@ -111,6 +148,7 @@ async def award_xp(
         reason: Raison de l'attribution (pour le log et le message)
         event_type: Type d'événement pour le broadcast
         extra_data: Données supplémentaires à inclure dans le broadcast
+        db: Session de base de données (optionnel, pour mise à jour directe weekly_xp)
     """
     # Utiliser gamification pour gérer les XP (total_xp est une property en lecture seule sur User)
     if not user.gamification:
@@ -135,6 +173,13 @@ async def award_xp(
         user.gamification.level = new_level
 
     logger.info(f"XP awarded: {user.username} +{amount} XP ({reason}) -> Total: {new_xp}")
+
+    # Mettre à jour weekly_xp pour les ligues
+    try:
+        await update_weekly_xp(user.id, amount, db)
+    except Exception as e:
+        # Non bloquant si la mise à jour weekly_xp échoue
+        logger.warning(f"Failed to update weekly XP for leagues: {e}")
 
     # Broadcaster la mise à jour
     try:

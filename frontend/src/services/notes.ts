@@ -77,4 +77,19 @@ export const notesService = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/notes/${id}`)
   },
+
+  // Alias for getAll (compatibility)
+  getNotes: async (params?: {
+    subject_id?: number
+    note_type?: string
+    tags?: string
+    is_pinned?: boolean
+    is_favorite?: boolean
+    is_archived?: boolean
+  }): Promise<Note[]> => {
+    const response = await api.get('/notes/', { params })
+    return response.data.notes || response.data
+  },
 }
+
+export default notesService

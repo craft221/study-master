@@ -465,14 +465,53 @@ async def submit_quiz_attempt(
             detail="Quiz non trouvé"
         )
 
-    # Vérifier que toutes les questions ont une réponse
-    if len(submission.answers) != len(quiz.questions_data):
+    # SÉCURITÉ: Validation stricte des réponses soumises
+    total_questions = len(quiz.questions_data)
+
+    # Vérifier le nombre de réponses
+    if len(submission.answers) != total_questions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Vous devez répondre à toutes les questions ({len(quiz.questions_data)} questions)"
+            detail=f"Vous devez répondre à toutes les questions ({total_questions} questions)"
         )
 
-    # Corriger les réponses
+    # Extraire et valider tous les question_id AVANT le traitement
+    submitted_question_ids = set()
+    for user_answer in submission.answers:
+        question_id = user_answer.question_id
+
+        # Vérifier que question_id est un entier valide
+        if not isinstance(question_id, int) or question_id != int(question_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"question_id doit être un entier: {question_id}"
+            )
+
+        # Vérifier les bounds
+        if question_id < 0 or question_id >= total_questions:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"question_id {question_id} invalide (doit être entre 0 et {total_questions - 1})"
+            )
+
+        # Vérifier les doublons (CRITIQUE: empêche la manipulation de score)
+        if question_id in submitted_question_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"question_id {question_id} en double - chaque question ne peut être répondue qu'une fois"
+            )
+        submitted_question_ids.add(question_id)
+
+    # Vérifier que TOUTES les questions sont couvertes
+    expected_ids = set(range(total_questions))
+    if submitted_question_ids != expected_ids:
+        missing = expected_ids - submitted_question_ids
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Questions manquantes: {sorted(missing)}"
+        )
+
+    # Corriger les réponses (maintenant que la validation est passée)
     answers_with_correction = []
     points_earned = 0
     correct_count = 0
@@ -480,13 +519,6 @@ async def submit_quiz_attempt(
 
     for user_answer in submission.answers:
         question_id = user_answer.question_id
-
-        if question_id < 0 or question_id >= len(quiz.questions_data):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"question_id {question_id} invalide"
-            )
-
         question = quiz.questions_data[question_id]
         correct_answer = question["correct_answer"]
         is_correct = user_answer.user_answer.strip().lower() == correct_answer.strip().lower()

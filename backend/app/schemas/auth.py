@@ -53,3 +53,21 @@ class RefreshTokenResponse(BaseModel):
     """Réponse de rafraîchissement de token"""
     access_token: str
     token_type: str = "bearer"
+
+
+class VerifyEmailRequest(BaseModel):
+    """Requête de vérification d'email"""
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6, description="Code de vérification à 6 chiffres")
+
+
+class ResendVerificationRequest(BaseModel):
+    """Requête de renvoi du code de vérification"""
+    email: EmailStr
+
+
+class RegisterResponse(BaseModel):
+    """Réponse d'inscription (avant vérification)"""
+    message: str
+    email: str
+    requires_verification: bool = True

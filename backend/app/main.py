@@ -15,6 +15,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.services.cache_service import cache_service
+from app.services.search_cache_service import search_cache
 from app.core.exceptions import register_exception_handlers
 from app.middleware.security import (
     RateLimitMiddleware,
@@ -73,6 +74,7 @@ from app.api.v1.daily_quests import router as daily_quests_router
 from app.api.v1.social_share import router as social_share_router
 from app.api.v1.explore import router as explore_router
 from app.api.v1.mfa import router as mfa_router
+from app.api.v1.exam_mode import router as exam_mode_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -188,7 +190,7 @@ async def get_metrics() -> Dict[str, Any]:
 async def invalidate_cache(prefix: str) -> Dict[str, Any]:
     """
     Invalide le cache par préfixe.
-    Préfixes: ai, leaderboard, achievements, mascot, all
+    Préfixes: ai, leaderboard, achievements, mascot, search, explore, all
     """
     if prefix == "ai":
         count = await cache_service.invalidate_ai_cache()
@@ -196,6 +198,10 @@ async def invalidate_cache(prefix: str) -> Dict[str, Any]:
         count = await cache_service.invalidate_leaderboard_cache()
     elif prefix == "achievements":
         count = await cache_service.invalidate_achievements_cache()
+    elif prefix == "search":
+        count = await cache_service.delete_pattern("cache:search:*")
+    elif prefix == "explore":
+        count = await search_cache.invalidate_explore_cache()
     elif prefix == "all":
         await cache_service.clear_all()
         count = -1  # Unknown
@@ -208,6 +214,42 @@ async def invalidate_cache(prefix: str) -> Dict[str, Any]:
         "keys_deleted": count,
         "message": f"Cache '{prefix}' invalidé"
     }
+
+
+@router.get("/cache/search-metrics")
+async def get_search_cache_metrics() -> Dict[str, Any]:
+    """
+    Retourne les métriques de cache spécifiques aux recherches.
+    """
+    return {
+        "search_metrics": search_cache.get_search_metrics(),
+        "cache_enabled": cache_service.enabled,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.post("/cache/warm")
+async def trigger_cache_warming() -> Dict[str, Any]:
+    """
+    Déclenche manuellement le cache warming.
+    Utile après un déploiement ou après avoir vidé le cache.
+    """
+    try:
+        from app.core.database import async_session_maker
+        async with async_session_maker() as db:
+            results = await search_cache.warm_all_caches(db)
+
+        return {
+            "success": True,
+            "results": results,
+            "message": "Cache warming completed"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Cache warming failed"
+        }
 
 
 # Include all routers
@@ -242,6 +284,7 @@ app.include_router(daily_quests_router, prefix="/api/v1", tags=["Daily Quests - 
 app.include_router(social_share_router, prefix="/api/v1/share", tags=["Social Share - Partage Social 📤"])
 app.include_router(explore_router, prefix="/api/v1/explore", tags=["Explore - Découverte de Contenu 🔍"])
 app.include_router(mfa_router, prefix="/api/v1/mfa", tags=["MFA - Authentification à Deux Facteurs 🔐"])
+app.include_router(exam_mode_router, prefix="/api/v1/exam-mode", tags=["Exam Mode - Préparation aux Examens 📚"])
 
 
 @app.middleware("http")
@@ -289,6 +332,20 @@ async def startup_event():
     cache_initialized = await cache_service.initialize()
     if cache_initialized:
         logger.info("Cache Redis initialisé avec succès")
+
+        # Cache Warming - Pré-charger les données populaires
+        # Exécuté en background pour ne pas bloquer le démarrage
+        async def warm_caches():
+            try:
+                from app.core.database import async_session_maker
+                async with async_session_maker() as db:
+                    warmup_results = await search_cache.warm_all_caches(db)
+                    logger.info(f"Cache warming completed: {warmup_results}")
+            except Exception as e:
+                logger.warning(f"Cache warming failed (non-critical): {e}")
+
+        asyncio.create_task(warm_caches())
+        logger.info("Cache warming task started in background")
     else:
         logger.warning("Cache Redis non disponible - fonctionnement en mode dégradé")
 
@@ -335,12 +392,13 @@ app.add_middleware(
 )
 
 # Middleware de rate limiting avancé (par IP ET par utilisateur)
+# Note: Limites élevées pour le développement local
 app.add_middleware(
     RateLimitMiddleware,
     redis_url=settings.REDIS_URL,
-    requests_per_minute=settings.RATE_LIMIT_PER_MINUTE,
-    requests_per_hour=1000,
-    burst_size=20
+    requests_per_minute=300,  # 300/min pour dev (au lieu de 60)
+    requests_per_hour=5000,   # 5000/heure pour dev (au lieu de 1000)
+    burst_size=50             # Burst de 50 (au lieu de 20)
 )
 
 # Middleware de headers de sécurité

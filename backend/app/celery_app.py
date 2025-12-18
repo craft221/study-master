@@ -15,6 +15,7 @@ celery_app = Celery(
         "app.tasks.export_tasks",
         "app.tasks.notification_tasks",
         "app.tasks.gamification_tasks",
+        "app.tasks.exam_mode_tasks",
     ]
 )
 
@@ -63,6 +64,14 @@ celery_app.conf.update(
             "schedule": 7200.0,  # Toutes les 2 heures
         },
 
+        # === Reset Hebdomadaire des Ligues ===
+        # Promeut/rétrograde les utilisateurs et reset les XP
+        # Exécuté chaque lundi à 00:00 UTC
+        "weekly-league-reset": {
+            "task": "app.tasks.gamification_tasks.process_weekly_league_reset",
+            "schedule": 604800.0,  # 7 jours en secondes
+        },
+
         # === Rappels Calendrier Intelligents ===
         # Vérifie les événements et envoie des rappels selon le type:
         # - Examen: 7j, 3j, 1j, 2h, 30min avant
@@ -109,6 +118,38 @@ celery_app.conf.update(
             "task": "app.tasks.notification_tasks.send_email_digest",
             "schedule": 3600.0,  # Toutes les heures (18h heure locale)
         },
+
+        # === Exam Mode - Rappels Quotidiens ===
+        # Envoie des rappels aux heures configurées par chaque utilisateur
+        "exam-mode-daily-reminders": {
+            "task": "exam_mode.send_daily_reminders",
+            "schedule": 3600.0,  # Toutes les heures (vérifie les timezones)
+        },
+
+        # === Exam Mode - Alertes Examens ===
+        # Alerte J-7, J-3, J-1, Jour J
+        "exam-mode-exam-alerts": {
+            "task": "exam_mode.send_exam_alerts",
+            "schedule": 21600.0,  # Toutes les 6 heures
+        },
+
+        # === Exam Mode - Mise à jour Prédictions ===
+        "exam-mode-update-predictions": {
+            "task": "exam_mode.update_predictions",
+            "schedule": 21600.0,  # Toutes les 6 heures
+        },
+
+        # === Exam Mode - Nettoyage Sessions Expirées ===
+        "exam-mode-cleanup-sessions": {
+            "task": "exam_mode.cleanup_expired_sessions",
+            "schedule": 86400.0,  # Une fois par jour
+        },
+
+        # === Exam Mode - Notifications Progression ===
+        "exam-mode-progress-notifications": {
+            "task": "exam_mode.send_progress_notifications",
+            "schedule": 7200.0,  # Toutes les 2 heures
+        },
     },
 )
 
@@ -119,6 +160,8 @@ celery_app.conf.task_routes = {
     "app.tasks.export_tasks.*": {"queue": "processing"},
     "app.tasks.notification_tasks.*": {"queue": "notifications"},
     "app.tasks.gamification_tasks.*": {"queue": "default"},
+    "app.tasks.exam_mode_tasks.*": {"queue": "notifications"},
+    "exam_mode.*": {"queue": "notifications"},
 }
 
 if __name__ == "__main__":

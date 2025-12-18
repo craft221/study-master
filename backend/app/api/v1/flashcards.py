@@ -32,6 +32,7 @@ from app.services.fsrs_service import (
     create_fsrs_card_from_flashcard,
     format_interval_display
 )
+from app.core.sql_utils import escape_like_pattern
 
 router = APIRouter()
 
@@ -614,7 +615,9 @@ async def list_flashcards(
     if is_suspended is not None:
         query = query.where(Flashcard.is_suspended == is_suspended)
     if tags:
-        query = query.where(Flashcard.tags.ilike(f"%{tags}%"))
+        # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+        safe_tags = escape_like_pattern(tags)
+        query = query.where(Flashcard.tags.ilike(f"%{safe_tags}%"))
     
     # Compter le total
     count_query = select(func.count()).select_from(query.subquery())

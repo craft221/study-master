@@ -45,7 +45,7 @@ class SparkIntelligenceService:
     """
 
     def __init__(self):
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-5-20250929"  # Claude Sonnet 4.5
 
     async def analyze_user_patterns(
         self,

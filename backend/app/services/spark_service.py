@@ -131,7 +131,7 @@ class SparkService:
     """
 
     def __init__(self):
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-5-20250929"  # Claude Sonnet 4.5
         self.max_tokens_message = 300
         self.max_tokens_tutor = 600
         self.max_tokens_conversation = 500

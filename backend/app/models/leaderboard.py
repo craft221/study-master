@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SQLEnum, Boolean, JSON, Index
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, JSON, Index
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -97,7 +97,7 @@ class UserLeague(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
 
     # Ligue actuelle
-    current_tier = Column(SQLEnum(LeagueTier), default=LeagueTier.BRONZE, nullable=False)
+    current_tier = Column(String(20), default="bronze", nullable=False)
 
     # XP de la semaine en cours (reset chaque lundi)
     weekly_xp = Column(Integer, default=0, nullable=False)
@@ -106,7 +106,7 @@ class UserLeague(Base):
     current_rank = Column(Integer, nullable=True)
 
     # Historique
-    highest_tier_reached = Column(SQLEnum(LeagueTier), default=LeagueTier.BRONZE, nullable=False)
+    highest_tier_reached = Column(String(20), default="bronze", nullable=False)
     weeks_in_current_tier = Column(Integer, default=0, nullable=False)
     total_promotions = Column(Integer, default=0, nullable=False)
     total_demotions = Column(Integer, default=0, nullable=False)
@@ -126,13 +126,15 @@ class UserLeague(Base):
     @property
     def tier_config(self):
         """Retourne la configuration de la ligue actuelle"""
-        return LEAGUE_CONFIG[self.current_tier]
+        tier_enum = LeagueTier(self.current_tier)
+        return LEAGUE_CONFIG[tier_enum]
 
     @property
     def next_tier(self) -> Optional[LeagueTier]:
         """Retourne la prochaine ligue"""
         tiers = list(LeagueTier)
-        current_idx = tiers.index(self.current_tier)
+        current_enum = LeagueTier(self.current_tier)
+        current_idx = tiers.index(current_enum)
         if current_idx < len(tiers) - 1:
             return tiers[current_idx + 1]
         return None
@@ -141,7 +143,8 @@ class UserLeague(Base):
     def previous_tier(self) -> Optional[LeagueTier]:
         """Retourne la ligue précédente"""
         tiers = list(LeagueTier)
-        current_idx = tiers.index(self.current_tier)
+        current_enum = LeagueTier(self.current_tier)
+        current_idx = tiers.index(current_enum)
         if current_idx > 0:
             return tiers[current_idx - 1]
         return None
@@ -155,8 +158,8 @@ class LeaderboardEntry(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Type et période
-    leaderboard_type = Column(SQLEnum(LeaderboardType), nullable=False)
-    period = Column(SQLEnum(LeaderboardPeriod), nullable=False)
+    leaderboard_type = Column(String(20), nullable=False)
+    period = Column(String(20), nullable=False)
 
     # Période spécifique (ex: "2024-W01" pour semaine 1, "2024-01" pour janvier)
     period_key = Column(String(20), nullable=False)
@@ -166,7 +169,7 @@ class LeaderboardEntry(Base):
     rank = Column(Integer, nullable=True)
 
     # Ligue au moment du classement
-    league_tier = Column(SQLEnum(LeagueTier), nullable=True)
+    league_tier = Column(String(20), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
@@ -189,8 +192,8 @@ class LeagueHistory(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Changement
-    from_tier = Column(SQLEnum(LeagueTier), nullable=False)
-    to_tier = Column(SQLEnum(LeagueTier), nullable=False)
+    from_tier = Column(String(20), nullable=False)
+    to_tier = Column(String(20), nullable=False)
 
     # Contexte
     period_key = Column(String(20), nullable=False)  # ex: "2024-W01"

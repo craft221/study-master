@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import {
   FunctionSquare,
   Type,
@@ -8,9 +8,14 @@ import {
   Infinity,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Image as ImageIcon,
+  Upload,
+  Loader2
 } from 'lucide-react'
 import MarkdownRenderer from './MarkdownRenderer'
+import api from '@/lib/api'
+import { toast } from 'react-hot-toast'
 
 interface LaTeXEditorProps {
   value: string
@@ -134,7 +139,10 @@ export default function LaTeXEditor({
 }: LaTeXEditorProps) {
   const [showPreview, setShowPreview] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const insertLatex = (latex: string) => {
     if (!textareaRef.current) return
@@ -160,6 +168,157 @@ export default function LaTeXEditor({
     }, 0)
   }
 
+  // Upload image to server
+  const uploadImage = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Seules les images sont acceptées')
+      return null
+    }
+
+    // Check file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image trop volumineuse (max 10 MB)')
+      return null
+    }
+
+    setIsUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/notes/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        toast.success('Image uploadée!')
+        return response.data.markdown
+      } else {
+        toast.error('Erreur lors de l\'upload')
+        return null
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload')
+      return null
+    } finally {
+      setIsUploading(false)
+    }
+  }, [])
+
+  // Insert markdown at cursor position
+  const insertAtCursor = useCallback((text: string) => {
+    if (!textareaRef.current) return
+
+    const textarea = textareaRef.current
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const before = value.substring(0, start)
+    const after = value.substring(end)
+
+    // Add newlines if needed for better formatting
+    const needsNewlineBefore = before.length > 0 && !before.endsWith('\n')
+    const needsNewlineAfter = after.length > 0 && !after.startsWith('\n')
+
+    const newValue = `${before}${needsNewlineBefore ? '\n' : ''}${text}${needsNewlineAfter ? '\n' : ''}${after}`
+    onChange(newValue)
+
+    // Set cursor after inserted text
+    setTimeout(() => {
+      const newPos = start + (needsNewlineBefore ? 1 : 0) + text.length
+      textarea.focus()
+      textarea.setSelectionRange(newPos, newPos)
+    }, 0)
+  }, [value, onChange])
+
+  // Handle paste event (Ctrl+V with image)
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        if (file) {
+          const markdown = await uploadImage(file)
+          if (markdown) {
+            insertAtCursor(markdown)
+          }
+        }
+        return
+      }
+    }
+    // If no image, let the default paste behavior happen
+  }, [uploadImage, insertAtCursor])
+
+  // Handle drag events
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer?.files
+    if (!files || files.length === 0) return
+
+    // Upload each image file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.type.startsWith('image/')) {
+        const markdown = await uploadImage(file)
+        if (markdown) {
+          insertAtCursor(markdown)
+        }
+      }
+    }
+  }, [uploadImage, insertAtCursor])
+
+  // Handle file input change (manual upload)
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.type.startsWith('image/')) {
+        const markdown = await uploadImage(file)
+        if (markdown) {
+          insertAtCursor(markdown)
+        }
+      }
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [uploadImage, insertAtCursor])
+
+  // Trigger file input click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -167,13 +326,41 @@ export default function LaTeXEditor({
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Éditeur LaTeX</h3>
 
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded"
-          >
-            {showPreview ? 'Masquer' : 'Afficher'} aperçu
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Image Upload Button */}
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              className="flex items-center gap-1 text-xs px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition disabled:opacity-50"
+            >
+              {isUploading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ImageIcon className="h-3 w-3" />
+              )}
+              <span>Image</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded"
+            >
+              {showPreview ? 'Masquer' : 'Afficher'} aperçu
+            </button>
+          </div>
         </div>
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          multiple
+          className="hidden"
+        />
 
         <div className="space-y-2">
           {Object.entries(symbolCategories).map(([key, category]) => {
@@ -184,6 +371,7 @@ export default function LaTeXEditor({
               <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
 
                 <button
+                  type="button"
                   onClick={() => setActiveCategory(isActive ? null : key)}
                   className="w-full flex items-center justify-between p-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
                 >
@@ -208,6 +396,7 @@ export default function LaTeXEditor({
                   <div className="p-3 bg-gray-50 dark:bg-gray-800 grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
                     {category.symbols.map((symbol, idx) => (
                       <button
+                        type="button"
                         key={idx}
                         onClick={() => insertLatex(symbol.latex)}
                         className="p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-600 transition group relative"
@@ -229,17 +418,55 @@ export default function LaTeXEditor({
 
         <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-700 dark:text-blue-400">
           <strong>Astuce :</strong> Utilise <code>$formule$</code> pour inline, ou <code>$$formule$$</code> pour un bloc.
+          <span className="ml-2 text-green-600 dark:text-green-400">
+            <ImageIcon className="h-3 w-3 inline mr-1" />
+            Colle une image (Ctrl+V) ou glisse-la ici!
+          </span>
         </div>
       </div>
 
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-100 font-mono text-sm"
-      />
+      {/* Textarea with drag & drop zone */}
+      <div
+        className={`relative ${isDragging ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onPaste={handlePaste}
+          placeholder={placeholder}
+          rows={rows}
+          className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-100 font-mono text-sm"
+        />
+
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-green-500/20 border-2 border-dashed border-green-500 rounded-lg flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+              <Upload className="h-5 w-5 text-green-600" />
+              <span className="text-green-700 dark:text-green-400 font-medium">
+                Dépose ton image ici
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Upload indicator */}
+        {isUploading && (
+          <div className="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+              <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
+              <span className="text-gray-700 dark:text-gray-300 font-medium">
+                Upload en cours...
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {showPreview && value && (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">

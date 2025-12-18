@@ -36,6 +36,27 @@ ContentType = Literal["all", "notes", "flashcards", "quizzes"]
 SortBy = Literal["recent", "popular", "rating"]
 
 
+def escape_like_pattern(pattern: str) -> str:
+    """
+    SÉCURITÉ: Échappe les caractères spéciaux SQL LIKE pour éviter les injections.
+
+    Les caractères spéciaux dans LIKE sont:
+    - % : correspond à n'importe quelle séquence de caractères
+    - _ : correspond à un seul caractère
+    - \ : caractère d'échappement
+
+    On les échappe avec un backslash.
+    """
+    if not pattern:
+        return ""
+    # Échapper le backslash en premier (sinon on échappe nos propres échappements)
+    pattern = pattern.replace("\\", "\\\\")
+    # Échapper les caractères spéciaux LIKE
+    pattern = pattern.replace("%", "\\%")
+    pattern = pattern.replace("_", "\\_")
+    return pattern
+
+
 class ExploreService:
     """Service pour explorer le contenu public"""
 
@@ -131,12 +152,13 @@ class ExploreService:
             .where(Note.is_archived == False)
         )
 
-        # Filtres
+        # Filtres avec échappement SQL sécurisé
         if query:
+            safe_query = escape_like_pattern(query)
             stmt = stmt.where(
                 or_(
-                    Note.title.ilike(f"%{query}%"),
-                    Note.content.ilike(f"%{query}%")
+                    Note.title.ilike(f"%{safe_query}%"),
+                    Note.content.ilike(f"%{safe_query}%")
                 )
             )
 
@@ -144,7 +166,8 @@ class ExploreService:
             stmt = stmt.where(Note.subject_id == subject_id)
 
         if subject_name:
-            stmt = stmt.join(Subject).where(Subject.name.ilike(f"%{subject_name}%"))
+            safe_subject = escape_like_pattern(subject_name)
+            stmt = stmt.join(Subject).where(Subject.name.ilike(f"%{safe_subject}%"))
 
         # Tri
         if sort_by == "recent":
@@ -159,13 +182,14 @@ class ExploreService:
         result = await db.execute(stmt)
         notes = result.unique().scalars().all()
 
-        # Compter le total
+        # Compter le total (utilise le même safe_query sécurisé)
         count_stmt = select(func.count(Note.id)).where(Note.is_public == True)
         if query:
+            safe_query = escape_like_pattern(query)
             count_stmt = count_stmt.where(
                 or_(
-                    Note.title.ilike(f"%{query}%"),
-                    Note.content.ilike(f"%{query}%")
+                    Note.title.ilike(f"%{safe_query}%"),
+                    Note.content.ilike(f"%{safe_query}%")
                 )
             )
         count_result = await db.execute(count_stmt)
@@ -227,11 +251,13 @@ class ExploreService:
         if subject_id:
             deck_subquery = deck_subquery.where(Flashcard.subject_id == subject_id)
 
+        # Échappement SQL sécurisé pour les flashcards
         if query:
+            safe_query = escape_like_pattern(query)
             deck_subquery = deck_subquery.where(
                 or_(
-                    Flashcard.deck_name.ilike(f"%{query}%"),
-                    Flashcard.front.ilike(f"%{query}%")
+                    Flashcard.deck_name.ilike(f"%{safe_query}%"),
+                    Flashcard.front.ilike(f"%{safe_query}%")
                 )
             )
 
@@ -327,12 +353,13 @@ class ExploreService:
             .where(Quiz.is_published == True)
         )
 
-        # Filtres
+        # Filtres avec échappement SQL sécurisé
         if query:
+            safe_query = escape_like_pattern(query)
             stmt = stmt.where(
                 or_(
-                    Quiz.title.ilike(f"%{query}%"),
-                    Quiz.description.ilike(f"%{query}%")
+                    Quiz.title.ilike(f"%{safe_query}%"),
+                    Quiz.description.ilike(f"%{safe_query}%")
                 )
             )
 
@@ -340,8 +367,9 @@ class ExploreService:
             stmt = stmt.where(Quiz.subject_id == subject_id)
 
         if subject_name:
+            safe_subject = escape_like_pattern(subject_name)
             stmt = stmt.join(Subject, Quiz.subject_id == Subject.id).where(
-                Subject.name.ilike(f"%{subject_name}%")
+                Subject.name.ilike(f"%{safe_subject}%")
             )
 
         # Tri
@@ -358,17 +386,18 @@ class ExploreService:
         result = await db.execute(stmt)
         quizzes = result.unique().scalars().all()
 
-        # Compter le total
+        # Compter le total (utilise le même safe_query sécurisé)
         count_stmt = (
             select(func.count(Quiz.id))
             .where(Quiz.is_public == True)
             .where(Quiz.is_published == True)
         )
         if query:
+            safe_query = escape_like_pattern(query)
             count_stmt = count_stmt.where(
                 or_(
-                    Quiz.title.ilike(f"%{query}%"),
-                    Quiz.description.ilike(f"%{query}%")
+                    Quiz.title.ilike(f"%{safe_query}%"),
+                    Quiz.description.ilike(f"%{safe_query}%")
                 )
             )
         count_result = await db.execute(count_stmt)

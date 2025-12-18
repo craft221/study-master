@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import {
   User,
   Mail,
@@ -21,6 +22,24 @@ import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { useTranslation } from '@/contexts/LanguageContext'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
+
+// Imports dynamiques pour éviter les erreurs d'hydratation
+const UniversitySelect = dynamic(() => import('@/components/ui/UniversitySelect'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 animate-pulse" />
+  )
+})
+
+const MajorCombobox = dynamic(
+  () => import('@/components/ui/combobox').then(mod => ({ default: mod.MajorCombobox })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 animate-pulse" />
+    )
+  }
+)
 
 interface UserProfile {
   id: number
@@ -318,12 +337,9 @@ export default function SettingsPage() {
                   <GraduationCap className="w-4 h-4 inline mr-1" />
                   Université
                 </label>
-                <input
-                  type="text"
+                <UniversitySelect
                   value={profileData.university}
-                  onChange={(e) => setProfileData({ ...profileData, university: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Nom de votre université"
+                  onChange={(value) => setProfileData({ ...profileData, university: value })}
                 />
               </div>
 
@@ -331,12 +347,9 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Filière
                 </label>
-                <input
-                  type="text"
+                <MajorCombobox
                   value={profileData.major}
-                  onChange={(e) => setProfileData({ ...profileData, major: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: Informatique"
+                  onChange={(value) => setProfileData({ ...profileData, major: value })}
                 />
               </div>
 

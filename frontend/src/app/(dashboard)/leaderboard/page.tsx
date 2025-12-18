@@ -228,9 +228,10 @@ export default function LeaderboardPage() {
   const fetchLeagueLeaderboard = async (tier: LeagueTier) => {
     try {
       const response = await leaderboardsService.getLeagueLeaderboard(tier, 50)
-      setLeagueEntries(response.entries)
+      setLeagueEntries(response?.entries || [])
     } catch (error) {
       console.error('Erreur chargement classement ligue:', error)
+      setLeagueEntries([])
     }
   }
 
@@ -256,8 +257,6 @@ export default function LeaderboardPage() {
         endpoint = `/leaderboards/?leaderboard_type=${leaderboardType}&period=${period}`
       } else if (scope === 'university') {
         endpoint = `/leaderboards/university?leaderboard_type=${leaderboardType}&period=${period}`
-      } else if (scope === 'promotion') {
-        endpoint = `/leaderboards/promotion?leaderboard_type=${leaderboardType}&period=${period}`
       }
 
       const response = await api.get(endpoint)
@@ -470,8 +469,7 @@ export default function LeaderboardPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="global">🌍 Global</SelectItem>
-            <SelectItem value="university">🎓 Université</SelectItem>
-            <SelectItem value="promotion">👥 Promotion</SelectItem>
+            <SelectItem value="university">🎓 Mon Université</SelectItem>
           </SelectContent>
         </Select>
       </div>

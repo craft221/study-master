@@ -78,6 +78,19 @@ from app.models.social_share import (
     SHARE_TEMPLATES,
     SHARE_BADGES
 )
+from app.models.exam_mode import (
+    ExamSession,
+    StudyDay,
+    StudyTask,
+    ExamModeNotification,
+    ExamSessionStatus,
+    StudyTaskType,
+    StudyTaskStatus,
+    DifficultyLevel,
+    EXAM_MODE_XP_REWARDS,
+    TASK_DURATION_ESTIMATES,
+    SPACED_REPETITION_INTERVALS
+)
 
 __all__ = [
     # User et sous-modèles
@@ -157,4 +170,16 @@ __all__ = [
     "SharePlatform",
     "SHARE_TEMPLATES",
     "SHARE_BADGES",
+    # Exam Mode
+    "ExamSession",
+    "StudyDay",
+    "StudyTask",
+    "ExamModeNotification",
+    "ExamSessionStatus",
+    "StudyTaskType",
+    "StudyTaskStatus",
+    "DifficultyLevel",
+    "EXAM_MODE_XP_REWARDS",
+    "TASK_DURATION_ESTIMATES",
+    "SPACED_REPETITION_INTERVALS",
 ]

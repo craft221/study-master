@@ -107,22 +107,29 @@ export default function FocusRoomsPage() {
       const subjectsRes = await api.get('/subjects/')
       setSubjects(subjectsRes.data.subjects || [])
 
-      // Fetch rooms with filters
-      const filters: RoomFilters = {
-        page: 1,
-        page_size: 50,
-        sort_by: filter === 'popular' ? 'active_participants' : 'created_at',
-        sort_order: 'desc'
-      }
-      if (categoryFilter !== 'all') {
-        filters.category = categoryFilter
-      }
-      if (searchQuery) {
-        filters.search = searchQuery
-      }
+      // Fetch rooms based on filter
+      if (filter === 'my_rooms') {
+        // Fetch my rooms (created and recently joined)
+        const myRooms = await focusRoomsService.getMyRooms()
+        setRooms(myRooms || [])
+      } else {
+        // Fetch rooms with filters
+        const filters: RoomFilters = {
+          page: 1,
+          page_size: 50,
+          sort_by: filter === 'popular' ? 'active_participants' : 'created_at',
+          sort_order: 'desc'
+        }
+        if (categoryFilter !== 'all') {
+          filters.category = categoryFilter
+        }
+        if (searchQuery) {
+          filters.search = searchQuery
+        }
 
-      const roomsData = await focusRoomsService.getRooms(filters)
-      setRooms(roomsData.rooms || [])
+        const roomsData = await focusRoomsService.getRooms(filters)
+        setRooms(roomsData.rooms || [])
+      }
 
       // Fetch my stats
       try {
@@ -735,6 +742,13 @@ export default function FocusRoomsPage() {
                 size="sm"
               >
                 {t('focusRoom.popular')}
+              </Button>
+              <Button
+                variant={filter === 'my_rooms' ? 'default' : 'outline'}
+                onClick={() => setFilter('my_rooms')}
+                size="sm"
+              >
+                {t('focusRoom.myRooms')}
               </Button>
             </div>
           </div>

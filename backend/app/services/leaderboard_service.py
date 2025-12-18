@@ -51,9 +51,9 @@ class LeaderboardService:
         if not user_league:
             user_league = UserLeague(
                 user_id=user_id,
-                current_tier=LeagueTier.BRONZE,
+                current_tier=LeagueTier.BRONZE.value,
                 weekly_xp=0,
-                highest_tier_reached=LeagueTier.BRONZE
+                highest_tier_reached=LeagueTier.BRONZE.value
             )
             db.add(user_league)
             await db.flush()
@@ -79,10 +79,11 @@ class LeaderboardService:
         limit: int = 30
     ) -> List[Dict[str, Any]]:
         """Récupère le classement d'une ligue"""
+        tier_value = tier.value if isinstance(tier, LeagueTier) else tier
         query = (
             select(UserLeague, User)
             .join(User, UserLeague.user_id == User.id)
-            .where(UserLeague.current_tier == tier)
+            .where(UserLeague.current_tier == tier_value)
             .order_by(desc(UserLeague.weekly_xp))
             .limit(limit)
         )
@@ -132,11 +133,13 @@ class LeaderboardService:
         total_result = await db.execute(total_query)
         total_in_league = total_result.scalar() or 0
 
-        tier_config = LEAGUE_CONFIG[user_league.current_tier]
+        # Convert string tier to enum for config lookup
+        current_tier_enum = LeagueTier(user_league.current_tier)
+        tier_config = LEAGUE_CONFIG[current_tier_enum]
 
         return {
             "user_id": user_id,
-            "tier": user_league.current_tier.value,
+            "tier": user_league.current_tier,
             "tier_name": tier_config["name"],
             "tier_icon": tier_config["icon"],
             "tier_color": tier_config["color"],
@@ -144,13 +147,13 @@ class LeaderboardService:
             "rank": rank,
             "total_in_league": total_in_league,
             "is_promotion_zone": rank <= tier_config["promotion_slots"],
-            "is_demotion_zone": rank > (total_in_league - tier_config["demotion_slots"]) if user_league.current_tier != LeagueTier.BRONZE else False,
+            "is_demotion_zone": rank > (total_in_league - tier_config["demotion_slots"]) if user_league.current_tier != LeagueTier.BRONZE.value else False,
             "promotion_threshold": tier_config["promotion_slots"],
             "demotion_threshold": total_in_league - tier_config["demotion_slots"] if tier_config["demotion_slots"] > 0 else None,
             "next_tier": user_league.next_tier.value if user_league.next_tier else None,
             "previous_tier": user_league.previous_tier.value if user_league.previous_tier else None,
             "weeks_in_tier": user_league.weeks_in_current_tier,
-            "highest_tier": user_league.highest_tier_reached.value,
+            "highest_tier": user_league.highest_tier_reached,
         }
 
     async def process_weekly_reset(self, db: AsyncSession) -> Dict[str, Any]:

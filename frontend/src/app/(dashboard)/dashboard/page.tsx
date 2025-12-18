@@ -37,6 +37,7 @@ interface Activity {
   time: string
   subject?: string
   timestamp?: string
+  action?: string
 }
 
 interface Event {
@@ -45,6 +46,7 @@ interface Event {
   date: string
   time?: string
   type?: string
+  color?: string
 }
 
 interface DashboardStats {

@@ -96,6 +96,10 @@ class User(Base):
     social_shares = relationship("SocialShare", back_populates="user", cascade="all, delete-orphan")
     share_stats = relationship("ShareStats", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
+    # ==================== RELATIONS EXAM MODE ====================
+    exam_sessions = relationship("ExamSession", back_populates="user", cascade="all, delete-orphan")
+    study_tasks = relationship("StudyTask", back_populates="user", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<User {self.username} ({self.email})>"
 

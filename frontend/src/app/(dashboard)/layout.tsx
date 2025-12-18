@@ -30,7 +30,8 @@ import {
   Download,
   FolderOpen,
   Radio,
-  Compass
+  Compass,
+  GraduationCap
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SparkProvider } from '@/contexts/SparkContext'
@@ -40,6 +41,7 @@ import { useTranslation } from '@/contexts/LanguageContext'
 import { LanguageToggle } from '@/components/ui/LanguageSelector'
 import { useSparkPageMessages } from '@/hooks/useSparkPageMessages'
 import NotificationDropdown from '@/components/NotificationDropdown'
+import { OfflineBanner, OfflineIndicator } from '@/components/offline/OfflineIndicator'
 
 // Navigation items avec clés i18n
 const navigationItems = [
@@ -54,6 +56,7 @@ const navigationItems = [
   { key: 'documents.upload', href: '/ocr', icon: Scan },
   { key: 'nav.sessions', href: '/sessions', icon: Zap },
   { key: 'nav.focusRooms', href: '/focus-rooms', icon: Radio },
+  { key: 'nav.examMode', href: '/exam-mode', icon: GraduationCap },
   { key: 'nav.calendar', href: '/schedule', icon: Calendar },
   { key: 'nav.subjects', href: '/subjects', icon: Target },
   { key: 'nav.achievements', href: '/achievements', icon: Award },
@@ -155,6 +158,9 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
+      {/* Offline Banner */}
+      <OfflineBanner />
+
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -282,6 +288,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
             {/* Right Actions */}
             <div className="flex items-center space-x-2">
+              <OfflineIndicator compact showSyncButton={false} />
               <NotificationDropdown />
               <LanguageToggle />
               <button

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, true
+from sqlalchemy import select, func, and_, true, or_
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from datetime import datetime, timedelta, timezone
@@ -24,40 +24,74 @@ from app.schemas.user import (
 from app.core.i18n import SUPPORTED_LANGUAGES
 from app.services.cache_service import cache_service
 from app.services.xp_service import get_level_progress
+from app.core.sql_utils import escape_like_pattern
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list)
-async def get_all_users(
+@router.get("/search", response_model=dict)
+async def search_users(
+    q: str = Query(..., min_length=2, max_length=50, description="Recherche par username"),
+    page: int = Query(1, ge=1, le=100),
+    page_size: int = Query(10, ge=1, le=20),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Récupérer la liste des utilisateurs (pour les duels, groupes, etc.)"""
-    result = await db.execute(
-        select(User).where(
-            and_(
-                User.is_active.is_(True),
-                User.is_deleted.is_(False)
-            )
-        ).options(
-            selectinload(User.profile),
-            selectinload(User.gamification)
-        ).order_by(User.username)
+    """
+    Rechercher des utilisateurs par username (pour duels, groupes, etc.)
+
+    SÉCURITÉ:
+    - Requiert une recherche minimum de 2 caractères
+    - Maximum 20 résultats par page
+    - Exclut l'utilisateur actuel des résultats
+    - Ne retourne que les utilisateurs visibles publiquement
+    """
+    # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+    safe_query = escape_like_pattern(q)
+    search_pattern = f"%{safe_query}%"
+
+    # Construire la requête avec filtres de sécurité
+    query = select(User).where(
+        and_(
+            User.is_active.is_(True),
+            User.is_deleted.is_(False),
+            User.id != current_user.id,  # Exclure l'utilisateur actuel
+            User.username.ilike(search_pattern)
+        )
+    ).options(
+        selectinload(User.profile),
+        selectinload(User.gamification)
+    ).order_by(User.username)
+
+    # Compter le total (avec limite de sécurité)
+    count_query = select(func.count()).select_from(
+        query.limit(100).subquery()  # Limiter le count aussi
     )
+    total_result = await db.execute(count_query)
+    total = min(total_result.scalar() or 0, 100)  # Maximum 100 résultats
+
+    # Paginer
+    offset = (page - 1) * page_size
+    query = query.offset(offset).limit(page_size)
+
+    result = await db.execute(query)
     users = result.scalars().all()
 
-    return [
-        {
-            "id": u.id,
-            "username": u.username,
-            "full_name": u.full_name,
-            "avatar_url": u.profile.avatar_url if u.profile else None,
-            "level": u.level,  # Via property, utilise gamification
-            "total_xp": u.total_xp  # Via property, utilise gamification
-        }
-        for u in users
-    ]
+    return {
+        "users": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "avatar_url": u.profile.avatar_url if u.profile else None,
+                "level": u.level
+                # NOTE: full_name et total_xp ne sont plus exposés par défaut
+            }
+            for u in users
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }
 
 
 @router.get("/me", response_model=UserProfileResponse)

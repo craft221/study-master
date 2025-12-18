@@ -395,10 +395,15 @@ async def get_recommended_opponents(
     min_xp = max(0, user_xp - xp_range)
     max_xp = user_xp + xp_range
 
-    # Joindre UserGamification pour filtrer par XP
+    # OPTIMISATION: Utiliser selectinload pour éviter N+1 queries
+    # On charge gamification et profile en une seule requête
     query = (
         select(User)
         .join(UserGamification, User.id == UserGamification.user_id, isouter=True)
+        .options(
+            selectinload(User.gamification),
+            selectinload(User.profile)
+        )
         .where(
             and_(
                 User.id != current_user.id,
@@ -413,7 +418,7 @@ async def get_recommended_opponents(
     )
 
     result = await db.execute(query)
-    users = result.scalars().all()
+    users = result.unique().scalars().all()  # unique() requis avec selectinload + join
 
     if len(users) < limit:
         # Récupérer des utilisateurs supplémentaires si pas assez
@@ -421,6 +426,10 @@ async def get_recommended_opponents(
         extended_query = (
             select(User)
             .join(UserGamification, User.id == UserGamification.user_id, isouter=True)
+            .options(
+                selectinload(User.gamification),
+                selectinload(User.profile)
+            )
             .where(
                 and_(
                     User.id != current_user.id,
@@ -433,7 +442,7 @@ async def get_recommended_opponents(
             .limit(limit - len(users))
         )
         extended_result = await db.execute(extended_query)
-        users.extend(extended_result.scalars().all())
+        users.extend(extended_result.unique().scalars().all())
 
     # Récupérer les duels en attente
     pending_duels_query = select(Duel.opponent_id, Duel.challenger_id).where(

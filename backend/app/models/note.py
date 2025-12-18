@@ -4,9 +4,9 @@ Modèle Note
 
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from app.core.database import Base
+from app.core.datetime_utils import utc_now
 
 
 class Note(Base):
@@ -25,9 +25,10 @@ class Note(Base):
     is_indexed = Column(Boolean, default=False)
     is_public = Column(Boolean, default=False)  # Visible dans la page Explore
     gallery_images = Column(JSON, default=list)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relations
     user = relationship("User", back_populates="notes")
     subject = relationship("Subject", back_populates="notes")
+    study_tasks = relationship("StudyTask", back_populates="note")

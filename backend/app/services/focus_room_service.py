@@ -27,6 +27,7 @@ from app.services.cache_service import cache_service
 from app.services.xp_service import award_xp
 from app.services.notification_service import notification_service
 from app.core.datetime_utils import utc_now, days_ago, utc_today
+from app.core.sql_utils import escape_like_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -89,15 +90,16 @@ class FocusRoomService:
         await db.commit()
         await db.refresh(room)
 
-        # Mettre a jour les stats utilisateur
-        await self._update_user_focus_stats(db, user.id, rooms_created=1)
+        # Mettre a jour les stats utilisateur (inclure les XP gagnés)
+        await self._update_user_focus_stats(db, user.id, rooms_created=1, xp_earned=XP_REWARDS["create_room"])
 
         # Attribuer XP
         await award_xp(
             user=user,
             amount=XP_REWARDS["create_room"],
             reason="focus_room_created",
-            extra_data={"room_id": room.id}
+            extra_data={"room_id": room.id},
+            db=db
         )
 
         logger.info(f"Room created: {room.name} by user {user.id}")
@@ -147,14 +149,18 @@ class FocusRoomService:
         if category:
             query = query.where(FocusRoom.category == category)
         if university:
-            query = query.where(FocusRoom.university.ilike(f"%{university}%"))
+            # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+            safe_university = escape_like_pattern(university)
+            query = query.where(FocusRoom.university.ilike(f"%{safe_university}%"))
         if subject_id:
             query = query.where(FocusRoom.subject_id == subject_id)
         if search:
+            # SÉCURITÉ: Échapper les caractères spéciaux SQL LIKE
+            safe_search = escape_like_pattern(search)
             query = query.where(
                 or_(
-                    FocusRoom.name.ilike(f"%{search}%"),
-                    FocusRoom.description.ilike(f"%{search}%")
+                    FocusRoom.name.ilike(f"%{safe_search}%"),
+                    FocusRoom.description.ilike(f"%{safe_search}%")
                 )
             )
 
@@ -469,15 +475,16 @@ class FocusRoomService:
         await db.commit()
         await db.refresh(participant)
 
-        # Mettre a jour stats utilisateur
-        await self._update_user_focus_stats(db, user.id, rooms_joined=1)
+        # Mettre a jour stats utilisateur (inclure les XP gagnés)
+        await self._update_user_focus_stats(db, user.id, rooms_joined=1, xp_earned=XP_REWARDS["join_room"])
 
         # Attribuer XP
         await award_xp(
             user=user,
             amount=XP_REWARDS["join_room"],
             reason="focus_room_joined",
-            extra_data={"room_id": room.id}
+            extra_data={"room_id": room.id},
+            db=db
         )
 
         # Creer activite
@@ -556,7 +563,8 @@ class FocusRoomService:
                 user=user,
                 amount=total_xp,
                 reason="focus_session_completed",
-                extra_data={"session_id": session.id, "minutes": session.focus_minutes}
+                extra_data={"session_id": session.id, "minutes": session.focus_minutes},
+                db=db
             )
 
         # Creer activite
@@ -670,7 +678,8 @@ class FocusRoomService:
                 user=user,
                 amount=XP_REWARDS["deep_work_completed"],
                 reason="deep_work_completed",
-                extra_data={"room_id": room_id}
+                extra_data={"room_id": room_id},
+                db=db
             )
         else:
             await self._create_activity(
@@ -1015,7 +1024,8 @@ class FocusRoomService:
                     user=inviter,
                     amount=XP_REWARDS["invitation_accepted"],
                     reason="focus_invitation_accepted",
-                    extra_data={"invitee_id": invitation.invitee_id}
+                    extra_data={"invitee_id": invitation.invitee_id},
+                    db=db
                 )
 
             # Charger la room pour la notification

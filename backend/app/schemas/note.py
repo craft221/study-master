@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
 
@@ -110,9 +110,39 @@ class NoteResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @model_validator(mode='before')
+    @classmethod
+    def convert_is_public_to_visibility(cls, data: Any) -> Any:
+        """Convert is_public boolean from ORM model to visibility enum"""
+        if hasattr(data, '__dict__'):  # ORM model
+            if hasattr(data, 'is_public') and data.is_public:
+                # Create a dict from ORM and set visibility
+                return {
+                    **{k: getattr(data, k, None) for k in [
+                        'id', 'title', 'content', 'subject_id', 'user_id', 'parent_id',
+                        'note_type', 'tags', 'content_html', 'summary', 'keywords',
+                        'attachments', 'gallery_images', 'is_collaborative', 'collaborators',
+                        'is_for_sale', 'price', 'sales_count', 'quality_score', 'rating_average',
+                        'rating_count', 'views_count', 'word_count', 'read_time_minutes',
+                        'version', 'is_latest_version', 'is_ai_generated', 'is_indexed',
+                        'is_pinned', 'is_favorite', 'is_archived', 'is_published',
+                        'created_at', 'updated_at', 'published_at'
+                    ]},
+                    'subject': data.subject if hasattr(data, 'subject') else None,
+                    'author_id': data.user_id if hasattr(data, 'user_id') else None,
+                    'visibility': 'public' if data.is_public else 'private'
+                }
+        elif isinstance(data, dict):
+            if data.get('is_public'):
+                data['visibility'] = 'public'
+        return data
+
     @classmethod
     def from_orm_model(cls, note) -> "NoteResponse":
         """Create NoteResponse from ORM model with proper field mapping"""
+        # Convert is_public boolean to visibility enum
+        visibility = NoteVisibilityEnum.PUBLIC if getattr(note, 'is_public', False) else NoteVisibilityEnum.PRIVATE
+
         return cls(
             id=note.id,
             title=note.title,
@@ -122,6 +152,7 @@ class NoteResponse(BaseModel):
             author_id=note.user_id,  # Map user_id to author_id
             parent_id=note.parent_id,
             tags=note.tags or [],
+            visibility=visibility,
             gallery_images=note.gallery_images or [],
             is_pinned=note.is_pinned or False,
             is_favorite=note.is_favorite or False,
@@ -130,6 +161,11 @@ class NoteResponse(BaseModel):
             created_at=note.created_at,
             updated_at=note.updated_at,
         )
+
+    @property
+    def is_public(self) -> bool:
+        """Helper to check if note is public"""
+        return self.visibility == NoteVisibilityEnum.PUBLIC
 
 
 class NoteListResponse(BaseModel):

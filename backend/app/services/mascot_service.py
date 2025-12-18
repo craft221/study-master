@@ -37,7 +37,7 @@ class MascotService:
     """Service pour gérer Spark, la mascotte écureuil de Study Master"""
 
     def __init__(self):
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-5-20250929"  # Claude Sonnet 4.5
         self.max_tokens = 200  # Messages courts
 
         # Messages prédéfinis par langue (économie API)

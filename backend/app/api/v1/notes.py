@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import os
+import uuid
+import logging
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
@@ -18,7 +24,33 @@ from app.schemas.note import (
 )
 from app.services.xp_service import award_xp
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+# Configuration pour l'upload d'images
+UPLOAD_DIR = Path("/app/uploads/note-images")
+
+# Extensions d'images autorisées
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+def is_allowed_image(filename: str) -> bool:
+    """Vérifie si le fichier est une image autorisée"""
+    if not filename:
+        return False
+    ext = '.' + filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    return ext in ALLOWED_IMAGE_EXTENSIONS
+
+
+def format_file_size(size_bytes: int) -> str:
+    """Formate la taille en bytes vers une chaîne lisible"""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} TB"
 
 
 @router.post("/", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
@@ -63,8 +95,15 @@ async def create_note(
     
     # Exclude fields that don't exist in the Note model
     note_dict = note_data.model_dump(exclude={"note_type", "visibility"})
+
+    # Handle visibility -> is_public conversion
+    is_public = False
+    if note_data.visibility:
+        is_public = note_data.visibility.value == "public"
+
     new_note = Note(
         user_id=current_user.id,
+        is_public=is_public,
         **note_dict
     )
 
@@ -200,27 +239,14 @@ async def get_note_with_children(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Récupérer une note avec toutes ses notes enfants (hiérarchie)"""
-    
-    async def load_children(note_id: int, depth: int = 0) -> List[Note]:
-        if depth >= max_depth:
-            return []
-        
-        result = await db.execute(
-            select(Note).where(
-                and_(
-                    Note.parent_id == note_id,
-                    Note.user_id == current_user.id
-                )
-            ).order_by(Note.order, Note.created_at)
-        )
-        children = result.scalars().all()
-        
-        for child in children:
-            child.children = await load_children(child.id, depth + 1)
-        
-        return children
-    
+    """
+    Récupérer une note avec toutes ses notes enfants (hiérarchie)
+
+    OPTIMISATION: Charge toute la hiérarchie en UNE SEULE requête
+    au lieu de faire N+1 requêtes récursives.
+    """
+
+    # Étape 1: Charger la note parente
     result = await db.execute(
         select(Note).where(
             and_(
@@ -230,15 +256,50 @@ async def get_note_with_children(
         )
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
-    note.children = await load_children(note.id)
-    
+
+    # Étape 2: Charger TOUS les descendants en UNE SEULE requête
+    # On utilise une CTE (Common Table Expression) récursive pour PostgreSQL
+    # ou on charge tous les enfants potentiels et on construit l'arbre en Python
+
+    # Méthode batch: charger toutes les notes de l'utilisateur qui pourraient être des enfants
+    # puis construire l'arbre en mémoire (beaucoup plus efficace que N+1)
+    result = await db.execute(
+        select(Note).where(
+            and_(
+                Note.user_id == current_user.id,
+                Note.parent_id.isnot(None)  # Seulement les notes avec parent
+            )
+        ).order_by(Note.order, Note.created_at)
+    )
+    all_child_notes = result.scalars().all()
+
+    # Créer un index par parent_id pour accès O(1)
+    children_by_parent: dict = {}
+    for child_note in all_child_notes:
+        if child_note.parent_id not in children_by_parent:
+            children_by_parent[child_note.parent_id] = []
+        children_by_parent[child_note.parent_id].append(child_note)
+
+    # Fonction récursive qui utilise les données déjà chargées (pas de DB)
+    def build_hierarchy(parent_id: int, depth: int = 0) -> List[Note]:
+        if depth >= max_depth:
+            return []
+
+        children = children_by_parent.get(parent_id, [])
+        for child in children:
+            child.children = build_hierarchy(child.id, depth + 1)
+
+        return children
+
+    # Construire la hiérarchie sans requêtes supplémentaires
+    note.children = build_hierarchy(note.id)
+
     return note
 
 
@@ -316,9 +377,28 @@ async def delete_note(
     return None
 
 
+def escape_like_pattern(pattern: str) -> str:
+    """
+    Échappe les caractères spéciaux SQL LIKE pour éviter les injections.
+
+    Les caractères spéciaux dans LIKE sont:
+    - % : correspond à n'importe quelle séquence de caractères
+    - _ : correspond à un seul caractère
+    - \ : caractère d'échappement
+
+    On les échappe avec un backslash.
+    """
+    # Échapper le backslash en premier (sinon on échappe nos propres échappements)
+    pattern = pattern.replace("\\", "\\\\")
+    # Échapper les caractères spéciaux LIKE
+    pattern = pattern.replace("%", "\\%")
+    pattern = pattern.replace("_", "\\_")
+    return pattern
+
+
 @router.get("/search", response_model=NoteListResponse)
 async def search_notes(
-    q: str = Query(..., min_length=2, description="Recherche"),
+    q: str = Query(..., min_length=2, max_length=100, description="Recherche"),
     subject_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -327,7 +407,10 @@ async def search_notes(
 ):
     """Rechercher dans les notes"""
 
-    search_pattern = f"%{q}%"
+    # Échapper les caractères spéciaux SQL LIKE pour éviter les injections
+    # et les attaques DoS par patterns malicieux
+    safe_query = escape_like_pattern(q.strip())
+    search_pattern = f"%{safe_query}%"
 
     query = select(Note).where(
         and_(
@@ -335,7 +418,8 @@ async def search_notes(
             or_(
                 Note.title.ilike(search_pattern),
                 Note.content.ilike(search_pattern),
-                Note.tags.any(q)
+                # Pour les tags, on utilise la recherche exacte (déjà sécurisée par l'ORM)
+                Note.tags.any(q.strip())
             )
         )
     ).options(selectinload(Note.subject))
@@ -343,14 +427,14 @@ async def search_notes(
     if subject_id:
         query = query.where(Note.subject_id == subject_id)
 
-    # Count query sans selectinload
+    # Count query sans selectinload (utilise le même search_pattern sécurisé)
     count_base = select(Note).where(
         and_(
             Note.user_id == current_user.id,
             or_(
                 Note.title.ilike(search_pattern),
                 Note.content.ilike(search_pattern),
-                Note.tags.any(q)
+                Note.tags.any(q.strip())
             )
         )
     )
@@ -466,3 +550,202 @@ async def toggle_archive(
     await db.refresh(note, ["subject"])
 
     return note
+
+
+# ==================== Image Upload Endpoints ====================
+
+@router.post("/upload-image")
+async def upload_note_image(
+    file: UploadFile = File(..., description="Image à uploader (JPG, PNG, GIF, WebP)"),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Uploader une image pour l'insérer dans une note.
+
+    Supporte le collage (paste) et le drag & drop depuis le frontend.
+    Types supportés: JPG, PNG, GIF, WebP, BMP
+    Taille max: 10 MB
+
+    Retourne l'URL de l'image pour insertion dans le contenu Markdown.
+    """
+
+    # Vérifier le type de fichier
+    filename = file.filename or "image.png"
+
+    # Gérer les fichiers collés sans extension (blob)
+    content_type = file.content_type or ""
+    if not is_allowed_image(filename):
+        # Essayer de détecter l'extension depuis le content-type
+        content_type_to_ext = {
+            "image/jpeg": ".jpg",
+            "image/jpg": ".jpg",
+            "image/png": ".png",
+            "image/gif": ".gif",
+            "image/webp": ".webp",
+            "image/bmp": ".bmp"
+        }
+        ext = content_type_to_ext.get(content_type)
+        if ext:
+            filename = f"pasted_image{ext}"
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Type d'image non supporté. Extensions autorisées: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
+            )
+
+    # Lire le contenu pour vérifier la taille
+    content = await file.read()
+    file_size = len(content)
+
+    if file_size > MAX_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Image trop volumineuse. Taille max: {format_file_size(MAX_IMAGE_SIZE)}"
+        )
+
+    if file_size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le fichier est vide"
+        )
+
+    # Extraire l'extension
+    file_extension = '.' + filename.rsplit('.', 1)[-1].lower()
+
+    # Générer un nom de fichier unique
+    stored_filename = f"{uuid.uuid4().hex}{file_extension}"
+
+    # Créer les répertoires si nécessaires
+    try:
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        logger.warning(f"Cannot create {UPLOAD_DIR}, using /tmp fallback")
+        UPLOAD_DIR_FALLBACK = Path("/tmp/note-images")
+        UPLOAD_DIR_FALLBACK.mkdir(parents=True, exist_ok=True)
+
+    user_upload_dir = UPLOAD_DIR / str(current_user.id)
+    try:
+        user_upload_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        user_upload_dir = Path("/tmp/note-images") / str(current_user.id)
+        user_upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Chemin complet du fichier
+    file_path = user_upload_dir / stored_filename
+
+    # Sauvegarder le fichier
+    try:
+        with open(file_path, "wb") as f:
+            f.write(content)
+        logger.info(f"Image note sauvegardée: {file_path}")
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde de l'image: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la sauvegarde de l'image"
+        )
+
+    # Construire l'URL de l'image
+    image_url = f"/api/v1/notes/images/{current_user.id}/{stored_filename}"
+
+    # Format Markdown pour insertion
+    markdown_image = f"![Image]({image_url})"
+
+    logger.info(f"Image uploadée: {stored_filename} par utilisateur {current_user.id}")
+
+    return {
+        "success": True,
+        "url": image_url,
+        "markdown": markdown_image,
+        "filename": stored_filename,
+        "original_filename": filename,
+        "size": file_size,
+        "size_formatted": format_file_size(file_size)
+    }
+
+
+@router.get("/images/{user_id}/{filename}")
+async def get_note_image(
+    user_id: int,
+    filename: str
+):
+    """
+    Récupérer une image de note.
+
+    Les images sont publiques pour permettre l'affichage dans les notes partagées.
+    """
+
+    # Sécurité: vérifier que le filename ne contient pas de path traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nom de fichier invalide"
+        )
+
+    # Construire le chemin du fichier
+    file_path = UPLOAD_DIR / str(user_id) / filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image non trouvée"
+        )
+
+    # Déterminer le content-type
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    content_types = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'bmp': 'image/bmp'
+    }
+    media_type = content_types.get(ext, 'application/octet-stream')
+
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=31536000"}  # Cache 1 an
+    )
+
+
+@router.delete("/images/{filename}")
+async def delete_note_image(
+    filename: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Supprimer une image de note.
+
+    Seul le propriétaire peut supprimer ses images.
+    """
+
+    # Sécurité: vérifier que le filename ne contient pas de path traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nom de fichier invalide"
+        )
+
+    # Construire le chemin du fichier (dans le dossier de l'utilisateur)
+    file_path = UPLOAD_DIR / str(current_user.id) / filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image non trouvée"
+        )
+
+    try:
+        os.remove(file_path)
+        logger.info(f"Image supprimée: {filename} par utilisateur {current_user.id}")
+    except Exception as e:
+        logger.error(f"Erreur lors de la suppression de l'image: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la suppression"
+        )
+
+    return {"success": True, "message": "Image supprimée"}

@@ -13,9 +13,15 @@ import {
   MoreVertical,
   Trash2,
   Edit,
-  Eye
+  Eye,
+  CloudOff,
+  RefreshCw
 } from 'lucide-react'
 import api from '@/lib/api'
+import { useOfflineNotes } from '@/hooks/useOffline'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService } from '@/services/syncService'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
 
 interface Subject {
   id: string
@@ -36,26 +42,20 @@ interface Note {
 }
 
 export default function NotesPage() {
+  // Utiliser le hook offline pour les notes
+  const { data: notesData, loading, error, isFromCache, refetch } = useOfflineNotes()
+  const { isOnline } = useOfflineContext()
   const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
   const [showFavorites, setShowFavorites] = useState(false)
 
+  // Mettre à jour les notes quand les données arrivent
   useEffect(() => {
-    fetchNotes()
-  }, [])
-
-  const fetchNotes = async () => {
-    try {
-      const response = await api.get('/notes/')
-      setNotes(response.data.notes || [])
-    } catch (error) {
-      console.error('Erreur lors du chargement des notes:', error)
-    } finally {
-      setLoading(false)
+    if (notesData) {
+      setNotes(Array.isArray(notesData) ? notesData : [])
     }
-  }
+  }, [notesData])
 
   const filteredNotes = notes.filter((note) => {
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,23 +66,62 @@ export default function NotesPage() {
   })
 
   const toggleFavorite = async (noteId: string) => {
+    const note = notes.find(n => n.id === noteId)
+    if (!note) return
+
+    // Mise à jour optimiste
+    const updatedNote = { ...note, is_favorite: !note.is_favorite }
+    setNotes(notes.map(n => n.id === noteId ? updatedNote : n))
+
     try {
-      await api.post(`/notes/${noteId}/favorite`)
-      setNotes(notes.map(note =>
-        note.id === noteId ? { ...note, is_favorite: !note.is_favorite } : note
-      ))
+      if (isOnline) {
+        await api.post(`/notes/${noteId}/favorite`)
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.NOTES,
+          'update',
+          `/api/v1/notes/${noteId}/favorite`,
+          'POST',
+          {}
+        )
+      }
+      // Mettre à jour le cache local
+      await offlineStorage.saveNote(updatedNote)
     } catch (error) {
+      // Rollback en cas d'erreur
+      setNotes(notes.map(n => n.id === noteId ? note : n))
       console.error('Erreur lors de la mise à jour du favori:', error)
     }
   }
 
   const deleteNote = async (noteId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette note?')) return
-    
+
+    const noteToDelete = notes.find(n => n.id === noteId)
+    // Mise à jour optimiste
+    setNotes(notes.filter(note => note.id !== noteId))
+
     try {
-      await api.delete(`/notes/${noteId}`)
-      setNotes(notes.filter(note => note.id !== noteId))
+      if (isOnline) {
+        await api.delete(`/notes/${noteId}`)
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.NOTES,
+          'delete',
+          `/api/v1/notes/${noteId}`,
+          'DELETE',
+          { id: noteId }
+        )
+      }
+      // Supprimer du cache local
+      await offlineStorage.deleteNote(Number(noteId))
     } catch (error) {
+      // Rollback en cas d'erreur
+      if (noteToDelete) {
+        setNotes([...notes, noteToDelete])
+      }
       console.error('Erreur lors de la suppression:', error)
     }
   }
@@ -100,16 +139,38 @@ export default function NotesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Notes</h1>
-          <p className="text-gray-600 mt-1">{notes.length} notes au total</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Notes</h1>
+            {isFromCache && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <CloudOff className="w-3 h-3 mr-1" />
+                Données en cache
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {notes.length} notes au total
+            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+          </p>
         </div>
-        <Link
-          href="/notes/new"
-          className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nouvelle note
-        </Link>
+        <div className="flex items-center gap-2">
+          {isFromCache && isOnline && (
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              title="Actualiser les données"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          <Link
+            href="/notes/new"
+            className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Nouvelle note
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

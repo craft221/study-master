@@ -24,6 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copier tout le code backend
 COPY . .
 
+# Créer les répertoires d'upload
+RUN mkdir -p /app/uploads/documents /app/uploads/note-images
+
 # Changer le propriétaire des fichiers vers l'utilisateur non-root
 RUN chown -R appuser:appgroup /app
 

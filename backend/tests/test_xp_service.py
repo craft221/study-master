@@ -46,39 +46,43 @@ class TestXPServiceAwardXP:
         """award_xp calcule correctement le niveau"""
         from app.services.xp_service import award_xp
 
-        user = create_mock_user(total_xp=90, level=0)
+        # Nouvelle formule Duolingo: niveau 2 à 75 XP
+        user = create_mock_user(total_xp=70, level=1)
 
         async def run_test():
             with patch('app.services.xp_service.get_broadcast_func') as mock_get_broadcast:
                 mock_broadcast = AsyncMock()
                 mock_get_broadcast.return_value = mock_broadcast
-                return await award_xp(user, amount=20, reason="Level up test")
+                return await award_xp(user, amount=10, reason="Level up test")
 
         result = run_async(run_test())
-        assert user.gamification.total_xp == 110
-        assert result["level"] == 1
+        assert user.gamification.total_xp == 80
+        assert result["level"] == 2  # 80 XP = niveau 2 (seuil: 75 XP)
 
     def test_award_xp_level_up(self):
         """award_xp détecte le level up"""
         from app.services.xp_service import award_xp
 
-        user = create_mock_user(total_xp=90, level=0)
+        # Nouvelle formule: niveau 2 à 75 XP, on part de 50 XP niveau 1
+        user = create_mock_user(total_xp=50, level=1)
 
         async def run_test():
             with patch('app.services.xp_service.get_broadcast_func') as mock_get_broadcast:
                 mock_broadcast = AsyncMock()
                 mock_get_broadcast.return_value = mock_broadcast
-                return await award_xp(user, amount=50, reason="Big XP gain")
+                return await award_xp(user, amount=30, reason="Big XP gain")
 
         result = run_async(run_test())
-        assert result["level_up"] is True
-        assert user.gamification.level == 1
+        assert result["level_up"] is True  # 80 XP >= 75 XP (niveau 2)
+        assert user.gamification.level == 2
 
     def test_award_xp_no_level_up(self):
         """award_xp ne lève pas de level up si pas de changement"""
         from app.services.xp_service import award_xp
 
-        user = create_mock_user(total_xp=150, level=1)
+        # Niveau 2 commence à 75 XP, niveau 3 à 175 XP
+        # On part de 80 XP (niveau 2) et on ajoute 40, donc 120 XP (toujours niveau 2)
+        user = create_mock_user(total_xp=80, level=2)
 
         async def run_test():
             with patch('app.services.xp_service.get_broadcast_func') as mock_get_broadcast:
@@ -87,7 +91,7 @@ class TestXPServiceAwardXP:
                 return await award_xp(user, amount=40, reason="Small gain")
 
         result = run_async(run_test())
-        assert result["level_up"] is False
+        assert result["level_up"] is False  # 120 XP < 175 XP (seuil niveau 3)
 
     def test_award_xp_broadcasts_update(self):
         """award_xp broadcast la mise à jour"""
@@ -269,7 +273,8 @@ class TestXPCalculations:
         """Test des limites de calcul de niveau"""
         from app.services.xp_service import award_xp
 
-        user = create_mock_user(total_xp=99, level=0)
+        # Nouvelle formule: niveau 2 à 75 XP exactement
+        user = create_mock_user(total_xp=74, level=1)
 
         async def run_test():
             with patch('app.services.xp_service.get_broadcast_func') as mock_get_broadcast:
@@ -278,25 +283,28 @@ class TestXPCalculations:
                 return await award_xp(user, amount=1, reason="Boundary test")
 
         result = run_async(run_test())
-        assert user.gamification.total_xp == 100
-        assert result["level"] == 1
+        assert user.gamification.total_xp == 75
+        assert result["level"] == 2  # 75 XP = exactement niveau 2
         assert result["level_up"] is True
 
     def test_multiple_level_ups(self):
         """Test de plusieurs level ups en une fois"""
         from app.services.xp_service import award_xp
 
-        user = create_mock_user(total_xp=50, level=0)
+        # Nouvelle formule Duolingo:
+        # Niveau 2: 75 XP, Niveau 3: 175 XP, Niveau 4: 300 XP
+        # On part de 50 XP (niveau 1), on ajoute 260 = 310 XP (niveau 4)
+        user = create_mock_user(total_xp=50, level=1)
 
         async def run_test():
             with patch('app.services.xp_service.get_broadcast_func') as mock_get_broadcast:
                 mock_broadcast = AsyncMock()
                 mock_get_broadcast.return_value = mock_broadcast
-                return await award_xp(user, amount=250, reason="Big bonus")
+                return await award_xp(user, amount=260, reason="Big bonus")
 
         result = run_async(run_test())
-        assert user.gamification.total_xp == 300
-        assert result["level"] == 3
+        assert user.gamification.total_xp == 310
+        assert result["level"] == 4  # 310 XP >= 300 XP (seuil niveau 4)
         assert result["level_up"] is True
 
     def test_zero_xp_award(self):

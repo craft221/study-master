@@ -21,10 +21,15 @@ import {
   X,
   ChevronDown,
   HardDrive,
-  AlertTriangle
+  AlertTriangle,
+  CloudOff,
+  RefreshCw
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService } from '@/services/syncService'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
 
 interface Subject {
   id: number
@@ -88,6 +93,7 @@ const FILE_TYPE_COLORS: Record<string, string> = {
 }
 
 export default function DocumentsPage() {
+  const { isOnline } = useOfflineContext()
   const searchParams = useSearchParams()
   const subjectFromUrl = searchParams.get('subject')
 
@@ -96,6 +102,7 @@ export default function DocumentsPage() {
   const [stats, setStats] = useState<DocumentStats | null>(null)
   const [storageQuota, setStorageQuota] = useState<StorageQuota | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isFromCache, setIsFromCache] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<number | null>(
@@ -122,35 +129,68 @@ export default function DocumentsPage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (forceRefresh = false) => {
     try {
-      const [docsRes, subjectsRes, statsRes] = await Promise.all([
-        api.get('/documents/'),
-        api.get('/subjects/'),
-        api.get('/documents/stats')
-      ])
-      setDocuments(docsRes.data.documents || [])
-      setSubjects(subjectsRes.data.subjects || [])
-      setStats(statsRes.data)
+      if (isOnline || forceRefresh) {
+        try {
+          const [docsRes, subjectsRes, statsRes] = await Promise.all([
+            api.get('/documents/'),
+            api.get('/subjects/'),
+            api.get('/documents/stats')
+          ])
+          const docsData = docsRes.data.documents || []
+          const subjectsData = subjectsRes.data.subjects || []
 
-      // Récupérer le quota de stockage séparément (peut échouer si pas d'abonnement)
-      try {
-        const subscriptionRes = await api.get('/payments/subscription')
-        if (subscriptionRes.data) {
-          setStorageQuota({
-            storage_limit_mb: subscriptionRes.data.storage_limit_mb || 100,
-            storage_used_mb: subscriptionRes.data.storage_used_mb || 0
-          })
+          setDocuments(docsData)
+          setSubjects(subjectsData)
+          setStats(statsRes.data)
+          setIsFromCache(false)
+
+          // Sauvegarder en cache pour le mode offline
+          await offlineStorage.saveDocuments(docsData)
+          await offlineStorage.saveSubjects(subjectsData)
+
+          // Récupérer le quota de stockage séparément (peut échouer si pas d'abonnement)
+          try {
+            const subscriptionRes = await api.get('/payments/subscription')
+            if (subscriptionRes.data) {
+              setStorageQuota({
+                storage_limit_mb: subscriptionRes.data.storage_limit_mb || 100,
+                storage_used_mb: subscriptionRes.data.storage_used_mb || 0
+              })
+            }
+          } catch (subError) {
+            // Utiliser les valeurs par défaut (plan FREE) si pas d'abonnement
+            console.log('Abonnement non trouvé, utilisation des valeurs par défaut')
+            const usedMb = stats ? Math.round((statsRes.data.total_size_bytes || 0) / (1024 * 1024)) : 0
+            setStorageQuota({
+              storage_limit_mb: 100,
+              storage_used_mb: usedMb
+            })
+          }
+        } catch (error: any) {
+          // Si erreur réseau, essayer le cache
+          const cachedDocs = await offlineStorage.getDocuments()
+          const cachedSubjects = await offlineStorage.getSubjects()
+
+          if (cachedDocs && cachedDocs.length > 0) {
+            setDocuments(cachedDocs)
+            setSubjects(cachedSubjects || [])
+            setIsFromCache(true)
+            toast('Documents chargés depuis le cache', { icon: '📦' })
+          } else {
+            console.error('Erreur lors du chargement:', error)
+            toast.error('Erreur lors du chargement des documents')
+          }
         }
-      } catch (subError) {
-        // Utiliser les valeurs par défaut (plan FREE) si pas d'abonnement
-        console.log('Abonnement non trouvé, utilisation des valeurs par défaut')
-        // Calculer le stockage utilisé à partir des stats
-        const usedMb = stats ? Math.round((statsRes.data.total_size_bytes || 0) / (1024 * 1024)) : 0
-        setStorageQuota({
-          storage_limit_mb: 100, // Limite FREE par défaut
-          storage_used_mb: usedMb
-        })
+      } else {
+        // Mode hors-ligne: charger depuis le cache
+        const cachedDocs = await offlineStorage.getDocuments()
+        const cachedSubjects = await offlineStorage.getSubjects()
+
+        setDocuments(cachedDocs || [])
+        setSubjects(cachedSubjects || [])
+        setIsFromCache(true)
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
@@ -210,13 +250,31 @@ export default function DocumentsPage() {
   }
 
   const toggleFavorite = async (docId: number) => {
+    const doc = documents.find(d => d.id === docId)
+    if (!doc) return
+
+    // Mise à jour optimiste
+    const updatedDoc = { ...doc, is_favorite: !doc.is_favorite }
+    setDocuments(documents.map(d => d.id === docId ? updatedDoc : d))
+
     try {
-      await api.post(`/documents/${docId}/favorite`)
-      setDocuments(documents.map(doc =>
-        doc.id === docId ? { ...doc, is_favorite: !doc.is_favorite } : doc
-      ))
-      toast.success('Favori mis à jour')
+      if (isOnline) {
+        await api.post(`/documents/${docId}/favorite`)
+        toast.success('Favori mis à jour')
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.DOCUMENTS,
+          'update',
+          `/api/v1/documents/${docId}/favorite`,
+          'POST',
+          {}
+        )
+        toast.success('Favori mis à jour (sera synchronisé)')
+      }
     } catch (error) {
+      // Rollback en cas d'erreur
+      setDocuments(documents.map(d => d.id === docId ? doc : d))
       toast.error('Erreur lors de la mise à jour')
     }
   }
@@ -224,12 +282,31 @@ export default function DocumentsPage() {
   const deleteDocument = async (docId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce document?')) return
 
+    const docToDelete = documents.find(d => d.id === docId)
+    // Mise à jour optimiste
+    setDocuments(documents.filter(doc => doc.id !== docId))
+
     try {
-      await api.delete(`/documents/${docId}`)
-      setDocuments(documents.filter(doc => doc.id !== docId))
-      toast.success('Document supprimé')
-      fetchData() // Refresh stats
+      if (isOnline) {
+        await api.delete(`/documents/${docId}`)
+        toast.success('Document supprimé')
+        fetchData() // Refresh stats
+      } else {
+        // Queue pour sync offline
+        await syncService.queueAction(
+          STORES.DOCUMENTS,
+          'delete',
+          `/api/v1/documents/${docId}`,
+          'DELETE',
+          { id: docId }
+        )
+        toast.success('Document supprimé (sera synchronisé)')
+      }
     } catch (error) {
+      // Rollback en cas d'erreur
+      if (docToDelete) {
+        setDocuments([...documents, docToDelete])
+      }
       toast.error('Erreur lors de la suppression')
     }
   }
@@ -309,19 +386,45 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Documents</h1>
-          <p className="text-gray-600 mt-1">
-            {stats?.total_documents || 0} documents ({stats?.total_size_formatted || '0 B'})
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Documents</h1>
+            {isFromCache && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <CloudOff className="w-3 h-3 mr-1" />
+                Cache
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {stats?.total_documents || documents.length} documents ({stats?.total_size_formatted || '0 B'})
+            {isFromCache && !isOnline && ' • Mode hors-ligne'}
           </p>
         </div>
-        <button
-          onClick={() => setShowUploadModal(true)}
-          disabled={subjects.length === 0}
-          className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Upload className="h-5 w-5 mr-2" />
-          Uploader un document
-        </button>
+        <div className="flex items-center gap-2">
+          {isFromCache && isOnline && (
+            <button
+              onClick={() => fetchData(true)}
+              className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              title="Actualiser les données"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (!isOnline) {
+                toast.error('Upload non disponible hors-ligne')
+                return
+              }
+              setShowUploadModal(true)
+            }}
+            disabled={subjects.length === 0}
+            className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Upload className="h-5 w-5 mr-2" />
+            Uploader un document
+          </button>
+        </div>
       </div>
 
       {/* Storage Quota Card */}

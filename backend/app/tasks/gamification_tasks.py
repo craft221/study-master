@@ -16,6 +16,7 @@ from app.models.user import User, UserGamification, UserStats, UserAIUsage
 from app.models.study_session import StudySession
 from app.services.cache_service import cache_service
 from app.services.xp_service import calculate_level, get_level_progress
+from app.services.leaderboard_service import leaderboard_service
 
 logger = logging.getLogger(__name__)
 
@@ -477,6 +478,7 @@ def check_achievements(self, user_id: int) -> Dict[str, Any]:
 
                 new_achievements = []
                 unlocked = gamification.unlocked_achievements or []
+                total_achievement_xp = 0
 
                 for achievement_id, achievement in ACHIEVEMENTS.items():
                     if achievement_id not in unlocked:
@@ -494,6 +496,7 @@ def check_achievements(self, user_id: int) -> Dict[str, Any]:
                                 # Ajouter l'XP de récompense
                                 gamification.total_xp += achievement["xp_reward"]
                                 gamification.achievement_points += achievement["xp_reward"]
+                                total_achievement_xp += achievement["xp_reward"]
                         except Exception:
                             pass  # Ignorer les erreurs de condition
 
@@ -501,9 +504,14 @@ def check_achievements(self, user_id: int) -> Dict[str, Any]:
                     gamification.unlocked_achievements = unlocked
                     # Recalculer le niveau
                     gamification.level = gamification.calculate_level()
+
+                    # Mettre à jour weekly_xp pour les ligues
+                    if total_achievement_xp > 0:
+                        await leaderboard_service.add_weekly_xp(db, user_id, total_achievement_xp)
+
                     await db.commit()
 
-                    logger.info(f"User {user_id}: {len(new_achievements)} nouveaux achievements")
+                    logger.info(f"User {user_id}: {len(new_achievements)} nouveaux achievements (+{total_achievement_xp} weekly XP)")
 
                 return new_achievements
 
@@ -620,6 +628,9 @@ def award_daily_bonus(self, user_id: int) -> Dict[str, Any]:
                 gamification.last_activity_date = utc_now()
                 gamification.level = gamification.calculate_level()
 
+                # Mettre à jour weekly_xp pour les ligues
+                await leaderboard_service.add_weekly_xp(db, user_id, bonus_xp)
+
                 await db.commit()
 
                 return {
@@ -652,6 +663,95 @@ def award_daily_bonus(self, user_id: int) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Erreur award_daily_bonus: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "task_id": self.request.id
+        }
+
+
+@celery_app.task(base=GamificationTask, bind=True, name="app.tasks.gamification_tasks.process_weekly_league_reset")
+def process_weekly_league_reset(self) -> Dict[str, Any]:
+    """
+    Traite le reset hebdomadaire des ligues.
+    - Promeut le top X de chaque ligue
+    - Rétrograde le bottom Y de chaque ligue
+    - Remet les XP hebdomadaires à zéro
+
+    Exécuté chaque lundi à 00:00 UTC par Celery Beat
+
+    Returns:
+        Dict avec les statistiques de promotions/rétrogradations
+    """
+    async def _process():
+        async with async_session_maker() as db:
+            try:
+                result = await leaderboard_service.process_weekly_reset(db)
+                return result
+            except Exception as e:
+                await db.rollback()
+                raise e
+
+    try:
+        result = run_async(_process())
+
+        logger.info(f"Weekly league reset completed: {result}")
+
+        return {
+            "success": True,
+            **result,
+            "task_id": self.request.id,
+            "executed_at": utc_now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Erreur process_weekly_league_reset: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "task_id": self.request.id
+        }
+
+
+@celery_app.task(base=GamificationTask, bind=True, name="app.tasks.gamification_tasks.add_user_weekly_xp")
+def add_user_weekly_xp(self, user_id: int, xp_amount: int) -> Dict[str, Any]:
+    """
+    Ajoute des XP hebdomadaires à un utilisateur pour les ligues.
+    Appelé chaque fois qu'un utilisateur gagne des XP.
+
+    Args:
+        user_id: ID de l'utilisateur
+        xp_amount: Montant d'XP à ajouter
+
+    Returns:
+        Dict avec les informations de ligue mises à jour
+    """
+    async def _add():
+        async with async_session_maker() as db:
+            try:
+                user_league = await leaderboard_service.add_weekly_xp(db, user_id, xp_amount)
+                await db.commit()
+                return {
+                    "user_id": user_id,
+                    "weekly_xp": user_league.weekly_xp,
+                    "tier": user_league.current_tier
+                }
+            except Exception as e:
+                await db.rollback()
+                raise e
+
+    try:
+        result = run_async(_add())
+
+        return {
+            "success": True,
+            **result,
+            "xp_added": xp_amount,
+            "task_id": self.request.id
+        }
+
+    except Exception as e:
+        logger.error(f"Erreur add_user_weekly_xp: {e}")
         return {
             "success": False,
             "error": str(e),

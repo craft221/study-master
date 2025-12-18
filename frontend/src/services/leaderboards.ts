@@ -131,7 +131,14 @@ export const leaderboardsService = {
     total_participants: number
   }> => {
     const response = await api.get(`/leaderboards/leagues/${tier}`, { params: { limit } })
-    return response.data
+    // Backend returns array directly, wrap it in expected format
+    const entries = Array.isArray(response.data) ? response.data : []
+    return {
+      tier,
+      tier_info: { tier, name: tier, icon: '', color: '', min_xp: 0, promotion_slots: 0, demotion_slots: 0 },
+      entries,
+      total_participants: entries.length
+    }
   },
 
   /**
