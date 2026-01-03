@@ -80,7 +80,8 @@ async def create_study_group(
         user=current_user,
         amount=50,
         reason="Création d'un groupe d'étude",
-        event_type="study_group_created"
+        event_type="study_group_created",
+        db=db
     )
 
     await db.commit()
@@ -359,7 +360,8 @@ async def join_study_group(
         user=current_user,
         amount=10,
         reason="Rejoindre un groupe d'étude",
-        event_type="study_group_joined"
+        event_type="study_group_joined",
+        db=db
     )
 
     await db.commit()
@@ -532,7 +534,8 @@ async def share_note_with_group(
         user=current_user,
         amount=5,
         reason="Partage d'une note dans un groupe",
-        event_type="note_shared"
+        event_type="note_shared",
+        db=db
     )
 
     await db.commit()
@@ -711,7 +714,8 @@ async def share_flashcards_with_group(
         user=current_user,
         amount=5,
         reason="Partage de flashcards dans un groupe",
-        event_type="flashcards_shared"
+        event_type="flashcards_shared",
+        db=db
     )
 
     await db.commit()
@@ -912,7 +916,8 @@ async def create_group_session(
         user=current_user,
         amount=10,
         reason="Création d'une session de groupe",
-        event_type="group_session_created"
+        event_type="group_session_created",
+        db=db
     )
 
     await db.commit()
@@ -1051,7 +1056,8 @@ async def join_group_session(
         user=current_user,
         amount=5,
         reason="Participation à une session de groupe",
-        event_type="group_session_joined"
+        event_type="group_session_joined",
+        db=db
     )
 
     await db.commit()
@@ -1175,7 +1181,8 @@ async def share_quiz_with_group(
         user=current_user,
         amount=5,
         reason="Partage d'un quiz dans un groupe",
-        event_type="quiz_shared"
+        event_type="quiz_shared",
+        db=db
     )
 
     await db.commit()
@@ -1577,7 +1584,8 @@ async def accept_group_invitation(
         user=current_user,
         amount=10,
         reason="Rejoindre un groupe d'étude via invitation",
-        event_type="study_group_joined"
+        event_type="study_group_joined",
+        db=db
     )
 
     # Notifier l'inviteur

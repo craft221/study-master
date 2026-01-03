@@ -24,9 +24,13 @@ from app.schemas.focus_room import (
     RoomStatsResponse, UserFocusStatsResponse,
     RoomLeaderboardResponse, FocusSessionResponse,
     StartDeepWorkRequest, DeepWorkStatusResponse,
-    CreateEventRoomRequest, EventCountdownResponse
+    CreateEventRoomRequest, EventCountdownResponse,
+    HeartbeatResponse, ClaimRewardRequest, ClaimRewardResponse
 )
-from app.services.focus_room_service import focus_room_service
+from app.services.focus_room_service import focus_room_service, XP_REWARDS
+from app.services.xp_service import award_xp
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
 
 router = APIRouter()
 
@@ -333,6 +337,14 @@ async def join_room(
             invite_code=join_data.invite_code
         )
 
+        # Mettre à jour la quête JOIN_FOCUS_ROOM
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=current_user.id,
+            quest_type=QuestType.JOIN_FOCUS_ROOM,
+            progress=1
+        )
+
         return await _participant_to_response(participant)
 
     except ValueError as e:
@@ -434,6 +446,164 @@ async def update_activity(
         activity_data.subject_id
     )
     return await _participant_to_response(updated)
+
+
+@router.post("/{room_id}/heartbeat", response_model=HeartbeatResponse)
+async def heartbeat(
+    room_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Heartbeat HTTP pour sauvegarder les minutes de focus periodiquement.
+    Cet endpoint remplace/complete le heartbeat WebSocket qui peut ne pas fonctionner.
+    Appelez-le toutes les 30-60 secondes depuis le frontend.
+    Attribue aussi les XP des milestones atteints.
+    """
+    participant = await focus_room_service.get_participant(db, current_user.id)
+
+    if not participant or participant.room_id != room_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are not in this room"
+        )
+
+    # Appeler la fonction heartbeat du service qui sauvegarde les minutes
+    milestone = await focus_room_service.heartbeat(db, participant)
+
+    # Mettre à jour la quête STUDY_MINUTES (1 minute par heartbeat)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.STUDY_MINUTES,
+        progress=1
+    )
+
+    # Si un milestone est atteint, attribuer les XP correspondants
+    xp_earned = 0
+    if milestone:
+        milestone_xp_map = {
+            "15min": XP_REWARDS.get("milestone_15min", 10),
+            "30min": XP_REWARDS.get("milestone_30min", 25),
+            "45min": XP_REWARDS.get("milestone_45min", 40),
+            "1h": XP_REWARDS.get("milestone_1h", 60),
+            "90min": XP_REWARDS.get("milestone_90min", 100),
+            "2h": XP_REWARDS.get("milestone_2h", 150),
+            "3h": XP_REWARDS.get("milestone_3h", 250),
+            "4h": XP_REWARDS.get("milestone_4h", 400),
+        }
+        xp_earned = milestone_xp_map.get(milestone, 0)
+
+        if xp_earned > 0:
+            # Attribuer XP au profil utilisateur
+            await award_xp(
+                user=current_user,
+                amount=xp_earned,
+                reason=f"focus_room_milestone_{milestone}",
+                extra_data={"room_id": room_id, "milestone": milestone},
+                db=db
+            )
+            # Mettre à jour les stats Focus Room
+            await focus_room_service._update_user_focus_stats(
+                db, current_user.id, xp_bonus=xp_earned
+            )
+            # Mettre à jour la quête EARN_XP avec les XP gagnés du milestone
+            await daily_quest_service.update_quest_progress(
+                db=db,
+                user_id=current_user.id,
+                quest_type=QuestType.EARN_XP,
+                progress=xp_earned
+            )
+            await db.commit()
+
+    return HeartbeatResponse(
+        success=True,
+        focus_minutes=participant.current_focus_minutes,
+        today_focus_minutes=participant.today_focus_minutes,
+        milestone=milestone,
+        xp_earned=xp_earned
+    )
+
+
+@router.post("/{room_id}/claim-reward", response_model=ClaimRewardResponse)
+async def claim_reward(
+    room_id: int,
+    reward_data: ClaimRewardRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Reclamer une recompense aleatoire gagnee pendant le focus.
+    SECURITE: Les valeurs XP sont calculees cote serveur uniquement.
+    Le client ne peut PAS specifier de valeurs arbitraires.
+    """
+    participant = await focus_room_service.get_participant(db, current_user.id)
+
+    if not participant or participant.room_id != room_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are not in this room"
+        )
+
+    # Valider le type de recompense
+    valid_reward_types = {"xp", "multiplier", "streak_saver", "badge", "mystery"}
+    if reward_data.reward_type not in valid_reward_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Type de recompense invalide"
+        )
+
+    # Valider la rarete
+    valid_rarities = {"common", "rare", "epic", "legendary"}
+    rarity = reward_data.rarity if reward_data.rarity in valid_rarities else "common"
+
+    # Verifier le temps de focus minimum (anti-abus)
+    min_focus_minutes = 5
+    total_minutes = participant.get_today_total_minutes()
+    if total_minutes < min_focus_minutes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Focus minimum de {min_focus_minutes} minutes requis"
+        )
+
+    # SECURITE: XP calcule cote SERVEUR uniquement avec valeurs fixes
+    REWARD_XP_TABLE = {
+        "xp": {"common": 5, "rare": 15, "epic": 30, "legendary": 50},
+        "multiplier": {"common": 10, "rare": 15, "epic": 25, "legendary": 40},
+        "mystery": {"common": 10, "rare": 25, "epic": 50, "legendary": 100},
+        "badge": {"common": 5, "rare": 10, "epic": 20, "legendary": 50},
+        "streak_saver": {"common": 5, "rare": 10, "epic": 20, "legendary": 50},
+    }
+
+    xp_amount = REWARD_XP_TABLE.get(reward_data.reward_type, {}).get(rarity, 5)
+    reward_name = f"{rarity.capitalize()} {reward_data.reward_type.replace('_', ' ').title()}"
+
+    if xp_amount > 0:
+        # Attribuer XP au profil utilisateur
+        await award_xp(
+            user=current_user,
+            amount=xp_amount,
+            reason=f"focus_room_reward_{reward_data.reward_type}",
+            extra_data={
+                "room_id": room_id,
+                "reward_name": reward_name,
+                "reward_rarity": rarity
+            },
+            db=db
+        )
+        # Mettre a jour aussi les stats Focus Room (bonus XP)
+        await focus_room_service._update_user_focus_stats(
+            db, current_user.id, xp_bonus=xp_amount
+        )
+        await db.commit()
+
+    return ClaimRewardResponse(
+        success=True,
+        xp_earned=xp_amount,
+        reward_name=reward_name,
+        reward_type=reward_data.reward_type,
+        rarity=rarity
+    )
 
 
 @router.get("/{room_id}/participants", response_model=List[ParticipantResponse])

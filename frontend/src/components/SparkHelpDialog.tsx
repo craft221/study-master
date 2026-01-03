@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Send, Loader2 } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface SparkHelpDialogProps {
   isOpen: boolean
@@ -21,6 +22,7 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
   onAskQuestion,
   isLoading = false
 }) => {
+  const { t } = useLanguage()
   const [question, setQuestion] = useState('')
   const [error, setError] = useState('')
 
@@ -29,12 +31,12 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
 
     // Validation
     if (question.trim().length < 3) {
-      setError('Ta question doit faire au moins 3 caractères')
+      setError(t('sparkWidget.helpDialog.minCharsError'))
       return
     }
 
     if (question.trim().length > 500) {
-      setError('Ta question est trop longue (max 500 caractères)')
+      setError(t('sparkWidget.helpDialog.maxCharsError'))
       return
     }
 
@@ -86,10 +88,10 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
                   <div className="text-4xl">🐿️</div>
                   <div>
                     <h2 className="text-xl font-bold text-white">
-                      Demande de l'aide à Spark
+                      {t('sparkWidget.helpDialog.title')}
                     </h2>
                     <p className="text-white/90 text-sm">
-                      Je suis là pour t'aider ! ⚡
+                      {t('sparkWidget.helpDialog.subtitle')} ⚡
                     </p>
                   </div>
                 </div>
@@ -102,14 +104,14 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
                     htmlFor="question"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
-                    Ta question pour Spark
+                    {t('sparkWidget.helpDialog.questionLabel')}
                   </label>
 
                   <textarea
                     id="question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Comment puis-je mieux mémoriser ce chapitre ? Comment organiser mes révisions ? Quelles flashcards créer ?"
+                    placeholder={t('sparkWidget.helpDialog.placeholder')}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none"
                     rows={4}
                     disabled={isLoading}
@@ -118,7 +120,7 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
 
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-xs text-gray-500">
-                      {question.length}/500 caractères
+                      {t('sparkWidget.helpDialog.charCount', { count: question.length })}
                     </span>
 
                     {error && (
@@ -132,21 +134,20 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
                 {/* Info Box */}
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                   <p className="text-xs text-amber-800 dark:text-amber-200">
-                    💡 <strong>Spark utilise l'IA</strong> pour analyser ta question et ton contexte d'apprentissage.
-                    Tu recevras des conseils personnalisés et des suggestions d'actions !
+                    💡 {t('sparkWidget.helpDialog.aiInfo')}
                   </p>
                 </div>
 
                 {/* Exemples */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Exemples de questions :
+                    {t('sparkWidget.helpDialog.examplesTitle')}
                   </p>
                   <div className="space-y-1">
                     {[
-                      "Comment mieux réviser les maths ?",
-                      "J'ai du mal à mémoriser, des conseils ?",
-                      "Quelle est la meilleure méthode pour apprendre ?",
+                      t('sparkWidget.helpDialog.example1'),
+                      t('sparkWidget.helpDialog.example2'),
+                      t('sparkWidget.helpDialog.example3'),
                     ].map((example, idx) => (
                       <button
                         key={idx}
@@ -170,12 +171,12 @@ const SparkHelpDialog: React.FC<SparkHelpDialogProps> = ({
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Spark réfléchit...
+                      {t('sparkWidget.helpDialog.thinking')}
                     </>
                   ) : (
                     <>
                       <Send className="w-5 h-5" />
-                      Demander à Spark
+                      {t('sparkWidget.helpDialog.askButton')}
                     </>
                   )}
                 </button>

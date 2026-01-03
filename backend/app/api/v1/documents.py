@@ -219,7 +219,8 @@ async def upload_document(
         user=current_user,
         amount=xp_earned,
         reason="Upload d'un document",
-        event_type="document_uploaded"
+        event_type="document_uploaded",
+        db=db
     )
 
     await db.commit()
@@ -474,6 +475,57 @@ async def download_document(
         path=str(file_path),
         filename=document.original_filename,
         media_type=document.mime_type
+    )
+
+
+@router.get("/{document_id}/view")
+async def view_document(
+    document_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Visualiser un document dans le navigateur (sans téléchargement).
+    Le document s'ouvre directement dans le navigateur si le type est supporté (PDF, images).
+    """
+
+    result = await db.execute(
+        select(Document).where(
+            and_(
+                Document.id == document_id,
+                Document.user_id == current_user.id
+            )
+        )
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document non trouvé"
+        )
+
+    # Construire le chemin du fichier
+    file_path = UPLOAD_DIR / document.storage_path
+
+    if not file_path.exists():
+        logger.error(f"Fichier non trouvé sur le disque: {file_path}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fichier non trouvé sur le serveur"
+        )
+
+    # Incrémenter le compteur de vues
+    document.view_count += 1
+    await db.commit()
+
+    # Retourner le fichier avec Content-Disposition: inline pour affichage dans le navigateur
+    return FileResponse(
+        path=str(file_path),
+        media_type=document.mime_type,
+        headers={
+            "Content-Disposition": f"inline; filename=\"{document.original_filename}\""
+        }
     )
 
 

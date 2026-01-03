@@ -177,6 +177,30 @@ class UpdateActivityRequest(BaseModel):
     subject_id: Optional[int] = None
 
 
+class HeartbeatResponse(BaseModel):
+    """Schema de reponse pour le heartbeat"""
+    success: bool
+    focus_minutes: int
+    today_focus_minutes: int
+    milestone: Optional[str] = None
+    xp_earned: int = 0
+
+
+class ClaimRewardRequest(BaseModel):
+    """Schema pour reclamer une recompense aleatoire"""
+    reward_type: str = Field(..., description="Type: xp, multiplier, streak_saver, badge, mystery")
+    rarity: str = Field(default="common", description="Rarity: common, rare, epic, legendary")
+
+
+class ClaimRewardResponse(BaseModel):
+    """Schema de reponse pour la reclamation de recompense"""
+    success: bool
+    xp_earned: int
+    reward_name: str
+    reward_type: str
+    rarity: str
+
+
 class StartDeepWorkRequest(BaseModel):
     """Schema pour demarrer le mode Deep Work"""
     duration_minutes: int = Field(default=90, ge=30, le=180)
@@ -384,7 +408,7 @@ class FocusSessionResponse(BaseModel):
     total_minutes: int
     focus_score: Optional[int]
     activities_completed: int
-    milestones_reached: List[str]
+    milestones_reached: List[str] = []
     xp_earned: int
     xp_bonus: int
 

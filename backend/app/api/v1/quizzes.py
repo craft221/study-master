@@ -15,8 +15,54 @@ from app.models.subject import Subject
 from app.models.quiz import Quiz, QuizAttempt, QuizDifficulty, QuizType
 from app.services.xp_service import award_xp, broadcast_stat_update
 from app.services.cache_service import cache_service, CacheTTL
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
+from app.models.gamification import Duel, DuelStatus
 
 logger = logging.getLogger(__name__)
+
+
+async def send_duel_notification(
+    db: AsyncSession,
+    user_id: int,
+    notification_type: str,
+    title: str,
+    message: str,
+    duel_id: int,
+    data: dict = None
+):
+    """Envoie une notification de duel (helper local)"""
+    try:
+        from app.models.notification import Notification, NotificationType, NotificationPriority
+
+        # Mapping des types
+        type_map = {
+            "challenge": NotificationType.DUEL_CHALLENGE,
+            "accepted": NotificationType.DUEL_ACCEPTED,
+            "declined": NotificationType.DUEL_DECLINED,
+            "completed": NotificationType.DUEL_COMPLETED,
+            "won": NotificationType.DUEL_WON,
+            "lost": NotificationType.DUEL_LOST,
+            "duel_won": NotificationType.DUEL_WON,
+            "duel_lost": NotificationType.DUEL_LOST,
+            "duel_draw": NotificationType.DUEL_COMPLETED,
+        }
+
+        notification = Notification(
+            user_id=user_id,
+            type=type_map.get(notification_type, NotificationType.DUEL_COMPLETED),
+            title=title,
+            message=message,
+            priority=NotificationPriority.NORMAL,
+            action_url=f"/duels/{duel_id}",
+            data=str(data) if data else None
+        )
+
+        db.add(notification)
+        logger.info(f"Notification duel envoyée: user={user_id}, type={notification_type}")
+
+    except Exception as e:
+        logger.warning(f"Erreur création notification duel: {e}")
 
 
 async def invalidate_quiz_cache(user_id: int, quiz_id: int = None):
@@ -75,7 +121,14 @@ async def create_quiz(
     # Calculer le total de points
     total_points = sum(q.get("points", 10) for q in questions_json)
 
-    # Créer le quiz
+    # Créer le quiz avec timestamps explicites
+    now = utc_now()
+
+    # Utiliser la langue de l'utilisateur si non spécifiée
+    quiz_language = quiz_data.language
+    if not quiz_language:
+        quiz_language = current_user.preferences.language if current_user.preferences else "fr"
+
     new_quiz = Quiz(
         user_id=current_user.id,
         subject_id=quiz_data.subject_id,
@@ -93,7 +146,10 @@ async def create_quiz(
         show_correct_answers=quiz_data.show_correct_answers,
         randomize_questions=quiz_data.randomize_questions,
         randomize_options=quiz_data.randomize_options,
-        is_ai_generated=quiz_data.is_ai_generated
+        is_ai_generated=quiz_data.is_ai_generated,
+        language=quiz_language,
+        created_at=now,
+        updated_at=now
     )
     
     db.add(new_quiz)
@@ -113,8 +169,18 @@ async def create_quiz(
         amount=15,
         reason="Quiz créé",
         event_type="quiz_completed",
-        extra_data={"quiz_title": new_quiz.title}
+        extra_data={"quiz_title": new_quiz.title},
+        db=db
     )
+
+    # Mettre à jour la quête EARN_XP (+15 XP pour création de quiz)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.EARN_XP,
+        progress=15
+    )
+
     await db.refresh(new_quiz)
 
     # Construire la réponse manuellement pour éviter les problèmes de lazy loading
@@ -247,10 +313,17 @@ async def list_quizzes(
 @router.get("/{quiz_id}", response_model=QuizResponse)
 async def get_quiz(
     quiz_id: int,
+    duel_id: Optional[int] = None,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Récupérer les détails d'un quiz (avec cache 5min)"""
+    """Récupérer les détails d'un quiz (avec cache 5min)
+
+    Accessible si:
+    - L'utilisateur est le propriétaire du quiz
+    - Le quiz est public (is_public = True)
+    - L'utilisateur participe à un duel utilisant ce quiz
+    """
 
     # Cache key
     cache_key = f"cache:quiz:detail:{quiz_id}:user={current_user.id}"
@@ -260,17 +333,44 @@ async def get_quiz(
     if cached:
         return cached
 
-    result = await db.execute(
-        select(Quiz).where(
-            and_(
-                Quiz.id == quiz_id,
-                Quiz.user_id == current_user.id
-            )
-        )
-    )
+    # Récupérer le quiz
+    result = await db.execute(select(Quiz).where(Quiz.id == quiz_id))
     quiz = result.scalar_one_or_none()
 
     if not quiz:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz non trouvé"
+        )
+
+    # Vérifier les permissions d'accès
+    has_access = False
+
+    # 1. Propriétaire du quiz
+    if quiz.user_id == current_user.id:
+        has_access = True
+
+    # 2. Quiz public
+    elif quiz.is_public:
+        has_access = True
+
+    # 3. Participant à un duel avec ce quiz
+    else:
+        # Duel is already imported at module level from app.models.gamification
+        duel_query = select(Duel).where(
+            and_(
+                Duel.quiz_id == quiz_id,
+                or_(
+                    Duel.challenger_id == current_user.id,
+                    Duel.opponent_id == current_user.id
+                )
+            )
+        ).limit(1)
+        duel_result = await db.execute(duel_query)
+        if duel_result.scalar():
+            has_access = True
+
+    if not has_access:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz non trouvé"
@@ -328,10 +428,18 @@ async def get_quiz(
 @router.post("/{quiz_id}/attempt", status_code=status.HTTP_201_CREATED)
 async def start_quiz_attempt(
     quiz_id: int,
+    duel_id: Optional[int] = None,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Commencer une tentative de quiz"""
+    """Commencer une tentative de quiz
+
+    Accessible si:
+    - L'utilisateur est le propriétaire du quiz
+    - Le quiz est publié (is_published = True)
+    - Le quiz est public (is_public = True)
+    - L'utilisateur participe à un duel utilisant ce quiz
+    """
 
     # Récupérer le quiz
     result = await db.execute(
@@ -345,13 +453,78 @@ async def start_quiz_attempt(
             detail="Quiz non trouvé"
         )
 
-    if not quiz.is_published and quiz.user_id != current_user.id:
+    # Vérifier les permissions d'accès
+    has_access = False
+
+    # 1. Propriétaire du quiz
+    if quiz.user_id == current_user.id:
+        has_access = True
+
+    # 2. Quiz publié
+    elif quiz.is_published:
+        has_access = True
+
+    # 3. Quiz public
+    elif quiz.is_public:
+        has_access = True
+
+    # 4. Participant à un duel avec ce quiz
+    else:
+        # Duel is already imported at module level from app.models.gamification
+        duel_query = select(Duel).where(
+            and_(
+                Duel.quiz_id == quiz_id,
+                or_(
+                    Duel.challenger_id == current_user.id,
+                    Duel.opponent_id == current_user.id
+                )
+            )
+        ).limit(1)
+        duel_result = await db.execute(duel_query)
+        if duel_result.scalar():
+            has_access = True
+
+    if not has_access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Ce quiz n'est pas encore publié"
+            detail="Ce quiz n'est pas accessible"
         )
 
-    # Vérifier si plusieurs tentatives sont autorisées
+    # === VÉRIFICATION SPÉCIALE POUR LES DUELS ===
+    # Vérifier si ce quiz fait partie d'un duel actif où l'utilisateur est participant
+    # On prend le duel le plus récent pour éviter les conflits avec les duels complétés
+    duel_check_query = select(Duel).where(
+        and_(
+            Duel.quiz_id == quiz_id,
+            Duel.status.in_([DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]),
+            or_(
+                Duel.challenger_id == current_user.id,
+                Duel.opponent_id == current_user.id
+            )
+        )
+    ).order_by(Duel.created_at.desc()).limit(1)
+    duel_check_result = await db.execute(duel_check_query)
+    duel_for_quiz = duel_check_result.scalar()
+
+    if duel_for_quiz:
+        # Vérifier si l'utilisateur a déjà complété sa partie du duel
+        is_challenger = duel_for_quiz.challenger_id == current_user.id
+        user_score = duel_for_quiz.challenger_score if is_challenger else duel_for_quiz.opponent_score
+
+        if user_score is not None:
+            # Message différent selon le statut du duel
+            if duel_for_quiz.status == DuelStatus.COMPLETED:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ce duel est terminé. Vous ne pouvez plus rejouer ce quiz dans le cadre de ce duel."
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Vous avez déjà complété votre partie de ce duel. Attendez que votre adversaire termine."
+                )
+
+    # Vérifier si plusieurs tentatives sont autorisées (pour les quiz normaux)
     if not quiz.allow_multiple_attempts:
         result = await db.execute(
             select(QuizAttempt).where(
@@ -464,6 +637,23 @@ async def submit_quiz_attempt(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz non trouvé"
         )
+
+    # Vérifier si ce quiz fait partie d'un duel actif pour cet utilisateur
+    is_duel_quiz = False
+    duel_check_query = select(Duel).where(
+        and_(
+            Duel.quiz_id == quiz.id,
+            Duel.status.in_([DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]),
+            or_(
+                Duel.challenger_id == current_user.id,
+                Duel.opponent_id == current_user.id
+            )
+        )
+    ).limit(1)
+    duel_check_result = await db.execute(duel_check_query)
+    if duel_check_result.scalar():
+        is_duel_quiz = True
+        logger.info(f"Quiz {quiz.id} is part of a duel - skipping regular XP rewards")
 
     # SÉCURITÉ: Validation stricte des réponses soumises
     total_questions = len(quiz.questions_data)
@@ -582,31 +772,71 @@ async def submit_quiz_attempt(
 
     quiz.completion_rate = 100.0  # Simplifié pour le MVP
 
-    # Calculer XP
-    xp_earned = 20  # Base
-    if is_passed:
-        xp_earned += 10
-    if score >= 90:
-        xp_earned += 20  # Bonus excellence
+    # Calculer XP - SEULEMENT si ce n'est PAS un quiz de duel
+    xp_earned = 0
+    if not is_duel_quiz:
+        xp_earned = 20  # Base
+        if is_passed:
+            xp_earned += 10
+        if score >= 90:
+            xp_earned += 20  # Bonus excellence
+    else:
+        logger.info(f"Skipping regular XP for duel quiz {quiz.id} - XP will come from duel result")
 
     # Mettre à jour les stats de l'utilisateur si disponibles
     if current_user.stats:
         current_user.stats.total_quizzes_taken = (current_user.stats.total_quizzes_taken or 0) + 1
 
+    # Mettre à jour la progression des quêtes quotidiennes (compte pour les duels aussi)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.COMPLETE_QUIZ,
+        progress=1
+    )
+
+    # Si score parfait (100%), mettre à jour aussi la quête PERFECT_QUIZ
+    if score == 100:
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=current_user.id,
+            quest_type=QuestType.PERFECT_QUIZ,
+            progress=1
+        )
+
+    # Mettre à jour la quête EARN_XP avec les XP gagnés du quiz
+    if xp_earned > 0:
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=current_user.id,
+            quest_type=QuestType.EARN_XP,
+            progress=xp_earned
+        )
+
+    # Mettre à jour la quête MAINTAIN_STREAK (garder le streak actif)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.MAINTAIN_STREAK,
+        progress=1
+    )
+
     await db.commit()
 
-    # Attribuer XP avec broadcast temps réel
-    await award_xp(
-        user=current_user,
-        amount=xp_earned,
-        reason=f"Quiz terminé: {score:.0f}%",
-        event_type="quiz_completed",
-        extra_data={
-            "quiz_title": quiz.title,
-            "score": score,
-            "is_passed": is_passed
-        }
-    )
+    # Attribuer XP avec broadcast temps réel - SEULEMENT si pas un duel
+    if xp_earned > 0:
+        await award_xp(
+            user=current_user,
+            amount=xp_earned,
+            reason=f"Quiz terminé: {score:.0f}%",
+            event_type="quiz_completed",
+            extra_data={
+                "quiz_title": quiz.title,
+                "score": score,
+                "is_passed": is_passed
+            },
+            db=db
+        )
     await db.refresh(attempt)
 
     # Préparer la réponse détaillée
@@ -650,6 +880,137 @@ async def submit_quiz_attempt(
         "weaknesses": weaknesses,
         "recommendations": recommendations
     }
+
+    # === AUTO-COMPLETION DU DUEL ===
+    # Vérifier si ce quiz fait partie d'un duel actif et auto-compléter si les deux joueurs ont fini
+    try:
+        duel_query = select(Duel).where(
+            and_(
+                Duel.quiz_id == quiz.id,
+                Duel.status.in_([DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]),
+                or_(
+                    Duel.challenger_id == current_user.id,
+                    Duel.opponent_id == current_user.id
+                )
+            )
+        ).order_by(Duel.created_at.desc()).limit(1)
+        duel_result = await db.execute(duel_query)
+        duel = duel_result.scalar()
+
+        if duel:
+            # Vérifier si les deux joueurs ont complété leur quiz
+            challenger_attempt_query = select(QuizAttempt).where(
+                and_(
+                    QuizAttempt.quiz_id == duel.quiz_id,
+                    QuizAttempt.user_id == duel.challenger_id,
+                    QuizAttempt.completed_at.isnot(None)
+                )
+            ).order_by(QuizAttempt.completed_at.desc()).limit(1)
+
+            opponent_attempt_query = select(QuizAttempt).where(
+                and_(
+                    QuizAttempt.quiz_id == duel.quiz_id,
+                    QuizAttempt.user_id == duel.opponent_id,
+                    QuizAttempt.completed_at.isnot(None)
+                )
+            ).order_by(QuizAttempt.completed_at.desc()).limit(1)
+
+            challenger_result = await db.execute(challenger_attempt_query)
+            opponent_result = await db.execute(opponent_attempt_query)
+
+            challenger_attempt = challenger_result.scalar_one_or_none()
+            opponent_attempt = opponent_result.scalar_one_or_none()
+
+            # Si les deux ont terminé, auto-compléter le duel
+            if challenger_attempt and opponent_attempt:
+                logger.info(f"Auto-completing duel {duel.id}: both players have finished")
+
+                # Récupérer les scores
+                duel.challenger_score = int(challenger_attempt.score)
+                duel.opponent_score = int(opponent_attempt.score)
+
+                # Déterminer le gagnant - charger avec gamification
+                challenger_query = select(User).options(
+                    selectinload(User.gamification)
+                ).where(User.id == duel.challenger_id)
+                opponent_query = select(User).options(
+                    selectinload(User.gamification)
+                ).where(User.id == duel.opponent_id)
+
+                challenger_res = await db.execute(challenger_query)
+                opponent_res = await db.execute(opponent_query)
+                challenger = challenger_res.scalar_one_or_none()
+                opponent = opponent_res.scalar_one_or_none()
+
+                winner = None
+                loser = None
+
+                if duel.challenger_score > duel.opponent_score:
+                    duel.winner_id = duel.challenger_id
+                    winner = challenger
+                    loser = opponent
+                elif duel.opponent_score > duel.challenger_score:
+                    duel.winner_id = duel.opponent_id
+                    winner = opponent
+                    loser = challenger
+                else:
+                    # Égalité
+                    duel.winner_id = None
+
+                # Transfert XP
+                if winner and loser:
+                    # Gagnant gagne l'enjeu complet
+                    if winner.gamification:
+                        winner.gamification.total_xp += duel.stakes_xp
+                        winner.gamification.level = (winner.gamification.total_xp // 100) + 1
+
+                    # Perdant perd la moitié de l'enjeu
+                    xp_loss = duel.stakes_xp // 2
+                    if loser.gamification:
+                        loser.gamification.total_xp = max(0, loser.gamification.total_xp - xp_loss)
+                        loser.gamification.level = (loser.gamification.total_xp // 100) + 1
+
+                    logger.info(f"Duel {duel.id} auto-completed: {winner.username} wins +{duel.stakes_xp}XP, {loser.username} loses -{xp_loss}XP")
+
+                    # Notifications
+                    await send_duel_notification(
+                        db=db,
+                        user_id=winner.id,
+                        notification_type="duel_won",
+                        title="Victoire ! 🏆",
+                        message=f"Vous avez gagné le duel contre {loser.username} ! +{duel.stakes_xp} XP",
+                        duel_id=duel.id,
+                        data={"xp_gained": duel.stakes_xp}
+                    )
+                    await send_duel_notification(
+                        db=db,
+                        user_id=loser.id,
+                        notification_type="duel_lost",
+                        title="Défaite",
+                        message=f"Vous avez perdu le duel contre {winner.username}. -{xp_loss} XP",
+                        duel_id=duel.id,
+                        data={"xp_lost": xp_loss}
+                    )
+                else:
+                    # Égalité
+                    logger.info(f"Duel {duel.id} auto-completed: draw between {challenger.username} and {opponent.username}")
+                    for user in [challenger, opponent]:
+                        await send_duel_notification(
+                            db=db,
+                            user_id=user.id,
+                            notification_type="duel_draw",
+                            title="Égalité ! 🤝",
+                            message="Match nul ! Aucun XP échangé.",
+                            duel_id=duel.id
+                        )
+
+                duel.status = DuelStatus.COMPLETED
+                duel.ended_at = utc_now()
+                await db.commit()
+
+    except Exception as e:
+        logger.error(f"Error auto-completing duel: {e}")
+        # Ne pas faire échouer la soumission du quiz si l'auto-completion échoue
 
     return {
         "attempt": attempt_response,

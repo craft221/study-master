@@ -14,6 +14,7 @@ from app.core.database import async_session_maker
 from app.core.datetime_utils import utc_now, utc_date
 from app.models.user import User, UserGamification, UserStats, UserAIUsage
 from app.models.study_session import StudySession
+from app.models.focus_room import FocusRoom
 from app.services.cache_service import cache_service
 from app.services.xp_service import calculate_level, get_level_progress
 from app.services.leaderboard_service import leaderboard_service
@@ -752,6 +753,78 @@ def add_user_weekly_xp(self, user_id: int, xp_amount: int) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Erreur add_user_weekly_xp: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "task_id": self.request.id
+        }
+
+
+@celery_app.task(base=GamificationTask, bind=True, name="app.tasks.gamification_tasks.cleanup_expired_focus_rooms")
+def cleanup_expired_focus_rooms(self) -> Dict[str, Any]:
+    """
+    Supprime les Focus Rooms sans activité depuis 7 jours.
+    Exécuté une fois par jour par Celery Beat.
+
+    Les rooms d'événements (EVENT) ne sont pas supprimées automatiquement.
+
+    Returns:
+        Dict avec les statistiques de nettoyage
+    """
+    async def _cleanup():
+        async with async_session_maker() as db:
+            try:
+                # Seuil d'expiration: 7 jours sans activité
+                expiration_threshold = utc_now() - timedelta(days=7)
+
+                # Trouver les rooms expirées (sauf les events)
+                expired_query = (
+                    select(FocusRoom)
+                    .where(and_(
+                        FocusRoom.last_activity_at < expiration_threshold,
+                        FocusRoom.is_active == True,
+                        FocusRoom.room_type != "event"  # Ne pas supprimer les événements
+                    ))
+                )
+                result = await db.execute(expired_query)
+                expired_rooms = result.scalars().all()
+
+                rooms_deleted = 0
+                room_names = []
+
+                for room in expired_rooms:
+                    room_names.append(f"{room.name} (id={room.id}, inactif depuis {room.last_activity_at})")
+                    # Supprimer la room (cascade supprimera participants, activities, etc.)
+                    await db.delete(room)
+                    rooms_deleted += 1
+
+                await db.commit()
+
+                if rooms_deleted > 0:
+                    logger.info(f"Focus Rooms expirées supprimées: {rooms_deleted}")
+                    for name in room_names:
+                        logger.info(f"  - {name}")
+
+                return rooms_deleted, room_names
+
+            except Exception as e:
+                await db.rollback()
+                raise e
+
+    try:
+        rooms_deleted, room_names = run_async(_cleanup())
+
+        return {
+            "success": True,
+            "rooms_deleted": rooms_deleted,
+            "deleted_rooms": room_names,
+            "expiration_days": 7,
+            "task_id": self.request.id,
+            "executed_at": utc_now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Erreur cleanup_expired_focus_rooms: {e}")
         return {
             "success": False,
             "error": str(e),

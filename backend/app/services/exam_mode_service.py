@@ -27,6 +27,7 @@ from app.models.exam_mode import (
 from app.models.user import User, SubscriptionType
 from app.models.note import Note
 from app.models.subject import Subject
+from app.services.fsrs_service import FSRSScheduler, FSRSParameters, FSRSCard, State, Rating
 from app.schemas.exam_mode import (
     ExamSessionCreate, ExamSessionUpdate,
     ExamSessionResponse, ExamSessionDetailResponse,
@@ -41,6 +42,231 @@ logger = logging.getLogger(__name__)
 
 class ExamModeService:
     """Service principal pour Exam Mode"""
+
+    def __init__(self):
+        """Initialise le service avec FSRS pour la répétition espacée"""
+        self.fsrs = FSRSScheduler(FSRSParameters.default())
+
+    # ==================== MÉTHODES FSRS ====================
+
+    def _calculate_fsrs_review_days(
+        self,
+        total_days: int,
+        notes_count: int,
+        difficulty_level: DifficultyLevel
+    ) -> List[int]:
+        """
+        Calcule les jours de révision optimaux basés sur FSRS.
+
+        Au lieu d'un pourcentage fixe (30%), utilise les intervalles FSRS
+        pour planifier les révisions au moment optimal pour la rétention.
+
+        Args:
+            total_days: Nombre total de jours avant l'examen
+            notes_count: Nombre de notes à réviser
+            difficulty_level: Niveau de difficulté de l'examen
+
+        Returns:
+            Liste des numéros de jours où placer des révisions
+        """
+        review_days = []
+
+        # Intervalles FSRS typiques: 1, 3, 7, 14, 30 jours
+        # On adapte selon le temps disponible
+        if total_days <= 3:
+            # Très peu de temps: révision quotidienne
+            review_days = list(range(2, total_days + 1))
+        elif total_days <= 7:
+            # Une semaine: intervalles courts
+            review_days = [2, 4, 6] if total_days >= 6 else [2, total_days - 1]
+        elif total_days <= 14:
+            # Deux semaines: suivre FSRS
+            # Jour 1: apprendre, Jour 2: révision (+1), Jour 4: révision (+3), Jour 8: révision (+7)
+            intervals = [1, 3, 7]
+            current = 1
+            for interval in intervals:
+                current += interval
+                if current < total_days - 1:  # Garder le dernier jour pour examen blanc
+                    review_days.append(current)
+        else:
+            # Plus de deux semaines: intervalles FSRS complets
+            intervals = [1, 3, 7, 14]
+            current = 1
+            for interval in intervals:
+                current += interval
+                if current < total_days - 2:
+                    review_days.append(current)
+
+            # Ajouter des révisions supplémentaires pour le contenu volumineux
+            if notes_count > 10:
+                mid_point = total_days // 2
+                if mid_point not in review_days:
+                    review_days.append(mid_point)
+
+        # Ajuster selon la difficulté
+        if difficulty_level == DifficultyLevel.HARD:
+            # Plus de révisions pour les examens difficiles
+            additional_days = [d + 1 for d in review_days if d + 1 < total_days - 1 and d + 1 not in review_days]
+            review_days.extend(additional_days[:2])
+
+        return sorted(set(review_days))
+
+    def _calculate_adaptive_day_distribution(
+        self,
+        total_days: int,
+        notes_count: int,
+        total_words: int,
+        difficulty_level: DifficultyLevel
+    ) -> Dict[str, int]:
+        """
+        Calcule une répartition adaptative des jours basée sur le contenu.
+
+        Remplace les pourcentages fixes (60/30/10) par une distribution
+        intelligente basée sur le volume de contenu et le temps disponible.
+
+        Returns:
+            Dict avec learning_days, review_days, practice_days
+        """
+        # Estimer le temps nécessaire pour tout apprendre (15 min / 500 mots en moyenne)
+        estimated_learning_hours = max(1, total_words / 500 * 0.25)
+
+        # Estimer le nombre de jours d'apprentissage nécessaires
+        # (basé sur 2h d'étude par jour en moyenne)
+        min_learning_days = max(1, math.ceil(estimated_learning_hours / 2))
+
+        # Nombre de révisions recommandées par FSRS selon le temps disponible
+        recommended_reviews = len(self._calculate_fsrs_review_days(total_days, notes_count, difficulty_level))
+
+        # Calculer la distribution
+        if total_days <= 3:
+            # Mode survie: tout apprendre, pas de pratique
+            learning = total_days - 1
+            review = 1
+            practice = 0
+        elif total_days <= 7:
+            # Court terme: focus apprentissage + une révision
+            learning = max(2, total_days - recommended_reviews - 1)
+            review = recommended_reviews
+            practice = 1
+        else:
+            # Normal: distribution équilibrée
+            # 1. D'abord, allouer les jours d'apprentissage minimum
+            learning = max(min_learning_days, int(total_days * 0.5))
+
+            # 2. Allouer les jours de révision FSRS
+            review = min(recommended_reviews, total_days - learning - 2)
+
+            # 3. Le reste pour la pratique (min 1, max 3)
+            practice = max(1, min(3, total_days - learning - review))
+
+            # Ajuster si on dépasse
+            while learning + review + practice > total_days:
+                if learning > min_learning_days:
+                    learning -= 1
+                elif practice > 1:
+                    practice -= 1
+                else:
+                    review -= 1
+
+        # Ajuster selon la difficulté
+        if difficulty_level == DifficultyLevel.HARD and practice < 2 and total_days > 7:
+            practice = min(2, total_days - learning - review)
+
+        return {
+            "learning_days": max(1, learning),
+            "review_days": max(0, review),
+            "practice_days": max(0, practice)
+        }
+
+    async def _calculate_real_regularity(
+        self,
+        db: AsyncSession,
+        session: ExamSession
+    ) -> float:
+        """
+        Calcule la régularité réelle basée sur l'historique des tâches.
+
+        Remplace le placeholder 0.7 par un calcul réel basé sur:
+        - Nombre de jours complétés à temps
+        - Continuité des sessions (pas de grandes pauses)
+        - Respect du planning prévu
+
+        Returns:
+            Score de régularité entre 0.0 et 1.0
+        """
+        # Récupérer tous les jours d'étude passés
+        today = date.today()
+        query = select(StudyDay).where(
+            StudyDay.exam_session_id == session.id,
+            StudyDay.study_date < today
+        ).order_by(StudyDay.study_date)
+
+        result = await db.execute(query)
+        past_days = list(result.scalars().all())
+
+        if not past_days:
+            return 0.7  # Valeur par défaut si pas encore d'historique
+
+        # Facteur 1: Taux de complétion des jours (40% du score)
+        completed_days = sum(1 for d in past_days if d.is_completed)
+        completion_rate = completed_days / len(past_days) if past_days else 0
+
+        # Facteur 2: Continuité (pas de trous) (30% du score)
+        consecutive_streaks = 0
+        current_streak = 0
+        for i, day in enumerate(past_days):
+            if day.is_completed:
+                current_streak += 1
+                consecutive_streaks = max(consecutive_streaks, current_streak)
+            else:
+                current_streak = 0
+
+        # Score de continuité basé sur le plus long streak vs total
+        continuity_score = consecutive_streaks / len(past_days) if past_days else 0
+
+        # Facteur 3: Ponctualité (complétion le jour prévu) (30% du score)
+        on_time_count = 0
+        for day in past_days:
+            if day.is_completed and day.completed_at:
+                # Vérifie si complété le jour même ou le lendemain
+                completion_date = day.completed_at.date() if hasattr(day.completed_at, 'date') else day.completed_at
+                if isinstance(completion_date, datetime):
+                    completion_date = completion_date.date()
+                days_late = (completion_date - day.study_date).days if isinstance(day.study_date, date) else 0
+                if days_late <= 1:
+                    on_time_count += 1
+
+        punctuality_score = on_time_count / len(past_days) if past_days else 0
+
+        # Score final pondéré
+        regularity = (
+            completion_rate * 0.4 +
+            continuity_score * 0.3 +
+            punctuality_score * 0.3
+        )
+
+        return max(0.0, min(1.0, regularity))
+
+    def _get_fsrs_based_task_order(
+        self,
+        tasks: List[StudyTask],
+        scores_history: Dict[int, List[float]]
+    ) -> List[StudyTask]:
+        """
+        Réordonne les tâches selon leur priorité FSRS.
+
+        Les contenus avec une récupérabilité plus basse (plus à risque d'oubli)
+        sont placés en premier.
+        """
+        def get_priority(task: StudyTask) -> float:
+            if task.note_id and task.note_id in scores_history:
+                scores = scores_history[task.note_id]
+                avg_score = sum(scores) / len(scores) if scores else 0.5
+                # Plus le score est bas, plus la priorité est haute
+                return 1 - avg_score
+            return 0.5  # Priorité moyenne par défaut
+
+        return sorted(tasks, key=get_priority, reverse=True)
 
     # ==================== LIMITES PAR ABONNEMENT ====================
     SUBSCRIPTION_LIMITS = {
@@ -136,7 +362,13 @@ class ExamModeService:
         await self.generate_study_plan(db, session, user)
 
         # Attribuer XP pour la création
-        await award_xp(db, user.id, EXAM_MODE_XP_REWARDS["create_plan"], "exam_mode_create")
+        await award_xp(
+            user=user,
+            amount=EXAM_MODE_XP_REWARDS["create_plan"],
+            reason="Création d'un plan d'examen",
+            event_type="exam_mode_create",
+            db=db
+        )
 
         logger.info(f"Exam session created: {session.id} for user {user.id}")
         return session
@@ -251,18 +483,31 @@ class ExamModeService:
         study_days = []
         num_days = len(study_dates)
 
-        # Diviser les notes sur les jours (en gardant des jours de révision)
-        learning_days = int(num_days * 0.6)  # 60% apprentissage
-        review_days = int(num_days * 0.3)    # 30% révision
-        practice_days = num_days - learning_days - review_days  # 10% examen blanc
+        # ===== NOUVEAU: Distribution adaptative basée sur FSRS =====
+        distribution = self._calculate_adaptive_day_distribution(
+            total_days=num_days,
+            notes_count=len(notes),
+            total_words=session.total_content_words,
+            difficulty_level=session.difficulty_level
+        )
+
+        learning_days = distribution["learning_days"]
+        review_days_count = distribution["review_days"]
+        practice_days = distribution["practice_days"]
+
+        # Obtenir les jours de révision optimaux selon FSRS
+        fsrs_review_day_numbers = self._calculate_fsrs_review_days(
+            num_days, len(notes), session.difficulty_level
+        )
 
         # Répartir les notes sur les jours d'apprentissage
         notes_per_day = max(1, len(notes) // learning_days) if learning_days > 0 and notes else 0
 
         for day_num, study_date in enumerate(study_dates, 1):
             is_last_day = day_num == num_days
-            is_practice_day = day_num > learning_days + review_days
-            is_review_day = learning_days < day_num <= learning_days + review_days
+            # ===== NOUVEAU: Utiliser les jours de révision FSRS =====
+            is_review_day = day_num in fsrs_review_day_numbers
+            is_practice_day = day_num > num_days - practice_days and not is_last_day
 
             # Déterminer le titre du jour
             if is_last_day:
@@ -599,7 +844,20 @@ class ExamModeService:
             if avg_score >= 90:
                 xp_earned += EXAM_MODE_XP_REWARDS["perfect_day"]
 
-        await award_xp(db, user_id, xp_earned, "exam_mode_task")
+        # Récupérer l'utilisateur pour award_xp
+        from sqlalchemy.orm import selectinload
+        user_result = await db.execute(
+            select(User).where(User.id == user_id).options(selectinload(User.gamification))
+        )
+        user = user_result.scalar_one_or_none()
+        if user:
+            await award_xp(
+                user=user,
+                amount=xp_earned,
+                reason="Tâche d'examen terminée",
+                event_type="exam_mode_task",
+                db=db
+            )
         await db.commit()
 
         return task, xp_earned
@@ -677,11 +935,10 @@ class ExamModeService:
             "label": "Score moyen aux quiz"
         }
 
-        # 3. Régularité (20%)
-        # TODO: Calculer basé sur les jours complétés à temps
-        regularity = 0.7  # Placeholder
+        # 3. Régularité (20%) - ===== NOUVEAU: Calcul réel basé sur FSRS =====
+        regularity = await self._calculate_real_regularity(db, session)
         factors["regularity"] = {
-            "value": regularity * 100,
+            "value": round(regularity * 100, 1),
             "weight": 0.2,
             "label": "Régularité d'étude"
         }

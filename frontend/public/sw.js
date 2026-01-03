@@ -3,18 +3,16 @@
  * Gère le cache, les requêtes réseau et la synchronisation
  */
 
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.2.0';
 const STATIC_CACHE = `study-master-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `study-master-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `study-master-api-${CACHE_VERSION}`;
 
 // Ressources statiques à mettre en cache immédiatement
+// Note: On utilise uniquement les ressources qui existent
 const STATIC_ASSETS = [
   '/',
-  '/offline',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
 ];
 
 // Routes API à mettre en cache pour le mode hors ligne
@@ -44,9 +42,21 @@ self.addEventListener('install', (event) => {
 
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then((cache) => {
+      .then(async (cache) => {
         console.log('[SW] Mise en cache des ressources statiques');
-        return cache.addAll(STATIC_ASSETS);
+        // Utiliser addAll avec gestion d'erreur individuelle
+        const cachePromises = STATIC_ASSETS.map(async (url) => {
+          try {
+            const response = await fetch(url);
+            if (response.ok) {
+              await cache.put(url, response);
+              console.log('[SW] Cached:', url);
+            }
+          } catch (error) {
+            console.warn('[SW] Impossible de cacher:', url, error.message);
+          }
+        });
+        return Promise.all(cachePromises);
       })
       .then(() => {
         console.log('[SW] Installation terminée');
@@ -54,6 +64,8 @@ self.addEventListener('install', (event) => {
       })
       .catch((error) => {
         console.error('[SW] Erreur lors de l\'installation:', error);
+        // Ne pas bloquer l'installation même en cas d'erreur
+        return self.skipWaiting();
       })
   );
 });

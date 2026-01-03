@@ -33,8 +33,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSparkEventMessages } from '@/hooks/useSparkEvents'
+import { useAuthStore } from '@/store/auth-store'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function DailyQuestsPage() {
+  const { t } = useLanguage()
   const [questsData, setQuestsData] = useState<DailyQuestsResponse | null>(null)
   const [streakStats, setStreakStats] = useState<StreakStats | null>(null)
   const [chests, setChests] = useState<MysteryChest[]>([])
@@ -51,6 +54,9 @@ export default function DailyQuestsPage() {
 
   // Hook Spark pour les messages du widget
   const { onQuestComplete, onDailyBonusClaimed } = useSparkEventMessages()
+
+  // Pour mettre à jour l'XP dans le header
+  const refreshUser = useAuthStore((state) => state.refreshUser)
 
   const fetchData = useCallback(async () => {
     try {
@@ -99,6 +105,9 @@ export default function DailyQuestsPage() {
         const isAllComplete = updatedData.stats?.all_completed || false
         onQuestComplete(quest?.title || 'Quête', isAllComplete)
 
+        // Mettre à jour l'XP dans le header
+        await refreshUser()
+
         await fetchData()
       }
     } catch (error) {
@@ -116,13 +125,16 @@ export default function DailyQuestsPage() {
         triggerConfetti()
         setShowReward({
           xp: result.bonus_xp,
-          message: `${result.spark_message.text} Tu as aussi gagne un coffre ${getChestRarityLabel(result.chest_rarity)}!`
+          message: `${result.spark_message.text} + ${t('quests.chest')} ${t(`quests.chestRarity.${result.chest_rarity}`)}!`
         })
         setSparkMessage(result.spark_message)
         setTimeout(() => setShowReward(null), 4000)
 
         // Message du widget Spark
         onDailyBonusClaimed()
+
+        // Mettre à jour l'XP dans le header
+        await refreshUser()
 
         await fetchData()
       }
@@ -142,6 +154,10 @@ export default function DailyQuestsPage() {
         setShowChestReward({ rarity: result.rarity, contents: result.contents })
         setSparkMessage(result.spark_message)
         setTimeout(() => setShowChestReward(null), 4000)
+
+        // Mettre à jour l'XP dans le header
+        await refreshUser()
+
         await fetchData()
       }
     } catch (error) {
@@ -244,7 +260,7 @@ export default function DailyQuestsPage() {
                 >
                   {getChestEmoji(showChestReward.rarity as any)}
                 </motion.div>
-                <h3 className="text-xl font-bold">Coffre {getChestRarityLabel(showChestReward.rarity as any)}!</h3>
+                <h3 className="text-xl font-bold">{t('quests.chest')} {t(`quests.chestRarity.${showChestReward.rarity}`)}!</h3>
                 <div className="space-y-2">
                   {showChestReward.contents.xp && (
                     <Badge variant="secondary" className="text-lg px-4 py-2">
@@ -276,7 +292,7 @@ export default function DailyQuestsPage() {
         <div className="flex-1 text-center md:text-left">
           <h1 className="text-3xl font-bold mb-2 flex items-center justify-center md:justify-start gap-2">
             <Target className="h-8 w-8 text-orange-500" />
-            Objectifs du Jour
+            {t('quests.title')}
           </h1>
           {sparkMessage && (
             <p className="text-lg text-muted-foreground italic">
@@ -289,7 +305,7 @@ export default function DailyQuestsPage() {
             <Flame className="h-8 w-8 text-orange-500" />
             <span>{streakStats?.current_streak || 0}</span>
           </div>
-          <span className="text-sm text-muted-foreground">Jours de suite</span>
+          <span className="text-sm text-muted-foreground">{t('quests.daysStreak')}</span>
         </div>
       </div>
 
@@ -297,9 +313,9 @@ export default function DailyQuestsPage() {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-medium">Progression du jour</span>
+            <span className="font-medium">{t('quests.dailyProgress')}</span>
             <span className="text-sm text-muted-foreground">
-              {stats?.total_claimed || 0}/3 completes
+              {stats?.total_claimed || 0}/3 {t('quests.completed')}
             </span>
           </div>
           <Progress
@@ -322,14 +338,14 @@ export default function DailyQuestsPage() {
                 ) : (
                   <Gift className="h-4 w-4 mr-2" />
                 )}
-                Reclamer le Bonus (+50 XP + Coffre Mystere!)
+                {t('quests.claimBonus')}
               </Button>
             </motion.div>
           )}
           {stats?.bonus_claimed && (
             <div className="mt-4 text-center text-green-600 dark:text-green-400 flex items-center justify-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              Bonus du jour reclame! Reviens demain pour de nouveaux objectifs.
+              {t('quests.bonusClaimed')}
             </div>
           )}
         </CardContent>
@@ -361,7 +377,7 @@ export default function DailyQuestsPage() {
                     <div>
                       <CardTitle className="text-lg">{quest.title}</CardTitle>
                       <Badge variant={getDifficultyBadgeVariant(quest.difficulty)} className="mt-1">
-                        {getDifficultyLabel(quest.difficulty)}
+                        {t(`quests.difficulty.${quest.difficulty}`)}
                       </Badge>
                     </div>
                   </div>
@@ -400,20 +416,20 @@ export default function DailyQuestsPage() {
                     ) : (
                       <Gift className="h-4 w-4 mr-2" />
                     )}
-                    Reclamer la recompense
+                    {t('quests.claimReward')}
                   </Button>
                 )}
 
                 {quest.status === 'claimed' && (
                   <div className="flex items-center justify-center text-green-600 dark:text-green-400 gap-2">
                     <CheckCircle2 className="h-5 w-5" />
-                    <span>Complete!</span>
+                    <span>{t('quests.questComplete')}</span>
                   </div>
                 )}
 
                 {(quest.status === 'pending' || quest.status === 'in_progress') && (
                   <div className="text-center text-sm text-muted-foreground">
-                    Continue tes activites pour completer cet objectif!
+                    {t('quests.continueActivities')}
                   </div>
                 )}
               </CardContent>
@@ -428,11 +444,11 @@ export default function DailyQuestsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-purple-500" />
-              Coffres Mystere
+              {t('quests.mysteryChests')}
               <Badge variant="secondary">{chests.length}</Badge>
             </CardTitle>
             <CardDescription>
-              Tu as des coffres a ouvrir! Clique pour reveler leur contenu.
+              {t('quests.chestsToOpen')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -471,7 +487,7 @@ export default function DailyQuestsPage() {
                           chest.rarity === 'rare' ? 'bg-blue-500 text-white' : ''
                         }
                       >
-                        {getChestRarityLabel(chest.rarity as any)}
+                        {t(`quests.chestRarity.${chest.rarity}`)}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -487,30 +503,30 @@ export default function DailyQuestsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            Statistiques des Quetes
+            {t('quests.questStats')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
             <div className="text-center p-4 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <div className="text-3xl font-bold text-orange-600">{streakStats?.current_streak || 0}</div>
-              <div className="text-sm text-muted-foreground">Serie actuelle</div>
+              <div className="text-sm text-muted-foreground">{t('quests.currentStreak')}</div>
             </div>
             <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
               <div className="text-3xl font-bold text-yellow-600">{streakStats?.longest_streak || 0}</div>
-              <div className="text-sm text-muted-foreground">Meilleure serie</div>
+              <div className="text-sm text-muted-foreground">{t('quests.longestStreak')}</div>
             </div>
             <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <div className="text-3xl font-bold text-green-600">{streakStats?.total_quests_completed || 0}</div>
-              <div className="text-sm text-muted-foreground">Quetes completees</div>
+              <div className="text-sm text-muted-foreground">{t('quests.questsCompleted')}</div>
             </div>
             <div className="text-center p-4 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <div className="text-3xl font-bold text-purple-600">{streakStats?.total_bonus_claimed || 0}</div>
-              <div className="text-sm text-muted-foreground">Bonus reclames</div>
+              <div className="text-sm text-muted-foreground">{t('quests.bonusesClaimed')}</div>
             </div>
             <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <div className="text-3xl font-bold text-blue-600">{streakStats?.total_xp_from_quests || 0}</div>
-              <div className="text-sm text-muted-foreground">XP total</div>
+              <div className="text-sm text-muted-foreground">{t('quests.totalXP')}</div>
             </div>
           </div>
         </CardContent>
@@ -521,10 +537,10 @@ export default function DailyQuestsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-500" />
-            Bonus de Serie
+            {t('quests.streakBonuses')}
           </CardTitle>
           <CardDescription>
-            Complete 3/3 objectifs plusieurs jours de suite pour debloquer des bonus!
+            {t('quests.streakBonusDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -549,12 +565,12 @@ export default function DailyQuestsPage() {
                   <div className="text-2xl mb-1">
                     {isUnlocked ? '🏆' : '🔒'}
                   </div>
-                  <div className="font-bold">{milestone.days} jours</div>
+                  <div className="font-bold">{milestone.days} {t('quests.days')}</div>
                   <div className="text-sm text-muted-foreground">
                     +{milestone.xp} XP
                   </div>
                   <div className="text-xs">
-                    {getChestEmoji(milestone.chest as any)} {getChestRarityLabel(milestone.chest as any)}
+                    {getChestEmoji(milestone.chest as any)} {t(`quests.chestRarity.${milestone.chest}`)}
                   </div>
                 </div>
               )

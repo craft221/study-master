@@ -35,7 +35,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SparkProvider } from '@/contexts/SparkContext'
+import { PomodoroProvider } from '@/contexts/PomodoroContext'
 import SparkWidget from '@/components/SparkWidget'
+import FloatingPomodoroTimer from '@/components/FloatingPomodoroTimer'
 import ErrorBoundary, { PageErrorFallback } from '@/components/ErrorBoundary'
 import { useTranslation } from '@/contexts/LanguageContext'
 import { LanguageToggle } from '@/components/ui/LanguageSelector'
@@ -317,6 +319,9 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
       {/* Spark Widget - Mascotte flottante */}
       <SparkWidget position="bottom-right" autoShow={true} showHelpButton={true} />
+
+      {/* Floating Pomodoro Timer - Visible partout sauf sur /sessions */}
+      <FloatingPomodoroTimer />
     </div>
   )
 }
@@ -357,7 +362,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SparkProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <PomodoroProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </PomodoroProvider>
     </SparkProvider>
   )
 }

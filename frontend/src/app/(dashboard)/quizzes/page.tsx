@@ -18,10 +18,14 @@ import {
   X,
   Crown,
   Copy,
-  ExternalLink
+  ExternalLink,
+  CloudOff
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { offlineStorage } from '@/lib/offlineStorage'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Subject {
   id: string
@@ -30,11 +34,12 @@ interface Subject {
 }
 
 interface Quiz {
-  id: number
+  id: number | string
   title: string
   description: string
   subject?: Subject | null
   total_questions: number
+  question_count?: number
   time_limit_minutes: number | null
   created_at: string
   attempts?: {
@@ -47,6 +52,8 @@ interface Quiz {
   share_code: string | null
   is_public: boolean
   total_plays: number
+  _isOffline?: boolean
+  _tempId?: string
 }
 
 interface LeaderboardEntry {
@@ -59,6 +66,8 @@ interface LeaderboardEntry {
 }
 
 export default function QuizzesPage() {
+  const { isOnline } = useOfflineContext()
+  const { t } = useLanguage()
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -82,24 +91,47 @@ export default function QuizzesPage() {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await api.get('/quizzes/')
-      setQuizzes(response.data)
+      if (isOnline) {
+        const response = await api.get('/quizzes/')
+        const onlineQuizzes = response.data || []
+
+        // Sauvegarder en cache
+        await offlineStorage.saveQuizzes(onlineQuizzes)
+
+        // Récupérer les quizzes offline non synchronisés
+        const offlineQuizzes = await offlineStorage.getQuizzes()
+        const pendingOfflineQuizzes = offlineQuizzes.filter((q: any) => q._isOffline)
+
+        // Fusionner (offline en premier pour visibilité)
+        setQuizzes([...pendingOfflineQuizzes, ...onlineQuizzes])
+      } else {
+        // Mode hors-ligne: charger depuis le cache
+        const cachedQuizzes = await offlineStorage.getQuizzes()
+        setQuizzes(cachedQuizzes || [])
+      }
     } catch (error) {
-      toast.error('Erreur lors du chargement des quiz')
+      console.error('Erreur lors du chargement des quiz:', error)
+      // Essayer le cache en cas d'erreur
+      const cachedQuizzes = await offlineStorage.getQuizzes()
+      if (cachedQuizzes && cachedQuizzes.length > 0) {
+        setQuizzes(cachedQuizzes)
+      } else {
+        toast.error(t('quizzesPage.loadError'))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const deleteQuiz = async (quizId: number) => {
-    if (!confirm('Supprimer ce quiz?')) return
+    if (!confirm(t('quizzesPage.confirmDelete'))) return
 
     try {
       await api.delete(`/quizzes/${quizId}`)
       setQuizzes(quizzes.filter(q => q.id !== quizId))
-      toast.success('Quiz supprimé')
+      toast.success(t('quizzesPage.quizDeleted'))
     } catch (error) {
-      toast.error('Erreur')
+      toast.error(t('quizzesPage.error'))
     }
   }
 
@@ -117,9 +149,9 @@ export default function QuizzesPage() {
       // Copier le lien
       const shareUrl = `${window.location.origin}/play/${shareCode}`
       navigator.clipboard.writeText(shareUrl)
-      toast.success('Lien copié! Le quiz est maintenant public.')
+      toast.success(t('quizzesPage.linkCopiedPublic'))
     } catch (error) {
-      toast.error('Erreur lors de l\'activation du partage')
+      toast.error(t('quizzesPage.sharingError'))
     }
   }
 
@@ -127,7 +159,7 @@ export default function QuizzesPage() {
   const copyShareLink = (shareCode: string) => {
     const shareUrl = `${window.location.origin}/play/${shareCode}`
     navigator.clipboard.writeText(shareUrl)
-    toast.success('Lien copié!')
+    toast.success(t('quizzesPage.linkCopied'))
   }
 
   // Ouvrir le modal de classement
@@ -154,7 +186,7 @@ export default function QuizzesPage() {
         loading: false
       }))
     } catch (error) {
-      toast.error('Erreur lors du chargement du classement')
+      toast.error(t('quizzesPage.leaderboardError'))
       setLeaderboardModal(prev => ({ ...prev, loading: false }))
     }
   }
@@ -196,15 +228,15 @@ export default function QuizzesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quiz</h1>
-          <p className="text-gray-600 mt-1">{quizzes.length} quiz disponibles</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('quizzesPage.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('quizzesPage.quizzesAvailable', { count: quizzes.length })}</p>
         </div>
         <Link
           href="/quizzes/new"
           className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
         >
           <Plus className="h-5 w-5 mr-2" />
-          Créer un quiz
+          {t('quizzesPage.createQuiz')}
         </Link>
       </div>
 
@@ -217,7 +249,7 @@ export default function QuizzesPage() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalAttempts}</h3>
-          <p className="text-gray-600 text-sm">Tentatives totales</p>
+          <p className="text-gray-600 text-sm">{t('quizzesPage.totalAttempts')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
@@ -227,7 +259,7 @@ export default function QuizzesPage() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{completedQuizzes}</h3>
-          <p className="text-gray-600 text-sm">Quiz complétés</p>
+          <p className="text-gray-600 text-sm">{t('quizzesPage.completedQuizzes')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
@@ -239,7 +271,7 @@ export default function QuizzesPage() {
           <h3 className="text-2xl font-bold text-gray-900 mb-1">
             {averageScore.toFixed(0)}%
           </h3>
-          <p className="text-gray-600 text-sm">Score moyen</p>
+          <p className="text-gray-600 text-sm">{t('quizzesPage.averageScore')}</p>
         </div>
       </div>
 
@@ -249,7 +281,7 @@ export default function QuizzesPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher un quiz..."
+            placeholder={t('quizzesPage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -262,12 +294,12 @@ export default function QuizzesPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchQuery ? 'Aucun quiz trouvé' : 'Aucun quiz disponible'}
+            {searchQuery ? t('quizzesPage.noQuizFound') : t('quizzesPage.noQuizAvailable')}
           </h3>
           <p className="text-gray-600 mb-6">
             {searchQuery
-              ? 'Essayez de modifier votre recherche'
-              : 'Créez votre premier quiz pour tester vos connaissances'}
+              ? t('quizzesPage.tryDifferentSearch')
+              : t('quizzesPage.createFirstQuiz')}
           </p>
           {!searchQuery && (
             <Link
@@ -275,7 +307,7 @@ export default function QuizzesPage() {
               className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Créer mon premier quiz
+              {t('quizzesPage.createMyFirstQuiz')}
             </Link>
           )}
         </div>
@@ -305,9 +337,17 @@ export default function QuizzesPage() {
                           {quiz.subject.name}
                         </span>
                       )}
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {quiz.title}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {quiz.title}
+                        </h3>
+                        {quiz._isOffline && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                            <CloudOff className="w-3 h-3 mr-1" />
+                            {t('quizzesPage.offline')}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {quiz.description}
                       </p>
@@ -317,18 +357,18 @@ export default function QuizzesPage() {
                   {/* Info */}
                   <div className="flex items-center justify-between py-4 border-t border-b border-gray-200 mb-4">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{quiz.total_questions}</div>
-                      <div className="text-xs text-gray-500">Questions</div>
+                      <div className="text-lg font-bold text-gray-900">{quiz.total_questions || quiz.question_count || 0}</div>
+                      <div className="text-xs text-gray-500">{t('quizzesPage.questions')}</div>
                     </div>
                     <div className="border-l border-r border-gray-200 px-4 text-center">
                       <div className="text-lg font-bold text-gray-900">
                         {quiz.time_limit_minutes || '∞'}
                       </div>
-                      <div className="text-xs text-gray-500">Minutes</div>
+                      <div className="text-xs text-gray-500">{t('quizzesPage.minutes')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-gray-900">{quiz.attempts?.length || 0}</div>
-                      <div className="text-xs text-gray-500">Tentatives</div>
+                      <div className="text-xs text-gray-500">{t('quizzesPage.attempts')}</div>
                     </div>
                   </div>
 
@@ -336,7 +376,7 @@ export default function QuizzesPage() {
                   {bestScore !== null && (
                     <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">Meilleur score</span>
+                        <span className="text-sm text-gray-700">{t('quizzesPage.bestScore')}</span>
                         <div className="flex items-center space-x-2">
                           <Trophy className="h-4 w-4 text-yellow-600" />
                           <span className="font-bold text-yellow-700">{bestScore}%</span>
@@ -347,13 +387,23 @@ export default function QuizzesPage() {
 
                   {/* Actions */}
                   <div className="flex items-center space-x-2">
-                    <Link
-                      href={`/quizzes/${quiz.id}`}
-                      className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium text-center flex items-center justify-center"
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Commencer
-                    </Link>
+                    {quiz._isOffline ? (
+                      <div
+                        className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm font-medium text-center flex items-center justify-center cursor-not-allowed"
+                        title={t('quizzesPage.waitingSync')}
+                      >
+                        <CloudOff className="h-4 w-4 mr-1" />
+                        {t('quizzesPage.waitingSync')}
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/quizzes/${quiz.id}`}
+                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium text-center flex items-center justify-center"
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        {t('quizzesPage.start')}
+                      </Link>
+                    )}
 
                     {/* Bouton Partager / Classement */}
                     {quiz.share_code ? (
@@ -396,10 +446,10 @@ export default function QuizzesPage() {
                     <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-xs">
                       <span className="flex items-center text-green-600">
                         <Share2 className="h-3 w-3 mr-1" />
-                        Quiz public
+                        {t('quizzesPage.publicQuiz')}
                       </span>
                       <span className="text-gray-500">
-                        {quiz.total_plays || 0} joueurs
+                        {quiz.total_plays || 0} {t('quizzesPage.players')}
                       </span>
                     </div>
                   )}
@@ -409,11 +459,11 @@ export default function QuizzesPage() {
                     <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 flex items-center justify-between">
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
-                        {new Date(lastAttempt.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(lastAttempt.created_at).toLocaleDateString()}
                       </span>
                       {lastAttempt.is_completed && (
                         <span className="font-medium text-gray-700">
-                          Dernier: {lastAttempt.score.toFixed(0)}%
+                          {t('quizzesPage.last')} {lastAttempt.score.toFixed(0)}%
                         </span>
                       )}
                     </div>
@@ -444,7 +494,7 @@ export default function QuizzesPage() {
                     <Trophy className="h-6 w-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold">Classement</h2>
+                    <h2 className="text-xl font-bold">{t('quizzesPage.leaderboard')}</h2>
                     <p className="text-purple-100 text-sm">{leaderboardModal.quiz?.title}</p>
                   </div>
                 </div>
@@ -491,9 +541,9 @@ export default function QuizzesPage() {
               ) : leaderboardModal.leaderboard.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucun participant</h3>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">{t('quizzesPage.noParticipants')}</h3>
                   <p className="text-gray-500 text-sm">
-                    Partagez ce quiz pour voir le classement!
+                    {t('quizzesPage.shareToSeeLeaderboard')}
                   </p>
                 </div>
               ) : (
@@ -532,13 +582,13 @@ export default function QuizzesPage() {
                           </span>
                           {entry.is_registered && (
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
-                              Membre
+                              {t('quizzesPage.member')}
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-gray-500">
-                          {entry.correct_count} bonnes réponses •{' '}
-                          {new Date(entry.completed_at).toLocaleDateString('fr-FR')}
+                          {entry.correct_count} {t('quizzesPage.correctAnswers')} •{' '}
+                          {new Date(entry.completed_at).toLocaleDateString()}
                         </p>
                       </div>
 
@@ -560,12 +610,12 @@ export default function QuizzesPage() {
             {/* Footer */}
             <div className="p-4 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>{leaderboardModal.leaderboard.length} participant(s)</span>
+                <span>{leaderboardModal.leaderboard.length} {t('quizzesPage.participants')}</span>
                 <button
                   onClick={() => openLeaderboard(leaderboardModal.quiz!)}
                   className="text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  Actualiser
+                  {t('quizzesPage.refresh')}
                 </button>
               </div>
             </div>

@@ -27,7 +27,8 @@
     "success": "Success",
     "warning": "Warning",
     "info": "Information",
-    "upgrade_premium": "Upgrade to Premium"
+    "upgrade_premium": "Upgrade to Premium",
+    "optional": "Optional"
   },
 
   "auth": {
@@ -93,6 +94,189 @@
     "quickActions": "Quick actions",
     "noActivity": "No recent activity",
     "startStudying": "Start studying"
+  },
+
+  "sessionsPage": {
+    "title": "Pomodoro Sessions",
+    "subtitle": "Time management technique to improve your productivity",
+    "pomodorosToday": "Pomodoros today",
+    "studyTime": "Study time",
+    "dayRecord": "Day record",
+    "pomodoro": "Pomodoro",
+    "shortBreak": "Short break",
+    "longBreak": "Long break",
+    "focus": "Focus",
+    "workingOn": "What are you working on? (optional)",
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset",
+    "sessionComplete": "completed!",
+    "howItWorks": "How does the Pomodoro technique work?",
+    "step1Title": "Work 25 min",
+    "step1Desc": "Focus on one task",
+    "step2Title": "Break 5 min",
+    "step2Desc": "Relax briefly",
+    "step3Title": "Repeat x4",
+    "step3Desc": "Complete 4 pomodoros",
+    "step4Title": "Break 15 min",
+    "step4Desc": "Well-deserved long break",
+    "completedPomodoros": "Completed Pomodoros",
+    "cycleComplete": "Cycle complete! Take a long break.",
+    "untilLongBreak": "{count} pomodoro(s) until long break",
+    "generalSession": "General session"
+  },
+
+  "notesPage": {
+    "title": "My Notes",
+    "cachedData": "Cached data",
+    "totalNotes": "{count} notes total",
+    "offlineMode": "Offline mode",
+    "newNote": "New note",
+    "searchPlaceholder": "Search your notes...",
+    "noNotesFound": "No notes found",
+    "noNotesYet": "No notes yet",
+    "tryDifferentSearch": "Try different search criteria",
+    "createFirstNote": "Start by creating your first study note",
+    "createMyFirstNote": "Create my first note",
+    "confirmDelete": "Are you sure you want to delete this note?"
+  },
+
+  "newNotePage": {
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your note will be saved locally and synced automatically when you reconnect.",
+    "title": "New Note",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "titleLabel": "Title",
+    "titlePlaceholder": "E.g.: Chapter 5 - Sorting Algorithms",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "contentLabel": "Content",
+    "contentPlaceholder": "Start taking notes... Use **bold** for key concepts, $formula$ for LaTeX",
+    "tagsLabel": "Tags",
+    "addTagPlaceholder": "Add a tag...",
+    "addButton": "Add",
+    "visibilityLabel": "Visibility",
+    "private": "Private",
+    "privateDesc": "Only visible to you",
+    "public": "Public",
+    "publicDesc": "Visible in Explore",
+    "publicNotice": "This note will be visible to all users in the Explore page",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore if the note is public",
+    "aiActions": "AI Actions",
+    "aiActionsDesc": "Use AI to automatically create flashcards, quizzes or summarize your note.",
+    "generateFlashcards": "Generate flashcards",
+    "createQuiz": "Create a quiz",
+    "summarize": "Summarize",
+    "saving": "Saving...",
+    "saveNote": "Save note",
+    "fillRequired": "Please fill in all required fields",
+    "noteCreated": "Note created successfully!",
+    "noteCreatedOffline": "Note created locally (will be synced)",
+    "addContentFirst": "Add content first",
+    "generatingFlashcards": "Generating flashcards with AI...",
+    "flashcardsGenerated": "{count} flashcards generated!",
+    "aiGenerationError": "Error during AI generation"
+  },
+
+  "quizzesPage": {
+    "title": "Quizzes",
+    "quizzesAvailable": "{count} quizzes available",
+    "createQuiz": "Create a quiz",
+    "totalAttempts": "Total attempts",
+    "completedQuizzes": "Completed quizzes",
+    "averageScore": "Average score",
+    "searchPlaceholder": "Search a quiz...",
+    "noQuizFound": "No quiz found",
+    "noQuizAvailable": "No quiz available",
+    "tryDifferentSearch": "Try modifying your search",
+    "createFirstQuiz": "Create your first quiz to test your knowledge",
+    "createMyFirstQuiz": "Create my first quiz",
+    "questions": "Questions",
+    "minutes": "Minutes",
+    "attempts": "Attempts",
+    "bestScore": "Best score",
+    "start": "Start",
+    "waitingSync": "Waiting for sync",
+    "publicQuiz": "Public quiz",
+    "players": "players",
+    "last": "Last:",
+    "confirmDelete": "Delete this quiz?",
+    "quizDeleted": "Quiz deleted",
+    "linkCopiedPublic": "Link copied! The quiz is now public.",
+    "linkCopied": "Link copied!",
+    "leaderboard": "Leaderboard",
+    "noParticipants": "No participants",
+    "shareToSeeLeaderboard": "Share this quiz to see the leaderboard!",
+    "member": "Member",
+    "correctAnswers": "correct answers",
+    "participants": "participant(s)",
+    "refresh": "Refresh",
+    "offline": "Offline",
+    "error": "Error",
+    "loadError": "Error loading quizzes",
+    "leaderboardError": "Error loading leaderboard",
+    "sharingError": "Error enabling sharing"
+  },
+
+  "newQuizPage": {
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your quiz will be saved locally and synced automatically when you reconnect.",
+    "title": "New Quiz",
+    "subtitle": "Create a quiz to test your knowledge",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "quizInfo": "Quiz Information",
+    "titleLabel": "Title",
+    "titlePlaceholder": "E.g.: Review Quiz - Chapter 3",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Quiz description...",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "difficultyLabel": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore if the quiz is public",
+    "passingScore": "Passing score (%)",
+    "timedQuiz": "Timed quiz",
+    "timeLimit": "Time limit (minutes)",
+    "showCorrectAnswers": "Show correct answers after",
+    "shuffleQuestions": "Shuffle questions",
+    "shuffleOptions": "Shuffle options (MCQ)",
+    "questionsTitle": "Questions",
+    "totalPoints": "Total: {count} points",
+    "addQuestion": "Add a question",
+    "question": "Question",
+    "pts": "pts",
+    "valid": "Valid",
+    "questionLabel": "Question",
+    "questionPlaceholder": "Enter your question...",
+    "typeLabel": "Type",
+    "multipleChoice": "MCQ",
+    "trueFalse": "True/False",
+    "shortAnswer": "Short answer",
+    "optionsLabel": "Options",
+    "addOption": "Add option",
+    "correctAnswer": "Correct answer",
+    "selectCorrectAnswer": "Select the correct answer",
+    "pointsLabel": "Points",
+    "explanationLabel": "Explanation (optional)",
+    "explanationPlaceholder": "Explain why this is the correct answer...",
+    "creating": "Creating...",
+    "createQuiz": "Create Quiz ({count} questions)",
+    "warning": "Warning",
+    "atLeastOneQuestion": "You must have at least one question",
+    "missingFields": "Missing fields",
+    "fillSubjectAndTitle": "Please select a subject and give the quiz a title",
+    "noValidQuestion": "No valid question",
+    "addCompleteQuestion": "Add at least one complete question",
+    "quizCreated": "Quiz created",
+    "quizCreatedWith": "Quiz \"{title}\" created with {count} question(s)",
+    "quizCreatedOffline": "Quiz created locally",
+    "quizWillSync": "Quiz \"{title}\" will be synced when you reconnect"
   },
 
   "subjects": {
@@ -173,6 +357,80 @@
     "accuracy": "Accuracy"
   },
 
+  "flashcardsPage": {
+    "title": "Flashcards",
+    "decksCount": "{count} decks",
+    "cardsCount": "{count} cards",
+    "offlineMode": "Offline mode",
+    "cache": "Cache",
+    "newDeck": "New deck",
+    "cardsToReview": "Cards to review",
+    "startReview": "Start review",
+    "totalCards": "Total cards",
+    "masteredCards": "Mastered cards",
+    "progression": "progression",
+    "searchPlaceholder": "Search for a deck...",
+    "noDeckFound": "No deck found",
+    "noDeckYet": "No deck yet",
+    "tryDifferentSearch": "Try a different search",
+    "createFirstDeck": "Create your first flashcard deck to start reviewing",
+    "createMyFirstDeck": "Create my first deck",
+    "total": "Total",
+    "toReview": "To review",
+    "mastered": "Mastered",
+    "progress": "Progress",
+    "review": "Review",
+    "view": "View",
+    "lastReview": "Last review",
+    "confirmDelete": "Delete this deck and all its cards?",
+    "deckDeleted": "Deck deleted",
+    "deckDeletedSync": "Deck deleted (will be synced)",
+    "deleteError": "Error while deleting"
+  },
+
+  "newFlashcardPage": {
+    "title": "New Flashcard Deck",
+    "subtitle": "Create a new deck and add your cards",
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your deck will be saved locally and synced automatically when you reconnect.",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "deckInfo": "Deck Information",
+    "deckName": "Deck Name",
+    "deckNamePlaceholder": "E.g.: English Vocabulary - Chapter 1",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "tagsLabel": "Tags (comma separated)",
+    "tagsPlaceholder": "E.g.: vocabulary, exams, important",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore",
+    "cardsTitle": "Cards",
+    "addCard": "Add a card",
+    "card": "Card",
+    "valid": "Valid",
+    "questionFront": "Question (Front)",
+    "questionPlaceholder": "Enter the question or term...",
+    "answerBack": "Answer (Back)",
+    "answerPlaceholder": "Enter the answer...",
+    "hintOptional": "Hint (optional)",
+    "hintPlaceholder": "A hint to help you...",
+    "explanationOptional": "Explanation (optional)",
+    "explanationPlaceholder": "Additional explanation...",
+    "creating": "Creating...",
+    "createDeck": "Create Deck ({count} cards)",
+    "warning": "Warning",
+    "atLeastOneCard": "You must have at least one card",
+    "missingFields": "Missing fields",
+    "fillSubjectAndName": "Please select a subject and name your deck",
+    "noValidCard": "No valid card",
+    "addCompleteCard": "Add at least one card with a question and answer",
+    "deckCreated": "Deck created",
+    "deckCreatedWith": "{count} card(s) successfully added to deck \"{name}\"",
+    "deckCreatedOffline": "Deck created locally",
+    "deckWillSync": "{count} card(s) will be synced when you reconnect",
+    "error": "Error while creating deck"
+  },
+
   "quiz": {
     "title": "My Quizzes",
     "addQuiz": "New quiz",
@@ -197,27 +455,103 @@
     "reviewAnswers": "Review answers",
     "tryAgain": "Try again",
     "timeRemaining": "Time remaining",
-    "questionOf": "Question {current} of {total}"
+    "questionOf": "Question {current} of {total}",
+    "answerAllQuestions": "You must answer all questions ({count} question(s) unanswered)",
+    "retry": "Retry",
+    "viewDuelResults": "View duel results",
+    "backToQuizzes": "Back to quizzes",
+    "quizFinished": "Quiz finished!",
+    "resultInvalidated": "Result invalidated",
+    "yourResults": "Here are your results",
+    "finalScore": "Final score",
+    "correctAnswers": "Correct answers",
+    "incorrectAnswers": "Incorrect answers",
+    "reviewTitle": "Answer review",
+    "correct": "Correct",
+    "yourAnswer": "Your answer",
+    "explanation": "Explanation",
+    "previous": "Previous",
+    "next": "Next",
+    "quickNav": "Quick navigation",
+    "penaltyApplied": "Penalty applied",
+    "submissionError": "Error during submission"
   },
 
   "calendar": {
-    "title": "Calendar",
+    "title": "Schedule",
+    "subtitle": "Plan and track your study events",
     "today": "Today",
     "month": "Month",
     "week": "Week",
     "day": "Day",
+    "hour": "Hour",
     "addEvent": "Add event",
     "editEvent": "Edit event",
     "eventTitle": "Event title",
     "eventType": "Type",
     "exam": "Exam",
     "homework": "Homework",
+    "deadline": "Deadline",
     "studySession": "Study session",
+    "study": "Study",
+    "revision": "Revision",
+    "class": "Class",
+    "meeting": "Meeting",
+    "other": "Other",
     "reminder": "Reminder",
     "startDate": "Start date",
     "endDate": "End date",
     "allDay": "All day",
-    "noEvents": "No events"
+    "noEvents": "No events",
+    "upcomingEvents": "Upcoming events",
+    "noUpcoming": "No upcoming events",
+    "legend": "Legend",
+    "tip": "Tip",
+    "tipMessage": "Drag and drop events to quickly move them to another date or time.",
+    "moreEvents": "+{count} more",
+    "loading": "Loading...",
+    "cache": "Cache",
+    "offlineMode": "Offline mode",
+    "dataFromCache": "Data loaded from cache",
+    "eventDeleted": "Event deleted",
+    "eventDeletedSync": "Event deleted (will be synced)",
+    "deleteError": "Error deleting event",
+    "eventMoved": "Event moved",
+    "moveError": "Error moving event",
+    "loadError": "Error loading events",
+    "confirmDelete": "Are you sure you want to delete this event?",
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "daysShort": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
   },
 
   "groups": {
@@ -458,7 +792,11 @@
     "extractionError": "Extraction error",
     "cannotExtractText": "Unable to extract text",
     "noteCreated": "Note created",
-    "noteCreatedFromText": "Note created from extracted text"
+    "noteCreatedFromText": "Note created from extracted text",
+    "advancedOptions": "Advanced options",
+    "detectLayout": "Detect tables and columns",
+    "aiPostProcess": "AI error correction",
+    "aiPostProcessDesc": "Uses Claude to correct OCR errors (uses 1 AI request)"
   },
 
   "activity": {
@@ -711,27 +1049,43 @@
 
   "explore": {
     "title": "Explore",
-    "subtitle": "Discover content shared by the community",
+    "subtitle": "Discover content created by the Study Master community",
     "searchPlaceholder": "Search notes, flashcards, quizzes...",
     "allContent": "All",
     "notesTab": "Notes",
     "flashcardsTab": "Flashcards",
+    "flashcardDecks": "Flashcard Decks",
     "quizzesTab": "Quizzes",
     "sortBy": "Sort by",
-    "recent": "Recent",
+    "recent": "Most recent",
     "popular": "Popular",
-    "rating": "Rating",
+    "rating": "Best scores",
     "allSubjects": "All subjects",
+    "allLanguages": "All",
     "trending": "Trending",
     "trendingSubtitle": "Popular content this week",
     "popularSubjects": "Popular subjects",
-    "noResults": "No results found",
+    "noResults": "No content found",
     "noResultsSubtitle": "Try adjusting your filters or search",
+    "resultsFound": "{count} result(s) found",
     "cards": "cards",
+    "card": "card",
     "questions": "questions",
+    "question": "question",
     "plays": "plays",
+    "play": "play",
     "views": "views",
     "by": "by",
+    "anonymous": "Anonymous",
+    "see": "View",
+    "duplicate": "Duplicate",
+    "duplicated": "Duplicated!",
+    "playQuiz": "Play",
+    "linkCopied": "Link copied!",
+    "linkCopiedDesc": "The quiz link has been copied to your clipboard",
+    "report": "Report",
+    "reportSent": "Report sent",
+    "reportSentDesc": "Our team will review this content",
     "makePublic": "Make public",
     "makePrivate": "Make private",
     "myPublicContent": "My public content",
@@ -744,7 +1098,21 @@
     "copy": "Copy",
     "copySuccess": "Content copied to your library!",
     "copyError": "Error copying content",
-    "loadError": "Error loading content"
+    "loadError": "Unable to load content",
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "languages": {
+      "all": "All",
+      "fr": "Français",
+      "en": "English",
+      "es": "Español"
+    },
+    "aiGenerated": "AI"
   },
 
   "pricing": {
@@ -820,38 +1188,61 @@
   },
 
   "leaderboard": {
-    "title": "Leaderboard",
-    "subtitle": "Compare your performance with the community",
+    "title": "Leaderboards & Leagues",
+    "subtitle": "Compare your progress with other students",
     "global": "Global",
     "friends": "Friends",
     "university": "University",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
+    "myUniversity": "My University",
+    "weekly": "This week",
+    "monthly": "This month",
+    "daily": "Today",
     "allTime": "All time",
     "xp": "XP",
     "streak": "Streak",
+    "streakDays": "Streak (days)",
     "quizzes": "Quizzes",
+    "quizzesCompleted": "Quizzes completed",
     "flashcards": "Flashcards",
+    "flashcardsReviewed": "Flashcards reviewed",
+    "notes": "Notes",
+    "notesCreated": "Notes created",
+    "studyTime": "Study time",
+    "studyTimeMin": "Study time (min)",
     "yourRank": "Your rank",
+    "yourPosition": "Your position",
     "top": "Top {percent}%",
     "rank": "Rank",
+    "currentRank": "Current rank",
     "user": "User",
     "score": "Score",
     "level": "Level",
-    "noData": "No data available",
+    "noData": "No data for this leaderboard",
     "loading": "Loading...",
+    "online": "Live",
+    "offline": "Offline",
+    "liveActivity": "Live activity",
     "liveUpdates": "Live updates",
     "connected": "Connected",
     "disconnected": "Disconnected",
     "recentActivity": "Recent activity",
     "gainedXp": "+{xp} XP",
-    "levelUp": "Level up!",
+    "levelUp": "Level Up!",
+    "fullLeaderboard": "Full leaderboard",
     "leagues": "Leagues",
+    "leaderboardTab": "Leaderboard",
     "myLeague": "My league",
     "leagueRank": "League rank",
+    "weekInLeague": "Week {count} in this league",
+    "weeklyXP": "XP this week",
+    "xpWeek": "Weekly XP",
     "promotion": "Promotion",
+    "promotionZone": "Promotion zone!",
     "relegation": "Relegation",
+    "relegationZone": "Danger zone!",
     "safe": "Safe zone",
+    "towards": "To {league}",
+    "bestLeague": "Best league",
     "weekEndsIn": "Week ends in",
     "days": "days",
     "hours": "hours",
@@ -862,13 +1253,33 @@
       "diamond": "Diamond",
       "master": "Master"
     },
+    "leagueLeaderboard": "League {league} Leaderboard",
+    "noPlayersInLeague": "No players in this league yet",
+    "you": "You",
     "share": "Share",
-    "shareProgress": "Share my progress"
+    "shareProgress": "Share my progress",
+    "shareLeague": "Share your league!",
+    "howToClimb": "How to climb the leaderboard?",
+    "howToClimbTips": [
+      "Complete quizzes and get good scores",
+      "Review your flashcards daily",
+      "Create and share quality notes",
+      "Maintain your learning streak",
+      "Participate in group study sessions"
+    ],
+    "howLeaguesWork": "How do leagues work?",
+    "howLeaguesTips": [
+      "Earn XP each week to climb the rankings",
+      "Top 3 in each league get promoted to the next level",
+      "Bottom players risk relegation",
+      "Rankings reset every Monday at midnight",
+      "Higher leagues give you more bonuses!"
+    ]
   },
 
   "achievements": {
-    "title": "Achievements",
-    "subtitle": "Unlock rewards by reaching your goals",
+    "title": "Achievements & Badges",
+    "subtitle": "Unlock badges by progressing in your studies",
     "unlocked": "Unlocked",
     "locked": "Locked",
     "progress": "Progress",
@@ -877,13 +1288,25 @@
     "rare": "Rare",
     "xpReward": "+{xp} XP",
     "unlockedOn": "Unlocked on {date}",
+    "successUnlocked": "Achievements Unlocked",
+    "completed": "completed",
+    "xpEarned": "XP Earned",
+    "thanksToAchievements": "From achievements",
+    "rarity": "Rarity",
+    "byRarity": "By rarity level",
+    "unlockedLabel": "Unlocked",
+    "noAchievementInCategory": "No achievements in this category",
     "categories": {
+      "all": "All",
       "study": "Study",
+      "learning": "Learning",
       "streak": "Streaks",
       "social": "Social",
       "mastery": "Mastery",
       "exploration": "Exploration",
-      "special": "Special"
+      "special": "Special",
+      "duels": "Duels",
+      "study_time": "Study time"
     },
     "shareAchievement": "Share this achievement"
   },
@@ -936,7 +1359,224 @@
     "sparkWillNotify": "Spark will notify you if needed!",
     "markAllRead": "Mark all as read",
     "askQuestion": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
-    "sparkUsesAI": "Spark uses AI to analyze your question and learning context."
+    "sparkUsesAI": "Spark uses AI to analyze your question and learning context.",
+    "errorMessage": "Oops! I had a problem. Try again!",
+    "hintFallback": "Think carefully... The answer is within reach!",
+    "hereIsMyAnswer": "Here's my answer!",
+    "errorAnswering": "Oops! I had a problem trying to answer. Try again!",
+    "helpDialog": {
+      "title": "Ask Spark for Help",
+      "subtitle": "I'm here to help you!",
+      "questionLabel": "Your question for Spark",
+      "placeholder": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
+      "charCount": "{count}/500 characters",
+      "minCharsError": "Your question must be at least 3 characters",
+      "maxCharsError": "Your question is too long (max 500 characters)",
+      "aiInfo": "Spark uses AI to analyze your question and learning context. You'll receive personalized advice and action suggestions!",
+      "examplesTitle": "Example questions:",
+      "example1": "How to better revise math?",
+      "example2": "I have trouble memorizing, any tips?",
+      "example3": "What's the best method for learning?",
+      "thinking": "Spark is thinking...",
+      "askButton": "Ask Spark"
+    },
+    "answerCard": {
+      "title": "Spark answers",
+      "subtitle": "With AI assistance",
+      "suggestedActions": "Suggested actions",
+      "needMoreHelp": "Need more help? Click on Spark to ask another question!"
+    },
+    "levels": {
+      "baby": "Baby Spark",
+      "junior": "Junior Spark",
+      "expert": "Expert Spark",
+      "sage": "Sage Spark",
+      "legendary": "Legendary Spark"
+    },
+    "pageMessages": {
+      "dashboard": [
+        "Welcome to your dashboard! Ready to study?",
+        "Hey! Check your stats, you're doing great!",
+        "Let's have a productive session!"
+      ],
+      "notes": [
+        "Your notes are waiting! What are we reviewing today?",
+        "Taking notes is key! You're doing great!",
+        "Don't forget: reading your notes regularly helps memorize!"
+      ],
+      "flashcards": [
+        "Flashcards! My favorite technique for memorizing!",
+        "Reviewing with flashcards is super effective!",
+        "Let's flip those cards! You'll remember everything!"
+      ],
+      "quizzes": [
+        "A quiz? I love it! Show me what you know!",
+        "Quizzes are the best way to test your knowledge!",
+        "Ready to challenge yourself? Let's go!"
+      ],
+      "quests": [
+        "Your daily quests! Complete them all for the bonus!",
+        "3 quests = 3 rewards + bonus! You can do it!",
+        "Each completed quest brings you closer to your goal!"
+      ],
+      "leaderboard": [
+        "The leaderboard! Let's see where you stand...",
+        "Want to climb the rankings? Keep it up!",
+        "Healthy competition motivates! Are you in the top?"
+      ],
+      "achievements": [
+        "Your achievements! How many have you unlocked?",
+        "Each badge tells a story of success!",
+        "Keep going and you'll get them all!"
+      ],
+      "profile": [
+        "Your profile! Want to customize something?",
+        "This is where you can see your overall progress!"
+      ],
+      "schedule": [
+        "Your schedule! Good organization is the key to success!",
+        "Exams coming up? I can help you prepare!",
+        "Planning your revisions helps reduce stress!"
+      ],
+      "explore": [
+        "Explore! Discover what others have created!",
+        "You can find super useful resources here!",
+        "Sharing is growing together!"
+      ],
+      "duels": [
+        "Duels! Ready to face other students?",
+        "A duel is fun AND educational! En garde!",
+        "Win a duel = bonus XP! Up for the challenge?"
+      ],
+      "focusRooms": [
+        "Focus Rooms! Studying together is more motivating!",
+        "Join a room and study as a group!",
+        "Shared focus boosts productivity!"
+      ],
+      "ai": [
+        "Hey it's me! Want to chat?",
+        "I'm here to help! Ask me your questions!",
+        "Tutor mode activated! What do you want to learn?"
+      ],
+      "documents": [
+        "Your documents! Need to organize them?",
+        "Well-organized documents are easier to find!",
+        "You can share your documents with other students!"
+      ],
+      "subjects": [
+        "Your subjects! Which one is your favorite?",
+        "Organizing by subject helps review better!",
+        "Each subject is a new adventure!"
+      ],
+      "sessions": [
+        "Study sessions! Ready for a productive session?",
+        "Pomodoro is life! 25 min of focus!",
+        "One session a day keeps failure away!"
+      ],
+      "groups": [
+        "Study groups! Unity is strength!",
+        "Studying together is more fun!",
+        "Join or create a group to progress together!"
+      ]
+    },
+    "automaticMessages": {
+      "welcome": [
+        "Hey! Spark is here, ready to help! 🐿️⚡",
+        "Hello champion! Ready to study today?",
+        "Hi there! Let's make progress together! 🌰"
+      ],
+      "welcome_back": [
+        "Welcome back! I missed you! 🐿️",
+        "Hey, you're back! Let's continue where we left off!",
+        "There you are! Ready for another session?"
+      ],
+      "streak_warning": [
+        "Hey, don't forget to study today to keep your streak! 🔥",
+        "Your streak is at risk! A quick session?",
+        "Don't let your streak end! Come study with me!"
+      ],
+      "streak_milestone": [
+        "Amazing! {days} days in a row! You're incredible! 🔥",
+        "Wow! {days} days of streak! Keep it up! 🎉",
+        "{days} consecutive days! You're on fire! 💪"
+      ],
+      "quiz_perfect": [
+        "PERFECT! 100%! You're a genius! 🎉",
+        "Incredible! Perfect score! I'm so proud! ⭐",
+        "100%! Nothing gets past you! 🏆"
+      ],
+      "quiz_success": [
+        "Well done! {score}% on {topic}! 💪",
+        "Nice job! {score}% is great! Keep it up!",
+        "Good work! {score}% on the quiz!"
+      ],
+      "quiz_failed": [
+        "Don't give up! {score}% is a good start! 📚",
+        "Practice makes perfect! Try again?",
+        "Keep studying, you'll get there! 💪"
+      ],
+      "level_up": [
+        "LEVEL UP! You reached level {level}! 🎉",
+        "Amazing! Level {level}! You're growing so fast! ⭐",
+        "Level {level} unlocked! You're awesome! 🏆"
+      ],
+      "exam_reminder": [
+        "Reminder: {exam_name} in {days_until} days! Time to prepare! 📚",
+        "Don't forget: {exam_name} is coming in {days_until} days!",
+        "Exam alert! {exam_name} in {days_until} days! Let's review!"
+      ],
+      "focus_room": {
+        "milestone_15min": "15 minutes! You're getting started! 🚀",
+        "milestone_30min": "30 MINUTES! You're killing it! 🔥",
+        "milestone_45min": "45 min! Almost 1 hour, keep going! 💪",
+        "milestone_1h": "1 HOUR! You're a MACHINE! 🏆",
+        "milestone_90min": "1h30 of focus! Impressive! ⭐",
+        "milestone_2h": "2 HOURS!! You're INCREDIBLE! 🌟✨",
+        "milestone_3h": "3 HOURS!!! LEGENDARY! 👑🔥",
+        "milestone_4h": "4 HOURS!!!! YOU'RE A GOD! 🏆👑🔥✨",
+        "user_joined": "A new focus buddy joined! 👋",
+        "deep_work_started": "Deep Work mode activated! 🧘 I'll stay quiet...",
+        "deep_work_completed": "Deep Work COMPLETED! +50 XP bonus! 🎯",
+        "reward_claimed": "Chest opened! 🎁",
+        "first_in_room": "First in the room! You're setting the example! 🥇",
+        "room_goal_reached": "ROOM GOAL REACHED! CONGRATS EVERYONE! 🎊"
+      }
+    }
+  },
+
+  "quests": {
+    "title": "Daily Quests",
+    "daysStreak": "Days in a row",
+    "dailyProgress": "Today's progress",
+    "completed": "completed",
+    "claimBonus": "Claim Bonus (+50 XP + Mystery Chest!)",
+    "bonusClaimed": "Daily bonus claimed! Come back tomorrow for new quests.",
+    "claimReward": "Claim reward",
+    "questComplete": "Completed!",
+    "continueActivities": "Continue your activities to complete this quest!",
+    "mysteryChests": "Mystery Chests",
+    "chestsToOpen": "You have chests to open! Click to reveal their contents.",
+    "questStats": "Quest Statistics",
+    "currentStreak": "Current streak",
+    "longestStreak": "Best streak",
+    "questsCompleted": "Quests completed",
+    "bonusesClaimed": "Bonuses claimed",
+    "totalXP": "Total XP",
+    "streakBonuses": "Streak Bonuses",
+    "streakBonusDesc": "Complete 3/3 quests multiple days in a row to unlock bonuses!",
+    "days": "days",
+    "chest": "Chest",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "chestRarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    }
   },
 
   "offline": {
@@ -1108,5 +1748,579 @@
 
     "content_generated": "Content generated!",
     "content_linked": "Content linked"
+  },
+
+  "landing": {
+    "nav": {
+      "login": "Log in",
+      "startFree": "Start for free",
+      "studentsOnline": "{count} students online"
+    },
+    "hero": {
+      "badge": "New — Join the free beta",
+      "title1": "Stop struggling.",
+      "title2": "Start dominating.",
+      "subtitle": "Anki + Quizlet + Notion + Duolingo — combined in one free app.",
+      "subtitleHighlight": "With an AI that knows you and group study rooms.",
+      "cta": "Create my free account",
+      "watchFeatures": "See features",
+      "trust1": "100% free to start",
+      "trust2": "No credit card required",
+      "trust3": "Ready in 30 seconds"
+    },
+    "socialProof": {
+      "betaOpen": "Open beta",
+      "fsrs": "#1 algorithm worldwide",
+      "claudeAI": "Most advanced AI",
+      "allSubjects": "All subjects"
+    },
+    "problem": {
+      "title": "You know this feeling?",
+      "subtitle": "Hours of studying... only to forget everything on exam day.",
+      "without": "Without Study Master",
+      "with": "With Study Master",
+      "problems": [
+        "You study for hours but forget everything",
+        "You procrastinate alone in your room",
+        "You use 10 different apps (Anki, Notion, Quizlet...)",
+        "You don't know if you're ready for the exam",
+        "Zero motivation after 2 days"
+      ],
+      "solutions": [
+        "You memorize 2x faster with the FSRS algorithm",
+        "You study with others in Focus Rooms (like at the library)",
+        "Everything in one place: notes, flashcards, quizzes, AI",
+        "The AI tells you exactly what to review",
+        "Addictive gamification: XP, streaks, duels, leaderboards"
+      ]
+    },
+    "features": {
+      "title": "What no other app does",
+      "subtitle": "3 unique features that change everything",
+      "examMode": {
+        "badge": "#1",
+        "title": "Exam Mode",
+        "description": "Enter your exam date, the AI generates a personalized day-by-day study plan with score prediction.",
+        "feature1": "Auto-generated AI planning",
+        "feature2": "Final grade prediction",
+        "feature3": "Detects your weak points"
+      },
+      "spark": {
+        "title": "Spark — Your AI tutor",
+        "description": "An AI assistant with a real personality who knows you, encourages you and explains everything.",
+        "poweredBy": "Powered by Claude (best AI on the market)"
+      },
+      "focusRooms": {
+        "title": "Focus Rooms",
+        "description": "Study in virtual groups, like at the library. Seeing others work motivates you to work.",
+        "studying": "people studying now"
+      }
+    },
+    "examModeDetail": {
+      "badge": "Key feature",
+      "title": "Exam Mode:",
+      "titleHighlight": "Your personal AI coach",
+      "description": "Got an exam in 2 weeks? Enter the date, select your notes, and the AI generates a custom study plan for you.",
+      "feature1Title": "Day-by-day plan",
+      "feature1Desc": "Daily tasks: reading, quizzes, flashcards, targeted review",
+      "feature2Title": "Score prediction",
+      "feature2Desc": "The AI predicts your grade based on your actual progress",
+      "feature3Title": "Weakness detection",
+      "feature3Desc": "Analyzes your mistakes and adapts the plan automatically",
+      "feature4Title": "Generated mock exam",
+      "feature4Desc": "Complete quiz based on your notes to test yourself before the big day",
+      "cta": "Try Exam Mode for free",
+      "preview": "Live Preview",
+      "previewExam": "Mathematics Midterm",
+      "previewDays": "In 12 days",
+      "previewScore": "Predicted score",
+      "previewProgress": "Progress",
+      "previewTasks": "Today's tasks",
+      "previewTask1": "Reading: Integrals (Chapter 4)",
+      "previewTask2": "Quiz: Derivatives (15 questions)",
+      "previewTask3": "Flashcards: Key formulas",
+      "previewMotivation": "You're on track! Keep it up and you'll crush it."
+    },
+    "comparison": {
+      "title": "Why switch?",
+      "subtitle": "Study Master vs. what you're probably using",
+      "feature": "Feature",
+      "features": [
+        "AI study plan (Exam Mode)",
+        "Exam score prediction",
+        "FSRS flashcards (best algorithm)",
+        "AI content generation",
+        "Adaptive quizzes",
+        "Focus Rooms (group study)",
+        "Personalized AI assistant",
+        "PvP duels",
+        "Full gamification",
+        "Notes + Flashcards + Quizzes",
+        "100% free to start"
+      ]
+    },
+    "allFeatures": {
+      "title": "Everything you need",
+      "subtitle": "15+ features to ace your exams",
+      "items": [
+        { "title": "Generative AI", "desc": "Create flashcards and quizzes from your notes" },
+        { "title": "FSRS Flashcards", "desc": "Memorize 2x faster, scientifically proven" },
+        { "title": "Adaptive Quizzes", "desc": "Questions that adapt to your level" },
+        { "title": "Focus Rooms", "desc": "Study in virtual groups" },
+        { "title": "Spark AI", "desc": "Your personal tutor available 24/7" },
+        { "title": "Duels", "desc": "Challenge your friends to quizzes" },
+        { "title": "Leaderboards", "desc": "Compare yourself to other students" },
+        { "title": "Streaks", "desc": "Keep your study day streak going" },
+        { "title": "Markdown Notes", "desc": "Powerful editor with LaTeX" },
+        { "title": "Pomodoro", "desc": "Built-in timer for your sessions" },
+        { "title": "Statistics", "desc": "Track your progress in detail" },
+        { "title": "Exam Mode", "desc": "Personalized AI study plan" }
+      ]
+    },
+    "cta": {
+      "title": "Ready to crush it?",
+      "subtitle": "Join the students who decided to stop struggling.",
+      "free": "It's free. Forever.",
+      "button": "Create my free account",
+      "note": "Sign up in 30 seconds • No credit card required"
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "questions": [
+        {
+          "q": "Is it really free?",
+          "a": "Yes! You get access to all basic features for free, forever. The Premium plan unlocks more AI requests and advanced features."
+        },
+        {
+          "q": "What is the FSRS algorithm?",
+          "a": "FSRS (Free Spaced Repetition Scheduler) is the most advanced memorization algorithm in the world. It's 30% more efficient than Anki's old algorithm. Study less, remember more."
+        },
+        {
+          "q": "Can I use it for any subject?",
+          "a": "Absolutely! Medicine, law, languages, sciences, history... Study Master works for all subjects. The AI adapts to your field."
+        },
+        {
+          "q": "Is my data secure?",
+          "a": "Yes. Your data is encrypted and stored securely. We never sell your data to third parties."
+        }
+      ]
+    },
+    "footer": {
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "copyright": "© 2025 Study Master. Made with 💜 for students."
+    }
+  },
+
+  "about": {
+    "nav": {
+      "back": "Back"
+    },
+    "hero": {
+      "title": "About",
+      "subtitle": "The intelligent learning assistant for ambitious students"
+    },
+    "story": {
+      "title": "Our story",
+      "p1": "Study Master was born from a frustration shared by millions of students: spending hours studying only to forget everything on exam day.",
+      "p2": "We combined the best research in cognitive science with the most advanced AI to create a tool that truly adapts to each student.",
+      "p3": "Today, Study Master helps students worldwide learn more effectively, whether in medicine, law, languages, or any other field."
+    },
+    "mission": {
+      "title": "Our mission",
+      "description": "Democratizing access to effective learning through artificial intelligence and scientifically proven methods."
+    },
+    "values": {
+      "title": "Our values",
+      "innovation": {
+        "title": "Innovation",
+        "description": "We use the most advanced AI to personalize each student's learning experience."
+      },
+      "accessibility": {
+        "title": "Accessibility",
+        "description": "Quality education should be accessible to everyone, not just those who can afford private tutors."
+      },
+      "community": {
+        "title": "Community",
+        "description": "Learning together is more effective and motivating than learning alone."
+      },
+      "passion": {
+        "title": "Passion",
+        "description": "Every feature is based on validated scientific research in cognitive science."
+      }
+    },
+    "features": {
+      "title": "Key features",
+      "list": [
+        { "title": "FSRS Flashcards", "description": "Memorize 2x faster with the most advanced algorithm" },
+        { "title": "Adaptive quizzes", "description": "Questions that adapt to your level" },
+        { "title": "Generative AI", "description": "Create content automatically from your notes" },
+        { "title": "Focus Rooms", "description": "Study virtually with groups" },
+        { "title": "Exam Mode", "description": "Personalized revision plan for your exams" },
+        { "title": "Gamification", "description": "XP, levels, streaks and leaderboards" }
+      ]
+    },
+    "cta": {
+      "title": "Ready to transform the way you learn?",
+      "subtitle": "Join thousands of students who succeed with Study Master.",
+      "button": "Get started for free"
+    },
+    "footer": {
+      "copyright": "© 2025 Study Master. All rights reserved.",
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+
+  "contact": {
+    "nav": {
+      "back": "Back"
+    },
+    "hero": {
+      "title1": "Contact ",
+      "title2": "our team",
+      "subtitle": "Have a question? An issue? We're here to help."
+    },
+    "info": {
+      "email": {
+        "title": "Email",
+        "description": "For general inquiries"
+      },
+      "support": {
+        "title": "Technical support",
+        "description": "For technical issues"
+      },
+      "response": {
+        "title": "Response time",
+        "description": "We typically respond <strong>within 24 hours</strong> on business days."
+      }
+    },
+    "form": {
+      "title": "Send us a message",
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "subject": "Subject",
+      "subjectSelect": "Select a subject",
+      "subjects": [
+        { "value": "general", "label": "General question" },
+        { "value": "bug", "label": "Report a bug" },
+        { "value": "feature", "label": "Feature suggestion" },
+        { "value": "billing", "label": "Billing" },
+        { "value": "partnership", "label": "Partnership" },
+        { "value": "other", "label": "Other" }
+      ],
+      "message": "Message",
+      "messagePlaceholder": "Describe your request in detail...",
+      "submit": "Send message",
+      "sending": "Sending...",
+      "success": {
+        "title": "Message sent!",
+        "message": "We will respond as soon as possible.",
+        "sendAnother": "Send another message"
+      }
+    },
+    "faq": {
+      "title": "Need quick help?",
+      "description": "Check our resources to find answers to your questions.",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "footer": {
+      "copyright": "© 2025 Study Master. All rights reserved.",
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+
+  "legal": {
+    "privacy": {
+      "nav": {
+        "back": "Back"
+      },
+      "hero": {
+        "title1": "Privacy ",
+        "title2": "Policy",
+        "lastUpdate": "Last updated: December 2025"
+      },
+      "intro": "Study Master (\"we\", \"our\") is committed to protecting your privacy. This policy explains how we collect, use and protect your personal data.",
+      "sections": {
+        "dataCollected": {
+          "title": "1. Data collected",
+          "intro": "We collect the following data:",
+          "categories": [
+            {
+              "title": "Account information",
+              "items": ["Name", "Email address", "Password (hashed)", "Profile picture (optional)"]
+            },
+            {
+              "title": "Learning data",
+              "items": ["Notes and documents", "Flashcards and decks", "Quizzes and results", "Progress and statistics"]
+            },
+            {
+              "title": "Technical data",
+              "items": ["IP address", "Browser type", "Device used", "Pages visited"]
+            }
+          ]
+        },
+        "dataUsage": {
+          "title": "2. Use of data",
+          "intro": "Your data is used to:",
+          "uses": [
+            { "title": "Provide our services", "description": "Enable access to all platform features" },
+            { "title": "Personalization", "description": "Adapt the learning experience to your needs" },
+            { "title": "Communication", "description": "Send you important notifications and updates" },
+            { "title": "Improvement", "description": "Analyze usage to improve our services" }
+          ]
+        },
+        "dataProtection": {
+          "title": "3. Data protection",
+          "intro": "We implement robust security measures:",
+          "measures": [
+            { "title": "SSL/TLS encryption", "description": "All communications are encrypted" },
+            { "title": "Password hashing", "description": "Your passwords are never stored in plain text" },
+            { "title": "Restricted access", "description": "Only authorized personnel have access to data" },
+            { "title": "Secure backups", "description": "Your data is backed up regularly" }
+          ]
+        },
+        "dataSharing": {
+          "title": "4. Data sharing",
+          "noSale": "We never sell your personal data.",
+          "intro": "Your data may only be shared in the following cases:",
+          "cases": [
+            { "title": "Technical providers", "description": "Hosting, email, payment - under confidentiality agreement" },
+            { "title": "Legal obligations", "description": "If required by law or competent authority" },
+            { "title": "With your consent", "description": "For any other sharing, we ask for your agreement" }
+          ]
+        },
+        "yourRights": {
+          "title": "5. Your rights",
+          "intro": "In accordance with GDPR, you have the following rights:",
+          "rights": [
+            { "title": "Right of access", "description": "Obtain a copy of your data" },
+            { "title": "Right to rectification", "description": "Correct inaccurate data" },
+            { "title": "Right to erasure", "description": "Request deletion of your data" },
+            { "title": "Right to portability", "description": "Export your data in a standard format" }
+          ],
+          "contact": "To exercise these rights, contact us at"
+        },
+        "cookies": {
+          "title": "6. Cookies",
+          "intro": "We use cookies to improve your experience:",
+          "types": [
+            { "title": "Essential cookies", "description": "Required for website functionality" },
+            { "title": "Preference cookies", "description": "Remember your choices (language, theme)" },
+            { "title": "Analytical cookies", "description": "Help us understand site usage (with your consent)" }
+          ],
+          "manage": "You can manage your cookie preferences at any time."
+        },
+        "dataRetention": {
+          "title": "7. Data retention",
+          "intro": "We retain your data for:",
+          "periods": [
+            { "title": "Active account", "duration": "As long as your account exists" },
+            { "title": "After deletion", "duration": "30 days (recovery period)" },
+            { "title": "Billing data", "duration": "10 years (legal requirement)" }
+          ]
+        },
+        "minors": {
+          "title": "8. Protection of minors",
+          "content": "Study Master is intended for users aged 13 and older. Users under 16 must have parental or guardian authorization."
+        },
+        "changes": {
+          "title": "9. Changes",
+          "content": "We may modify this policy at any time. Significant changes will be notified by email at least 30 days before taking effect."
+        }
+      },
+      "contact": {
+        "title": "Contact us",
+        "description": "For any questions regarding your personal data or this privacy policy:",
+        "form": "Contact form"
+      },
+      "footer": {
+        "copyright": "© 2025 Study Master. All rights reserved.",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    },
+    "terms": {
+      "nav": {
+        "back": "Back"
+      },
+      "hero": {
+        "title1": "Terms of ",
+        "title2": "Service",
+        "lastUpdate": "Last updated: December 2025"
+      },
+      "intro": "Welcome to Study Master! These Terms of Service govern your access and use of the Study Master platform. By using our services, you accept these terms in their entirety.",
+      "articles": {
+        "definitions": {
+          "title": "Article 1 - Definitions",
+          "items": [
+            { "term": "\"Platform\"", "definition": "means the studymaster.app website, mobile app and all associated services" },
+            { "term": "\"User\"", "definition": "means any person who accesses the Platform and/or creates an account" },
+            { "term": "\"Content\"", "definition": "means all data, texts, notes, flashcards, quizzes created by the User" },
+            { "term": "\"Services\"", "definition": "means all features offered by the Platform" },
+            { "term": "\"Premium\"", "definition": "means the paid subscription providing access to advanced features" }
+          ]
+        },
+        "acceptance": {
+          "title": "Article 2 - Acceptance of terms",
+          "intro": "By creating an account or using the Platform, you declare:",
+          "items": [
+            "Having read and accepted these Terms",
+            "Having legal capacity to enter into a contract",
+            "Providing accurate information when registering",
+            "Complying with applicable laws in your country"
+          ]
+        },
+        "services": {
+          "title": "Article 3 - Description of services",
+          "intro": "Study Master offers a learning platform including:",
+          "free": {
+            "title": "Free features",
+            "items": [
+              "Create notes and documents",
+              "Flashcards with spaced repetition (FSRS)",
+              "Quizzes and exercises",
+              "Gamification system (XP, levels)",
+              "Pomodoro timer",
+              "Basic statistics"
+            ]
+          },
+          "premium": {
+            "title": "Premium features",
+            "items": [
+              "Unlimited AI generation",
+              "Focus Rooms (study rooms)",
+              "Advanced statistics",
+              "Multi-device sync",
+              "Priority support",
+              "Early access to new features"
+            ]
+          }
+        },
+        "account": {
+          "title": "Article 4 - Account creation",
+          "intro": "To use the Services, you must create an account by providing:",
+          "requirements": [
+            "A valid email address",
+            "A secure password",
+            "A unique username"
+          ],
+          "important": {
+            "title": "Important",
+            "content": "You are responsible for keeping your login credentials confidential. Any activity from your account is presumed to be yours."
+          }
+        },
+        "prohibited": {
+          "title": "Article 5 - Prohibited uses",
+          "intro": "It is strictly prohibited to:",
+          "items": [
+            "Use the Platform for illegal or fraudulent purposes",
+            "Post unlawful, defamatory or hateful content",
+            "Attempt to bypass security measures",
+            "Use robots or automated tools",
+            "Resell or redistribute the Services",
+            "Create multiple accounts to bypass limitations",
+            "Disrupt the operation of the Platform"
+          ],
+          "warning": "Any violation may result in suspension or deletion of your account, without notice or refund."
+        },
+        "ip": {
+          "title": "Article 6 - Intellectual property",
+          "yourContent": {
+            "title": "Your content",
+            "description": "You retain all rights to the Content you create. By using the Services, you grant us a limited license to store and display this content."
+          },
+          "ourContent": {
+            "title": "Our content",
+            "description": "Study Master, its logo, interface and algorithms are protected by copyright. Any unauthorized reproduction is prohibited."
+          }
+        },
+        "premium": {
+          "title": "Article 7 - Premium subscription",
+          "sections": [
+            { "title": "7.1 Pricing", "content": "Prices are displayed on the Platform and may be modified with notice." },
+            { "title": "7.2 Payment", "content": "Payments are processed securely by our partners (Stripe, PayPal, Mobile Money)." },
+            { "title": "7.3 Renewal", "content": "Subscriptions are automatically renewed unless cancelled before the renewal date." },
+            { "title": "7.4 Refund", "content": "You have 14 days after your first purchase to request a full refund." }
+          ]
+        },
+        "availability": {
+          "title": "Article 8 - Service availability",
+          "intro": "We strive to ensure maximum availability. We reserve the right to:",
+          "items": [
+            "Perform scheduled maintenance",
+            "Temporarily interrupt the service in case of emergency",
+            "Modify or discontinue certain features"
+          ],
+          "compensation": "In case of prolonged interruption, Premium users may receive compensation."
+        },
+        "liability": {
+          "title": "Article 9 - Limitation of liability",
+          "intro": "Study Master is provided \"as is\". Within the limits of the law:",
+          "items": [
+            "We do not guarantee that Services will meet all your needs",
+            "We are not responsible for academic results",
+            "We are not responsible for content created by Users",
+            "Our liability is limited to amounts paid in the last 12 months"
+          ],
+          "exception": "This limitation does not apply in case of intentional fault or gross negligence."
+        },
+        "termination": {
+          "title": "Article 10 - Termination",
+          "byUser": {
+            "title": "By User",
+            "description": "You can delete your account at any time. Your data will be deleted after 30 days."
+          },
+          "byUs": {
+            "title": "By Study Master",
+            "description": "We may suspend or delete an account in case of Terms violation or fraudulent activity."
+          }
+        },
+        "modifications": {
+          "title": "Article 11 - Modifications to Terms",
+          "content1": "We may modify these Terms at any time. Modifications will be communicated at least 30 days before taking effect.",
+          "content2": "Your continued use after modifications constitutes acceptance of the new Terms."
+        },
+        "governingLaw": {
+          "title": "Article 12 - Governing law",
+          "content1": "These Terms are governed by the applicable law in your country of residence.",
+          "content2": "In case of dispute, we favor amicable resolution. Contact us at",
+          "content3": "If no agreement is reached, competent courts will be seized."
+        },
+        "miscellaneous": {
+          "title": "Article 13 - Miscellaneous",
+          "items": [
+            { "title": "Entirety", "description": "These Terms constitute the complete agreement between you and Study Master." },
+            { "title": "Severability", "description": "If a clause is invalid, the others remain in effect." },
+            { "title": "Non-waiver", "description": "Not exercising a right does not constitute a waiver." },
+            { "title": "Assignment", "description": "You may not assign your rights without our written consent." }
+          ]
+        }
+      },
+      "contact": {
+        "title": "Questions about these terms?",
+        "description": "If you have any questions about these Terms of Service, please don't hesitate to contact us.",
+        "form": "Contact form"
+      },
+      "footer": {
+        "copyright": "© 2025 Study Master. All rights reserved.",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    }
   }
 }

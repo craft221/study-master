@@ -1,7 +1,7 @@
 """
 Service OCR pour extraction de texte depuis PDF
-Utilise pytesseract + pdf2image pour l'extraction OCR
-Avec détection avancée de layout et post-traitement IA
+Utilise pytesseract + pdf2image + PyMuPDF pour l'extraction OCR
+Avec détection avancée de layout, extraction d'images intégrées et post-traitement IA
 """
 import os
 import re
@@ -13,6 +13,14 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image, ImageEnhance, ImageFilter
 import io
+
+# PyMuPDF pour extraction d'images intégrées
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
+    fitz = None
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +67,159 @@ class OCRService:
             else:
                 tesseract_langs.append(lang)  # Utiliser tel quel si non trouvé
         return '+'.join(tesseract_langs)
+
+    async def _extract_embedded_images(
+        self,
+        pdf_bytes: bytes,
+        min_width: int = 100,
+        min_height: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Extraire les images intégrées dans un PDF avec PyMuPDF
+
+        Args:
+            pdf_bytes: Contenu du PDF en bytes
+            min_width: Largeur minimale des images à extraire
+            min_height: Hauteur minimale des images à extraire
+
+        Returns:
+            Liste de dictionnaires avec les images et leurs métadonnées
+        """
+        if not PYMUPDF_AVAILABLE:
+            logger.warning("PyMuPDF not available, skipping embedded image extraction")
+            return []
+
+        extracted_images = []
+
+        try:
+            # Ouvrir le PDF depuis les bytes
+            pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+            for page_num in range(len(pdf_document)):
+                page = pdf_document.load_page(page_num)
+
+                # Obtenir la liste des images sur cette page
+                image_list = page.get_images(full=True)
+
+                for img_index, img_info in enumerate(image_list):
+                    try:
+                        # Extraire l'image
+                        xref = img_info[0]  # xref de l'image
+                        base_image = pdf_document.extract_image(xref)
+
+                        if base_image:
+                            image_bytes = base_image["image"]
+                            image_ext = base_image["ext"]
+                            width = base_image.get("width", 0)
+                            height = base_image.get("height", 0)
+
+                            # Filtrer les petites images (logos, icônes, etc.)
+                            if width >= min_width and height >= min_height:
+                                # Convertir en PIL Image
+                                pil_image = Image.open(io.BytesIO(image_bytes))
+
+                                # Obtenir la position de l'image sur la page
+                                img_rect = page.get_image_rects(xref)
+                                position = img_rect[0] if img_rect else None
+
+                                extracted_images.append({
+                                    'page': page_num + 1,
+                                    'index': img_index + 1,
+                                    'image': pil_image,
+                                    'width': width,
+                                    'height': height,
+                                    'format': image_ext,
+                                    'position': {
+                                        'x': position.x0 if position else 0,
+                                        'y': position.y0 if position else 0
+                                    } if position else None
+                                })
+
+                                logger.info(
+                                    f"Extracted image from page {page_num + 1}: "
+                                    f"{width}x{height} ({image_ext})"
+                                )
+
+                    except Exception as e:
+                        logger.warning(f"Failed to extract image {img_index} from page {page_num}: {e}")
+                        continue
+
+            pdf_document.close()
+            logger.info(f"Total embedded images extracted: {len(extracted_images)}")
+
+        except Exception as e:
+            logger.error(f"Error extracting embedded images: {e}")
+
+        return extracted_images
+
+    async def _ocr_embedded_images(
+        self,
+        images: List[Dict[str, Any]],
+        language: str,
+        detect_layout: bool = True
+    ) -> List[Dict[str, Any]]:
+        """
+        Effectuer l'OCR sur les images extraites
+
+        Args:
+            images: Liste des images extraites avec métadonnées
+            language: Langue pour l'OCR
+
+        Returns:
+            Liste avec le texte extrait de chaque image
+        """
+        results = []
+        tesseract_lang = self._get_tesseract_lang(language)
+
+        for img_data in images:
+            try:
+                image = img_data['image']
+
+                # Prétraitement de l'image
+                processed_image = await self._preprocess_image_advanced(image)
+
+                # Détecter le layout si demandé
+                layout_type = 'single_column'
+                if detect_layout:
+                    layout_type = self._detect_layout_type(processed_image)
+
+                psm_config = self._get_psm_for_layout(layout_type)
+
+                # OCR sur l'image
+                text = pytesseract.image_to_string(
+                    processed_image,
+                    lang=tesseract_lang,
+                    config=psm_config
+                )
+
+                # Calculer la confiance
+                details = pytesseract.image_to_data(
+                    processed_image,
+                    lang=tesseract_lang,
+                    output_type=pytesseract.Output.DICT
+                )
+
+                confidences = [
+                    float(conf) for conf in details['conf']
+                    if conf != '-1' and float(conf) > 0
+                ]
+                avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+
+                if text.strip():  # Ne garder que les images avec du texte
+                    results.append({
+                        'page': img_data['page'],
+                        'image_index': img_data['index'],
+                        'text': text.strip(),
+                        'confidence': round(avg_confidence, 2),
+                        'size': f"{img_data['width']}x{img_data['height']}",
+                        'layout_type': layout_type
+                    })
+
+            except Exception as e:
+                logger.warning(f"OCR failed for embedded image: {e}")
+                continue
+
+        return results
 
     def _detect_layout_type(self, image: Image.Image) -> str:
         """
@@ -274,6 +435,42 @@ class OCRService:
                         'layout_type': layout_type
                     })
 
+                # Extraire et OCR les images intégrées dans le PDF
+                embedded_images_text = []
+                if PYMUPDF_AVAILABLE:
+                    logger.info("Extracting embedded images from PDF...")
+                    embedded_images = await self._extract_embedded_images(pdf_file)
+
+                    if embedded_images:
+                        logger.info(f"Found {len(embedded_images)} embedded images, running OCR...")
+                        embedded_results = await self._ocr_embedded_images(
+                            embedded_images, language, detect_layout
+                        )
+
+                        # Ajouter le texte des images aux pages correspondantes
+                        for result in embedded_results:
+                            page_num = result['page']
+                            # Trouver la page correspondante
+                            for page_data in extracted_text:
+                                if page_data['page'] == page_num:
+                                    # Ajouter le texte de l'image intégrée
+                                    if result['text']:
+                                        page_data['text'] += f"\n\n[Image intégrée {result['image_index']}]\n{result['text']}"
+                                        # Ajouter aux métadonnées
+                                        if 'embedded_images' not in page_data:
+                                            page_data['embedded_images'] = []
+                                        page_data['embedded_images'].append({
+                                            'index': result['image_index'],
+                                            'text': result['text'],
+                                            'confidence': result['confidence'],
+                                            'size': result['size']
+                                        })
+                                    break
+
+                            embedded_images_text.append(result)
+
+                        logger.info(f"Extracted text from {len(embedded_results)} embedded images")
+
                 # Texte complet
                 full_text = '\n\n--- Page Break ---\n\n'.join(
                     page['text'] for page in extracted_text
@@ -294,7 +491,9 @@ class OCRService:
                     'pages': extracted_text,
                     'page_count': page_count,
                     'average_confidence': avg_confidence,
-                    'language': language
+                    'language': language,
+                    'embedded_images_count': len(embedded_images_text),
+                    'embedded_images': embedded_images_text
                 }
 
             finally:

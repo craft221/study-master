@@ -318,7 +318,8 @@ async def generate_flashcards_from_note(
             note_content=note.content,
             note_title=note.title,
             count=request.count,
-            difficulty=request.difficulty
+            difficulty=request.difficulty,
+            lang=current_user.language
         )
         
         # Créer les flashcards en DB
@@ -351,7 +352,8 @@ async def generate_flashcards_from_note(
             user=current_user,
             amount=10,
             reason="Génération de flashcards par IA",
-            event_type="ai_flashcards_generated"
+            event_type="ai_flashcards_generated",
+            db=db
         )
 
         await db.commit()
@@ -429,7 +431,8 @@ async def generate_quiz_from_note(
             note_title=note.title,
             question_count=request.question_count,
             question_types=request.question_types,
-            difficulty=request.difficulty
+            difficulty=request.difficulty,
+            lang=current_user.language
         )
         
         # Calculer le total de points
@@ -466,7 +469,8 @@ async def generate_quiz_from_note(
             user=current_user,
             amount=15,
             reason="Génération de quiz par IA",
-            event_type="ai_quiz_generated"
+            event_type="ai_quiz_generated",
+            db=db
         )
 
         await db.commit()
@@ -533,7 +537,8 @@ async def summarize_note(
         summary = await ai_service.summarize_note(
             note_content=note.content,
             note_title=note.title,
-            max_length=request.max_length
+            max_length=request.max_length,
+            lang=current_user.language
         )
 
         logger.info(f"Résumé généré pour utilisateur {current_user.id}")
@@ -592,7 +597,8 @@ async def extract_keywords(
         keywords = await ai_service.extract_keywords(
             note_content=note.content,
             note_title=note.title,
-            max_keywords=request.max_keywords
+            max_keywords=request.max_keywords,
+            lang=current_user.language
         )
 
         logger.info(f"Mots-clés extraits pour utilisateur {current_user.id}: {len(keywords)} mots")
@@ -634,7 +640,8 @@ async def explain_concept(
         explanation = await ai_service.explain_concept(
             concept=request.concept,
             context=request.context,
-            level=request.level
+            level=request.level,
+            lang=current_user.language
         )
 
         logger.info(f"Concept expliqué pour utilisateur {current_user.id}: {request.concept[:50]}")

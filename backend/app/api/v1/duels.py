@@ -25,6 +25,8 @@ from app.schemas.gamification import (
     DuelListResponse
 )
 from app.services.cache_service import cache_service, CachePrefix, CacheTTL
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -208,7 +210,8 @@ async def create_duel(
             detail="Un défi est déjà en attente entre vous deux"
         )
 
-    # Créer le duel
+    # Créer le duel avec timestamps explicites
+    now = utc_now()
     new_duel = Duel(
         challenger_id=current_user.id,
         opponent_id=duel_data.opponent_id,
@@ -216,7 +219,9 @@ async def create_duel(
         quiz_id=duel_data.quiz_id,
         stakes_xp=duel_data.stakes_xp,
         duration_minutes=duel_data.duration_minutes,
-        status=DuelStatus.PENDING
+        status=DuelStatus.PENDING,
+        created_at=now,
+        updated_at=now
     )
 
     db.add(new_duel)
@@ -969,6 +974,22 @@ async def complete_duel(
         # Gagnant gagne l'enjeu complet
         winner.total_xp += duel.stakes_xp
         winner.level = (winner.total_xp // 100) + 1
+
+        # Mettre à jour la quête WIN_DUEL pour le gagnant
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=winner.id,
+            quest_type=QuestType.WIN_DUEL,
+            progress=1
+        )
+
+        # Mettre à jour la quête EARN_XP pour le gagnant
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=winner.id,
+            quest_type=QuestType.EARN_XP,
+            progress=duel.stakes_xp
+        )
 
         # Perdant perd la MOITIÉ de l'enjeu (50%)
         xp_loss = duel.stakes_xp // 2

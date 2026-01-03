@@ -1,5 +1,8 @@
 import api from '@/lib/api'
 
+// Timeout spécifique pour OCR (5 minutes pour les gros documents)
+const OCR_TIMEOUT = 300000 // 5 minutes
+
 export interface OCRResult {
   text: string
   confidence: number
@@ -37,6 +40,7 @@ export const ocrService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: OCR_TIMEOUT, // 5 minutes pour les gros PDFs
     })
     return response.data
   },
@@ -54,6 +58,7 @@ export const ocrService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: OCR_TIMEOUT, // 5 minutes pour les grosses images
     })
     return response.data
   },

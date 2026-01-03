@@ -33,6 +33,8 @@ from app.services.fsrs_service import (
     format_interval_display
 )
 from app.core.sql_utils import escape_like_pattern
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
 
 router = APIRouter()
 
@@ -165,11 +167,18 @@ async def get_flashcard_deck(
             }
 
     # Construire la réponse avec métriques FSRS
+    # Récupérer subject_id et is_public de la première carte
+    first_card = cards[0]
+    deck_subject_id = first_card.subject_id
+    deck_is_public = any(card.is_public for card in cards) if hasattr(first_card, 'is_public') else False
+
     return {
         "id": deck_name,
         "title": deck_name,
         "description": f"{total_cards} carte{'s' if total_cards > 1 else ''}",
         "subject": subject_data,
+        "subject_id": deck_subject_id,
+        "is_public": deck_is_public,
         "algorithm": "FSRS",
         "cards": [
             {
@@ -513,13 +522,41 @@ async def review_flashcard(
     if current_user.stats:
         current_user.stats.total_flashcards_reviewed += 1
 
+    # Mettre à jour la progression des quêtes quotidiennes
+    quest_result = await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.REVIEW_FLASHCARDS,
+        progress=1
+    )
+
+    # Mettre à jour aussi la quête EARN_XP avec les XP gagnés
+    xp_quest_result = await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.EARN_XP,
+        progress=xp_reward
+    )
+
+    # Mettre à jour la quête MAINTAIN_STREAK (garder le streak actif)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.MAINTAIN_STREAK,
+        progress=1
+    )
+
+    # Combiner les résultats des quêtes
+    if xp_quest_result and not quest_result:
+        quest_result = xp_quest_result
+
     await db.commit()
     await db.refresh(card)
 
     # Obtenir les prévisions pour toutes les options (pour le frontend)
     scheduling_preview = fsrs_scheduler.get_scheduling_cards(fsrs_card, now)
 
-    return {
+    response = {
         "success": True,
         "algorithm": "FSRS",
         "xp_earned": xp_reward,
@@ -535,6 +572,12 @@ async def review_flashcard(
         "scheduling_preview": scheduling_preview,
         "message": "Révision enregistrée avec FSRS!"
     }
+
+    # Ajouter les infos de quête si une quête a été complétée
+    if quest_result:
+        response["quest_progress"] = quest_result
+
+    return response
 
 
 @router.post("/", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
@@ -564,11 +607,18 @@ async def create_flashcard(
     
     # Créer la flashcard
     now = utc_now()
+    flashcard_dict = flashcard_data.model_dump()
+
+    # Utiliser la langue de l'utilisateur si non spécifiée
+    if not flashcard_dict.get("language"):
+        user_lang = current_user.preferences.language if current_user.preferences else "fr"
+        flashcard_dict["language"] = user_lang
+
     new_flashcard = Flashcard(
         user_id=current_user.id,
         next_review_at=now,  # Disponible immédiatement pour révision
         due_date=now,
-        **flashcard_data.model_dump()
+        **flashcard_dict
     )
 
     db.add(new_flashcard)
@@ -579,6 +629,22 @@ async def create_flashcard(
         current_user.gamification.total_xp += 5
     if current_user.stats:
         current_user.stats.total_flashcards_created += 1
+
+    # Mettre à jour la progression des quêtes quotidiennes
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.CREATE_FLASHCARDS,
+        progress=1
+    )
+
+    # Mettre à jour la quête EARN_XP (+5 XP pour création)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.EARN_XP,
+        progress=5
+    )
 
     await db.commit()
     await db.refresh(new_flashcard)

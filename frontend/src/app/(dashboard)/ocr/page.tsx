@@ -323,7 +323,8 @@ export default function OCRPage() {
         const endpoint = isPDF ? '/ocr/async/upload-pdf' : '/ocr/async/upload-image'
 
         const response = await api.post(`${endpoint}?${params.toString()}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 300000 // 5 minutes pour l'upload initial
         })
 
         const newTaskId = response.data.task_id
@@ -348,7 +349,8 @@ export default function OCRPage() {
         setAsyncMode(false)
         const endpoint = isPDF ? '/ocr/upload-pdf' : '/ocr/upload-image'
         const response = await api.post<OCRResult>(`${endpoint}?${params.toString()}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 300000 // 5 minutes pour OCR
         })
 
         // Backend returns extracted_text for PDF and text for image

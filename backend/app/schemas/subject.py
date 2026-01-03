@@ -62,6 +62,7 @@ class SubjectResponse(SubjectBase):
     total_notes_count: int
     total_flashcards_count: int
     total_quizzes_count: int
+    total_documents_count: int
     total_study_time_minutes: int
     
     # Gamification

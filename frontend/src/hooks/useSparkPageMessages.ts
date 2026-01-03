@@ -10,181 +10,116 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSpark } from '@/contexts/SparkContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getArray } from '@/lib/i18n';
 
-// Messages contextuels par page
-const PAGE_MESSAGES: Record<string, {
+// Configuration des pages (sans les messages, juste les paramètres)
+const PAGE_CONFIG: Record<string, {
   event: string;
-  messages: string[];
+  messageKey: string;
   context?: Record<string, any>;
   delay?: number;
-  probability?: number; // Probabilité d'afficher (0-1)
+  probability?: number;
 }> = {
   '/dashboard': {
     event: 'page_dashboard',
-    messages: [
-      "Bienvenue sur ton tableau de bord ! Prêt à étudier ? 📚",
-      "Hey ! Regarde tes stats, tu progresses bien ! 📈",
-      "C'est parti pour une session productive ! 💪",
-    ],
-    delay: 3000, // Plus de délai pour le dashboard (après le message de bienvenue)
-    probability: 0.5, // 50% de chance
+    messageKey: 'dashboard',
+    delay: 3000,
+    probability: 0.5,
   },
   '/notes': {
     event: 'page_notes',
-    messages: [
-      "Tes notes t'attendent ! Qu'est-ce qu'on révise aujourd'hui ? 📝",
-      "Prendre des notes c'est la clé ! Tu gères ! ✨",
-      "N'oublie pas : relire ses notes régulièrement aide à mémoriser ! 🧠",
-    ],
+    messageKey: 'notes',
     delay: 1500,
-    probability: 0.8, // Augmenté pour test
+    probability: 0.8,
   },
   '/flashcards': {
     event: 'page_flashcards',
-    messages: [
-      "Les flashcards ! Ma technique préférée pour mémoriser ! 🎴",
-      "Réviser avec les flashcards, c'est super efficace ! 💡",
-      "Allez, on fait tourner ces cartes ! Tu vas tout retenir ! 🔥",
-    ],
+    messageKey: 'flashcards',
     delay: 1500,
-    probability: 0.8, // Augmenté pour test
+    probability: 0.8,
   },
   '/quizzes': {
     event: 'page_quizzes',
-    messages: [
-      "Un quiz ? J'adore ! Montre-moi ce que tu sais ! 🎯",
-      "Les quiz c'est le meilleur moyen de tester tes connaissances ! 📊",
-      "Prêt à te challenger ? Go go go ! 🚀",
-    ],
+    messageKey: 'quizzes',
     delay: 1500,
-    probability: 0.8, // Augmenté pour test
+    probability: 0.8,
   },
   '/quests': {
     event: 'page_quests',
-    messages: [
-      "Tes quêtes du jour ! Complète-les toutes pour le bonus ! 🎯",
-      "3 quêtes = 3 récompenses + bonus ! Tu peux le faire ! 💪",
-      "Chaque quête complétée te rapproche de ton objectif ! ⭐",
-    ],
+    messageKey: 'quests',
     delay: 1500,
-    probability: 0.8, // Augmenté pour test
+    probability: 0.8,
   },
   '/leaderboard': {
     event: 'page_leaderboard',
-    messages: [
-      "Le classement ! Voyons où tu te situes... 🏆",
-      "Tu veux monter dans le classement ? Continue comme ça ! 📈",
-      "La compétition saine motive ! Tu es dans le top ? 🥇",
-    ],
+    messageKey: 'leaderboard',
     delay: 1500,
     probability: 0.8,
   },
   '/achievements': {
     event: 'page_achievements',
-    messages: [
-      "Tes accomplissements ! Tu en as débloqué combien ? 🏅",
-      "Chaque badge raconte une histoire de réussite ! ✨",
-      "Continue comme ça et tu les auras tous ! 🎖️",
-    ],
+    messageKey: 'achievements',
     delay: 1500,
     probability: 0.8,
   },
   '/profile': {
     event: 'page_profile',
-    messages: [
-      "Ton profil ! Tu veux personnaliser quelque chose ? 👤",
-      "C'est ici que tu peux voir ta progression globale ! 📊",
-    ],
+    messageKey: 'profile',
     delay: 1500,
     probability: 0.8,
   },
   '/schedule': {
     event: 'page_schedule',
-    messages: [
-      "Ton planning ! Bien s'organiser c'est la clé du succès ! 📅",
-      "Des examens à venir ? Je peux t'aider à te préparer ! 📚",
-      "Planifier ses révisions aide à réduire le stress ! 🧘",
-    ],
+    messageKey: 'schedule',
     delay: 1500,
     probability: 0.8,
   },
   '/explore': {
     event: 'page_explore',
-    messages: [
-      "Explorer ! Découvre ce que les autres ont créé ! 🌍",
-      "Tu peux trouver des ressources super utiles ici ! 💎",
-      "Partager c'est grandir ensemble ! 🤝",
-    ],
+    messageKey: 'explore',
     delay: 1500,
     probability: 0.8,
   },
   '/duels': {
     event: 'page_duels',
-    messages: [
-      "Les duels ! Prêt à affronter d'autres étudiants ? ⚔️",
-      "Un duel c'est fun ET éducatif ! En garde ! 🤺",
-      "Gagner un duel = XP bonus ! Tu relèves le défi ? 🎮",
-    ],
+    messageKey: 'duels',
     delay: 1500,
     probability: 0.8,
   },
   '/focus-rooms': {
     event: 'page_focus_rooms',
-    messages: [
-      "Les Focus Rooms ! Étudier ensemble c'est plus motivant ! 👥",
-      "Rejoins une salle et étudie en groupe ! 🎓",
-      "La concentration partagée, ça booste la productivité ! 🚀",
-    ],
+    messageKey: 'focusRooms',
     delay: 1500,
     probability: 0.8,
   },
   '/ai': {
     event: 'page_ai',
-    messages: [
-      "Hey c'est moi ! Tu veux qu'on discute ? 🐿️",
-      "Je suis là pour t'aider ! Pose-moi tes questions ! 💬",
-      "Mode tuteur activé ! Qu'est-ce que tu veux apprendre ? 📖",
-    ],
+    messageKey: 'ai',
     delay: 1000,
     probability: 0.9,
   },
   '/documents': {
     event: 'page_documents',
-    messages: [
-      "Tes documents ! Tu as besoin de les organiser ? 📁",
-      "Les documents bien rangés sont plus faciles à retrouver ! 🗂️",
-      "Tu peux partager tes documents avec d'autres étudiants ! 🤝",
-    ],
+    messageKey: 'documents',
     delay: 1500,
     probability: 0.8,
   },
   '/subjects': {
     event: 'page_subjects',
-    messages: [
-      "Tes matières ! Quelle est ta préférée ? 📚",
-      "Organiser par matière aide à mieux réviser ! 🎯",
-      "Chaque matière est une nouvelle aventure ! 🌟",
-    ],
+    messageKey: 'subjects',
     delay: 1500,
     probability: 0.8,
   },
   '/sessions': {
     event: 'page_sessions',
-    messages: [
-      "Sessions d'étude ! Prêt pour une session productive ? ⚡",
-      "Le pomodoro c'est la vie ! 25 min de focus ! 🍅",
-      "Une session par jour éloigne l'échec pour toujours ! 💪",
-    ],
+    messageKey: 'sessions',
     delay: 1500,
     probability: 0.8,
   },
   '/groups': {
     event: 'page_groups',
-    messages: [
-      "Les groupes d'étude ! L'union fait la force ! 👥",
-      "Étudier ensemble c'est plus fun ! 🎉",
-      "Rejoins ou crée un groupe pour progresser ensemble ! 🤝",
-    ],
+    messageKey: 'groups',
     delay: 1500,
     probability: 0.8,
   },
@@ -193,6 +128,7 @@ const PAGE_MESSAGES: Record<string, {
 export function useSparkPageMessages() {
   const pathname = usePathname();
   const { showMessage } = useSpark();
+  const { locale } = useLanguage();
   const lastPageRef = useRef<string | null>(null);
   const lastMessageTimeRef = useRef<number>(0);
   const [isReady, setIsReady] = useState(false);
@@ -239,11 +175,11 @@ export function useSparkPageMessages() {
     }
 
     // Trouver la config de la page actuelle
-    let pageConfig = PAGE_MESSAGES[pathname];
+    let pageConfig = PAGE_CONFIG[pathname];
 
     // Si pas de config exacte, chercher une correspondance partielle
     if (!pageConfig) {
-      for (const [path, config] of Object.entries(PAGE_MESSAGES)) {
+      for (const [path, config] of Object.entries(PAGE_CONFIG)) {
         if (pathname.startsWith(path) && path !== '/') {
           pageConfig = config;
           break;
@@ -268,10 +204,19 @@ export function useSparkPageMessages() {
       return;
     }
 
+    // Récupérer les messages traduits depuis i18n
+    const messagesKey = `sparkWidget.pageMessages.${pageConfig.messageKey}`;
+    const messages = getArray(locale, messagesKey);
+
+    // Vérifier que les messages existent et sont un tableau
+    if (!Array.isArray(messages) || messages.length === 0) {
+      console.log('🐿️ PageMessages: Skip - pas de messages pour:', messagesKey);
+      lastPageRef.current = pathname;
+      return;
+    }
+
     // Choisir un message aléatoire
-    const randomMessage = pageConfig.messages[
-      Math.floor(Math.random() * pageConfig.messages.length)
-    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
     console.log('🐿️ PageMessages: Programmation message:', randomMessage);
 
@@ -289,7 +234,7 @@ export function useSparkPageMessages() {
     lastPageRef.current = pathname;
 
     return () => clearTimeout(timer);
-  }, [pathname, isReady, showMessage]);
+  }, [pathname, isReady, showMessage, locale]);
 }
 
 export default useSparkPageMessages;

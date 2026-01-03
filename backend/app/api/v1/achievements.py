@@ -120,10 +120,17 @@ async def get_my_achievements(
     user_achievements = result.scalars().all()
 
     # Les achievements sont maintenant déjà chargés via selectinload
+    # Dédupliquer par achievement_id (garder le plus récent en cas de doublons)
     achievements_data = []
+    seen_achievement_ids = set()
     total_xp = 0
 
     for ua in user_achievements:
+        # Skip si on a déjà vu cet achievement (doublons)
+        if ua.achievement_id in seen_achievement_ids:
+            continue
+        seen_achievement_ids.add(ua.achievement_id)
+
         achievement = ua.achievement  # Déjà chargé, pas de query supplémentaire
         if achievement:
             total_xp += achievement.xp_reward
@@ -197,10 +204,17 @@ async def get_user_achievements(
     user_achievements = result.scalars().all()
 
     # Les achievements sont maintenant déjà chargés via selectinload
+    # Dédupliquer par achievement_id (garder le plus récent en cas de doublons)
     achievements_data = []
+    seen_achievement_ids = set()
     total_xp = 0
 
     for ua in user_achievements:
+        # Skip si on a déjà vu cet achievement (doublons)
+        if ua.achievement_id in seen_achievement_ids:
+            continue
+        seen_achievement_ids.add(ua.achievement_id)
+
         achievement = ua.achievement  # Déjà chargé, pas de query supplémentaire
         if achievement:
             total_xp += achievement.xp_reward
@@ -329,7 +343,8 @@ async def unlock_achievement(
         user=current_user,
         amount=achievement.xp_reward,
         reason=f"Achievement débloqué: {achievement.name}",
-        event_type="achievement_unlocked"
+        event_type="achievement_unlocked",
+        db=db
     )
 
     await db.commit()
@@ -417,7 +432,8 @@ async def check_achievement_progress(
                 user=current_user,
                 amount=achievement.xp_reward,
                 reason=f"Achievement débloqué: {achievement.name}",
-                event_type="achievement_unlocked"
+                event_type="achievement_unlocked",
+                db=db
             )
 
             unlocked.append((user_achievement, achievement))

@@ -1,16 +1,29 @@
 /**
  * IndexedDB Storage Layer pour Study Master
  * Gère le stockage local des données pour le mode hors ligne
+ * Inclut support FSRS pour révisions offline
  */
 
+import {
+  FSRSScheduler,
+  Rating,
+  State,
+  createFSRSCard,
+  fsrsCardToApiFormat,
+  type FSRSCard,
+  type SchedulingOptions,
+} from './fsrs';
+
 const DB_NAME = 'StudyMasterDB';
-const DB_VERSION = 3; // Incrémenté pour ajouter le store exam_sessions
+const DB_VERSION = 5; // Incrémenté pour ajouter review_logs
 
 // Stores (tables) de la base de données
 const STORES = {
   NOTES: 'notes',
   FLASHCARD_DECKS: 'flashcard_decks',
   FLASHCARDS: 'flashcards',
+  FLASHCARD_REVIEW_LOGS: 'flashcard_review_logs', // Logs FSRS pour sync
+  QUIZZES: 'quizzes',
   SCHEDULES: 'schedules',
   STUDY_SESSIONS: 'study_sessions',
   USER_PROFILE: 'user_profile',
@@ -104,6 +117,23 @@ class OfflineStorage {
       const cardsStore = db.createObjectStore(STORES.FLASHCARDS, { keyPath: 'id' });
       cardsStore.createIndex('deck_id', 'deck_id', { unique: false });
       cardsStore.createIndex('next_review', 'next_review', { unique: false });
+      cardsStore.createIndex('state', 'state', { unique: false });
+    }
+
+    // Flashcard Review Logs (pour sync des révisions offline)
+    if (!db.objectStoreNames.contains(STORES.FLASHCARD_REVIEW_LOGS)) {
+      const logsStore = db.createObjectStore(STORES.FLASHCARD_REVIEW_LOGS, { keyPath: 'id', autoIncrement: true });
+      logsStore.createIndex('flashcard_id', 'flashcard_id', { unique: false });
+      logsStore.createIndex('synced', 'synced', { unique: false });
+      logsStore.createIndex('reviewed_at', 'reviewed_at', { unique: false });
+    }
+
+    // Quizzes
+    if (!db.objectStoreNames.contains(STORES.QUIZZES)) {
+      const quizzesStore = db.createObjectStore(STORES.QUIZZES, { keyPath: 'id' });
+      quizzesStore.createIndex('user_id', 'user_id', { unique: false });
+      quizzesStore.createIndex('subject_id', 'subject_id', { unique: false });
+      quizzesStore.createIndex('created_at', 'created_at', { unique: false });
     }
 
     // Schedules (Calendrier)
@@ -372,6 +402,14 @@ class OfflineStorage {
     await this.putMany(STORES.FLASHCARDS, cards);
   }
 
+  async saveFlashcard(card: any): Promise<any> {
+    return this.put(STORES.FLASHCARDS, card);
+  }
+
+  async getFlashcard(id: string | number): Promise<any> {
+    return this.get(STORES.FLASHCARDS, id);
+  }
+
   async getFlashcards(deckId?: number): Promise<any[]> {
     if (deckId) {
       return this.getByIndex(STORES.FLASHCARDS, 'deck_id', deckId);
@@ -382,7 +420,263 @@ class OfflineStorage {
   async getFlashcardsForReview(): Promise<any[]> {
     const allCards = await this.getAll<any>(STORES.FLASHCARDS);
     const now = new Date().toISOString();
-    return allCards.filter(card => !card.next_review || card.next_review <= now);
+    return allCards.filter(card => !card.next_review_at || card.next_review_at <= now);
+  }
+
+  /**
+   * Récupérer les cartes dues d'un deck spécifique
+   */
+  async getDueFlashcards(deckId: number | string): Promise<any[]> {
+    const deckCards = await this.getByIndex<any>(STORES.FLASHCARDS, 'deck_id', deckId);
+    const now = new Date().toISOString();
+    return deckCards.filter(card => {
+      // Nouvelle carte OU carte dont la date de révision est passée
+      if (!card.next_review_at) return true;
+      return card.next_review_at <= now;
+    });
+  }
+
+  // ============================================
+  // FSRS - Révisions Offline avec calcul local
+  // ============================================
+
+  private fsrsScheduler = new FSRSScheduler();
+
+  /**
+   * Convertir une flashcard de l'API vers le format FSRS
+   */
+  private flashcardToFSRS(card: any): FSRSCard {
+    return createFSRSCard({
+      stability: card.stability,
+      difficulty: card.difficulty,
+      easeFactor: card.ease_factor,
+      interval: card.interval_days || card.interval,
+      repetitions: card.repetitions || card.reps,
+      status: card.state || card.status,
+      lastReviewedAt: card.last_reviewed_at,
+      nextReviewAt: card.next_review_at,
+    });
+  }
+
+  /**
+   * Prévisualiser les intervalles FSRS pour toutes les options
+   */
+  getSchedulingPreview(card: any): SchedulingOptions {
+    const fsrsCard = this.flashcardToFSRS(card);
+    return this.fsrsScheduler.getSchedulingOptions(fsrsCard);
+  }
+
+  /**
+   * Réviser une flashcard en mode offline avec FSRS
+   * Calcule localement et stocke pour synchronisation ultérieure
+   */
+  async reviewFlashcardOffline(
+    cardId: string | number,
+    quality: 0 | 1 | 2 | 3
+  ): Promise<{
+    success: boolean;
+    updatedCard: any;
+    schedulingInfo: {
+      intervalDays: number;
+      nextReview: string;
+      stability: number;
+      difficulty: number;
+      state: string;
+    };
+  }> {
+    // 1. Récupérer la carte
+    const card = await this.getFlashcard(cardId);
+    if (!card) {
+      throw new Error(`Flashcard ${cardId} non trouvée dans le cache`);
+    }
+
+    // 2. Convertir en format FSRS
+    const fsrsCard = this.flashcardToFSRS(card);
+
+    // 3. Mapper quality (0-3) vers Rating FSRS
+    const ratingMap: Record<number, Rating> = {
+      0: Rating.AGAIN,
+      1: Rating.HARD,
+      2: Rating.GOOD,
+      3: Rating.EASY,
+    };
+    const rating = ratingMap[quality];
+
+    // 4. Calculer la prochaine révision avec FSRS
+    const now = new Date();
+    const { card: newFsrsCard, log } = this.fsrsScheduler.schedule(fsrsCard, rating, now);
+
+    // 5. Convertir vers le format API
+    const apiData = fsrsCardToApiFormat(newFsrsCard);
+
+    // 6. Mettre à jour la carte dans IndexedDB
+    const updatedCard = {
+      ...card,
+      stability: apiData.stability,
+      difficulty: apiData.difficulty,
+      interval_days: apiData.interval_days,
+      repetitions: apiData.repetitions,
+      lapses: apiData.lapses,
+      state: apiData.state,
+      last_reviewed_at: apiData.last_reviewed_at,
+      next_review_at: apiData.next_review_at,
+      retrievability: apiData.retrievability,
+      _offlineReviewed: true,
+      _lastOfflineReview: now.toISOString(),
+    };
+    await this.saveFlashcard(updatedCard);
+
+    // 7. Enregistrer le log de révision pour synchronisation
+    const reviewLog = {
+      flashcard_id: cardId,
+      deck_id: card.deck_id,
+      rating: quality,
+      reviewed_at: now.toISOString(),
+      stability_before: fsrsCard.stability,
+      stability_after: apiData.stability,
+      difficulty_before: fsrsCard.difficulty,
+      difficulty_after: apiData.difficulty,
+      interval_days: apiData.interval_days,
+      state_before: State[fsrsCard.state],
+      state_after: apiData.state,
+      retrievability: log.retrievability,
+      synced: false,
+    };
+    await this.put(STORES.FLASHCARD_REVIEW_LOGS, reviewLog);
+
+    console.log(`[FSRS Offline] Card ${cardId} reviewed: ${Rating[rating]} -> next in ${apiData.interval_days} days`);
+
+    return {
+      success: true,
+      updatedCard,
+      schedulingInfo: {
+        intervalDays: apiData.interval_days,
+        nextReview: apiData.next_review_at || '',
+        stability: apiData.stability,
+        difficulty: apiData.difficulty,
+        state: apiData.state,
+      },
+    };
+  }
+
+  /**
+   * Récupérer les logs de révision non synchronisés
+   */
+  async getUnsyncedReviewLogs(): Promise<any[]> {
+    const allLogs = await this.getAll<any>(STORES.FLASHCARD_REVIEW_LOGS);
+    return allLogs.filter(log => !log.synced);
+  }
+
+  /**
+   * Marquer un log de révision comme synchronisé
+   */
+  async markReviewLogSynced(logId: number): Promise<void> {
+    const log = await this.get<any>(STORES.FLASHCARD_REVIEW_LOGS, logId);
+    if (log) {
+      log.synced = true;
+      await this.put(STORES.FLASHCARD_REVIEW_LOGS, log);
+    }
+  }
+
+  /**
+   * Supprimer les logs synchronisés anciens (nettoyage)
+   */
+  async cleanupSyncedReviewLogs(olderThanDays: number = 30): Promise<number> {
+    const allLogs = await this.getAll<any>(STORES.FLASHCARD_REVIEW_LOGS);
+    const cutoff = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
+    let cleaned = 0;
+
+    for (const log of allLogs) {
+      if (log.synced && new Date(log.reviewed_at).getTime() < cutoff) {
+        await this.delete(STORES.FLASHCARD_REVIEW_LOGS, log.id);
+        cleaned++;
+      }
+    }
+
+    return cleaned;
+  }
+
+  /**
+   * Statistiques FSRS pour un deck
+   */
+  async getDeckFSRSStats(deckId: number | string): Promise<{
+    totalCards: number;
+    newCards: number;
+    learningCards: number;
+    reviewCards: number;
+    dueNow: number;
+    averageStability: number;
+    averageDifficulty: number;
+  }> {
+    const cards = await this.getByIndex<any>(STORES.FLASHCARDS, 'deck_id', deckId);
+    const now = new Date().toISOString();
+
+    let newCount = 0;
+    let learningCount = 0;
+    let reviewCount = 0;
+    let dueCount = 0;
+    let totalStability = 0;
+    let totalDifficulty = 0;
+    let nonNewCount = 0;
+
+    for (const card of cards) {
+      const state = (card.state || 'new').toLowerCase();
+
+      if (state === 'new' || !card.stability) {
+        newCount++;
+      } else if (state === 'learning' || state === 'relearning') {
+        learningCount++;
+        nonNewCount++;
+        totalStability += card.stability || 0;
+        totalDifficulty += card.difficulty || 5;
+      } else {
+        reviewCount++;
+        nonNewCount++;
+        totalStability += card.stability || 0;
+        totalDifficulty += card.difficulty || 5;
+      }
+
+      // Compter les cartes dues
+      if (!card.next_review_at || card.next_review_at <= now) {
+        dueCount++;
+      }
+    }
+
+    return {
+      totalCards: cards.length,
+      newCards: newCount,
+      learningCards: learningCount,
+      reviewCards: reviewCount,
+      dueNow: dueCount,
+      averageStability: nonNewCount > 0 ? Math.round((totalStability / nonNewCount) * 100) / 100 : 0,
+      averageDifficulty: nonNewCount > 0 ? Math.round((totalDifficulty / nonNewCount) * 100) / 100 : 5,
+    };
+  }
+
+  // --- Quizzes ---
+  async saveQuizzes(quizzes: any[]): Promise<void> {
+    await this.putMany(STORES.QUIZZES, quizzes);
+    await this.updateMetadata(STORES.QUIZZES);
+  }
+
+  async getQuizzes(): Promise<any[]> {
+    return this.getAll(STORES.QUIZZES);
+  }
+
+  async getQuiz(id: string | number): Promise<any> {
+    return this.get(STORES.QUIZZES, id);
+  }
+
+  async saveQuiz(quiz: any): Promise<any> {
+    return this.put(STORES.QUIZZES, quiz);
+  }
+
+  async deleteQuiz(id: string | number): Promise<void> {
+    return this.delete(STORES.QUIZZES, id);
+  }
+
+  async getQuizzesBySubject(subjectId: number): Promise<any[]> {
+    return this.getByIndex(STORES.QUIZZES, 'subject_id', subjectId);
   }
 
   // --- Schedules ---
@@ -409,8 +703,41 @@ class OfflineStorage {
     await this.updateMetadata(STORES.STUDY_SESSIONS);
   }
 
+  async saveStudySession(session: any): Promise<any> {
+    return this.put(STORES.STUDY_SESSIONS, session);
+  }
+
   async getStudySessions(): Promise<any[]> {
     return this.getAll(STORES.STUDY_SESSIONS);
+  }
+
+  async getStudySession(id: string | number): Promise<any> {
+    return this.get(STORES.STUDY_SESSIONS, id);
+  }
+
+  async deleteStudySession(id: string | number): Promise<void> {
+    return this.delete(STORES.STUDY_SESSIONS, id);
+  }
+
+  async getTodayStudySessions(): Promise<any[]> {
+    const sessions = await this.getAll<any>(STORES.STUDY_SESSIONS);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return sessions.filter(s => {
+      const sessionDate = new Date(s.created_at || s.started_at);
+      sessionDate.setHours(0, 0, 0, 0);
+      return sessionDate.getTime() === today.getTime();
+    });
+  }
+
+  async getTodayStudyStats(): Promise<{ total_sessions: number; total_minutes: number }> {
+    const todaySessions = await this.getTodayStudySessions();
+    const completedSessions = todaySessions.filter(s => s.status === 'completed' || s.completed_at);
+    const totalMinutes = completedSessions.reduce((sum, s) => sum + (s.actual_duration_minutes || s.duration_minutes || 0), 0);
+    return {
+      total_sessions: completedSessions.length,
+      total_minutes: totalMinutes,
+    };
   }
 
   // --- User Profile ---

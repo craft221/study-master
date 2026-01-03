@@ -27,7 +27,8 @@
     "success": "Éxito",
     "warning": "Advertencia",
     "info": "Información",
-    "upgrade_premium": "Actualizar a Premium"
+    "upgrade_premium": "Actualizar a Premium",
+    "optional": "Opcional"
   },
 
   "auth": {
@@ -73,7 +74,8 @@
     "duels": "Duelos",
     "leaderboard": "Clasificación",
     "export": "Exportar",
-    "pricing": "Precios"
+    "pricing": "Precios",
+    "examMode": "Modo Examen"
   },
 
   "dashboard": {
@@ -92,6 +94,189 @@
     "quickActions": "Acciones rápidas",
     "noActivity": "Sin actividad reciente",
     "startStudying": "Empezar a estudiar"
+  },
+
+  "sessionsPage": {
+    "title": "Sesiones Pomodoro",
+    "subtitle": "Técnica de gestión del tiempo para mejorar tu productividad",
+    "pomodorosToday": "Pomodoros hoy",
+    "studyTime": "Tiempo de estudio",
+    "dayRecord": "Récord del día",
+    "pomodoro": "Pomodoro",
+    "shortBreak": "Pausa corta",
+    "longBreak": "Pausa larga",
+    "focus": "Enfoque",
+    "workingOn": "¿En qué estás trabajando? (opcional)",
+    "start": "Iniciar",
+    "pause": "Pausar",
+    "reset": "Reiniciar",
+    "sessionComplete": "¡completado!",
+    "howItWorks": "¿Cómo funciona la técnica Pomodoro?",
+    "step1Title": "Trabaja 25 min",
+    "step1Desc": "Concéntrate en una tarea",
+    "step2Title": "Pausa 5 min",
+    "step2Desc": "Relájate brevemente",
+    "step3Title": "Repite x4",
+    "step3Desc": "Completa 4 pomodoros",
+    "step4Title": "Pausa 15 min",
+    "step4Desc": "Pausa larga bien merecida",
+    "completedPomodoros": "Pomodoros completados",
+    "cycleComplete": "¡Ciclo completado! Toma una pausa larga.",
+    "untilLongBreak": "{count} pomodoro(s) hasta la pausa larga",
+    "generalSession": "Sesión general"
+  },
+
+  "notesPage": {
+    "title": "Mis Notas",
+    "cachedData": "Datos en caché",
+    "totalNotes": "{count} notas en total",
+    "offlineMode": "Modo sin conexión",
+    "newNote": "Nueva nota",
+    "searchPlaceholder": "Buscar en tus notas...",
+    "noNotesFound": "No se encontraron notas",
+    "noNotesYet": "Aún no hay notas",
+    "tryDifferentSearch": "Intenta modificar tus criterios de búsqueda",
+    "createFirstNote": "Comienza creando tu primera nota de estudio",
+    "createMyFirstNote": "Crear mi primera nota",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar esta nota?"
+  },
+
+  "newNotePage": {
+    "offlineMode": "Modo sin conexión",
+    "offlineSaveMessage": "Tu nota se guardará localmente y se sincronizará automáticamente cuando te reconectes.",
+    "title": "Nueva Nota",
+    "offline": "Sin conexión",
+    "cancel": "Cancelar",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Ej: Capítulo 5 - Algoritmos de Ordenamiento",
+    "subjectLabel": "Materia",
+    "selectSubject": "Selecciona una materia",
+    "contentLabel": "Contenido",
+    "contentPlaceholder": "Comienza a tomar notas... Usa **negrita** para conceptos clave, $fórmula$ para LaTeX",
+    "tagsLabel": "Etiquetas",
+    "addTagPlaceholder": "Agregar una etiqueta...",
+    "addButton": "Agregar",
+    "visibilityLabel": "Visibilidad",
+    "private": "Privada",
+    "privateDesc": "Solo visible para ti",
+    "public": "Pública",
+    "publicDesc": "Visible en Explorar",
+    "publicNotice": "Esta nota será visible para todos los usuarios en la página Explorar",
+    "languageLabel": "Idioma del contenido",
+    "languageNotice": "Este idioma se usará para el filtrado en Explorar si la nota es pública",
+    "aiActions": "Acciones IA",
+    "aiActionsDesc": "Usa IA para crear automáticamente tarjetas, cuestionarios o resumir tu nota.",
+    "generateFlashcards": "Generar tarjetas",
+    "createQuiz": "Crear un cuestionario",
+    "summarize": "Resumir",
+    "saving": "Guardando...",
+    "saveNote": "Guardar nota",
+    "fillRequired": "Por favor completa todos los campos obligatorios",
+    "noteCreated": "¡Nota creada con éxito!",
+    "noteCreatedOffline": "Nota creada localmente (se sincronizará)",
+    "addContentFirst": "Agrega contenido primero",
+    "generatingFlashcards": "Generando tarjetas con IA...",
+    "flashcardsGenerated": "¡{count} tarjetas generadas!",
+    "aiGenerationError": "Error durante la generación con IA"
+  },
+
+  "quizzesPage": {
+    "title": "Cuestionarios",
+    "quizzesAvailable": "{count} cuestionarios disponibles",
+    "createQuiz": "Crear un cuestionario",
+    "totalAttempts": "Intentos totales",
+    "completedQuizzes": "Cuestionarios completados",
+    "averageScore": "Puntuación media",
+    "searchPlaceholder": "Buscar un cuestionario...",
+    "noQuizFound": "No se encontró cuestionario",
+    "noQuizAvailable": "No hay cuestionarios disponibles",
+    "tryDifferentSearch": "Intenta modificar tu búsqueda",
+    "createFirstQuiz": "Crea tu primer cuestionario para probar tus conocimientos",
+    "createMyFirstQuiz": "Crear mi primer cuestionario",
+    "questions": "Preguntas",
+    "minutes": "Minutos",
+    "attempts": "Intentos",
+    "bestScore": "Mejor puntuación",
+    "start": "Comenzar",
+    "waitingSync": "Esperando sincronización",
+    "publicQuiz": "Cuestionario público",
+    "players": "jugadores",
+    "last": "Último:",
+    "confirmDelete": "¿Eliminar este cuestionario?",
+    "quizDeleted": "Cuestionario eliminado",
+    "linkCopiedPublic": "¡Enlace copiado! El cuestionario ahora es público.",
+    "linkCopied": "¡Enlace copiado!",
+    "leaderboard": "Clasificación",
+    "noParticipants": "Sin participantes",
+    "shareToSeeLeaderboard": "¡Comparte este cuestionario para ver la clasificación!",
+    "member": "Miembro",
+    "correctAnswers": "respuestas correctas",
+    "participants": "participante(s)",
+    "refresh": "Actualizar",
+    "offline": "Sin conexión",
+    "error": "Error",
+    "loadError": "Error al cargar cuestionarios",
+    "leaderboardError": "Error al cargar clasificación",
+    "sharingError": "Error al activar el compartir"
+  },
+
+  "newQuizPage": {
+    "offlineMode": "Modo sin conexión",
+    "offlineSaveMessage": "Tu cuestionario se guardará localmente y se sincronizará automáticamente cuando te reconectes.",
+    "title": "Nuevo Cuestionario",
+    "subtitle": "Crea un cuestionario para probar tus conocimientos",
+    "offline": "Sin conexión",
+    "cancel": "Cancelar",
+    "quizInfo": "Información del Cuestionario",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Ej: Cuestionario de repaso - Capítulo 3",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción del cuestionario...",
+    "subjectLabel": "Materia",
+    "selectSubject": "Seleccionar una materia",
+    "difficultyLabel": "Dificultad",
+    "easy": "Fácil",
+    "medium": "Medio",
+    "hard": "Difícil",
+    "languageLabel": "Idioma del contenido",
+    "languageNotice": "Este idioma se usará para el filtrado en Explorar si el cuestionario es público",
+    "passingScore": "Puntuación para aprobar (%)",
+    "timedQuiz": "Cuestionario cronometrado",
+    "timeLimit": "Límite de tiempo (minutos)",
+    "showCorrectAnswers": "Mostrar respuestas correctas después",
+    "shuffleQuestions": "Mezclar preguntas",
+    "shuffleOptions": "Mezclar opciones (opción múltiple)",
+    "questionsTitle": "Preguntas",
+    "totalPoints": "Total: {count} puntos",
+    "addQuestion": "Agregar una pregunta",
+    "question": "Pregunta",
+    "pts": "pts",
+    "valid": "Válida",
+    "questionLabel": "Pregunta",
+    "questionPlaceholder": "Ingresa tu pregunta...",
+    "typeLabel": "Tipo",
+    "multipleChoice": "Opción múltiple",
+    "trueFalse": "Verdadero/Falso",
+    "shortAnswer": "Respuesta corta",
+    "optionsLabel": "Opciones",
+    "addOption": "Agregar opción",
+    "correctAnswer": "Respuesta correcta",
+    "selectCorrectAnswer": "Seleccionar la respuesta correcta",
+    "pointsLabel": "Puntos",
+    "explanationLabel": "Explicación (opcional)",
+    "explanationPlaceholder": "Explica por qué esta es la respuesta correcta...",
+    "creating": "Creando...",
+    "createQuiz": "Crear Cuestionario ({count} preguntas)",
+    "warning": "Atención",
+    "atLeastOneQuestion": "Debes tener al menos una pregunta",
+    "missingFields": "Campos faltantes",
+    "fillSubjectAndTitle": "Por favor selecciona una materia y dale un título al cuestionario",
+    "noValidQuestion": "Sin pregunta válida",
+    "addCompleteQuestion": "Agrega al menos una pregunta completa",
+    "quizCreated": "Cuestionario creado",
+    "quizCreatedWith": "Cuestionario \"{title}\" creado con {count} pregunta(s)",
+    "quizCreatedOffline": "Cuestionario creado localmente",
+    "quizWillSync": "Cuestionario \"{title}\" se sincronizará cuando te reconectes"
   },
 
   "subjects": {
@@ -172,6 +357,80 @@
     "accuracy": "Precisión"
   },
 
+  "flashcardsPage": {
+    "title": "Tarjetas",
+    "decksCount": "{count} mazos",
+    "cardsCount": "{count} tarjetas",
+    "offlineMode": "Modo sin conexión",
+    "cache": "Caché",
+    "newDeck": "Nuevo mazo",
+    "cardsToReview": "Tarjetas para revisar",
+    "startReview": "Iniciar revisión",
+    "totalCards": "Tarjetas totales",
+    "masteredCards": "Tarjetas dominadas",
+    "progression": "de progreso",
+    "searchPlaceholder": "Buscar un mazo...",
+    "noDeckFound": "Ningún mazo encontrado",
+    "noDeckYet": "Aún no hay mazos",
+    "tryDifferentSearch": "Intenta con otra búsqueda",
+    "createFirstDeck": "Crea tu primer mazo de tarjetas para comenzar a revisar",
+    "createMyFirstDeck": "Crear mi primer mazo",
+    "total": "Total",
+    "toReview": "Para revisar",
+    "mastered": "Dominadas",
+    "progress": "Progreso",
+    "review": "Revisar",
+    "view": "Ver",
+    "lastReview": "Última revisión",
+    "confirmDelete": "¿Eliminar este mazo y todas sus tarjetas?",
+    "deckDeleted": "Mazo eliminado",
+    "deckDeletedSync": "Mazo eliminado (se sincronizará)",
+    "deleteError": "Error al eliminar"
+  },
+
+  "newFlashcardPage": {
+    "title": "Nuevo Mazo de Tarjetas",
+    "subtitle": "Crea un nuevo mazo y añade tus tarjetas",
+    "offlineMode": "Modo sin conexión",
+    "offlineSaveMessage": "Tu mazo se guardará localmente y se sincronizará automáticamente cuando te reconectes.",
+    "offline": "Sin conexión",
+    "cancel": "Cancelar",
+    "deckInfo": "Información del Mazo",
+    "deckName": "Nombre del Mazo",
+    "deckNamePlaceholder": "Ej: Vocabulario Inglés - Capítulo 1",
+    "subjectLabel": "Materia",
+    "selectSubject": "Seleccionar una materia",
+    "tagsLabel": "Etiquetas (separadas por comas)",
+    "tagsPlaceholder": "Ej: vocabulario, exámenes, importante",
+    "languageLabel": "Idioma del contenido",
+    "languageNotice": "Este idioma se usará para filtrar en Explorar",
+    "cardsTitle": "Tarjetas",
+    "addCard": "Añadir una tarjeta",
+    "card": "Tarjeta",
+    "valid": "Válida",
+    "questionFront": "Pregunta (Anverso)",
+    "questionPlaceholder": "Introduce la pregunta o término...",
+    "answerBack": "Respuesta (Reverso)",
+    "answerPlaceholder": "Introduce la respuesta...",
+    "hintOptional": "Pista (opcional)",
+    "hintPlaceholder": "Una pista para ayudarte...",
+    "explanationOptional": "Explicación (opcional)",
+    "explanationPlaceholder": "Explicación adicional...",
+    "creating": "Creando...",
+    "createDeck": "Crear Mazo ({count} tarjetas)",
+    "warning": "Atención",
+    "atLeastOneCard": "Debes tener al menos una tarjeta",
+    "missingFields": "Campos faltantes",
+    "fillSubjectAndName": "Por favor selecciona una materia y nombra tu mazo",
+    "noValidCard": "Ninguna tarjeta válida",
+    "addCompleteCard": "Añade al menos una tarjeta con pregunta y respuesta",
+    "deckCreated": "Mazo creado",
+    "deckCreatedWith": "{count} tarjeta(s) añadida(s) con éxito al mazo \"{name}\"",
+    "deckCreatedOffline": "Mazo creado localmente",
+    "deckWillSync": "{count} tarjeta(s) se sincronizarán cuando te reconectes",
+    "error": "Error al crear el mazo"
+  },
+
   "quiz": {
     "title": "Mis Cuestionarios",
     "addQuiz": "Nuevo cuestionario",
@@ -196,27 +455,103 @@
     "reviewAnswers": "Revisar respuestas",
     "tryAgain": "Intentar de nuevo",
     "timeRemaining": "Tiempo restante",
-    "questionOf": "Pregunta {current} de {total}"
+    "questionOf": "Pregunta {current} de {total}",
+    "answerAllQuestions": "Debes responder todas las preguntas ({count} pregunta(s) sin responder)",
+    "retry": "Reintentar",
+    "viewDuelResults": "Ver resultados del duelo",
+    "backToQuizzes": "Volver a cuestionarios",
+    "quizFinished": "¡Cuestionario terminado!",
+    "resultInvalidated": "Resultado invalidado",
+    "yourResults": "Aquí están tus resultados",
+    "finalScore": "Puntuación final",
+    "correctAnswers": "Respuestas correctas",
+    "incorrectAnswers": "Respuestas incorrectas",
+    "reviewTitle": "Revisión de respuestas",
+    "correct": "Correcta",
+    "yourAnswer": "Tu respuesta",
+    "explanation": "Explicación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "quickNav": "Navegación rápida",
+    "penaltyApplied": "Penalización aplicada",
+    "submissionError": "Error al enviar"
   },
 
   "calendar": {
-    "title": "Calendario",
+    "title": "Horario",
+    "subtitle": "Planifica y sigue tus eventos de estudio",
     "today": "Hoy",
     "month": "Mes",
     "week": "Semana",
     "day": "Día",
+    "hour": "Hora",
     "addEvent": "Añadir evento",
     "editEvent": "Editar evento",
     "eventTitle": "Título del evento",
     "eventType": "Tipo",
     "exam": "Examen",
     "homework": "Tarea",
+    "deadline": "Fecha límite",
     "studySession": "Sesión de estudio",
+    "study": "Estudio",
+    "revision": "Revisión",
+    "class": "Clase",
+    "meeting": "Reunión",
+    "other": "Otro",
     "reminder": "Recordatorio",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
     "allDay": "Todo el día",
-    "noEvents": "Sin eventos"
+    "noEvents": "Sin eventos",
+    "upcomingEvents": "Próximos eventos",
+    "noUpcoming": "Sin eventos próximos",
+    "legend": "Leyenda",
+    "tip": "Consejo",
+    "tipMessage": "Arrastra y suelta eventos para moverlos rápidamente a otra fecha u hora.",
+    "moreEvents": "+{count} más",
+    "loading": "Cargando...",
+    "cache": "Caché",
+    "offlineMode": "Modo sin conexión",
+    "dataFromCache": "Datos cargados desde caché",
+    "eventDeleted": "Evento eliminado",
+    "eventDeletedSync": "Evento eliminado (se sincronizará)",
+    "deleteError": "Error al eliminar evento",
+    "eventMoved": "Evento movido",
+    "moveError": "Error al mover evento",
+    "loadError": "Error al cargar eventos",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar este evento?",
+    "months": {
+      "january": "Enero",
+      "february": "Febrero",
+      "march": "Marzo",
+      "april": "Abril",
+      "may": "Mayo",
+      "june": "Junio",
+      "july": "Julio",
+      "august": "Agosto",
+      "september": "Septiembre",
+      "october": "Octubre",
+      "november": "Noviembre",
+      "december": "Diciembre"
+    },
+    "days": {
+      "sunday": "Domingo",
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado"
+    },
+    "daysShort": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb"
+    }
   },
 
   "groups": {
@@ -457,7 +792,11 @@
     "extractionError": "Error de extracción",
     "cannotExtractText": "No se puede extraer el texto",
     "noteCreated": "Nota creada",
-    "noteCreatedFromText": "Nota creada a partir del texto extraído"
+    "noteCreatedFromText": "Nota creada a partir del texto extraído",
+    "advancedOptions": "Opciones avanzadas",
+    "detectLayout": "Detectar tablas y columnas",
+    "aiPostProcess": "Corrección de errores con IA",
+    "aiPostProcessDesc": "Usa Claude para corregir errores de OCR (usa 1 solicitud de IA)"
   },
 
   "activity": {
@@ -710,27 +1049,43 @@
 
   "explore": {
     "title": "Explorar",
-    "subtitle": "Descubre contenido compartido por la comunidad",
+    "subtitle": "Descubre contenido creado por la comunidad Study Master",
     "searchPlaceholder": "Buscar notas, tarjetas, cuestionarios...",
     "allContent": "Todo",
     "notesTab": "Notas",
     "flashcardsTab": "Tarjetas",
+    "flashcardDecks": "Mazos de Tarjetas",
     "quizzesTab": "Cuestionarios",
     "sortBy": "Ordenar por",
-    "recent": "Reciente",
-    "popular": "Popular",
-    "rating": "Valoración",
+    "recent": "Más recientes",
+    "popular": "Populares",
+    "rating": "Mejores puntuaciones",
     "allSubjects": "Todas las materias",
+    "allLanguages": "Todos",
     "trending": "Tendencias",
     "trendingSubtitle": "Contenido popular esta semana",
     "popularSubjects": "Materias populares",
-    "noResults": "Sin resultados",
+    "noResults": "Sin contenido encontrado",
     "noResultsSubtitle": "Intenta ajustar tus filtros o búsqueda",
+    "resultsFound": "{count} resultado(s) encontrado(s)",
     "cards": "tarjetas",
+    "card": "tarjeta",
     "questions": "preguntas",
+    "question": "pregunta",
     "plays": "partidas",
+    "play": "partida",
     "views": "vistas",
     "by": "por",
+    "anonymous": "Anónimo",
+    "see": "Ver",
+    "duplicate": "Duplicar",
+    "duplicated": "¡Duplicado!",
+    "playQuiz": "Jugar",
+    "linkCopied": "¡Enlace copiado!",
+    "linkCopiedDesc": "El enlace del cuestionario se ha copiado al portapapeles",
+    "report": "Reportar",
+    "reportSent": "Reporte enviado",
+    "reportSentDesc": "Nuestro equipo revisará este contenido",
     "makePublic": "Hacer público",
     "makePrivate": "Hacer privado",
     "myPublicContent": "Mi contenido público",
@@ -743,7 +1098,21 @@
     "copy": "Copiar",
     "copySuccess": "¡Contenido copiado a tu biblioteca!",
     "copyError": "Error al copiar el contenido",
-    "loadError": "Error al cargar el contenido"
+    "loadError": "No se pudo cargar el contenido",
+    "clearFilters": "Limpiar filtros",
+    "loadMore": "Cargar más",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil"
+    },
+    "languages": {
+      "all": "Todos",
+      "fr": "Français",
+      "en": "English",
+      "es": "Español"
+    },
+    "aiGenerated": "IA"
   },
 
   "pricing": {
@@ -819,38 +1188,61 @@
   },
 
   "leaderboard": {
-    "title": "Clasificación",
-    "subtitle": "Compara tu rendimiento con la comunidad",
+    "title": "Clasificaciones y Ligas",
+    "subtitle": "Compara tu progreso con otros estudiantes",
     "global": "Global",
     "friends": "Amigos",
     "university": "Universidad",
-    "weekly": "Semanal",
-    "monthly": "Mensual",
+    "myUniversity": "Mi Universidad",
+    "weekly": "Esta semana",
+    "monthly": "Este mes",
+    "daily": "Hoy",
     "allTime": "Todo el tiempo",
     "xp": "XP",
     "streak": "Racha",
+    "streakDays": "Racha (días)",
     "quizzes": "Cuestionarios",
+    "quizzesCompleted": "Cuestionarios completados",
     "flashcards": "Tarjetas",
+    "flashcardsReviewed": "Tarjetas repasadas",
+    "notes": "Notas",
+    "notesCreated": "Notas creadas",
+    "studyTime": "Tiempo de estudio",
+    "studyTimeMin": "Tiempo de estudio (min)",
     "yourRank": "Tu posición",
+    "yourPosition": "Tu posición",
     "top": "Top {percent}%",
     "rank": "Posición",
+    "currentRank": "Posición actual",
     "user": "Usuario",
     "score": "Puntuación",
     "level": "Nivel",
-    "noData": "No hay datos disponibles",
+    "noData": "Sin datos para esta clasificación",
     "loading": "Cargando...",
+    "online": "En directo",
+    "offline": "Sin conexión",
+    "liveActivity": "Actividad en directo",
     "liveUpdates": "Actualizaciones en vivo",
     "connected": "Conectado",
     "disconnected": "Desconectado",
     "recentActivity": "Actividad reciente",
     "gainedXp": "+{xp} XP",
-    "levelUp": "¡Subida de nivel!",
+    "levelUp": "¡Level Up!",
+    "fullLeaderboard": "Clasificación completa",
     "leagues": "Ligas",
+    "leaderboardTab": "Clasificación",
     "myLeague": "Mi liga",
     "leagueRank": "Posición en la liga",
+    "weekInLeague": "Semana {count} en esta liga",
+    "weeklyXP": "XP esta semana",
+    "xpWeek": "XP semanal",
     "promotion": "Ascenso",
+    "promotionZone": "¡Zona de ascenso!",
     "relegation": "Descenso",
+    "relegationZone": "¡Zona de peligro!",
     "safe": "Zona segura",
+    "towards": "Hacia {league}",
+    "bestLeague": "Mejor liga",
     "weekEndsIn": "La semana termina en",
     "days": "días",
     "hours": "horas",
@@ -861,13 +1253,33 @@
       "diamond": "Diamante",
       "master": "Maestro"
     },
+    "leagueLeaderboard": "Clasificación Liga {league}",
+    "noPlayersInLeague": "Ningún jugador en esta liga por el momento",
+    "you": "Tú",
     "share": "Compartir",
-    "shareProgress": "Compartir mi progreso"
+    "shareProgress": "Compartir mi progreso",
+    "shareLeague": "¡Comparte tu liga!",
+    "howToClimb": "¿Cómo subir en la clasificación?",
+    "howToClimbTips": [
+      "Completa cuestionarios y obtén buenas puntuaciones",
+      "Repasa tus tarjetas diariamente",
+      "Crea y comparte notas de calidad",
+      "Mantén tu racha de aprendizaje",
+      "Participa en sesiones de estudio en grupo"
+    ],
+    "howLeaguesWork": "¿Cómo funcionan las ligas?",
+    "howLeaguesTips": [
+      "Gana XP cada semana para subir en la clasificación",
+      "Los top 3 de cada liga ascienden a la liga superior",
+      "Los últimos corren riesgo de descenso",
+      "La clasificación se reinicia cada lunes a medianoche",
+      "¡Cuanto más alta sea tu liga, más bonificaciones obtienes!"
+    ]
   },
 
   "achievements": {
-    "title": "Logros",
-    "subtitle": "Desbloquea recompensas alcanzando tus objetivos",
+    "title": "Logros e Insignias",
+    "subtitle": "Desbloquea insignias progresando en tus estudios",
     "unlocked": "Desbloqueados",
     "locked": "Bloqueados",
     "progress": "Progreso",
@@ -876,13 +1288,25 @@
     "rare": "Raros",
     "xpReward": "+{xp} XP",
     "unlockedOn": "Desbloqueado el {date}",
+    "successUnlocked": "Logros Desbloqueados",
+    "completed": "completado",
+    "xpEarned": "XP Ganado",
+    "thanksToAchievements": "Por logros",
+    "rarity": "Rareza",
+    "byRarity": "Por nivel de rareza",
+    "unlockedLabel": "Desbloqueado",
+    "noAchievementInCategory": "Sin logros en esta categoría",
     "categories": {
+      "all": "Todos",
       "study": "Estudio",
+      "learning": "Aprendizaje",
       "streak": "Rachas",
       "social": "Social",
       "mastery": "Maestría",
       "exploration": "Exploración",
-      "special": "Especial"
+      "special": "Especial",
+      "duels": "Duelos",
+      "study_time": "Tiempo de estudio"
     },
     "shareAchievement": "Compartir este logro"
   },
@@ -935,7 +1359,224 @@
     "sparkWillNotify": "¡Spark te avisará si es necesario!",
     "markAllRead": "Marcar todo como leído",
     "askQuestion": "¿Cómo puedo memorizar mejor este capítulo? ¿Cómo organizar mis repasos? ¿Qué tarjetas debo crear?",
-    "sparkUsesAI": "Spark usa IA para analizar tu pregunta y contexto de aprendizaje."
+    "sparkUsesAI": "Spark usa IA para analizar tu pregunta y contexto de aprendizaje.",
+    "errorMessage": "¡Ups! Tuve un problema. ¡Inténtalo de nuevo!",
+    "hintFallback": "Piensa bien... ¡La respuesta está al alcance!",
+    "hereIsMyAnswer": "¡Aquí está mi respuesta!",
+    "errorAnswering": "¡Ups! Tuve un problema al intentar responder. ¡Inténtalo de nuevo!",
+    "helpDialog": {
+      "title": "Pide ayuda a Spark",
+      "subtitle": "¡Estoy aquí para ayudarte!",
+      "questionLabel": "Tu pregunta para Spark",
+      "placeholder": "¿Cómo puedo memorizar mejor este capítulo? ¿Cómo organizar mis repasos? ¿Qué tarjetas debo crear?",
+      "charCount": "{count}/500 caracteres",
+      "minCharsError": "Tu pregunta debe tener al menos 3 caracteres",
+      "maxCharsError": "Tu pregunta es demasiado larga (máx. 500 caracteres)",
+      "aiInfo": "Spark usa IA para analizar tu pregunta y contexto de aprendizaje. ¡Recibirás consejos personalizados y sugerencias de acciones!",
+      "examplesTitle": "Ejemplos de preguntas:",
+      "example1": "¿Cómo repasar mejor las matemáticas?",
+      "example2": "Me cuesta memorizar, ¿algún consejo?",
+      "example3": "¿Cuál es el mejor método para aprender?",
+      "thinking": "Spark está pensando...",
+      "askButton": "Preguntar a Spark"
+    },
+    "answerCard": {
+      "title": "Spark responde",
+      "subtitle": "Con ayuda de la IA",
+      "suggestedActions": "Acciones sugeridas",
+      "needMoreHelp": "¿Necesitas más ayuda? ¡Haz clic en Spark para hacer otra pregunta!"
+    },
+    "levels": {
+      "baby": "Spark Bebé",
+      "junior": "Spark Junior",
+      "expert": "Spark Experto",
+      "sage": "Spark Sabio",
+      "legendary": "Spark Legendario"
+    },
+    "pageMessages": {
+      "dashboard": [
+        "¡Bienvenido a tu panel de control! ¿Listo para estudiar?",
+        "¡Hey! Mira tus estadísticas, ¡vas muy bien!",
+        "¡Vamos a tener una sesión productiva!"
+      ],
+      "notes": [
+        "¡Tus notas te esperan! ¿Qué repasamos hoy?",
+        "¡Tomar notas es la clave! ¡Lo estás haciendo genial!",
+        "¡No olvides: releer tus notas regularmente ayuda a memorizar!"
+      ],
+      "flashcards": [
+        "¡Tarjetas de memoria! ¡Mi técnica favorita para memorizar!",
+        "¡Repasar con tarjetas es súper efectivo!",
+        "¡Vamos a girar esas tarjetas! ¡Lo recordarás todo!"
+      ],
+      "quizzes": [
+        "¿Un cuestionario? ¡Me encanta! ¡Muéstrame lo que sabes!",
+        "¡Los cuestionarios son la mejor manera de probar tus conocimientos!",
+        "¿Listo para desafiarte? ¡Vamos!"
+      ],
+      "quests": [
+        "¡Tus objetivos del día! ¡Complétalos todos para el bonus!",
+        "¡3 objetivos = 3 recompensas + bonus! ¡Puedes hacerlo!",
+        "¡Cada objetivo completado te acerca más a tu meta!"
+      ],
+      "leaderboard": [
+        "¡La clasificación! Veamos dónde estás...",
+        "¿Quieres subir en el ranking? ¡Sigue así!",
+        "¡La competencia sana motiva! ¿Estás en el top?"
+      ],
+      "achievements": [
+        "¡Tus logros! ¿Cuántos has desbloqueado?",
+        "¡Cada insignia cuenta una historia de éxito!",
+        "¡Sigue así y los conseguirás todos!"
+      ],
+      "profile": [
+        "¡Tu perfil! ¿Quieres personalizar algo?",
+        "¡Aquí puedes ver tu progreso general!"
+      ],
+      "schedule": [
+        "¡Tu horario! ¡La buena organización es la clave del éxito!",
+        "¿Exámenes próximos? ¡Puedo ayudarte a prepararte!",
+        "¡Planificar tus repasos ayuda a reducir el estrés!"
+      ],
+      "explore": [
+        "¡Explorar! ¡Descubre lo que otros han creado!",
+        "¡Aquí puedes encontrar recursos súper útiles!",
+        "¡Compartir es crecer juntos!"
+      ],
+      "duels": [
+        "¡Duelos! ¿Listo para enfrentar a otros estudiantes?",
+        "¡Un duelo es divertido Y educativo! ¡En guardia!",
+        "¡Ganar un duelo = XP extra! ¿Aceptas el desafío?"
+      ],
+      "focusRooms": [
+        "¡Salas de Enfoque! ¡Estudiar juntos es más motivador!",
+        "¡Únete a una sala y estudia en grupo!",
+        "¡La concentración compartida aumenta la productividad!"
+      ],
+      "ai": [
+        "¡Hey soy yo! ¿Quieres que charlemos?",
+        "¡Estoy aquí para ayudarte! ¡Hazme tus preguntas!",
+        "¡Modo tutor activado! ¿Qué quieres aprender?"
+      ],
+      "documents": [
+        "¡Tus documentos! ¿Necesitas organizarlos?",
+        "¡Los documentos bien organizados son más fáciles de encontrar!",
+        "¡Puedes compartir tus documentos con otros estudiantes!"
+      ],
+      "subjects": [
+        "¡Tus materias! ¿Cuál es tu favorita?",
+        "¡Organizar por materia ayuda a repasar mejor!",
+        "¡Cada materia es una nueva aventura!"
+      ],
+      "sessions": [
+        "¡Sesiones de estudio! ¿Listo para una sesión productiva?",
+        "¡El pomodoro es vida! ¡25 min de enfoque!",
+        "¡Una sesión al día mantiene el fracaso alejado!"
+      ],
+      "groups": [
+        "¡Grupos de estudio! ¡La unión hace la fuerza!",
+        "¡Estudiar juntos es más divertido!",
+        "¡Únete o crea un grupo para progresar juntos!"
+      ]
+    },
+    "automaticMessages": {
+      "welcome": [
+        "¡Hola! ¡Spark está aquí, listo para ayudar! 🐿️⚡",
+        "¡Hola campeón! ¿Listo para estudiar hoy?",
+        "¡Hola! ¡Progresemos juntos! 🌰"
+      ],
+      "welcome_back": [
+        "¡Bienvenido de vuelta! ¡Te extrañé! 🐿️",
+        "¡Hey, volviste! ¿Continuamos donde lo dejamos?",
+        "¡Ahí estás! ¿Listo para otra sesión?"
+      ],
+      "streak_warning": [
+        "¡Hey, no olvides estudiar hoy para mantener tu racha! 🔥",
+        "¡Tu racha está en riesgo! ¿Una sesión rápida?",
+        "¡No dejes que termine tu racha! ¡Ven a estudiar conmigo!"
+      ],
+      "streak_milestone": [
+        "¡Increíble! ¡{days} días seguidos! ¡Eres genial! 🔥",
+        "¡Wow! ¡{days} días de racha! ¡Sigue así! 🎉",
+        "¡{days} días consecutivos! ¡Estás que ardes! 💪"
+      ],
+      "quiz_perfect": [
+        "¡PERFECTO! ¡100%! ¡Eres un genio! 🎉",
+        "¡Increíble! ¡Puntuación perfecta! ¡Estoy muy orgulloso! ⭐",
+        "¡100%! ¡Nada se te escapa! 🏆"
+      ],
+      "quiz_success": [
+        "¡Bien hecho! ¡{score}% en {topic}! 💪",
+        "¡Buen trabajo! ¡{score}% es genial! ¡Sigue así!",
+        "¡Buen trabajo! ¡{score}% en el cuestionario!"
+      ],
+      "quiz_failed": [
+        "¡No te rindas! ¡{score}% es un buen comienzo! 📚",
+        "¡La práctica hace al maestro! ¿Intentas de nuevo?",
+        "¡Sigue estudiando, lo lograrás! 💪"
+      ],
+      "level_up": [
+        "¡SUBISTE DE NIVEL! ¡Alcanzaste el nivel {level}! 🎉",
+        "¡Increíble! ¡Nivel {level}! ¡Estás creciendo rápido! ⭐",
+        "¡Nivel {level} desbloqueado! ¡Eres increíble! 🏆"
+      ],
+      "exam_reminder": [
+        "Recordatorio: ¡{exam_name} en {days_until} días! ¡Es hora de prepararse! 📚",
+        "¡No olvides: {exam_name} llega en {days_until} días!",
+        "¡Alerta de examen! ¡{exam_name} en {days_until} días! ¡Repasemos!"
+      ],
+      "focus_room": {
+        "milestone_15min": "¡15 minutos! ¡Estás empezando! 🚀",
+        "milestone_30min": "¡30 MINUTOS! ¡Lo estás haciendo genial! 🔥",
+        "milestone_45min": "¡45 min! ¡Casi 1 hora, sigue así! 💪",
+        "milestone_1h": "¡1 HORA! ¡Eres una MÁQUINA! 🏆",
+        "milestone_90min": "¡1h30 de enfoque! ¡Impresionante! ⭐",
+        "milestone_2h": "¡¡2 HORAS!! ¡Eres INCREÍBLE! 🌟✨",
+        "milestone_3h": "¡¡¡3 HORAS!!! ¡LEGENDARIO! 👑🔥",
+        "milestone_4h": "¡¡¡¡4 HORAS!!!! ¡ERES UN DIOS! 🏆👑🔥✨",
+        "user_joined": "¡Un nuevo compañero de enfoque! 👋",
+        "deep_work_started": "¡Modo Deep Work activado! 🧘 Me quedo callado...",
+        "deep_work_completed": "¡Deep Work COMPLETADO! +50 XP bonus! 🎯",
+        "reward_claimed": "¡Cofre abierto! 🎁",
+        "first_in_room": "¡Primero en la sala! ¡Estás dando el ejemplo! 🥇",
+        "room_goal_reached": "¡OBJETIVO DE LA SALA ALCANZADO! ¡FELICIDADES A TODOS! 🎊"
+      }
+    }
+  },
+
+  "quests": {
+    "title": "Objetivos del Día",
+    "daysStreak": "Días seguidos",
+    "dailyProgress": "Progreso de hoy",
+    "completed": "completados",
+    "claimBonus": "¡Reclamar Bonus (+50 XP + Cofre Misterioso!)",
+    "bonusClaimed": "¡Bonus del día reclamado! Vuelve mañana para nuevos objetivos.",
+    "claimReward": "Reclamar recompensa",
+    "questComplete": "¡Completado!",
+    "continueActivities": "¡Continúa tus actividades para completar este objetivo!",
+    "mysteryChests": "Cofres Misteriosos",
+    "chestsToOpen": "¡Tienes cofres para abrir! Haz clic para revelar su contenido.",
+    "questStats": "Estadísticas de Objetivos",
+    "currentStreak": "Racha actual",
+    "longestStreak": "Mejor racha",
+    "questsCompleted": "Objetivos completados",
+    "bonusesClaimed": "Bonus reclamados",
+    "totalXP": "XP total",
+    "streakBonuses": "Bonus de Racha",
+    "streakBonusDesc": "¡Completa 3/3 objetivos varios días seguidos para desbloquear bonus!",
+    "days": "días",
+    "chest": "Cofre",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil"
+    },
+    "chestRarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario"
+    }
   },
 
   "offline": {
@@ -975,6 +1616,762 @@
       "facebook": "Facebook",
       "linkedin": "LinkedIn",
       "email": "Email"
+    }
+  },
+
+  "exam_mode": {
+    "title": "Modo Examen",
+    "subtitle": "Preparación inteligente para exámenes",
+    "dashboard": "Panel de control",
+    "my_exams": "Mis exámenes",
+    "statistics": "Estadísticas",
+    "new_exam": "Nuevo examen",
+    "create_session": "Crear sesión de estudio",
+    "create_first": "Crear mi primera sesión",
+    "no_active_session": "Sin examen activo",
+    "start_description": "Crea una sesión de estudio para un próximo examen y deja que generemos un plan personalizado.",
+    "limit_reached": "Límite alcanzado",
+    "upgrade_title": "Pasa a Premium",
+    "upgrade_description": "Prepara hasta 5 exámenes simultáneamente",
+
+    "exam_name": "Nombre del examen",
+    "description": "Descripción",
+    "exam_date": "Fecha del examen",
+    "exam_time": "Hora del examen",
+    "subject": "Materia",
+    "select_subject": "Seleccionar una materia",
+    "select_notes": "Notas a estudiar",
+    "select_notes_desc": "Selecciona las notas que quieres incluir en tu plan de estudio",
+    "no_notes": "No hay notas disponibles",
+    "notes_selected": "nota(s) seleccionada(s)",
+    "notes_count": "Número de notas",
+
+    "hours_per_day": "Horas de estudio por día",
+    "preferred_times": "Horarios preferidos",
+    "difficulty": "Nivel de dificultad",
+    "include_weekends": "Incluir fines de semana",
+    "include_weekends_desc": "Estudiar también sábados y domingos",
+    "notifications": "Notificaciones",
+    "notifications_desc": "Recibir recordatorios diarios",
+    "reminder_time": "Hora del recordatorio",
+
+    "step1_desc": "Información del examen",
+    "step2_desc": "Seleccionar contenido a estudiar",
+    "step3_desc": "Configuración del horario",
+    "step4_desc": "Vista previa y confirmación",
+
+    "summary": "Resumen",
+    "plan_will_generate": "Se generará automáticamente un plan de estudio personalizado con tareas diarias adaptadas a tus objetivos.",
+    "create": "Crear sesión",
+    "validation_error": "Error de validación",
+    "fill_required_fields": "Por favor completa todos los campos obligatorios",
+    "created_success": "¡Sesión creada!",
+    "plan_generated": "Tu plan de estudio ha sido generado.",
+    "create_error": "Error al crear la sesión",
+    "session_deleted": "Sesión eliminada",
+
+    "progress": "Progreso",
+    "days_left": "Días restantes",
+    "tasks_done": "Tareas completadas",
+    "prediction": "Predicción",
+    "study_time": "Tiempo de estudio",
+    "today_tasks": "Tareas de hoy",
+    "remaining": "restantes",
+    "estimated": "estimado",
+    "all_done_today": "¡Todas las tareas de hoy están completadas!",
+    "study_plan": "Plan de estudio",
+
+    "task_started": "¡Tarea iniciada!",
+    "task_completed": "¡Tarea completada!",
+    "task_skipped": "Tarea omitida",
+    "finish": "Finalizar",
+
+    "active": "Activo",
+    "completed": "Completado",
+    "paused": "Pausado",
+    "no_sessions": "Sin sesiones de estudio",
+
+    "exams_prepared": "Exámenes preparados",
+    "exams_completed": "Exámenes completados",
+    "hours_studied": "Horas estudiadas",
+    "xp_earned": "XP ganados",
+    "best_score": "Mejor puntuación",
+    "longest_streak": "Racha más larga",
+    "no_stats": "Aún no hay estadísticas",
+
+    "task_types": {
+      "read": "Lectura",
+      "flashcards": "Tarjetas",
+      "quiz": "Cuestionario",
+      "review": "Repaso",
+      "practice_exam": "Examen de práctica",
+      "summary": "Resumen",
+      "weak_points": "Puntos débiles"
+    },
+
+    "ai_insights": "Análisis IA",
+    "ai_summary": "Resumen IA",
+    "ai_premium_title": "Inteligencia IA Premium",
+    "ai_premium_description": "Desbloquea el análisis avanzado de IA: puntos clave, detección de debilidades, consejos personalizados y adaptación dinámica del plan.",
+    "premium_required": "Se requiere Premium",
+    "ai_premium_desc": "La generación de IA está reservada para usuarios Premium",
+    "no_active_for_ai": "Sin examen activo",
+    "create_for_ai": "Crea una sesión de estudio para acceder al análisis de IA.",
+
+    "key_points": "Puntos clave",
+    "key_points_analysis": "Análisis de puntos clave",
+    "key_concepts": "Conceptos clave",
+    "formulas": "Fórmulas a memorizar",
+    "revision_priorities": "Prioridades de repaso",
+
+    "weak_points_title": "Puntos débiles",
+    "weak_points_analysis": "Detección de puntos débiles",
+    "no_weak_points": "¡No se detectaron puntos débiles!",
+    "recommendations": "Recomendaciones",
+
+    "advice": "Consejos",
+    "personalized_advice": "Consejos personalizados",
+    "global_strategy": "Estrategia global",
+    "priority_focus": "Enfoque prioritario",
+    "recommended_methods": "Métodos recomendados",
+    "suggested_planning": "Planificación sugerida",
+
+    "predicted_score": "Puntuación predicha",
+    "top_recommendations": "Principales recomendaciones",
+
+    "generate_practice_exam": "Generar examen de práctica",
+    "practice_exam_generated": "¡Examen de práctica generado!",
+    "adapt_plan": "Adaptar plan",
+    "plan_adapted": "¡Plan adaptado!",
+    "no_adaptation": "No se necesitan cambios",
+    "plan_optimal": "Tu plan ya es óptimo",
+
+    "content_generated": "¡Contenido generado!",
+    "content_linked": "Contenido vinculado"
+  },
+
+  "landing": {
+    "nav": {
+      "login": "Iniciar sesión",
+      "startFree": "Comenzar gratis",
+      "studentsOnline": "{count} estudiantes en línea"
+    },
+    "hero": {
+      "badge": "Nuevo — Únete a la beta gratuita",
+      "title1": "Deja de sufrir.",
+      "title2": "Empieza a dominar.",
+      "subtitle": "Anki + Quizlet + Notion + Duolingo — combinados en una sola app gratuita.",
+      "subtitleHighlight": "Con una IA que te conoce y salas de estudio en grupo.",
+      "cta": "Crear mi cuenta gratis",
+      "watchFeatures": "Ver funcionalidades",
+      "trust1": "100% gratis para empezar",
+      "trust2": "Sin tarjeta de crédito",
+      "trust3": "Listo en 30 segundos"
+    },
+    "socialProof": {
+      "betaOpen": "Beta abierta",
+      "fsrs": "Algoritmo #1 mundial",
+      "claudeAI": "IA más avanzada",
+      "allSubjects": "Todas las materias"
+    },
+    "problem": {
+      "title": "¿Conoces esta sensación?",
+      "subtitle": "Horas estudiando... para olvidarlo todo el día del examen.",
+      "without": "Sin Study Master",
+      "with": "Con Study Master",
+      "problems": [
+        "Estudias durante horas pero lo olvidas todo",
+        "Procrastinas solo en tu habitación",
+        "Usas 10 apps diferentes (Anki, Notion, Quizlet...)",
+        "No sabes si estás listo para el examen",
+        "Cero motivación después de 2 días"
+      ],
+      "solutions": [
+        "Memorizas 2 veces más rápido con el algoritmo FSRS",
+        "Estudias con otros en Focus Rooms (como en la biblioteca)",
+        "Todo en un solo lugar: notas, tarjetas, cuestionarios, IA",
+        "La IA te dice exactamente qué repasar",
+        "Gamificación adictiva: XP, rachas, duelos, clasificaciones"
+      ]
+    },
+    "features": {
+      "title": "Lo que ninguna otra app hace",
+      "subtitle": "3 funcionalidades únicas que lo cambian todo",
+      "examMode": {
+        "badge": "#1",
+        "title": "Modo Examen",
+        "description": "Introduce la fecha de tu examen, la IA genera un plan de repaso personalizado día a día con predicción de nota.",
+        "feature1": "Planificación auto-generada por IA",
+        "feature2": "Predicción de tu nota final",
+        "feature3": "Detecta tus puntos débiles"
+      },
+      "spark": {
+        "title": "Spark — Tu tutor IA",
+        "description": "Un asistente IA con personalidad real que te conoce, te anima y te lo explica todo.",
+        "poweredBy": "Impulsado por Claude (mejor IA del mercado)"
+      },
+      "focusRooms": {
+        "title": "Focus Rooms",
+        "description": "Estudia en grupo virtual, como en la biblioteca. Ver a otros trabajar te motiva a trabajar.",
+        "studying": "personas estudiando ahora"
+      }
+    },
+    "examModeDetail": {
+      "badge": "Funcionalidad estrella",
+      "title": "Modo Examen:",
+      "titleHighlight": "Tu coach IA personal",
+      "description": "¿Tienes un examen en 2 semanas? Introduce la fecha, selecciona tus notas, y la IA te genera un plan de repaso a medida.",
+      "feature1Title": "Plan día a día",
+      "feature1Desc": "Tareas diarias: lectura, cuestionarios, tarjetas, repaso específico",
+      "feature2Title": "Predicción de nota",
+      "feature2Desc": "La IA predice tu nota basándose en tu progreso real",
+      "feature3Title": "Detección de debilidades",
+      "feature3Desc": "Analiza tus errores y adapta el plan automáticamente",
+      "feature4Title": "Examen de práctica generado",
+      "feature4Desc": "Cuestionario completo basado en tus notas para ponerte a prueba antes del día D",
+      "cta": "Probar Modo Examen gratis",
+      "preview": "Vista previa en vivo",
+      "previewExam": "Parcial de Matemáticas",
+      "previewDays": "En 12 días",
+      "previewScore": "Nota predicha",
+      "previewProgress": "Progreso",
+      "previewTasks": "Tareas de hoy",
+      "previewTask1": "Lectura: Integrales (Capítulo 4)",
+      "previewTask2": "Cuestionario: Derivadas (15 preguntas)",
+      "previewTask3": "Tarjetas: Fórmulas clave",
+      "previewMotivation": "¡Vas bien! Sigue así y lo vas a petar."
+    },
+    "comparison": {
+      "title": "¿Por qué cambiar?",
+      "subtitle": "Study Master vs. lo que probablemente usas",
+      "feature": "Funcionalidad",
+      "features": [
+        "Plan de repaso IA (Modo Examen)",
+        "Predicción de nota del examen",
+        "Tarjetas FSRS (mejor algoritmo)",
+        "Generación de contenido IA",
+        "Cuestionarios adaptativos",
+        "Focus Rooms (estudio en grupo)",
+        "Asistente IA personalizado",
+        "Duelos PvP",
+        "Gamificación completa",
+        "Notas + Tarjetas + Cuestionarios",
+        "100% gratis para empezar"
+      ]
+    },
+    "allFeatures": {
+      "title": "Todo lo que necesitas",
+      "subtitle": "Más de 15 funcionalidades para aprobar tus exámenes",
+      "items": [
+        { "title": "IA Generativa", "desc": "Crea tarjetas y cuestionarios desde tus notas" },
+        { "title": "Tarjetas FSRS", "desc": "Memoriza 2 veces más rápido, científicamente probado" },
+        { "title": "Cuestionarios Adaptativos", "desc": "Preguntas que se adaptan a tu nivel" },
+        { "title": "Focus Rooms", "desc": "Estudia en grupo virtual" },
+        { "title": "Spark IA", "desc": "Tu tutor personal disponible 24/7" },
+        { "title": "Duelos", "desc": "Desafía a tus amigos en cuestionarios" },
+        { "title": "Clasificaciones", "desc": "Compárate con otros estudiantes" },
+        { "title": "Rachas", "desc": "Mantén tu racha de días de estudio" },
+        { "title": "Notas Markdown", "desc": "Editor potente con LaTeX" },
+        { "title": "Pomodoro", "desc": "Temporizador integrado para tus sesiones" },
+        { "title": "Estadísticas", "desc": "Sigue tu progreso en detalle" },
+        { "title": "Modo Examen", "desc": "Plan de repaso IA personalizado" }
+      ]
+    },
+    "cta": {
+      "title": "¿Listo para arrasar?",
+      "subtitle": "Únete a los estudiantes que decidieron dejar de sufrir.",
+      "free": "Es gratis. Para siempre.",
+      "button": "Crear mi cuenta gratis",
+      "note": "Registro en 30 segundos • Sin tarjeta de crédito"
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "questions": [
+        {
+          "q": "¿Es realmente gratis?",
+          "a": "¡Sí! Tienes acceso a todas las funcionalidades básicas gratis, para siempre. El plan Premium desbloquea más solicitudes de IA y funcionalidades avanzadas."
+        },
+        {
+          "q": "¿Qué es el algoritmo FSRS?",
+          "a": "FSRS (Free Spaced Repetition Scheduler) es el algoritmo de memorización más avanzado del mundo. Es un 30% más eficiente que el antiguo algoritmo de Anki. Estudias menos, recuerdas más."
+        },
+        {
+          "q": "¿Puedo usarlo para cualquier materia?",
+          "a": "¡Absolutamente! Medicina, derecho, idiomas, ciencias, historia... Study Master funciona para todas las materias. La IA se adapta a tu campo."
+        },
+        {
+          "q": "¿Mis datos están seguros?",
+          "a": "Sí. Tus datos están cifrados y almacenados de forma segura. Nunca vendemos tus datos a terceros."
+        }
+      ]
+    },
+    "footer": {
+      "about": "Acerca de",
+      "contact": "Contacto",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "copyright": "© 2025 Study Master. Hecho con 💜 para estudiantes."
+    }
+  },
+
+  "about": {
+    "nav": {
+      "back": "Volver"
+    },
+    "hero": {
+      "title": "Acerca de",
+      "subtitle": "El asistente de aprendizaje inteligente para estudiantes ambiciosos"
+    },
+    "story": {
+      "title": "Nuestra historia",
+      "p1": "Study Master nació de una frustración compartida por millones de estudiantes: pasar horas estudiando para olvidarlo todo el día del examen.",
+      "p2": "Combinamos las mejores investigaciones en ciencias cognitivas con la inteligencia artificial más avanzada para crear una herramienta que realmente se adapta a cada estudiante.",
+      "p3": "Hoy, Study Master ayuda a estudiantes de todo el mundo a aprender de manera más eficiente, ya sea en medicina, derecho, idiomas o cualquier otro campo."
+    },
+    "values": {
+      "title": "Nuestros valores",
+      "innovation": {
+        "title": "Innovación",
+        "description": "Integramos las últimas tecnologías de IA para ofrecer una experiencia de aprendizaje de vanguardia."
+      },
+      "accessibility": {
+        "title": "Accesibilidad",
+        "description": "La educación de calidad debe ser accesible para todos, sin importar los recursos financieros."
+      },
+      "science": {
+        "title": "Ciencia",
+        "description": "Cada funcionalidad se basa en investigaciones científicas validadas en ciencias cognitivas."
+      },
+      "community": {
+        "title": "Comunidad",
+        "description": "Aprender juntos es más eficaz y motivador que aprender solo."
+      }
+    },
+    "features": {
+      "title": "Funcionalidades principales",
+      "list": [
+        {
+          "title": "IA Generativa",
+          "description": "Genera tarjetas y cuestionarios automáticamente desde tus notas gracias a Claude, la IA más avanzada."
+        },
+        {
+          "title": "Algoritmo FSRS",
+          "description": "El algoritmo de repetición espaciada más eficiente del mundo para una memorización óptima."
+        },
+        {
+          "title": "Modo Examen",
+          "description": "Planificación inteligente de repasos con predicción de tu nota y detección de puntos débiles."
+        },
+        {
+          "title": "Focus Rooms",
+          "description": "Estudia en grupo virtual como en una biblioteca. La presencia de otros te motiva a concentrarte."
+        }
+      ]
+    },
+    "team": {
+      "title": "El equipo",
+      "description": "Un equipo apasionado por la educación y la tecnología, decidido a revolucionar la forma en que los estudiantes aprenden."
+    },
+    "stats": {
+      "users": "Usuarios",
+      "cardsCreated": "Tarjetas creadas",
+      "quizzesTaken": "Cuestionarios completados",
+      "studyHours": "Horas de estudio"
+    },
+    "cta": {
+      "title": "¿Listo para revolucionar tu aprendizaje?",
+      "button": "Comenzar gratis"
+    },
+    "footer": {
+      "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+      "about": "Acerca de",
+      "contact": "Contacto",
+      "privacy": "Privacidad",
+      "terms": "Términos"
+    }
+  },
+
+  "contact": {
+    "nav": {
+      "back": "Volver"
+    },
+    "hero": {
+      "title1": "Contáctenos",
+      "title2": "fácilmente",
+      "subtitle": "¿Una pregunta? ¿Una sugerencia? ¿Un error? Estamos aquí para escucharte."
+    },
+    "info": {
+      "email": {
+        "title": "Correo electrónico",
+        "description": "Para cualquier consulta general"
+      },
+      "response": {
+        "title": "Tiempo de respuesta",
+        "description": "Generalmente en 24 horas"
+      },
+      "social": {
+        "title": "Redes sociales",
+        "description": "Síguenos para novedades"
+      }
+    },
+    "form": {
+      "title": "Envíenos un mensaje",
+      "name": "Su nombre",
+      "namePlaceholder": "Juan García",
+      "email": "Dirección de correo",
+      "emailPlaceholder": "su@correo.com",
+      "subject": "Asunto",
+      "subjectPlaceholder": "Seleccione un asunto",
+      "subjects": [
+        { "value": "general", "label": "Pregunta general" },
+        { "value": "bug", "label": "Reportar un error" },
+        { "value": "feature", "label": "Sugerencia de funcionalidad" },
+        { "value": "billing", "label": "Facturación" },
+        { "value": "partnership", "label": "Colaboración" },
+        { "value": "other", "label": "Otro" }
+      ],
+      "message": "Su mensaje",
+      "messagePlaceholder": "Describa su consulta con detalle...",
+      "submit": "Enviar mensaje",
+      "sending": "Enviando...",
+      "success": {
+        "title": "¡Mensaje enviado!",
+        "description": "Gracias por su mensaje. Le responderemos lo antes posible."
+      },
+      "error": "Se produjo un error. Inténtelo de nuevo."
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "description": "Quizás la respuesta a su pregunta ya está aquí.",
+      "button": "Ver las FAQ"
+    },
+    "footer": {
+      "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+      "about": "Acerca de",
+      "contact": "Contacto",
+      "privacy": "Privacidad",
+      "terms": "Términos"
+    }
+  },
+
+  "legal": {
+    "privacy": {
+      "nav": {
+        "back": "Volver"
+      },
+      "hero": {
+        "title1": "Política de",
+        "title2": "Privacidad",
+        "lastUpdate": "Última actualización: 15 de diciembre de 2025"
+      },
+      "intro": "En Study Master, la protección de sus datos personales es una prioridad absoluta. Esta política de privacidad explica de manera transparente cómo recopilamos, utilizamos, almacenamos y protegemos su información.",
+      "sections": {
+        "dataCollected": {
+          "title": "Datos recopilados",
+          "intro": "Recopilamos varios tipos de datos para ofrecerle la mejor experiencia de aprendizaje posible:",
+          "categories": [
+            {
+              "icon": "user",
+              "title": "Datos de identificación",
+              "items": ["Nombre y apellido", "Dirección de correo electrónico", "Foto de perfil (opcional)", "Universidad/Escuela (opcional)"]
+            },
+            {
+              "icon": "book",
+              "title": "Datos de aprendizaje",
+              "items": ["Notas y documentos creados", "Tarjetas y cuestionarios", "Puntuaciones y progreso", "Tiempos de estudio"]
+            },
+            {
+              "icon": "chart",
+              "title": "Datos de uso",
+              "items": ["Páginas visitadas", "Funcionalidades utilizadas", "Preferencias de configuración", "Interacciones con la IA"]
+            },
+            {
+              "icon": "globe",
+              "title": "Datos técnicos",
+              "items": ["Dirección IP (anonimizada)", "Tipo de navegador", "Sistema operativo", "Identificador del dispositivo"]
+            }
+          ]
+        },
+        "dataUsage": {
+          "title": "Uso de los datos",
+          "intro": "Sus datos se utilizan para:",
+          "items": [
+            "Proporcionar y mejorar nuestros servicios de aprendizaje",
+            "Personalizar su experiencia y recomendaciones",
+            "Sincronizar su progreso en todos sus dispositivos",
+            "Enviarle notificaciones sobre su aprendizaje (con su consentimiento)",
+            "Generar estadísticas anónimas para mejorar la plataforma",
+            "Garantizar la seguridad de su cuenta"
+          ]
+        },
+        "dataSharing": {
+          "title": "Compartición de datos",
+          "intro": "Nunca vendemos sus datos personales. Pueden ser compartidos con:",
+          "items": [
+            {
+              "title": "Proveedores técnicos",
+              "description": "Alojamiento (Vercel), base de datos (PostgreSQL), análisis (Google Analytics con anonimización)"
+            },
+            {
+              "title": "Socios de IA",
+              "description": "Anthropic (Claude) para funcionalidades de IA. Sus datos se procesan de forma segura y no se utilizan para entrenar modelos."
+            },
+            {
+              "title": "Obligaciones legales",
+              "description": "Si la ley lo exige, podemos divulgar información a las autoridades competentes."
+            }
+          ]
+        },
+        "security": {
+          "title": "Seguridad de los datos",
+          "items": [
+            {
+              "title": "Cifrado SSL/TLS",
+              "description": "Todas las comunicaciones están cifradas en tránsito"
+            },
+            {
+              "title": "Hash de contraseñas",
+              "description": "Sus contraseñas nunca se almacenan en texto plano"
+            },
+            {
+              "title": "Acceso restringido",
+              "description": "Solo el personal autorizado puede acceder a los datos"
+            },
+            {
+              "title": "Copias de seguridad regulares",
+              "description": "Sus datos se respaldan diariamente de forma segura"
+            }
+          ]
+        },
+        "retention": {
+          "title": "Conservación de datos",
+          "active": "Cuenta activa",
+          "activeDesc": "Sus datos se conservan mientras su cuenta esté activa.",
+          "deletion": "Eliminación",
+          "deletionDesc": "Al solicitar la eliminación de su cuenta, sus datos se eliminan definitivamente en un plazo de 30 días.",
+          "backup": "Copias de seguridad",
+          "backupDesc": "Los datos en las copias de seguridad se eliminan automáticamente después de 90 días."
+        },
+        "rights": {
+          "title": "Sus derechos",
+          "intro": "De conformidad con el RGPD y la legislación vigente, tiene derecho a:",
+          "items": [
+            {
+              "title": "Acceso",
+              "description": "Obtener una copia de todos sus datos personales"
+            },
+            {
+              "title": "Rectificación",
+              "description": "Corregir datos inexactos o incompletos"
+            },
+            {
+              "title": "Supresión",
+              "description": "Solicitar la eliminación de sus datos"
+            },
+            {
+              "title": "Portabilidad",
+              "description": "Recuperar sus datos en un formato reutilizable"
+            },
+            {
+              "title": "Oposición",
+              "description": "Oponerse a ciertos tratamientos de sus datos"
+            },
+            {
+              "title": "Limitación",
+              "description": "Solicitar la limitación del tratamiento de sus datos"
+            }
+          ]
+        },
+        "cookies": {
+          "title": "Cookies",
+          "intro": "Utilizamos diferentes tipos de cookies:",
+          "types": [
+            {
+              "type": "Esenciales",
+              "description": "Necesarias para el funcionamiento del sitio (autenticación, preferencias)",
+              "duration": "Sesión"
+            },
+            {
+              "type": "Analíticas",
+              "description": "Google Analytics (con anonimización IP) para mejorar nuestros servicios",
+              "duration": "13 meses"
+            },
+            {
+              "type": "Funcionales",
+              "description": "Memorizar sus preferencias de tema, idioma, etc.",
+              "duration": "1 año"
+            }
+          ],
+          "note": "Puede gestionar sus preferencias de cookies en cualquier momento desde la configuración."
+        }
+      },
+      "contact": {
+        "title": "Contacto DPO",
+        "description": "Para cualquier pregunta sobre sus datos personales o para ejercer sus derechos:",
+        "form": "Formulario de contacto"
+      },
+      "footer": {
+        "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+        "about": "Acerca de",
+        "contact": "Contacto",
+        "privacy": "Privacidad",
+        "terms": "Términos"
+      }
+    },
+    "terms": {
+      "nav": {
+        "back": "Volver"
+      },
+      "hero": {
+        "title1": "Condiciones Generales de",
+        "title2": "Uso",
+        "lastUpdate": "Última actualización: 15 de diciembre de 2025"
+      },
+      "intro": "Bienvenido a Study Master. Al utilizar nuestro servicio, acepta las presentes condiciones generales de uso. Le invitamos a leerlas atentamente.",
+      "articles": {
+        "definitions": {
+          "title": "Artículo 1 - Definiciones",
+          "items": [
+            { "term": "Servicio", "definition": "La plataforma Study Master y todas sus funcionalidades (sitio web, aplicación móvil, API)." },
+            { "term": "Usuario", "definition": "Toda persona física que utilice el Servicio, de forma gratuita o con una suscripción de pago." },
+            { "term": "Contenido", "definition": "Todo dato, texto, imagen o material creado, subido o compartido por el Usuario en el Servicio." },
+            { "term": "Suscripción Premium", "definition": "Oferta de pago que ofrece acceso a funcionalidades avanzadas del Servicio." }
+          ]
+        },
+        "acceptance": {
+          "title": "Artículo 2 - Aceptación de las condiciones",
+          "intro": "Al crear una cuenta o utilizar el Servicio, usted declara:",
+          "items": [
+            "Haber leído y aceptado las presentes Condiciones Generales de Uso",
+            "Tener la capacidad jurídica para comprometerse (mayor de 13 años o con autorización de los padres)",
+            "Proporcionar información veraz y mantenerla actualizada",
+            "No haber sido previamente excluido del Servicio"
+          ]
+        },
+        "services": {
+          "title": "Artículo 3 - Descripción de los servicios",
+          "intro": "Study Master ofrece una plataforma de aprendizaje inteligente que incluye:",
+          "free": {
+            "title": "Gratis",
+            "items": ["Creación de notas y tarjetas", "Cuestionarios básicos", "Algoritmo FSRS estándar", "5 solicitudes de IA por día", "Focus Rooms públicas"]
+          },
+          "premium": {
+            "title": "Premium",
+            "items": ["Solicitudes de IA ilimitadas", "Modo Examen con IA", "Estadísticas avanzadas", "Exportación PDF/Word", "Soporte prioritario"]
+          }
+        },
+        "account": {
+          "title": "Artículo 4 - Cuenta de usuario",
+          "intro": "Para utilizar el Servicio, debe crear una cuenta personal:",
+          "requirements": [
+            "Proporcionar una dirección de correo electrónico válida y única",
+            "Elegir una contraseña segura (mínimo 8 caracteres)",
+            "No compartir sus credenciales con terceros",
+            "Notificarnos inmediatamente cualquier uso no autorizado"
+          ],
+          "important": {
+            "title": "Importante",
+            "content": "Usted es responsable de todas las actividades realizadas desde su cuenta. En caso de uso fraudulento comprobado, notifíquenos inmediatamente."
+          }
+        },
+        "prohibited": {
+          "title": "Artículo 5 - Usos prohibidos",
+          "intro": "Queda estrictamente prohibido:",
+          "items": [
+            "Utilizar el Servicio con fines ilegales o fraudulentos",
+            "Compartir contenido ilícito, difamatorio, odioso o que incite a la violencia",
+            "Intentar acceder de forma no autorizada a los sistemas o datos",
+            "Utilizar bots, scripts o herramientas automatizadas sin autorización",
+            "Revender, sublicenciar o explotar comercialmente el Servicio",
+            "Crear cuentas múltiples para eludir las limitaciones",
+            "Copiar, modificar o distribuir el contenido del Servicio sin autorización"
+          ],
+          "warning": "Cualquier incumplimiento de estas normas puede resultar en la suspensión o eliminación inmediata de su cuenta, sin previo aviso ni reembolso."
+        },
+        "ip": {
+          "title": "Artículo 6 - Propiedad intelectual",
+          "yourContent": {
+            "title": "Su contenido",
+            "description": "Usted conserva todos los derechos sobre el contenido que crea (notas, tarjetas, etc.). Al publicarlo públicamente, concede a los demás usuarios una licencia de uso personal y no comercial."
+          },
+          "ourContent": {
+            "title": "Nuestro contenido",
+            "description": "La marca Study Master, el logotipo, el diseño, los algoritmos y el código fuente son propiedad exclusiva nuestra y están protegidos por la ley de propiedad intelectual."
+          }
+        },
+        "premium": {
+          "title": "Artículo 7 - Suscripción Premium",
+          "sections": [
+            { "title": "Facturación", "content": "Las suscripciones se facturan por adelantado, mensual o anualmente según su elección." },
+            { "title": "Renovación", "content": "Las suscripciones se renuevan automáticamente. Puede cancelar en cualquier momento desde su cuenta." },
+            { "title": "Reembolso", "content": "Por regla general, los reembolsos no están disponibles. Sin embargo, puede contactarnos en caso de problema técnico grave." },
+            { "title": "Cambio de precio", "content": "Cualquier cambio de precio se comunicará con 30 días de antelación. El nuevo precio se aplicará en la próxima renovación." }
+          ]
+        },
+        "availability": {
+          "title": "Artículo 8 - Disponibilidad del servicio",
+          "intro": "Nos esforzamos por mantener el Servicio disponible 24/7. Sin embargo:",
+          "items": [
+            "Se puede producir un mantenimiento programado (comunicado con antelación)",
+            "Pueden ocurrir interrupciones imprevistas (fallos técnicos, ataques)",
+            "Algunas funcionalidades pueden evolucionar o ser retiradas"
+          ],
+          "compensation": "En caso de interrupción prolongada (más de 48 h consecutivas) para usuarios Premium, puede solicitarse una compensación proporcional."
+        },
+        "liability": {
+          "title": "Artículo 9 - Responsabilidad",
+          "intro": "Study Master se proporciona \"tal cual\". No garantizamos:",
+          "items": [
+            "Que el Servicio esté libre de errores o sea ininterrumpido",
+            "Los resultados académicos obtenidos gracias al Servicio",
+            "La exactitud del contenido generado por la IA",
+            "La disponibilidad permanente de todas las funcionalidades"
+          ],
+          "exception": "Nuestra responsabilidad queda limitada al importe pagado por el Usuario durante los 12 meses anteriores al hecho generador, excepto en caso de negligencia grave o dolo por nuestra parte."
+        },
+        "termination": {
+          "title": "Artículo 10 - Rescisión",
+          "byUser": {
+            "title": "Por el usuario",
+            "description": "Puede eliminar su cuenta en cualquier momento desde la configuración. Sus datos se eliminarán en un plazo de 30 días."
+          },
+          "byUs": {
+            "title": "Por nosotros",
+            "description": "Nos reservamos el derecho de suspender o eliminar una cuenta en caso de incumplimiento de las CGU, sin previo aviso ni reembolso."
+          }
+        },
+        "modifications": {
+          "title": "Artículo 11 - Modificación de las condiciones",
+          "content1": "Nos reservamos el derecho de modificar las presentes CGU en cualquier momento.",
+          "content2": "Cualquier modificación sustancial se comunicará por correo electrónico con 15 días de antelación. El uso continuado del Servicio después de esta fecha implica la aceptación de las nuevas condiciones."
+        },
+        "governingLaw": {
+          "title": "Artículo 12 - Ley aplicable",
+          "content1": "Las presentes CGU se rigen por la legislación senegalesa. Cualquier disputa se someterá en primer lugar a un intento de resolución amistosa.",
+          "content2": "Para cualquier reclamación, contáctenos en",
+          "content3": "En caso de fracaso, los tribunales de Dakar serán los únicos competentes."
+        },
+        "miscellaneous": {
+          "title": "Artículo 13 - Disposiciones diversas",
+          "items": [
+            { "title": "Divisibilidad", "description": "Si una disposición de las CGU fuera declarada nula, las demás permanecerían plenamente vigentes." },
+            { "title": "No renuncia", "description": "El hecho de no ejercer un derecho no constituye una renuncia a este derecho." },
+            { "title": "Acuerdo completo", "description": "Las presentes CGU constituyen el acuerdo completo entre usted y Study Master." }
+          ]
+        }
+      },
+      "contact": {
+        "title": "¿Preguntas?",
+        "description": "Si tiene alguna pregunta sobre estas condiciones, no dude en contactarnos.",
+        "form": "Formulario de contacto"
+      },
+      "footer": {
+        "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+        "about": "Acerca de",
+        "contact": "Contacto",
+        "privacy": "Privacidad",
+        "terms": "Términos"
+      }
     }
   }
 }

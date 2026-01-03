@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, Clock, Award } from 'lucide-react'
+import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, Clock, Award, Languages, CloudOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { offlineStorage, STORES } from '@/lib/offlineStorage'
+import { syncService, generateTempId } from '@/services/syncService'
+
+const LANGUAGE_OPTIONS = [
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+]
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -35,11 +45,14 @@ interface Question {
 export default function NewQuizPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { locale, t } = useLanguage()
+  const { isOnline } = useOfflineContext()
 
   const [loading, setLoading] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState('')
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([0])
+  const [language, setLanguage] = useState(locale || 'fr')
 
   // Quiz Info
   const [title, setTitle] = useState('')
@@ -69,10 +82,24 @@ export default function NewQuizPage() {
 
   const fetchSubjects = async () => {
     try {
-      const response = await api.get('/subjects/')
-      setSubjects(response.data.subjects || [])
+      if (isOnline) {
+        const response = await api.get('/subjects/')
+        const subjectsData = response.data.subjects || []
+        setSubjects(subjectsData)
+        // Sauvegarder en cache
+        await offlineStorage.saveSubjects(subjectsData)
+      } else {
+        // Charger depuis le cache
+        const cachedSubjects = await offlineStorage.getSubjects()
+        setSubjects(cachedSubjects || [])
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des matières:', error)
+      // Essayer le cache en cas d'erreur
+      const cachedSubjects = await offlineStorage.getSubjects()
+      if (cachedSubjects && cachedSubjects.length > 0) {
+        setSubjects(cachedSubjects)
+      }
     }
   }
 
@@ -95,8 +122,8 @@ export default function NewQuizPage() {
   const removeQuestion = (index: number) => {
     if (questions.length === 1) {
       toast({
-        title: 'Attention',
-        description: 'Vous devez avoir au moins une question',
+        title: t('newQuizPage.warning'),
+        description: t('newQuizPage.atLeastOneQuestion'),
         variant: 'destructive'
       })
       return
@@ -160,8 +187,8 @@ export default function NewQuizPage() {
 
     if (!selectedSubject || !title) {
       toast({
-        title: 'Champs manquants',
-        description: 'Veuillez sélectionner une matière et donner un titre au quiz',
+        title: t('newQuizPage.missingFields'),
+        description: t('newQuizPage.fillSubjectAndTitle'),
         variant: 'destructive'
       })
       return
@@ -178,8 +205,8 @@ export default function NewQuizPage() {
 
     if (validQuestions.length === 0) {
       toast({
-        title: 'Aucune question valide',
-        description: 'Ajoutez au moins une question complète',
+        title: t('newQuizPage.noValidQuestion'),
+        description: t('newQuizPage.addCompleteQuestion'),
         variant: 'destructive'
       })
       return
@@ -208,21 +235,65 @@ export default function NewQuizPage() {
         randomize_questions: randomizeQuestions,
         randomize_options: randomizeOptions,
         allow_multiple_attempts: true,
-        is_ai_generated: false
+        is_ai_generated: false,
+        language: language
       }
 
-      const response = await api.post('/quizzes/', payload)
+      if (isOnline) {
+        // Mode en ligne: créer directement sur le serveur
+        const response = await api.post('/quizzes/', payload)
 
-      toast({
-        title: 'Quiz créé',
-        description: `Quiz "${title}" créé avec ${validQuestions.length} question(s)`,
-      })
-      router.push(`/quizzes/${response.data.id}`)
+        toast({
+          title: t('newQuizPage.quizCreated'),
+          description: t('newQuizPage.quizCreatedWith', { title, count: validQuestions.length }),
+        })
+        router.push(`/quizzes/${response.data.id}`)
+      } else {
+        // Mode hors-ligne: créer localement avec un ID temporaire
+        const tempId = generateTempId()
+        const now = new Date().toISOString()
+
+        // Trouver les infos du subject pour l'affichage local
+        const subject = subjects.find(s => s.id.toString() === selectedSubject)
+
+        const offlineQuiz = {
+          id: tempId,
+          _tempId: tempId,
+          ...payload,
+          subject: subject ? { id: subject.id, name: subject.name, color: subject.color } : null,
+          question_count: validQuestions.length,
+          total_points: validQuestions.reduce((sum, q) => sum + q.points, 0),
+          attempt_count: 0,
+          best_score: null,
+          average_score: null,
+          created_at: now,
+          updated_at: now,
+          _isOffline: true,
+        }
+
+        // Sauvegarder dans IndexedDB
+        await offlineStorage.saveQuiz(offlineQuiz)
+
+        // Ajouter à la queue de synchronisation
+        await syncService.queueAction(
+          STORES.QUIZZES,
+          'create',
+          '/api/v1/quizzes/',
+          'POST',
+          { ...payload, _tempId: tempId }
+        )
+
+        toast({
+          title: t('newQuizPage.quizCreatedOffline'),
+          description: t('newQuizPage.quizWillSync', { title }),
+        })
+        router.push('/quizzes')
+      }
     } catch (error: any) {
       console.error('Erreur:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de la création du quiz',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('common.error'),
         variant: 'destructive'
       })
     } finally {
@@ -234,15 +305,40 @@ export default function NewQuizPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div>
+              <p className="font-medium text-orange-900 dark:text-orange-100">
+                {t('newQuizPage.offlineMode')}
+              </p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                {t('newQuizPage.offlineSaveMessage')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nouveau Quiz</h1>
-          <p className="text-gray-600 mt-1">Créez un quiz pour tester vos connaissances</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{t('newQuizPage.title')}</h1>
+            <p className="text-gray-600 mt-1">{t('newQuizPage.subtitle')}</p>
+          </div>
+          {!isOnline && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              <CloudOff className="w-3 h-3 mr-1" />
+              {t('newQuizPage.offline')}
+            </span>
+          )}
         </div>
         <Button variant="outline" onClick={() => router.back()}>
           <X className="h-4 w-4 mr-2" />
-          Annuler
+          {t('newQuizPage.cancel')}
         </Button>
       </div>
 
@@ -250,17 +346,17 @@ export default function NewQuizPage() {
         {/* Quiz Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Informations du Quiz</CardTitle>
+            <CardTitle>{t('newQuizPage.quizInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="title">
-                  Titre <span className="text-red-500">*</span>
+                  {t('newQuizPage.titleLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="title"
-                  placeholder="Ex: Quiz de révision - Chapitre 3"
+                  placeholder={t('newQuizPage.titlePlaceholder')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
@@ -268,10 +364,10 @@ export default function NewQuizPage() {
               </div>
 
               <div className="md:col-span-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('newQuizPage.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Description du quiz..."
+                  placeholder={t('newQuizPage.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
@@ -280,11 +376,11 @@ export default function NewQuizPage() {
 
               <div>
                 <Label htmlFor="subject">
-                  Matière <span className="text-red-500">*</span>
+                  {t('newQuizPage.subjectLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une matière" />
+                    <SelectValue placeholder={t('newQuizPage.selectSubject')} />
                   </SelectTrigger>
                   <SelectContent>
                     {subjects.map((subject) => (
@@ -303,28 +399,56 @@ export default function NewQuizPage() {
               </div>
 
               <div>
-                <Label htmlFor="difficulty">Difficulté</Label>
+                <Label htmlFor="difficulty">{t('newQuizPage.difficultyLabel')}</Label>
                 <Select value={difficulty} onValueChange={(value: QuizDifficulty) => setDifficulty(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="easy">
-                      <Badge variant="secondary">Facile</Badge>
+                      <Badge variant="secondary">{t('newQuizPage.easy')}</Badge>
                     </SelectItem>
                     <SelectItem value="medium">
-                      <Badge variant="default">Moyen</Badge>
+                      <Badge variant="default">{t('newQuizPage.medium')}</Badge>
                     </SelectItem>
                     <SelectItem value="hard">
-                      <Badge variant="destructive">Difficile</Badge>
+                      <Badge variant="destructive">{t('newQuizPage.hard')}</Badge>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Language Selector */}
+              <div className="md:col-span-2">
+                <Label className="flex items-center gap-2 mb-2">
+                  <Languages className="h-4 w-4" />
+                  {t('newQuizPage.languageLabel')}
+                </Label>
+                <div className="flex gap-3">
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => setLanguage(lang.code)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
+                        language === lang.code
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                      }`}
+                    >
+                      <span className="text-lg">{lang.flag}</span>
+                      <span className="font-medium">{lang.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {t('newQuizPage.languageNotice')}
+                </p>
+              </div>
+
               <div>
                 <Label htmlFor="passingScore">
-                  Score de réussite (%) <Award className="inline h-4 w-4 ml-1" />
+                  {t('newQuizPage.passingScore')} <Award className="inline h-4 w-4 ml-1" />
                 </Label>
                 <Input
                   id="passingScore"
@@ -344,13 +468,13 @@ export default function NewQuizPage() {
                 />
                 <Label htmlFor="timed" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Quiz chronométré
+                  {t('newQuizPage.timedQuiz')}
                 </Label>
               </div>
 
               {isTimed && (
                 <div>
-                  <Label htmlFor="timeLimit">Temps limite (minutes)</Label>
+                  <Label htmlFor="timeLimit">{t('newQuizPage.timeLimit')}</Label>
                   <Input
                     id="timeLimit"
                     type="number"
@@ -365,7 +489,7 @@ export default function NewQuizPage() {
 
             <div className="space-y-3 pt-4 border-t">
               <div className="flex items-center justify-between">
-                <Label htmlFor="showAnswers">Afficher les réponses correctes après</Label>
+                <Label htmlFor="showAnswers">{t('newQuizPage.showCorrectAnswers')}</Label>
                 <Switch
                   id="showAnswers"
                   checked={showCorrectAnswers}
@@ -374,7 +498,7 @@ export default function NewQuizPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="randomizeQ">Mélanger les questions</Label>
+                <Label htmlFor="randomizeQ">{t('newQuizPage.shuffleQuestions')}</Label>
                 <Switch
                   id="randomizeQ"
                   checked={randomizeQuestions}
@@ -383,7 +507,7 @@ export default function NewQuizPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="randomizeO">Mélanger les options (QCM)</Label>
+                <Label htmlFor="randomizeO">{t('newQuizPage.shuffleOptions')}</Label>
                 <Switch
                   id="randomizeO"
                   checked={randomizeOptions}
@@ -398,12 +522,12 @@ export default function NewQuizPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Questions ({questions.length})</h2>
-              <p className="text-sm text-gray-600">Total: {totalPoints} points</p>
+              <h2 className="text-xl font-semibold">{t('newQuizPage.questionsTitle')} ({questions.length})</h2>
+              <p className="text-sm text-gray-600">{t('newQuizPage.totalPoints', { count: totalPoints })}</p>
             </div>
             <Button type="button" onClick={addQuestion} variant="outline">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter une question
+              {t('newQuizPage.addQuestion')}
             </Button>
           </div>
 
@@ -419,10 +543,10 @@ export default function NewQuizPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      Question {qIndex + 1}
-                      <Badge variant="outline">{question.points} pts</Badge>
+                      {t('newQuizPage.question')} {qIndex + 1}
+                      <Badge variant="outline">{question.points} {t('newQuizPage.pts')}</Badge>
                       {isValid && (
-                        <span className="text-xs font-normal text-green-600">✓ Valide</span>
+                        <span className="text-xs font-normal text-green-600">✓ {t('newQuizPage.valid')}</span>
                       )}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -451,10 +575,10 @@ export default function NewQuizPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="md:col-span-2">
                         <Label>
-                          Question <span className="text-red-500">*</span>
+                          {t('newQuizPage.questionLabel')} <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
-                          placeholder="Entrez votre question..."
+                          placeholder={t('newQuizPage.questionPlaceholder')}
                           value={question.question}
                           onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
                           rows={2}
@@ -463,7 +587,7 @@ export default function NewQuizPage() {
                       </div>
 
                       <div>
-                        <Label>Type</Label>
+                        <Label>{t('newQuizPage.typeLabel')}</Label>
                         <Select
                           value={question.type}
                           onValueChange={(value: QuestionType) => updateQuestion(qIndex, 'type', value)}
@@ -472,9 +596,9 @@ export default function NewQuizPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="multiple_choice">QCM</SelectItem>
-                            <SelectItem value="true_false">Vrai/Faux</SelectItem>
-                            <SelectItem value="short_answer">Réponse courte</SelectItem>
+                            <SelectItem value="multiple_choice">{t('newQuizPage.multipleChoice')}</SelectItem>
+                            <SelectItem value="true_false">{t('newQuizPage.trueFalse')}</SelectItem>
+                            <SelectItem value="short_answer">{t('newQuizPage.shortAnswer')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -484,7 +608,7 @@ export default function NewQuizPage() {
                     {question.type !== 'short_answer' && question.options && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <Label>Options</Label>
+                          <Label>{t('newQuizPage.optionsLabel')}</Label>
                           {question.type === 'multiple_choice' && (
                             <Button
                               type="button"
@@ -493,7 +617,7 @@ export default function NewQuizPage() {
                               onClick={() => addOption(qIndex)}
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              Ajouter option
+                              {t('newQuizPage.addOption')}
                             </Button>
                           )}
                         </div>
@@ -526,11 +650,11 @@ export default function NewQuizPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>
-                          Réponse correcte <span className="text-red-500">*</span>
+                          {t('newQuizPage.correctAnswer')} <span className="text-red-500">*</span>
                         </Label>
                         {question.type === 'short_answer' ? (
                           <Input
-                            placeholder="Réponse correcte"
+                            placeholder={t('newQuizPage.correctAnswer')}
                             value={question.correct_answer}
                             onChange={(e) => updateQuestion(qIndex, 'correct_answer', e.target.value)}
                             required
@@ -541,7 +665,7 @@ export default function NewQuizPage() {
                             onValueChange={(value) => updateQuestion(qIndex, 'correct_answer', value)}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner la bonne réponse" />
+                              <SelectValue placeholder={t('newQuizPage.selectCorrectAnswer')} />
                             </SelectTrigger>
                             <SelectContent>
                               {question.options?.map((option, idx) => (
@@ -555,7 +679,7 @@ export default function NewQuizPage() {
                       </div>
 
                       <div>
-                        <Label>Points</Label>
+                        <Label>{t('newQuizPage.pointsLabel')}</Label>
                         <Input
                           type="number"
                           min="1"
@@ -567,9 +691,9 @@ export default function NewQuizPage() {
                     </div>
 
                     <div>
-                      <Label>Explication (optionnel)</Label>
+                      <Label>{t('newQuizPage.explanationLabel')}</Label>
                       <Textarea
-                        placeholder="Expliquez pourquoi c'est la bonne réponse..."
+                        placeholder={t('newQuizPage.explanationPlaceholder')}
                         value={question.explanation || ''}
                         onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
                         rows={2}
@@ -585,15 +709,15 @@ export default function NewQuizPage() {
         {/* Actions */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
-            Annuler
+            {t('newQuizPage.cancel')}
           </Button>
           <Button type="submit" disabled={loading || !selectedSubject || !title}>
             {loading ? (
-              <>Création en cours...</>
+              <>{t('newQuizPage.creating')}</>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Créer le Quiz ({questions.filter(q => q.question && q.correct_answer).length} questions)
+                {t('newQuizPage.createQuiz', { count: questions.filter(q => q.question && q.correct_answer).length })}
               </>
             )}
           </Button>

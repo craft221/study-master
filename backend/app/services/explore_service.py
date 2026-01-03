@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 ContentType = Literal["all", "notes", "flashcards", "quizzes"]
 SortBy = Literal["recent", "popular", "rating"]
+Language = Literal["fr", "en", "es", "all"]
 
 
 def escape_like_pattern(pattern: str) -> str:
@@ -68,6 +69,7 @@ class ExploreService:
         subject_id: Optional[int] = None,
         subject_name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        language: Language = "all",
         sort_by: SortBy = "recent",
         page: int = 1,
         limit: int = 20,
@@ -102,7 +104,7 @@ class ExploreService:
         # Rechercher les notes
         if content_type in ["all", "notes"]:
             notes_result = await self._search_notes(
-                db, query, subject_id, subject_name, tags, sort_by, offset, limit, user_id
+                db, query, subject_id, subject_name, tags, language, sort_by, offset, limit, user_id
             )
             results["notes"] = notes_result["items"]
             results["total_count"] += notes_result["count"]
@@ -110,7 +112,7 @@ class ExploreService:
         # Rechercher les flashcards (groupées par deck)
         if content_type in ["all", "flashcards"]:
             flashcards_result = await self._search_flashcard_decks(
-                db, query, subject_id, subject_name, tags, sort_by, offset, limit, user_id
+                db, query, subject_id, subject_name, tags, language, sort_by, offset, limit, user_id
             )
             results["flashcards"] = flashcards_result["items"]
             results["total_count"] += flashcards_result["count"]
@@ -118,7 +120,7 @@ class ExploreService:
         # Rechercher les quizzes
         if content_type in ["all", "quizzes"]:
             quizzes_result = await self._search_quizzes(
-                db, query, subject_id, subject_name, tags, sort_by, offset, limit, user_id
+                db, query, subject_id, subject_name, tags, language, sort_by, offset, limit, user_id
             )
             results["quizzes"] = quizzes_result["items"]
             results["total_count"] += quizzes_result["count"]
@@ -136,6 +138,7 @@ class ExploreService:
         subject_id: Optional[int],
         subject_name: Optional[str],
         tags: Optional[List[str]],
+        language: Language,
         sort_by: SortBy,
         offset: int,
         limit: int,
@@ -168,6 +171,10 @@ class ExploreService:
         if subject_name:
             safe_subject = escape_like_pattern(subject_name)
             stmt = stmt.join(Subject).where(Subject.name.ilike(f"%{safe_subject}%"))
+
+        # Filtre par langue
+        if language and language != "all":
+            stmt = stmt.where(Note.language == language)
 
         # Tri
         if sort_by == "recent":
@@ -213,6 +220,7 @@ class ExploreService:
                         "avatar_url": note.user.avatar_url
                     } if note.user else None,
                     "tags": note.tags or [],
+                    "language": note.language or "fr",
                     "created_at": note.created_at.isoformat() if note.created_at else None,
                 }
                 for note in notes
@@ -227,6 +235,7 @@ class ExploreService:
         subject_id: Optional[int],
         subject_name: Optional[str],
         tags: Optional[List[str]],
+        language: Language,
         sort_by: SortBy,
         offset: int,
         limit: int,
@@ -240,16 +249,21 @@ class ExploreService:
                 Flashcard.user_id,
                 Flashcard.subject_id,
                 Flashcard.deck_name,
+                Flashcard.language,
                 func.count(Flashcard.id).label("card_count"),
                 func.max(Flashcard.created_at).label("latest_created")
             )
             .where(Flashcard.is_public == True)
             .where(Flashcard.deck_name.isnot(None))
-            .group_by(Flashcard.user_id, Flashcard.subject_id, Flashcard.deck_name)
+            .group_by(Flashcard.user_id, Flashcard.subject_id, Flashcard.deck_name, Flashcard.language)
         )
 
         if subject_id:
             deck_subquery = deck_subquery.where(Flashcard.subject_id == subject_id)
+
+        # Filtre par langue
+        if language and language != "all":
+            deck_subquery = deck_subquery.where(Flashcard.language == language)
 
         # Échappement SQL sécurisé pour les flashcards
         if query:
@@ -269,6 +283,7 @@ class ExploreService:
                 deck_subquery.c.user_id,
                 deck_subquery.c.subject_id,
                 deck_subquery.c.deck_name,
+                deck_subquery.c.language,
                 deck_subquery.c.card_count,
                 deck_subquery.c.latest_created,
                 User.username,
@@ -323,6 +338,7 @@ class ExploreService:
                         "username": deck.username,
                         "avatar_url": deck.avatar_url
                     },
+                    "language": deck.language or "fr",
                     "created_at": deck.latest_created.isoformat() if deck.latest_created else None,
                 }
                 for deck in decks
@@ -337,6 +353,7 @@ class ExploreService:
         subject_id: Optional[int],
         subject_name: Optional[str],
         tags: Optional[List[str]],
+        language: Language,
         sort_by: SortBy,
         offset: int,
         limit: int,
@@ -371,6 +388,10 @@ class ExploreService:
             stmt = stmt.join(Subject, Quiz.subject_id == Subject.id).where(
                 Subject.name.ilike(f"%{safe_subject}%")
             )
+
+        # Filtre par langue
+        if language and language != "all":
+            stmt = stmt.where(Quiz.language == language)
 
         # Tri
         if sort_by == "recent":
@@ -427,6 +448,7 @@ class ExploreService:
                         "avatar_url": quiz.user.avatar_url
                     } if quiz.user else None,
                     "is_ai_generated": quiz.is_ai_generated,
+                    "language": quiz.language or "fr",
                     "created_at": quiz.created_at.isoformat() if quiz.created_at else None,
                 }
                 for quiz in quizzes

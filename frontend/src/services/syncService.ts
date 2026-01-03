@@ -174,7 +174,13 @@ class SyncService {
       result.failed += pendingResult.failed;
       result.errors.push(...pendingResult.errors);
 
-      // 2. Récupérer les données fraîches du serveur
+      // 2. Synchroniser les révisions FSRS offline
+      const fsrsResult = await this.syncFSRSReviewLogs();
+      result.synced += fsrsResult.synced;
+      result.failed += fsrsResult.failed;
+      result.errors.push(...fsrsResult.errors);
+
+      // 3. Récupérer les données fraîches du serveur
       await this.fetchFreshData();
 
       result.success = result.failed === 0;
@@ -225,6 +231,68 @@ class SyncService {
         failed++;
         errors.push(`Erreur sur ${action.store}: ${error instanceof Error ? error.message : 'Erreur'}`);
       }
+    }
+
+    return { synced, failed, errors };
+  }
+
+  /**
+   * Synchroniser les logs de révision FSRS offline
+   */
+  private async syncFSRSReviewLogs(): Promise<{ synced: number; failed: number; errors: string[] }> {
+    let synced = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    try {
+      const unsyncedLogs = await offlineStorage.getUnsyncedReviewLogs();
+
+      if (unsyncedLogs.length === 0) {
+        return { synced: 0, failed: 0, errors: [] };
+      }
+
+      console.log(`[SyncService] Synchronisation de ${unsyncedLogs.length} révisions FSRS...`);
+
+      // Trier par date de révision (les plus anciennes d'abord)
+      unsyncedLogs.sort((a, b) =>
+        new Date(a.reviewed_at).getTime() - new Date(b.reviewed_at).getTime()
+      );
+
+      for (const log of unsyncedLogs) {
+        try {
+          // Envoyer la révision à l'API
+          await api.post(`/flashcards/${log.flashcard_id}/review`, {
+            quality: log.rating,
+            review_date: log.reviewed_at,
+            // Envoyer les données FSRS calculées localement
+            fsrs_data: {
+              stability: log.stability_after,
+              difficulty: log.difficulty_after,
+              interval_days: log.interval_days,
+              state: log.state_after,
+              retrievability: log.retrievability,
+            },
+          });
+
+          // Marquer comme synchronisé
+          await offlineStorage.markReviewLogSynced(log.id);
+          synced++;
+          console.log(`[SyncService] Révision FSRS synchronisée: card ${log.flashcard_id}`);
+        } catch (error) {
+          console.error(`[SyncService] Erreur sync révision ${log.flashcard_id}:`, error);
+          failed++;
+          errors.push(`Révision ${log.flashcard_id}: ${error instanceof Error ? error.message : 'Erreur'}`);
+        }
+      }
+
+      // Nettoyer les anciens logs synchronisés
+      const cleaned = await offlineStorage.cleanupSyncedReviewLogs(30);
+      if (cleaned > 0) {
+        console.log(`[SyncService] ${cleaned} anciens logs FSRS nettoyés`);
+      }
+    } catch (error) {
+      console.error('[SyncService] Erreur globale sync FSRS:', error);
+      errors.push(`Erreur FSRS: ${error instanceof Error ? error.message : 'Erreur'}`);
     }
 
     return { synced, failed, errors };
@@ -340,6 +408,10 @@ class SyncService {
           await offlineStorage.delete(STORES.EXAM_TASKS, tempId);
           await offlineStorage.saveExamTask(serverData);
           break;
+        case STORES.STUDY_SESSIONS:
+          await offlineStorage.delete(STORES.STUDY_SESSIONS, tempId);
+          await offlineStorage.saveStudySession(serverData);
+          break;
       }
       console.log(`[SyncService] Cache local mis à jour: ${store} ${tempId} -> ${realId}`);
     } catch (error) {
@@ -378,6 +450,7 @@ class SyncService {
         schedulesResponse,
         subjectsResponse,
         achievementsResponse,
+        studySessionsResponse,
       ] = await Promise.allSettled([
         api.get('/users/me'),
         api.get('/notes/'),
@@ -385,6 +458,7 @@ class SyncService {
         api.get('/schedules/'),
         api.get('/subjects/'),
         api.get('/achievements/user/me'),
+        api.get('/study-sessions/?limit=50'),
       ]);
 
       // Sauvegarder les données reçues
@@ -421,6 +495,12 @@ class SyncService {
         const achievementsData = achievementsResponse.value.data;
         const achievements = Array.isArray(achievementsData) ? achievementsData : (achievementsData.achievements || []);
         await offlineStorage.saveGamificationData('achievements', achievements);
+      }
+
+      if (studySessionsResponse.status === 'fulfilled') {
+        const sessionsData = studySessionsResponse.value.data;
+        const sessions = Array.isArray(sessionsData) ? sessionsData : (sessionsData.sessions || []);
+        await offlineStorage.saveStudySessions(sessions);
       }
 
       console.log('[SyncService] Données fraîches récupérées');

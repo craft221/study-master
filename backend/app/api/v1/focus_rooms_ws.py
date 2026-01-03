@@ -381,7 +381,8 @@ async def handle_message(room_id: int, user_id: int, message: dict):
                         user=user,
                         amount=xp_amount,
                         reason=f"focus_milestone_{milestone}",
-                        extra_data={"room_id": room_id, "minutes": participant.get_total_minutes()}
+                        extra_data={"room_id": room_id, "minutes": participant.get_total_minutes()},
+                        db=db
                     )
                     # Mettre à jour aussi les stats Focus Room
                     await focus_room_service._update_user_focus_stats(

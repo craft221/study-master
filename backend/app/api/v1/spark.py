@@ -61,6 +61,114 @@ router = APIRouter()
 
 
 # =============================================================================
+# QUOTAS SPARK (Modèle Hybride)
+# =============================================================================
+
+# Quotas par type d'abonnement
+SPARK_QUOTAS = {
+    "FREE": {"chat": 10, "tutor": 3, "ask": 5},
+    "PREMIUM": {"chat": 100, "tutor": 50, "ask": 100},
+    "PREMIUM_PLUS": {"chat": -1, "tutor": -1, "ask": -1},  # -1 = illimité
+    "INSTITUTIONAL": {"chat": -1, "tutor": -1, "ask": -1}
+}
+
+
+def raise_spark_quota_exceeded_error(
+    spark_type: str,
+    subscription_type: str,
+    max_requests: int,
+    used: int
+):
+    """
+    Lève une exception HTTP 429 pour le quota Spark épuisé.
+    Affiche un modal de mise à niveau côté frontend.
+    """
+    type_names = {
+        "chat": "conversations avec Spark",
+        "tutor": "explications du mode tuteur",
+        "ask": "questions rapides"
+    }
+
+    raise HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail={
+            "message": f"Quota Spark épuisé: {type_names.get(spark_type, spark_type)}",
+            "code": "SPARK_QUOTA_EXCEEDED",
+            "spark_type": spark_type,
+            "subscription_type": subscription_type,
+            "max_requests": max_requests,
+            "used_requests": used,
+            "remaining": 0,
+            "reset_time": "minuit UTC",
+            "upgrade_available": subscription_type in ["FREE", "PREMIUM"],
+            "upgrade_url": "/pricing",
+            "upgrade_benefits": {
+                "PREMIUM": {
+                    "chat": 100,
+                    "tutor": 50,
+                    "ask": 100,
+                    "price": "$5.99/mois"
+                },
+                "PREMIUM_PLUS": {
+                    "chat": "Illimité",
+                    "tutor": "Illimité",
+                    "ask": "Illimité",
+                    "price": "$11.99/mois"
+                }
+            } if subscription_type == "FREE" else None
+        }
+    )
+
+
+async def check_spark_quota(
+    user: User,
+    spark_type: str,
+    db: AsyncSession
+) -> tuple[bool, int, int]:
+    """
+    Vérifie et incrémente le quota Spark de manière atomique.
+
+    Args:
+        user: Utilisateur courant
+        spark_type: "chat", "tutor", ou "ask"
+        db: Session de base de données
+
+    Returns:
+        Tuple (can_use, remaining, max_requests)
+    """
+    subscription_type = user.subscription_type.value
+
+    # S'assurer que ai_usage existe
+    if not user.ai_usage:
+        from app.models.user import UserAIUsage
+        user.ai_usage = UserAIUsage(user_id=user.id)
+        db.add(user.ai_usage)
+        await db.flush()
+
+    ai_usage = user.ai_usage
+    quotas = SPARK_QUOTAS.get(subscription_type, SPARK_QUOTAS["FREE"])
+    max_requests = quotas.get(spark_type, 0)
+
+    # Illimité ?
+    if max_requests == -1:
+        ai_usage.record_spark_usage(spark_type)
+        await db.commit()
+        return True, -1, -1
+
+    # Vérifier le quota
+    can_use = ai_usage.can_use_spark(spark_type, subscription_type)
+
+    if can_use:
+        ai_usage.record_spark_usage(spark_type)
+        await db.commit()
+        remaining = ai_usage.get_spark_remaining(spark_type, subscription_type)
+        return True, remaining, max_requests
+    else:
+        current = getattr(ai_usage, f"spark_{spark_type}_today", 0) or 0
+        return False, 0, max_requests
+
+
+# =============================================================================
 # ÉTAT DE SPARK
 # =============================================================================
 
@@ -261,13 +369,35 @@ async def chat_with_spark(
 
     Spark se souvient du contexte et peut avoir des conversations
     continues et naturelles.
+
+    Quotas:
+    - FREE: 10 messages/jour
+    - PREMIUM: 100 messages/jour
+    - PREMIUM_PLUS/INSTITUTIONAL: Illimité
     """
+    # Vérifier le quota Spark chat
+    can_use, remaining, max_requests = await check_spark_quota(
+        current_user, "chat", db
+    )
+
+    if not can_use:
+        raise_spark_quota_exceeded_error(
+            "chat",
+            current_user.subscription_type.value,
+            max_requests,
+            max_requests
+        )
+
     result = await spark_service.chat(
         db=db,
         user=current_user,
         message=request.message,
         conversation_id=request.conversation_id
     )
+
+    # Ajouter les infos de quota dans la réponse
+    result["quota_remaining"] = remaining
+    result["quota_max"] = max_requests
 
     return SparkChatResponse(**result)
 
@@ -367,7 +497,25 @@ async def tutor_explain(
     - Pose des questions pour guider
     - Donne des indices progressifs
     - Utilise des analogies
+
+    Quotas:
+    - FREE: 3 explications/jour
+    - PREMIUM: 50 explications/jour
+    - PREMIUM_PLUS/INSTITUTIONAL: Illimité
     """
+    # Vérifier le quota Spark tuteur
+    can_use, remaining, max_requests = await check_spark_quota(
+        current_user, "tutor", db
+    )
+
+    if not can_use:
+        raise_spark_quota_exceeded_error(
+            "tutor",
+            current_user.subscription_type.value,
+            max_requests,
+            max_requests
+        )
+
     result = await spark_service.tutor_explain(
         db=db,
         user=current_user,
@@ -377,13 +525,18 @@ async def tutor_explain(
         conversation_id=request.conversation_id
     )
 
+    # Ajouter les infos de quota
+    result["quota_remaining"] = remaining
+    result["quota_max"] = max_requests
+
     return TutorExplainResponse(**result)
 
 
 @router.post("/tutor/hint", response_model=TutorHintResponse)
 async def get_tutor_hint(
     request: TutorHintRequest,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Obtient un indice progressif pour une question
@@ -391,8 +544,27 @@ async def get_tutor_hint(
     - Level 1: Indice vague
     - Level 2: Indice moyen
     - Level 3: Indice précis (sans révéler)
+
+    Quotas: Partagés avec tutor/explain
+    - FREE: 3 requêtes tuteur/jour
+    - PREMIUM: 50 requêtes tuteur/jour
+    - PREMIUM_PLUS/INSTITUTIONAL: Illimité
     """
+    # Vérifier le quota Spark tuteur
+    can_use, remaining, max_requests = await check_spark_quota(
+        current_user, "tutor", db
+    )
+
+    if not can_use:
+        raise_spark_quota_exceeded_error(
+            "tutor",
+            current_user.subscription_type.value,
+            max_requests,
+            max_requests
+        )
+
     result = await spark_service.tutor_hint(
+        user=current_user,
         question=request.question,
         answer=request.answer,
         user_attempt=request.user_attempt,
@@ -701,7 +873,25 @@ async def ask_spark(
     """
     Pose une question rapide à Spark (Q&A simple)
     Pour des conversations plus longues, utiliser /chat
+
+    Quotas:
+    - FREE: 5 questions/jour
+    - PREMIUM: 100 questions/jour
+    - PREMIUM_PLUS/INSTITUTIONAL: Illimité
     """
+    # Vérifier le quota Spark ask
+    can_use, remaining, max_requests = await check_spark_quota(
+        current_user, "ask", db
+    )
+
+    if not can_use:
+        raise_spark_quota_exceeded_error(
+            "ask",
+            current_user.subscription_type.value,
+            max_requests,
+            max_requests
+        )
+
     # Utiliser le chat mais sans sauvegarder la conversation
     result = await spark_service.chat(
         db=db,
@@ -715,7 +905,9 @@ async def ask_spark(
         mood=result["mood"],
         animation=result["animation"],
         suggestions=result.get("suggestions", []),
-        timestamp=result["timestamp"]
+        timestamp=result["timestamp"],
+        quota_remaining=remaining,
+        quota_max=max_requests
     )
 
 

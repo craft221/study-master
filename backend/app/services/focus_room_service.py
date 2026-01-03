@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # XP Rewards
 XP_REWARDS = {
     "create_room": 30,
-    "join_room": 5,
+    # "join_room": 5,  # Supprimé - trop facile à exploiter (entrer/sortir en boucle)
     "focus_minute": 1,
     "room_bonus_percent": 20,  # 20% bonus
     # Milestones (alignés avec le frontend StreakTracker)
@@ -397,13 +397,25 @@ class FocusRoomService:
     ) -> FocusRoomParticipant:
         """Rejoindre une room"""
         # Verifier si deja dans une room
-        existing = await db.execute(
+        existing_result = await db.execute(
             select(FocusRoomParticipant).where(
                 FocusRoomParticipant.user_id == user.id
+            ).options(
+                selectinload(FocusRoomParticipant.room),
+                selectinload(FocusRoomParticipant.user)
             )
         )
-        if existing.scalar_one_or_none():
-            raise ValueError("already_in_room")
+        existing_participant = existing_result.scalar_one_or_none()
+
+        if existing_participant:
+            # Si déjà dans LA MÊME room, retourner le participant existant
+            if existing_participant.room_id == room.id:
+                logger.info(f"[JOIN_ROOM] User {user.id} already in room {room.id}, returning existing participant")
+                return existing_participant
+
+            # Si dans une AUTRE room, quitter automatiquement avant de rejoindre
+            logger.info(f"[JOIN_ROOM] User {user.id} leaving room {existing_participant.room_id} to join room {room.id}")
+            await self.leave_room(db, existing_participant)
 
         # Verifier si room pleine
         active_count = len([p for p in room.participants if p.status != ParticipantStatus.IDLE])
@@ -471,21 +483,13 @@ class FocusRoomService:
         # Mettre a jour stats room
         room.total_unique_users += 1
         room.today_sessions += 1
+        room.last_activity_at = utc_now()  # Mise à jour pour éviter l'expiration
 
         await db.commit()
         await db.refresh(participant)
 
-        # Mettre a jour stats utilisateur (inclure les XP gagnés)
-        await self._update_user_focus_stats(db, user.id, rooms_joined=1, xp_earned=XP_REWARDS["join_room"])
-
-        # Attribuer XP
-        await award_xp(
-            user=user,
-            amount=XP_REWARDS["join_room"],
-            reason="focus_room_joined",
-            extra_data={"room_id": room.id},
-            db=db
-        )
+        # Mettre a jour stats utilisateur (sans XP - les XP sont gagnés via les milestones)
+        await self._update_user_focus_stats(db, user.id, rooms_joined=1)
 
         # Creer activite
         await self._create_activity(
@@ -755,6 +759,11 @@ class FocusRoomService:
         now = utc_now()
         participant.last_heartbeat_at = now
         participant.last_activity_at = now
+
+        # Mettre à jour l'activité de la room pour éviter l'expiration automatique
+        room = await db.get(FocusRoom, participant.room_id)
+        if room:
+            room.last_activity_at = now
 
         # Sauvegarder les minutes de focus en cours dans la DB
         # Cela permet de ne pas perdre le temps si l'utilisateur ferme le navigateur

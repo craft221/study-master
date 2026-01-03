@@ -33,6 +33,7 @@ class QuizBase(BaseModel):
     randomize_questions: bool = False
     randomize_options: bool = False
     is_ai_generated: bool = False
+    language: Optional[str] = Field("fr", max_length=5, description="Langue du contenu (fr, en, es)")
 
 
 class QuizCreate(QuizBase):
@@ -57,6 +58,7 @@ class QuizUpdate(BaseModel):
     randomize_questions: Optional[bool] = None
     randomize_options: Optional[bool] = None
     is_published: Optional[bool] = None
+    language: Optional[str] = Field(None, max_length=5)
 
 
 class QuizResponse(BaseModel):
@@ -85,9 +87,10 @@ class QuizResponse(BaseModel):
     show_correct_answers: bool
     randomize_questions: bool
     randomize_options: bool
-    created_at: datetime
-    updated_at: datetime
-    published_at: Optional[datetime]
+    language: Optional[str] = "fr"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

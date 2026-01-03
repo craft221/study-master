@@ -15,12 +15,14 @@ import {
   Tag,
   Sparkles,
   CreditCard,
-  Brain
+  Brain,
+  Globe,
+  Lock
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import LaTeXEditor from '@/components/LaTeXEditor'
+import SmartNoteEditor from '@/components/SmartNoteEditor'
 
 interface Subject {
   id: string
@@ -36,6 +38,8 @@ interface Note {
   subject?: Subject | null
   tags: string[]
   is_favorite: boolean
+  is_public: boolean
+  language: string
   created_at: string
   updated_at: string
 }
@@ -60,9 +64,10 @@ export default function NoteDetailPage() {
   const fetchNote = async () => {
     try {
       const response = await api.get(`/notes/${noteId}`)
-      setNote(response.data)
-      setEditedContent(response.data.content)
-      setEditedTitle(response.data.title)
+      const noteData = response.data
+      setNote(noteData)
+      setEditedContent(noteData.content || '')
+      setEditedTitle(noteData.title)
     } catch (error) {
       toast.error('Erreur lors du chargement de la note')
       router.push('/notes')
@@ -103,6 +108,19 @@ export default function NoteDetailPage() {
       setNote(note ? { ...note, is_favorite: !note.is_favorite } : null)
     } catch (error) {
       toast.error('Erreur')
+    }
+  }
+
+  const togglePublic = async () => {
+    try {
+      const newPublicState = !note?.is_public
+      await api.patch(`/explore/notes/${noteId}/visibility`, {
+        is_public: newPublicState
+      })
+      setNote(note ? { ...note, is_public: newPublicState } : null)
+      toast.success(newPublicState ? 'Note rendue publique!' : 'Note rendue privée')
+    } catch (error) {
+      toast.error('Erreur lors du changement de visibilité')
     }
   }
 
@@ -227,7 +245,7 @@ export default function NoteDetailPage() {
               <button
                 onClick={() => {
                   setEditMode(false)
-                  setEditedContent(note.content)
+                  setEditedContent(note.content || '')
                   setEditedTitle(note.title)
                 }}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center space-x-2"
@@ -259,6 +277,26 @@ export default function NoteDetailPage() {
                 <Trash2 className="h-4 w-4" />
                 <span>Supprimer</span>
               </button>
+              <button
+                onClick={togglePublic}
+                className={`px-4 py-2 rounded-lg transition flex items-center space-x-2 ${
+                  note.is_public
+                    ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {note.is_public ? (
+                  <>
+                    <Globe className="h-4 w-4" />
+                    <span>Publique</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4" />
+                    <span>Rendre publique</span>
+                  </>
+                )}
+              </button>
             </>
           )}
         </div>
@@ -267,14 +305,13 @@ export default function NoteDetailPage() {
       {/* Content */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         {editMode ? (
-          <LaTeXEditor
+          <SmartNoteEditor
             value={editedContent}
             onChange={setEditedContent}
-            placeholder="Écris ta note ici... Utilise LaTeX pour les formules mathématiques"
-            rows={20}
+            placeholder="Modifie ta note ici..."
           />
         ) : (
-          <div className="prose max-w-none">
+          <div className="prose max-w-none latex-preview">
             <MarkdownRenderer content={note.content} />
           </div>
         )}
@@ -333,3 +370,4 @@ export default function NoteDetailPage() {
     </div>
   )
 }
+

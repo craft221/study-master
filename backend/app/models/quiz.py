@@ -55,6 +55,7 @@ class Quiz(Base):
     ai_prompt_used = Column(Text, nullable=True)  # Prompt utilisé pour générer le quiz
     is_public = Column(Boolean, default=False)
     is_published = Column(Boolean, default=False)
+    language = Column(String(5), default="fr")  # fr, en, es - pour filtrer dans Explore
     published_at = Column(DateTime(timezone=True), nullable=True)
     # Stats du quiz
     total_attempts = Column(Integer, default=0)

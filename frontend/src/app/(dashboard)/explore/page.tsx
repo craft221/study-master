@@ -18,6 +18,10 @@ import {
   Copy,
   ExternalLink,
   Sparkles,
+  Eye,
+  Flag,
+  Languages,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,15 +59,18 @@ interface PublicNote {
   subject?: Subject;
   author?: Author;
   tags: string[];
+  language: string;
   created_at?: string;
 }
 
 interface PublicFlashcardDeck {
+  id?: number;
   type: string;
   deck_name: string;
   card_count: number;
   subject?: Subject;
   author: Author;
+  language: string;
   created_at?: string;
 }
 
@@ -81,6 +88,7 @@ interface PublicQuiz {
   subject?: Subject;
   author?: Author;
   is_ai_generated: boolean;
+  language: string;
   created_at?: string;
 }
 
@@ -103,6 +111,14 @@ interface SearchResults {
 
 type ContentType = "all" | "notes" | "flashcards" | "quizzes";
 type SortBy = "recent" | "popular" | "rating";
+type LanguageFilter = "all" | "fr" | "en" | "es";
+
+const languageConfig: Record<LanguageFilter, { label: string; flag: string }> = {
+  all: { label: "Toutes", flag: "🌍" },
+  fr: { label: "Français", flag: "🇫🇷" },
+  en: { label: "English", flag: "🇬🇧" },
+  es: { label: "Español", flag: "🇪🇸" },
+};
 
 const contentTypeConfig = {
   all: { label: "Tout", icon: Sparkles },
@@ -132,14 +148,21 @@ export default function ExplorePage() {
   const [contentType, setContentType] = useState<ContentType>("all");
   const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageFilter>("all");
   const [results, setResults] = useState<SearchResults | null>(null);
   const [popularSubjects, setPopularSubjects] = useState<PopularSubject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  // Fetch popular subjects on mount
+  // Detect user language on mount and fetch subjects
   useEffect(() => {
     fetchPopularSubjects();
+    // Détecter la langue du navigateur
+    const browserLang = navigator.language.split("-")[0];
+    if (browserLang === "fr" || browserLang === "en" || browserLang === "es") {
+      setSelectedLanguage(browserLang as LanguageFilter);
+    }
   }, []);
 
   // Search when filters change
@@ -148,7 +171,7 @@ export default function ExplorePage() {
       searchContent();
     }, 300);
     return () => clearTimeout(debounce);
-  }, [searchQuery, contentType, sortBy, selectedSubject, page]);
+  }, [searchQuery, contentType, sortBy, selectedSubject, selectedLanguage, page]);
 
   const fetchPopularSubjects = async () => {
     try {
@@ -167,6 +190,7 @@ export default function ExplorePage() {
       params.append("sort_by", sortBy);
       params.append("page", page.toString());
       params.append("limit", "20");
+      params.append("language", selectedLanguage);
 
       if (searchQuery) {
         params.append("q", searchQuery);
@@ -197,6 +221,55 @@ export default function ExplorePage() {
     });
   };
 
+  const duplicateContent = async (type: string, id: number, deckName?: string, deckOwnerId?: number, deckSubjectId?: number) => {
+    const key = `${type}-${id}`;
+    setDuplicatingId(key);
+    try {
+      const payload: any = {
+        content_type: type,
+        content_id: id,
+      };
+      if (deckName) {
+        payload.deck_name = deckName;
+        payload.deck_owner_id = deckOwnerId;
+        payload.deck_subject_id = deckSubjectId;
+      }
+      const response = await api.post("/explore/duplicate", payload);
+      toast({
+        title: "Dupliqué !",
+        description: response.data.message,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.response?.data?.detail || "Impossible de dupliquer",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
+  const reportContent = async (type: string, id: number, reason: string = "inappropriate") => {
+    try {
+      await api.post("/explore/report", {
+        content_type: type,
+        content_id: id,
+        reason: reason,
+      });
+      toast({
+        title: "Signalement envoyé",
+        description: "Notre équipe va examiner ce contenu",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.response?.data?.detail || "Impossible de signaler",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
@@ -212,10 +285,11 @@ export default function ExplorePage() {
     setSelectedSubject(null);
     setContentType("all");
     setSortBy("recent");
+    setSelectedLanguage("all");
     setPage(1);
   };
 
-  const hasActiveFilters = searchQuery || selectedSubject || contentType !== "all" || sortBy !== "recent";
+  const hasActiveFilters = searchQuery || selectedSubject || contentType !== "all" || sortBy !== "recent" || selectedLanguage !== "all";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -344,6 +418,31 @@ export default function ExplorePage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Language Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Languages className="w-4 h-4" />
+                {languageConfig[selectedLanguage].flag} {languageConfig[selectedLanguage].label}
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {Object.entries(languageConfig).map(([key, config]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => {
+                    setSelectedLanguage(key as LanguageFilter);
+                    setPage(1);
+                  }}
+                >
+                  <span className="mr-2">{config.flag}</span>
+                  {config.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Clear Filters */}
           {hasActiveFilters && (
             <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground">
@@ -390,7 +489,7 @@ export default function ExplorePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                      <Card className="h-full hover:shadow-lg transition-shadow">
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between">
                             <CardTitle className="text-lg line-clamp-2">{note.title}</CardTitle>
@@ -408,12 +507,43 @@ export default function ExplorePage() {
                           <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                             {note.content_preview}
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                             <span className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
                               {note.author?.username || "Anonyme"}
                             </span>
                             <span>{formatDate(note.created_at)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => router.push(`/explore/notes/${note.id}`)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Voir
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => duplicateContent("notes", note.id)}
+                              disabled={duplicatingId === `notes-${note.id}`}
+                            >
+                              {duplicatingId === `notes-${note.id}` ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <Copy className="w-4 h-4 mr-1" />
+                              )}
+                              Dupliquer
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-orange-500 hover:text-orange-600"
+                              onClick={() => reportContent("notes", note.id)}
+                            >
+                              <Flag className="w-4 h-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -439,7 +569,7 @@ export default function ExplorePage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                        <Card className="h-full hover:shadow-lg transition-shadow">
                           <CardHeader className="pb-2">
                             <div className="flex items-start justify-between">
                               <CardTitle className="text-lg">{deck.deck_name}</CardTitle>
@@ -459,12 +589,41 @@ export default function ExplorePage() {
                                 {deck.card_count} carte{deck.card_count !== 1 ? "s" : ""}
                               </Badge>
                             </div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                               <span className="flex items-center gap-1">
                                 <Users className="w-3 h-3" />
                                 {deck.author.username}
                               </span>
                               <span>{formatDate(deck.created_at)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 pt-2 border-t">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => duplicateContent(
+                                  "flashcards",
+                                  deck.id || 0,
+                                  deck.deck_name,
+                                  deck.author.id,
+                                  deck.subject?.id
+                                )}
+                                disabled={duplicatingId === `flashcards-${deck.id || 0}`}
+                              >
+                                {duplicatingId === `flashcards-${deck.id || 0}` ? (
+                                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Copy className="w-4 h-4 mr-1" />
+                                )}
+                                Dupliquer
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-orange-500 hover:text-orange-600"
+                                onClick={() => reportContent("flashcards", deck.id || 0)}
+                              >
+                                <Flag className="w-4 h-4" />
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -539,7 +698,7 @@ export default function ExplorePage() {
                             )}
                           </div>
 
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mb-3">
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Users className="w-3 h-3" />
                               {quiz.author?.username || "Anonyme"}
@@ -568,6 +727,29 @@ export default function ExplorePage() {
                                 Jouer
                               </Button>
                             </div>
+                          </div>
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => duplicateContent("quizzes", quiz.id)}
+                              disabled={duplicatingId === `quizzes-${quiz.id}`}
+                            >
+                              {duplicatingId === `quizzes-${quiz.id}` ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <Copy className="w-4 h-4 mr-1" />
+                              )}
+                              Dupliquer
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-orange-500 hover:text-orange-600"
+                              onClick={() => reportContent("quizzes", quiz.id)}
+                            >
+                              <Flag className="w-4 h-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>

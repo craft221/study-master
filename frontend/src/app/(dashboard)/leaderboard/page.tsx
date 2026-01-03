@@ -10,6 +10,7 @@ import api from '@/lib/api'
 import toast from 'react-hot-toast'
 import leaderboardsService, { LeaguePosition, LeagueEntry, LeagueInfo, LeagueTier } from '@/services/leaderboards'
 import ShareModal from '@/components/ShareModal'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface LeaderboardEntry {
   user_id: number
@@ -21,38 +22,33 @@ interface LeaderboardEntry {
   streak: number
 }
 
-// Configuration des icônes et couleurs par ligue
-const LEAGUE_CONFIG: Record<LeagueTier, { name: string; icon: string; color: string; bgGradient: string; borderColor: string }> = {
+// Configuration des icônes et couleurs par ligue (sans les noms hardcodés - utilisent i18n)
+const LEAGUE_STYLE_CONFIG: Record<LeagueTier, { icon: string; color: string; bgGradient: string; borderColor: string }> = {
   bronze: {
-    name: 'Bronze',
     icon: '🥉',
     color: 'text-orange-700',
     bgGradient: 'from-orange-400 to-orange-600',
     borderColor: 'border-orange-500'
   },
   silver: {
-    name: 'Argent',
     icon: '🥈',
     color: 'text-gray-400',
     bgGradient: 'from-gray-300 to-gray-500',
     borderColor: 'border-gray-400'
   },
   gold: {
-    name: 'Or',
     icon: '🥇',
     color: 'text-yellow-500',
     bgGradient: 'from-yellow-400 to-yellow-600',
     borderColor: 'border-yellow-500'
   },
   diamond: {
-    name: 'Diamant',
     icon: '💎',
     color: 'text-cyan-400',
     bgGradient: 'from-cyan-400 to-blue-500',
     borderColor: 'border-cyan-400'
   },
   master: {
-    name: 'Maître',
     icon: '👑',
     color: 'text-purple-500',
     bgGradient: 'from-purple-500 to-pink-600',
@@ -61,8 +57,18 @@ const LEAGUE_CONFIG: Record<LeagueTier, { name: string; icon: string; color: str
 }
 
 export default function LeaderboardPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+
+  // Helper pour obtenir le nom de la ligue traduit
+  const getLeagueName = (tier: LeagueTier) => t(`leaderboard.leagueTiers.${tier}`)
+
+  // Helper pour obtenir la config complète avec nom traduit
+  const getLeagueConfig = (tier: LeagueTier) => ({
+    ...LEAGUE_STYLE_CONFIG[tier],
+    name: getLeagueName(tier)
+  })
   const [leaderboardType, setLeaderboardType] = useState('xp')
   const [period, setPeriod] = useState('weekly')
   const [scope, setScope] = useState('global')
@@ -330,7 +336,7 @@ export default function LeaderboardPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
           <Trophy className="h-8 w-8 text-yellow-500" />
-          Classements & Ligues
+          {t('leaderboard.title')}
           {/* Indicateur temps réel */}
           <div className={`ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
             wsConnected
@@ -340,18 +346,18 @@ export default function LeaderboardPage() {
             {wsConnected ? (
               <>
                 <Wifi className="h-3 w-3" />
-                <span>En direct</span>
+                <span>{t('leaderboard.online')}</span>
               </>
             ) : (
               <>
                 <WifiOff className="h-3 w-3" />
-                <span>Hors ligne</span>
+                <span>{t('leaderboard.offline')}</span>
               </>
             )}
           </div>
         </h1>
         <p className="text-muted-foreground">
-          Comparez votre progression avec les autres étudiants
+          {t('leaderboard.subtitle')}
         </p>
       </div>
 
@@ -368,7 +374,7 @@ export default function LeaderboardPage() {
           >
             <span className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
-              Classement
+              {t('leaderboard.leaderboardTab')}
             </span>
           </button>
           <button
@@ -381,7 +387,7 @@ export default function LeaderboardPage() {
           >
             <span className="flex items-center gap-2">
               <Crown className="w-4 h-4" />
-              Ligues
+              {t('leaderboard.leagues')}
             </span>
           </button>
         </div>
@@ -399,7 +405,7 @@ export default function LeaderboardPage() {
                 <Zap className="h-5 w-5 text-green-600" />
                 <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-ping"></span>
               </div>
-              <span className="font-semibold text-green-700 dark:text-green-400">Activité en direct</span>
+              <span className="font-semibold text-green-700 dark:text-green-400">{t('leaderboard.liveActivity')}</span>
             </div>
             <div className="space-y-2">
               {recentUpdates.map((update, index) => (
@@ -442,12 +448,12 @@ export default function LeaderboardPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="xp">XP</SelectItem>
-            <SelectItem value="streak">Série</SelectItem>
-            <SelectItem value="notes">Notes</SelectItem>
-            <SelectItem value="flashcards">Flashcards</SelectItem>
-            <SelectItem value="quizzes">Quiz</SelectItem>
-            <SelectItem value="study_time">Temps d'étude</SelectItem>
+            <SelectItem value="xp">{t('leaderboard.xp')}</SelectItem>
+            <SelectItem value="streak">{t('leaderboard.streak')}</SelectItem>
+            <SelectItem value="notes">{t('leaderboard.notes')}</SelectItem>
+            <SelectItem value="flashcards">{t('leaderboard.flashcards')}</SelectItem>
+            <SelectItem value="quizzes">{t('leaderboard.quizzes')}</SelectItem>
+            <SelectItem value="study_time">{t('leaderboard.studyTime')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -456,10 +462,10 @@ export default function LeaderboardPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="daily">Aujourd'hui</SelectItem>
-            <SelectItem value="weekly">Cette semaine</SelectItem>
-            <SelectItem value="monthly">Ce mois</SelectItem>
-            <SelectItem value="all_time">Tout temps</SelectItem>
+            <SelectItem value="daily">{t('leaderboard.daily')}</SelectItem>
+            <SelectItem value="weekly">{t('leaderboard.weekly')}</SelectItem>
+            <SelectItem value="monthly">{t('leaderboard.monthly')}</SelectItem>
+            <SelectItem value="all_time">{t('leaderboard.allTime')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -468,8 +474,8 @@ export default function LeaderboardPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="global">🌍 Global</SelectItem>
-            <SelectItem value="university">🎓 Mon Université</SelectItem>
+            <SelectItem value="global">🌍 {t('leaderboard.global')}</SelectItem>
+            <SelectItem value="university">🎓 {t('leaderboard.myUniversity')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -537,7 +543,7 @@ export default function LeaderboardPage() {
       {/* Full Leaderboard */}
       <Card>
         <CardHeader>
-          <CardTitle>Classement complet</CardTitle>
+          <CardTitle>{t('leaderboard.fullLeaderboard')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -611,7 +617,7 @@ export default function LeaderboardPage() {
           {leaderboard.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Trophy className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>Aucune donnée pour ce classement</p>
+              <p>{t('leaderboard.noData')}</p>
             </div>
           )}
         </CardContent>
@@ -627,8 +633,8 @@ export default function LeaderboardPage() {
                       #{currentUserRank.rank}
                     </div>
                     <div>
-                      <h3 className="font-bold text-xl mb-1">Votre position</h3>
-                      <p className="text-white/80">Niveau {currentUserRank.level}</p>
+                      <h3 className="font-bold text-xl mb-1">{t('leaderboard.yourPosition')}</h3>
+                      <p className="text-white/80">{t('leaderboard.level')} {currentUserRank.level}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -639,7 +645,7 @@ export default function LeaderboardPage() {
                     <div className="mt-2 flex items-center justify-end gap-4">
                       <div className="flex items-center">
                         <Flame className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{currentUserRank.streak} jours</span>
+                        <span className="text-sm">{currentUserRank.streak} {t('leaderboard.days')}</span>
                       </div>
                     </div>
                   </div>
@@ -656,13 +662,11 @@ export default function LeaderboardPage() {
                   <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-2">Comment monter dans le classement?</h3>
+                  <h3 className="font-semibold mb-2">{t('leaderboard.howToClimb')}</h3>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Complétez des quiz et obtenez de bons scores</li>
-                    <li>• Révisez vos flashcards quotidiennement</li>
-                    <li>• Créez et partagez des notes de qualité</li>
-                    <li>• Maintenez votre série d'apprentissage</li>
-                    <li>• Participez aux sessions d'étude en groupe</li>
+                    {(t('leaderboard.howToClimbTips') as string[]).map((tip, index) => (
+                      <li key={index}>• {tip}</li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -686,13 +690,13 @@ export default function LeaderboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <Card className={`border-2 ${LEAGUE_CONFIG[myLeaguePosition.tier].borderColor} overflow-hidden`}>
-                    <div className={`bg-gradient-to-r ${LEAGUE_CONFIG[myLeaguePosition.tier].bgGradient} p-6 text-white`}>
+                  <Card className={`border-2 ${getLeagueConfig(myLeaguePosition.tier).borderColor} overflow-hidden`}>
+                    <div className={`bg-gradient-to-r ${getLeagueConfig(myLeaguePosition.tier).bgGradient} p-6 text-white`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="text-5xl">{LEAGUE_CONFIG[myLeaguePosition.tier].icon}</div>
+                          <div className="text-5xl">{getLeagueConfig(myLeaguePosition.tier).icon}</div>
                           <div>
-                            <h2 className="text-2xl font-bold">Ligue {LEAGUE_CONFIG[myLeaguePosition.tier].name}</h2>
+                            <h2 className="text-2xl font-bold">Ligue {getLeagueConfig(myLeaguePosition.tier).name}</h2>
                             <p className="text-white/80">Semaine {myLeaguePosition.weeks_in_tier} dans cette ligue</p>
                           </div>
                         </div>
@@ -731,7 +735,7 @@ export default function LeaderboardPage() {
                               <div className="text-sm text-green-600">Zone de promotion!</div>
                               {myLeaguePosition.next_tier && (
                                 <div className="text-xs text-gray-400 mt-1">
-                                  Vers {LEAGUE_CONFIG[myLeaguePosition.next_tier].name} {LEAGUE_CONFIG[myLeaguePosition.next_tier].icon}
+                                  Vers {getLeagueConfig(myLeaguePosition.next_tier).name} {getLeagueConfig(myLeaguePosition.next_tier).icon}
                                 </div>
                               )}
                             </div>
@@ -744,7 +748,7 @@ export default function LeaderboardPage() {
                               <div className="text-sm text-red-600">Zone de danger!</div>
                               {myLeaguePosition.previous_tier && (
                                 <div className="text-xs text-gray-400 mt-1">
-                                  Vers {LEAGUE_CONFIG[myLeaguePosition.previous_tier].name} {LEAGUE_CONFIG[myLeaguePosition.previous_tier].icon}
+                                  Vers {getLeagueConfig(myLeaguePosition.previous_tier).name} {getLeagueConfig(myLeaguePosition.previous_tier).icon}
                                 </div>
                               )}
                             </div>
@@ -758,9 +762,9 @@ export default function LeaderboardPage() {
 
                         {/* Meilleur rang */}
                         <div className="text-center">
-                          <div className="text-2xl">{LEAGUE_CONFIG[myLeaguePosition.highest_tier].icon}</div>
+                          <div className="text-2xl">{getLeagueConfig(myLeaguePosition.highest_tier).icon}</div>
                           <div className="text-sm text-muted-foreground">Meilleure ligue</div>
-                          <div className="text-xs font-medium">{LEAGUE_CONFIG[myLeaguePosition.highest_tier].name}</div>
+                          <div className="text-xs font-medium">{getLeagueConfig(myLeaguePosition.highest_tier).name}</div>
                         </div>
                       </div>
 
@@ -806,12 +810,12 @@ export default function LeaderboardPage() {
                       onClick={() => setSelectedLeagueTier(tier)}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         selectedLeagueTier === tier
-                          ? `bg-gradient-to-r ${LEAGUE_CONFIG[tier].bgGradient} text-white shadow-lg scale-105`
+                          ? `bg-gradient-to-r ${getLeagueConfig(tier).bgGradient} text-white shadow-lg scale-105`
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <span>{LEAGUE_CONFIG[tier].icon}</span>
-                      <span>{LEAGUE_CONFIG[tier].name}</span>
+                      <span>{getLeagueConfig(tier).icon}</span>
+                      <span>{getLeagueConfig(tier).name}</span>
                     </button>
                   ))}
                 </div>
@@ -822,15 +826,15 @@ export default function LeaderboardPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-3">
-                      <span className="text-2xl">{LEAGUE_CONFIG[selectedLeagueTier].icon}</span>
-                      Classement Ligue {LEAGUE_CONFIG[selectedLeagueTier].name}
+                      <span className="text-2xl">{getLeagueConfig(selectedLeagueTier).icon}</span>
+                      Classement Ligue {getLeagueConfig(selectedLeagueTier).name}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       {leagueEntries.map((entry, index) => {
                         const isCurrentUser = myLeaguePosition?.user_id === entry.user_id
-                        const tierConfig = LEAGUE_CONFIG[selectedLeagueTier]
+                        const tierConfig = getLeagueConfig(selectedLeagueTier)
 
                         return (
                           <motion.div
@@ -966,7 +970,7 @@ export default function LeaderboardPage() {
           onClose={() => setShowShareModal(false)}
           shareType={shareData.type}
           title={shareData.type === 'league_promotion' ? 'Partagez votre ligue!' : 'Partagez vos stats!'}
-          subtitle={myLeaguePosition ? `Ligue ${LEAGUE_CONFIG[myLeaguePosition.tier].name}` : undefined}
+          subtitle={myLeaguePosition ? `Ligue ${getLeagueConfig(myLeaguePosition.tier).name}` : undefined}
           data={shareData.data}
         />
       )}

@@ -30,6 +30,8 @@ import sparkService, {
   SparkNotification,
   ConversationSummary,
 } from '@/services/spark';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getArray } from '@/lib/i18n';
 
 // =============================================================================
 // TYPES
@@ -92,6 +94,9 @@ const SparkContext = createContext<SparkContextType | undefined>(undefined);
 // =============================================================================
 
 export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // i18n
+  const { t, locale } = useLanguage();
+
   // État principal
   const [sparkState, setSparkState] = useState<SparkState | null>(null);
   const [currentMessage, setCurrentMessage] = useState<SparkMessage | null>(null);
@@ -129,6 +134,25 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // MESSAGES CONTEXTUELS
   // ---------------------------------------------------------------------------
 
+  // Liste des événements qui utilisent les traductions locales au lieu de l'API
+  const LOCAL_MESSAGE_EVENTS = [
+    'welcome', 'welcome_back', 'streak_warning', 'streak_milestone',
+    'quiz_perfect', 'quiz_success', 'quiz_failed', 'level_up', 'exam_reminder'
+  ];
+
+  // Moods et animations par défaut pour chaque type d'événement
+  const EVENT_CONFIGS: Record<string, { mood: SparkMood; animation: SparkAnimation }> = {
+    welcome: { mood: 'happy', animation: 'wave' },
+    welcome_back: { mood: 'excited', animation: 'jump' },
+    streak_warning: { mood: 'worried', animation: 'think' },
+    streak_milestone: { mood: 'excited', animation: 'celebration' },
+    quiz_perfect: { mood: 'excited', animation: 'celebration' },
+    quiz_success: { mood: 'happy', animation: 'jump' },
+    quiz_failed: { mood: 'encouraging', animation: 'pat' },
+    level_up: { mood: 'excited', animation: 'evolution' },
+    exam_reminder: { mood: 'thinking', animation: 'think' },
+  };
+
   const showMessage = useCallback(async (event: string, context: any = {}) => {
     try {
       setIsLoading(true);
@@ -149,6 +173,37 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return;
       }
 
+      // Pour les événements automatiques, utiliser les traductions locales
+      if (LOCAL_MESSAGE_EVENTS.includes(event)) {
+        const messagesKey = `sparkWidget.automaticMessages.${event}`;
+        const messages = getArray(locale, messagesKey);
+
+        if (messages.length > 0) {
+          // Choisir un message aléatoire
+          let randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+          // Remplacer les placeholders si nécessaire
+          if (context.days) randomMessage = randomMessage.replace('{days}', context.days.toString());
+          if (context.score) randomMessage = randomMessage.replace('{score}', context.score.toString());
+          if (context.topic) randomMessage = randomMessage.replace('{topic}', context.topic);
+          if (context.level) randomMessage = randomMessage.replace('{level}', context.level.toString());
+          if (context.exam_name) randomMessage = randomMessage.replace('{exam_name}', context.exam_name);
+          if (context.days_until) randomMessage = randomMessage.replace('{days_until}', context.days_until.toString());
+
+          const config = EVENT_CONFIGS[event] || { mood: 'happy', animation: 'wave' };
+          const localMessage = {
+            message: randomMessage,
+            mood: context.mood || config.mood,
+            animation: context.animation || config.animation,
+            timestamp: new Date().toISOString(),
+          };
+          setCurrentMessage(localMessage);
+          console.log(`🐿️ Spark local [${event}]:`, localMessage.message);
+          setTimeout(() => setCurrentMessage(null), 5000);
+          return;
+        }
+      }
+
       // Sinon, appeler l'API pour un message généré
       const message = await sparkService.getMessage(event, context);
       setCurrentMessage(message);
@@ -162,7 +217,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   const clearMessage = useCallback(() => {
     setCurrentMessage(null);
@@ -219,6 +274,19 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           timestamp: new Date().toISOString(),
         });
 
+        // Auto-équiper le premier accessoire débloqué si aucun n'est équipé
+        if (result.newlyUnlocked && result.newlyUnlocked.length > 0) {
+          const currentAccessory = sparkState?.currentAccessory;
+          if (!currentAccessory) {
+            try {
+              await sparkService.updateSpark({ currentAccessory: result.newlyUnlocked[0] });
+              console.log('🐿️ Auto-équipé accessoire:', result.newlyUnlocked[0]);
+            } catch (equipError) {
+              console.error('Spark: Erreur auto-équipement:', equipError);
+            }
+          }
+        }
+
         await fetchSparkState();
 
         setTimeout(() => setCurrentMessage(null), 6000);
@@ -229,7 +297,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.error('Spark: Erreur vérification déblocages:', error);
       return null;
     }
-  }, [fetchSparkState]);
+  }, [fetchSparkState, sparkState?.currentAccessory]);
 
   // ---------------------------------------------------------------------------
   // CONVERSATIONS
@@ -316,7 +384,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } catch (error) {
         console.error('Spark: Erreur tuteur:', error);
         setCurrentAnswer({
-          answer: "Oups ! J'ai eu un problème. Réessaie ! 🐿️",
+          answer: `${t('sparkWidget.errorMessage')} 🐿️`,
           mood: 'sad',
           animation: 'idle',
           suggestions: [],
@@ -326,7 +394,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setIsLoading(false);
       }
     },
-    [activeConversationId]
+    [activeConversationId, t]
   );
 
   const getHint = useCallback(
@@ -336,10 +404,10 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return result.hint;
       } catch (error) {
         console.error('Spark: Erreur hint:', error);
-        return 'Réfléchis bien... La réponse est à portée de main ! 🤔';
+        return `${t('sparkWidget.hintFallback')} 🤔`;
       }
     },
-    []
+    [t]
   );
 
   // ---------------------------------------------------------------------------
@@ -418,7 +486,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
 
       setCurrentMessage({
-        message: 'Voici ma réponse ! 💡',
+        message: `${t('sparkWidget.hereIsMyAnswer')} 💡`,
         mood: 'happy',
         animation: 'wave',
         timestamp: new Date().toISOString(),
@@ -428,7 +496,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (error) {
       console.error('Spark: Erreur question:', error);
       setCurrentAnswer({
-        answer: "Oups ! J'ai eu un problème en essayant de répondre. Réessaie ! 🐿️",
+        answer: `${t('sparkWidget.errorAnswering')} 🐿️`,
         mood: 'sad',
         animation: 'idle',
         suggestions: [],
@@ -437,7 +505,7 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // ---------------------------------------------------------------------------
   // EFFETS
@@ -666,8 +734,10 @@ export const useSparkEvents = () => {
       } else if (days > 0 && days % 5 === 0) {
         await showMessage('streak_milestone', { days });
       }
+      // Vérifier les nouveaux accessoires débloqués (ex: lunettes à 10 jours)
+      await checkNewUnlocks();
     },
-    [showMessage]
+    [showMessage, checkNewUnlocks]
   );
 
   const onStreakWarning = useCallback(

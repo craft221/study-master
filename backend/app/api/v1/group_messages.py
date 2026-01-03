@@ -232,7 +232,8 @@ async def create_group_message(
         user=current_user,
         amount=2,
         reason="Envoi d'un message dans un groupe",
-        event_type="group_message_sent"
+        event_type="group_message_sent",
+        db=db
     )
 
     await db.commit()
@@ -404,7 +405,8 @@ async def add_reaction_to_message(
         user=current_user,
         amount=1,
         reason="Réaction à un message",
-        event_type="message_reaction"
+        event_type="message_reaction",
+        db=db
     )
 
     await db.commit()

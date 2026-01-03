@@ -22,6 +22,7 @@ import { useOfflineNotes } from '@/hooks/useOffline'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Subject {
   id: string
@@ -42,6 +43,7 @@ interface Note {
 }
 
 export default function NotesPage() {
+  const { t } = useLanguage()
   // Utiliser le hook offline pour les notes
   const { data: notesData, loading, error, isFromCache, refetch } = useOfflineNotes()
   const { isOnline } = useOfflineContext()
@@ -96,7 +98,7 @@ export default function NotesPage() {
   }
 
   const deleteNote = async (noteId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette note?')) return
+    if (!confirm(t('notesPage.confirmDelete'))) return
 
     const noteToDelete = notes.find(n => n.id === noteId)
     // Mise à jour optimiste
@@ -140,17 +142,17 @@ export default function NotesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Notes</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('notesPage.title')}</h1>
             {isFromCache && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 <CloudOff className="w-3 h-3 mr-1" />
-                Données en cache
+                {t('notesPage.cachedData')}
               </span>
             )}
           </div>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {notes.length} notes au total
-            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+            {t('notesPage.totalNotes', { count: notes.length })}
+            {isFromCache && !isOnline && ` • ${t('notesPage.offlineMode')}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -158,7 +160,6 @@ export default function NotesPage() {
             <button
               onClick={() => refetch()}
               className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-              title="Actualiser les données"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -168,7 +169,7 @@ export default function NotesPage() {
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Nouvelle note
+            {t('notesPage.newNote')}
           </Link>
         </div>
       </div>
@@ -181,7 +182,7 @@ export default function NotesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher dans vos notes..."
+              placeholder={t('notesPage.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -207,12 +208,12 @@ export default function NotesPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchQuery ? 'Aucune note trouvée' : 'Aucune note pour le moment'}
+            {searchQuery ? t('notesPage.noNotesFound') : t('notesPage.noNotesYet')}
           </h3>
           <p className="text-gray-600 mb-6">
             {searchQuery
-              ? 'Essayez de modifier vos critères de recherche'
-              : 'Commencez par créer votre première note d\'étude'}
+              ? t('notesPage.tryDifferentSearch')
+              : t('notesPage.createFirstNote')}
           </p>
           {!searchQuery && (
             <Link
@@ -220,7 +221,7 @@ export default function NotesPage() {
               className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Créer ma première note
+              {t('notesPage.createMyFirstNote')}
             </Link>
           )}
         </div>

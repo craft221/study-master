@@ -3,8 +3,12 @@
 import Link from 'next/link'
 import { BookOpen, ArrowLeft, Mail, MessageSquare, Clock, Send } from 'lucide-react'
 import { useState } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function ContactPage() {
+  const { t, messages } = useLanguage()
+  const contact = (messages as any).contact
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -47,7 +51,7 @@ export default function ContactPage() {
               className="text-gray-600 hover:text-gray-900 font-medium transition flex items-center space-x-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Retour</span>
+              <span>{t('contact.nav.back')}</span>
             </Link>
           </div>
         </div>
@@ -57,13 +61,13 @@ export default function ContactPage() {
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
-            Contactez-
+            {t('contact.hero.title1')}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600">
-              nous
+              {t('contact.hero.title2')}
             </span>
           </h1>
           <p className="text-xl text-gray-600">
-            Une question, une suggestion ou un problème ? Nous sommes là pour vous aider.
+            {t('contact.hero.subtitle')}
           </p>
         </div>
       </section>
@@ -78,8 +82,8 @@ export default function ContactPage() {
                 <div className="bg-primary-100 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                   <Mail className="h-6 w-6 text-primary-600" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Email</h3>
-                <p className="text-gray-600 mb-2">Pour toute question générale :</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.info.email.title')}</h3>
+                <p className="text-gray-600 mb-2">{t('contact.info.email.description')}</p>
                 <a
                   href="mailto:contact@studymaster.app"
                   className="text-primary-600 hover:text-primary-700 font-medium"
@@ -92,8 +96,8 @@ export default function ContactPage() {
                 <div className="bg-green-100 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                   <MessageSquare className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Support</h3>
-                <p className="text-gray-600 mb-2">Besoin d'aide technique ?</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.info.support.title')}</h3>
+                <p className="text-gray-600 mb-2">{t('contact.info.support.description')}</p>
                 <a
                   href="mailto:support@studymaster.app"
                   className="text-primary-600 hover:text-primary-700 font-medium"
@@ -106,10 +110,8 @@ export default function ContactPage() {
                 <div className="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                   <Clock className="h-6 w-6 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Délai de réponse</h3>
-                <p className="text-gray-600">
-                  Nous nous efforçons de répondre à toutes les demandes sous <strong>24 à 48 heures</strong> ouvrées.
-                </p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.info.response.title')}</h3>
+                <p className="text-gray-600" dangerouslySetInnerHTML={{ __html: t('contact.info.response.description') }} />
               </div>
             </div>
 
@@ -121,9 +123,9 @@ export default function ContactPage() {
                     <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Send className="h-8 w-8 text-green-600" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Message envoyé !</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('contact.form.success.title')}</h3>
                     <p className="text-gray-600 mb-6">
-                      Merci de nous avoir contactés. Nous vous répondrons dans les plus brefs délais.
+                      {t('contact.form.success.message')}
                     </p>
                     <button
                       onClick={() => {
@@ -132,17 +134,17 @@ export default function ContactPage() {
                       }}
                       className="text-primary-600 hover:text-primary-700 font-medium"
                     >
-                      Envoyer un autre message
+                      {t('contact.form.success.sendAnother')}
                     </button>
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Envoyez-nous un message</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('contact.form.title')}</h2>
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="grid md:grid-cols-2 gap-6">
                         <div>
                           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                            Nom complet *
+                            {t('contact.form.name')} *
                           </label>
                           <input
                             type="text"
@@ -152,12 +154,12 @@ export default function ContactPage() {
                             value={formData.name}
                             onChange={handleChange}
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                            placeholder="Votre nom"
+                            placeholder={t('contact.form.namePlaceholder')}
                           />
                         </div>
                         <div>
                           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                            Email *
+                            {t('contact.form.email')} *
                           </label>
                           <input
                             type="email"
@@ -167,14 +169,14 @@ export default function ContactPage() {
                             value={formData.email}
                             onChange={handleChange}
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                            placeholder="votre@email.com"
+                            placeholder={t('contact.form.emailPlaceholder')}
                           />
                         </div>
                       </div>
 
                       <div>
                         <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                          Sujet *
+                          {t('contact.form.subject')} *
                         </label>
                         <select
                           id="subject"
@@ -184,20 +186,16 @@ export default function ContactPage() {
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                         >
-                          <option value="">Sélectionnez un sujet</option>
-                          <option value="general">Question générale</option>
-                          <option value="bug">Signaler un bug</option>
-                          <option value="feature">Suggestion de fonctionnalité</option>
-                          <option value="account">Problème de compte</option>
-                          <option value="billing">Facturation</option>
-                          <option value="partnership">Partenariat</option>
-                          <option value="other">Autre</option>
+                          <option value="">{t('contact.form.subjectSelect')}</option>
+                          {contact?.form?.subjects?.map((subject: { value: string; label: string }, i: number) => (
+                            <option key={i} value={subject.value}>{subject.label}</option>
+                          ))}
                         </select>
                       </div>
 
                       <div>
                         <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                          Message *
+                          {t('contact.form.message')} *
                         </label>
                         <textarea
                           id="message"
@@ -207,7 +205,7 @@ export default function ContactPage() {
                           value={formData.message}
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition resize-none"
-                          placeholder="Décrivez votre demande en détail..."
+                          placeholder={t('contact.form.messagePlaceholder')}
                         />
                       </div>
 
@@ -219,12 +217,12 @@ export default function ContactPage() {
                         {isSubmitting ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Envoi en cours...</span>
+                            <span>{t('contact.form.sending')}</span>
                           </>
                         ) : (
                           <>
                             <Send className="h-5 w-5" />
-                            <span>Envoyer le message</span>
+                            <span>{t('contact.form.submit')}</span>
                           </>
                         )}
                       </button>
@@ -241,23 +239,22 @@ export default function ContactPage() {
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-8 text-white text-center">
-            <h2 className="text-2xl font-bold mb-4">Questions fréquentes</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('contact.faq.title')}</h2>
             <p className="text-primary-50 mb-6">
-              Avant de nous contacter, consultez peut-être notre FAQ. Vous y trouverez
-              probablement la réponse à votre question.
+              {t('contact.faq.description')}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/terms"
                 className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition font-medium"
               >
-                Conditions d'utilisation
+                {t('contact.faq.terms')}
               </Link>
               <Link
                 href="/privacy"
                 className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition font-medium"
               >
-                Confidentialité
+                {t('contact.faq.privacy')}
               </Link>
             </div>
           </div>
@@ -268,12 +265,12 @@ export default function ContactPage() {
       <footer className="border-t bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center text-gray-600">
-            <p>© 2025 Study Master. Tous droits réservés.</p>
+            <p>{t('contact.footer.copyright')}</p>
             <div className="flex items-center justify-center space-x-6 mt-4">
-              <Link href="/about" className="hover:text-gray-900 transition">À propos</Link>
-              <Link href="/contact" className="hover:text-gray-900 transition">Contact</Link>
-              <Link href="/privacy" className="hover:text-gray-900 transition">Confidentialité</Link>
-              <Link href="/terms" className="hover:text-gray-900 transition">CGU</Link>
+              <Link href="/about" className="hover:text-gray-900 transition">{t('contact.footer.about')}</Link>
+              <Link href="/contact" className="hover:text-gray-900 transition">{t('contact.footer.contact')}</Link>
+              <Link href="/privacy" className="hover:text-gray-900 transition">{t('contact.footer.privacy')}</Link>
+              <Link href="/terms" className="hover:text-gray-900 transition">{t('contact.footer.terms')}</Link>
             </div>
           </div>
         </div>

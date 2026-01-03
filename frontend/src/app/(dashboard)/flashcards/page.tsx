@@ -23,6 +23,7 @@ import { useOfflineDecks } from '@/hooks/useOffline'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface FlashcardDeck {
   id: string
@@ -45,6 +46,7 @@ export default function FlashcardsPage() {
   // Utiliser le hook offline pour les decks
   const { data: decksData, loading, error, isFromCache, refetch } = useOfflineDecks()
   const { isOnline } = useOfflineContext()
+  const { t } = useLanguage()
   const [decks, setDecks] = useState<FlashcardDeck[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -65,7 +67,7 @@ export default function FlashcardsPage() {
   const totalMastered = decks.reduce((sum, deck) => sum + deck.mastered_cards, 0)
 
   const deleteDeck = async (deckId: string) => {
-    if (!confirm('Supprimer ce deck et toutes ses cartes?')) return
+    if (!confirm(t('flashcardsPage.confirmDelete'))) return
 
     const deckToDelete = decks.find(d => d.id === deckId)
     // Mise à jour optimiste
@@ -84,13 +86,13 @@ export default function FlashcardsPage() {
           { id: deckId }
         )
       }
-      toast.success(isOnline ? 'Deck supprimé' : 'Deck supprimé (sera synchronisé)')
+      toast.success(isOnline ? t('flashcardsPage.deckDeleted') : t('flashcardsPage.deckDeletedSync'))
     } catch (error) {
       // Rollback en cas d'erreur
       if (deckToDelete) {
         setDecks([...decks, deckToDelete])
       }
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('flashcardsPage.deleteError'))
     }
   }
 
@@ -108,17 +110,17 @@ export default function FlashcardsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Flashcards</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('flashcardsPage.title')}</h1>
             {isFromCache && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 <CloudOff className="w-3 h-3 mr-1" />
-                Cache
+                {t('flashcardsPage.cache')}
               </span>
             )}
           </div>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {decks.length} decks • {totalCards} cartes
-            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+            {decks.length} decks • {totalCards} {t('flashcardsPage.cardsCount', { count: '' }).replace('{count} ', '')}
+            {isFromCache && !isOnline && ` • ${t('flashcardsPage.offlineMode')}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -126,7 +128,6 @@ export default function FlashcardsPage() {
             <button
               onClick={() => refetch()}
               className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-              title="Actualiser les données"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -136,7 +137,7 @@ export default function FlashcardsPage() {
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Nouveau deck
+            {t('flashcardsPage.newDeck')}
           </Link>
         </div>
       </div>
@@ -150,14 +151,14 @@ export default function FlashcardsPage() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalCardsDue}</h3>
-          <p className="text-gray-600 text-sm">Cartes à réviser</p>
+          <p className="text-gray-600 text-sm">{t('flashcardsPage.cardsToReview')}</p>
           {totalCardsDue > 0 && (
             <Link
               href="/flashcards/review-all"
               className="mt-4 inline-flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               <Play className="h-4 w-4 mr-1" />
-              Commencer la révision
+              {t('flashcardsPage.startReview')}
             </Link>
           )}
         </div>
@@ -169,7 +170,7 @@ export default function FlashcardsPage() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalCards}</h3>
-          <p className="text-gray-600 text-sm">Cartes totales</p>
+          <p className="text-gray-600 text-sm">{t('flashcardsPage.totalCards')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
@@ -179,9 +180,9 @@ export default function FlashcardsPage() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalMastered}</h3>
-          <p className="text-gray-600 text-sm">Cartes maîtrisées</p>
+          <p className="text-gray-600 text-sm">{t('flashcardsPage.masteredCards')}</p>
           <div className="mt-2 text-sm text-gray-500">
-            {totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}% de progression
+            {totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}% {t('flashcardsPage.progression')}
           </div>
         </div>
       </div>
@@ -192,7 +193,7 @@ export default function FlashcardsPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher un deck..."
+            placeholder={t('flashcardsPage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -205,12 +206,12 @@ export default function FlashcardsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <CreditCard className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchQuery ? 'Aucun deck trouvé' : 'Aucun deck pour le moment'}
+            {searchQuery ? t('flashcardsPage.noDeckFound') : t('flashcardsPage.noDeckYet')}
           </h3>
           <p className="text-gray-600 mb-6">
             {searchQuery
-              ? 'Essayez de modifier votre recherche'
-              : 'Créez votre premier deck de flashcards pour commencer à réviser'}
+              ? t('flashcardsPage.tryDifferentSearch')
+              : t('flashcardsPage.createFirstDeck')}
           </p>
           {!searchQuery && (
             <Link
@@ -218,7 +219,7 @@ export default function FlashcardsPage() {
               className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Créer mon premier deck
+              {t('flashcardsPage.createMyFirstDeck')}
             </Link>
           )}
         </div>
@@ -262,22 +263,22 @@ export default function FlashcardsPage() {
                   <div className="grid grid-cols-3 gap-2 mb-4 py-4 border-t border-b border-gray-200">
                     <div className="text-center">
                       <div className="text-lg font-bold text-gray-900">{deck.total_cards}</div>
-                      <div className="text-xs text-gray-500">Total</div>
+                      <div className="text-xs text-gray-500">{t('flashcardsPage.total')}</div>
                     </div>
                     <div className="text-center border-l border-r border-gray-200">
                       <div className="text-lg font-bold text-orange-600">{deck.cards_due}</div>
-                      <div className="text-xs text-gray-500">À réviser</div>
+                      <div className="text-xs text-gray-500">{t('flashcardsPage.toReview')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-green-600">{deck.mastered_cards}</div>
-                      <div className="text-xs text-gray-500">Maîtrisées</div>
+                      <div className="text-xs text-gray-500">{t('flashcardsPage.mastered')}</div>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                      <span>Progression</span>
+                      <span>{t('flashcardsPage.progress')}</span>
                       <span>{progressPercent}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -296,7 +297,7 @@ export default function FlashcardsPage() {
                         className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium text-center flex items-center justify-center"
                       >
                         <Play className="h-4 w-4 mr-1" />
-                        Réviser
+                        {t('flashcardsPage.review')}
                       </Link>
                     )}
                     <Link
@@ -304,7 +305,7 @@ export default function FlashcardsPage() {
                       className={`${deck.cards_due > 0 ? 'flex-1' : 'flex-1'} px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium text-center flex items-center justify-center`}
                     >
                       <BookOpen className="h-4 w-4 mr-1" />
-                      Voir
+                      {t('flashcardsPage.view')}
                     </Link>
                     <button
                       onClick={() => deleteDeck(deck.id)}
@@ -318,7 +319,7 @@ export default function FlashcardsPage() {
                   {deck.last_reviewed_at && (
                     <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
-                      Dernière révision: {new Date(deck.last_reviewed_at).toLocaleDateString('fr-FR')}
+                      {t('flashcardsPage.lastReview')}: {new Date(deck.last_reviewed_at).toLocaleDateString()}
                     </div>
                   )}
                 </div>

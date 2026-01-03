@@ -9,6 +9,7 @@ import { useAntiCheat } from '@/hooks/use-anti-cheat'
 import { AntiCheatMonitor, AntiCheatResult } from '@/components/anti-cheat-monitor'
 import { ValidateQuizResponse } from '@/services/anti-cheat'
 import { useSparkEventMessages } from '@/hooks/useSparkEvents'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Question {
   id: string
@@ -48,6 +49,9 @@ export default function TakeQuizPage() {
 
   // Hook Spark pour les messages d'événements
   const { onQuizComplete } = useSparkEventMessages()
+
+  // Hook pour les traductions
+  const { t } = useLanguage()
 
   // Timing pour chaque question
   const questionStartTime = useRef<number>(Date.now())
@@ -104,9 +108,21 @@ export default function TakeQuizPage() {
       await antiCheat.startSession()
       quizStartTime.current = Date.now()
       questionStartTime.current = Date.now()
-    } catch (error) {
-      toast.error('Erreur lors du chargement du quiz')
-      router.push('/quizzes')
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 'Erreur lors du chargement du quiz'
+
+      // Si c'est une erreur de duel déjà complété, afficher un message approprié et rediriger vers le duel
+      if (errorMessage.includes('duel') || errorMessage.includes('déjà complété')) {
+        toast.error(errorMessage, { duration: 5000 })
+        if (duelId) {
+          router.push(`/duels/${duelId}`)
+        } else {
+          router.push('/duels')
+        }
+      } else {
+        toast.error(errorMessage)
+        router.push('/quizzes')
+      }
     } finally {
       setLoading(false)
     }
@@ -133,13 +149,26 @@ export default function TakeQuizPage() {
   const handleSubmit = async () => {
     if (!quiz || !attemptId) return
 
+    // Vérifier que toutes les questions ont une réponse
+    const unansweredQuestions = quiz.questions.filter(q => !answers[q.id])
+    if (unansweredQuestions.length > 0) {
+      toast.error(t('quiz.answerAllQuestions', { count: unansweredQuestions.length }))
+      // Naviguer vers la première question sans réponse
+      const firstUnansweredIndex = quiz.questions.findIndex(q => !answers[q.id])
+      if (firstUnansweredIndex !== -1) {
+        setCurrentQuestion(firstUnansweredIndex)
+      }
+      return
+    }
+
     try {
       const totalTimeSeconds = Math.round((Date.now() - quizStartTime.current) / 1000)
 
+      // S'assurer que toutes les questions sont incluses dans la soumission
       const response = await api.put(`/quizzes/attempt/${attemptId}`, {
-        answers: Object.entries(answers).map(([question_id, user_answer]) => ({
-          question_id: parseInt(question_id),
-          user_answer,
+        answers: quiz.questions.map((question) => ({
+          question_id: parseInt(question.id),
+          user_answer: answers[question.id] || '',
           time_spent_seconds: 0
         })),
       })
@@ -169,14 +198,14 @@ export default function TakeQuizPage() {
       }
 
       if (acResult?.is_disqualified) {
-        toast.error('Résultat invalidé pour comportement suspect')
+        toast.error(t('quiz.resultInvalidated'))
       } else if (acResult && acResult.violations_count > 0) {
-        toast(`Quiz terminé avec ${acResult.violations_count} avertissement(s)`, { icon: '⚠️' })
+        toast(`${t('quiz.quizFinished')} ${acResult.violations_count} warning(s)`, { icon: '⚠️' })
       } else {
-        toast.success(`Quiz terminé! Score: ${Math.round(finalScore)}%`)
+        toast.success(`${t('quiz.quizFinished')} Score: ${Math.round(finalScore)}%`)
       }
     } catch (error) {
-      toast.error('Erreur lors de la soumission')
+      toast.error(t('quiz.submissionError'))
     }
   }
 
@@ -227,57 +256,70 @@ export default function TakeQuizPage() {
             )}
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {antiCheatResult?.is_disqualified ? 'Résultat invalidé' : 'Quiz terminé!'}
+            {antiCheatResult?.is_disqualified ? t('quiz.resultInvalidated') : t('quiz.quizFinished')}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">Voici vos résultats</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">{t('quiz.yourResults')}</p>
 
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div className={`text-3xl font-bold ${antiCheatResult?.is_disqualified ? 'text-gray-400 line-through' : 'text-blue-600'}`}>
                 {score}%
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Score final</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('quiz.finalScore')}</div>
             </div>
             <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="text-3xl font-bold text-green-600">{correctCount}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Réponses correctes</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('quiz.correctAnswers')}</div>
             </div>
             <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <div className="text-3xl font-bold text-red-600">
                 {quiz.questions.length - correctCount}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Réponses incorrectes</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('quiz.incorrectAnswers')}</div>
             </div>
           </div>
 
           {antiCheatResult?.penalty_xp && antiCheatResult.penalty_xp > 0 && !antiCheatResult.is_disqualified && (
             <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p className="text-yellow-800 dark:text-yellow-300 font-semibold">
-                Pénalité appliquée: -{antiCheatResult.penalty_xp} XP
+                {t('quiz.penaltyApplied')}: -{antiCheatResult.penalty_xp} XP
               </p>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => router.push(`/quizzes/${quizId}`)}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
-            >
-              Recommencer
-            </button>
-            <button
-              onClick={() => router.push('/quizzes')}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold"
-            >
-              Retour aux quiz
-            </button>
+            {/* Afficher Recommencer seulement si ce n'est pas un duel */}
+            {!duelId && (
+              <button
+                onClick={() => router.push(`/quizzes/${quizId}`)}
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+              >
+                {t('quiz.retry')}
+              </button>
+            )}
+            {/* Si c'est un duel, proposer de retourner au duel */}
+            {duelId ? (
+              <button
+                onClick={() => router.push(`/duels/${duelId}`)}
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+              >
+                {t('quiz.viewDuelResults')}
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/quizzes')}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                {t('quiz.backToQuizzes')}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Review Answers */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900">Révision des réponses</h3>
+            <h3 className="text-xl font-bold text-gray-900">{t('quiz.reviewTitle')}</h3>
           </div>
           <div className="divide-y divide-gray-200">
             {quiz.questions.map((question, index) => {
@@ -317,12 +359,12 @@ export default function TakeQuizPage() {
                             {option}
                             {option === question.correct_answer && (
                               <span className="ml-2 text-green-600 text-sm font-medium">
-                                ✓ Correcte
+                                ✓ {t('quiz.correct')}
                               </span>
                             )}
                             {option === userAnswer && option !== question.correct_answer && (
                               <span className="ml-2 text-red-600 text-sm font-medium">
-                                ✗ Votre réponse
+                                ✗ {t('quiz.yourAnswer')}
                               </span>
                             )}
                           </div>
@@ -331,7 +373,7 @@ export default function TakeQuizPage() {
                       {question.explanation && (
                         <div className="p-3 bg-blue-50 rounded-lg">
                           <p className="text-sm text-gray-700">
-                            <strong>Explication:</strong> {question.explanation}
+                            <strong>{t('quiz.explanation')}:</strong> {question.explanation}
                           </p>
                         </div>
                       )}
@@ -362,7 +404,7 @@ export default function TakeQuizPage() {
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-900">{quiz.title}</h2>
           <p className="text-sm text-gray-600">
-            Question {currentQuestion + 1} sur {quiz.questions.length}
+            {t('quiz.questionOf', { current: currentQuestion + 1, total: quiz.questions.length })}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -425,7 +467,7 @@ export default function TakeQuizPage() {
           disabled={currentQuestion === 0}
           className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Précédent
+          {t('quiz.previous')}
         </button>
 
         {currentQuestion === quiz.questions.length - 1 ? (
@@ -433,21 +475,21 @@ export default function TakeQuizPage() {
             onClick={handleSubmit}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
           >
-            Terminer le quiz
+            {t('quiz.finishQuiz')}
           </button>
         ) : (
           <button
             onClick={() => setCurrentQuestion(currentQuestion + 1)}
             className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
-            Suivant
+            {t('quiz.next')}
           </button>
         )}
       </div>
 
       {/* Question Navigator */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Navigation rapide</h4>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">{t('quiz.quickNav')}</h4>
         <div className="flex flex-wrap gap-2">
           {quiz.questions.map((_, index) => (
             <button

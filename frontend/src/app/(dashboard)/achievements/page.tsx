@@ -173,9 +173,17 @@ export default function AchievementsPage() {
     ? allAchievements
     : allAchievements.filter(a => a.category?.toLowerCase() === selectedCategory.toLowerCase())
 
-  const unlockedCount = userAchievements.length
+  // Dédupliquer les achievements par achievement_id (au cas où il y aurait des doublons en DB)
+  const uniqueUnlockedIds = new Set(userAchievements.map(ua => ua.achievement_id))
+  const unlockedCount = uniqueUnlockedIds.size
   const totalCount = allAchievements.length
-  const totalXP = userAchievements.reduce((sum, ua) => sum + (ua.achievement?.xp_reward || 0), 0)
+  // Calculer XP uniquement pour les achievements uniques
+  const seenAchievementIds = new Set<number>()
+  const totalXP = userAchievements.reduce((sum, ua) => {
+    if (seenAchievementIds.has(ua.achievement_id)) return sum
+    seenAchievementIds.add(ua.achievement_id)
+    return sum + (ua.achievement?.xp_reward || 0)
+  }, 0)
 
   if (loading) {
     return (

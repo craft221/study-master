@@ -33,6 +33,8 @@ import LiveLeaderboard from '@/components/focus-room/LiveLeaderboard'
 import SocialPressure from '@/components/focus-room/SocialPressure'
 import RandomRewards from '@/components/focus-room/RandomRewards'
 import DeepWorkMode from '@/components/focus-room/DeepWorkMode'
+import { useCelebrations, CelebrationEvent } from '@/components/focus-room/FocusRoomCelebrations'
+import { useSpark } from '@/contexts/SparkContext'
 
 const STATUS_CONFIG = {
   focusing: { labelKey: 'focusing', color: 'bg-green-500', textColor: 'text-green-400' },
@@ -99,6 +101,13 @@ export default function FocusRoomPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [incomingReaction, setIncomingReaction] = useState<{ emoji: string; fromUser: string } | null>(null)
 
+  // Spark celebration system
+  const [lastMilestone, setLastMilestone] = useState<number>(0)
+  const [isFirstInRoom, setIsFirstInRoom] = useState(false)
+  const [deepWorkActive, setDeepWorkActive] = useState(false)
+  const { celebrate, celebrateMilestone } = useCelebrations()
+  const { showMessage } = useSpark()
+
   // Invite user dialog
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -107,7 +116,9 @@ export default function FocusRoomPage() {
   const [invitingUserId, setInvitingUserId] = useState<number | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const hasJoinedRef = useRef(false) // Track if user has joined the room
+  const focusMinutesRef = useRef(0) // Ref pour éviter les problèmes de closure
+  // Note: heartbeatIntervalRef a été supprimé - on utilise httpHeartbeatRef pour le HTTP heartbeat
   const focusIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const getCurrentUserId = useCallback(() => {
@@ -122,6 +133,32 @@ export default function FocusRoomPage() {
     }
     return null
   }, [])
+
+  // Trigger celebration with Spark message
+  const triggerCelebration = useCallback((event: CelebrationEvent) => {
+    const result = celebrate(event)
+    if (result?.message) {
+      // Utiliser le système de messages Spark global
+      showMessage('focus_room_event', {
+        message_override: result.message,
+        mood: result.mood || 'excited',
+        animation: 'celebration'
+      })
+    }
+  }, [celebrate, showMessage])
+
+  // Trigger milestone celebration
+  const triggerMilestoneCelebration = useCallback((minutes: number) => {
+    const result = celebrateMilestone(minutes)
+    if (result?.message) {
+      // Utiliser le système de messages Spark global
+      showMessage('focus_room_milestone', {
+        message_override: result.message,
+        mood: result.mood || 'excited',
+        animation: 'celebration'
+      })
+    }
+  }, [celebrateMilestone, showMessage])
 
   // Fetch initial room data
   useEffect(() => {
@@ -141,16 +178,59 @@ export default function FocusRoomPage() {
 
     return () => {
       if (wsRef.current) wsRef.current.close()
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
       if (focusIntervalRef.current) clearInterval(focusIntervalRef.current)
     }
   }, [roomId])
 
-  // Use a ref to track the current status to avoid closure issues
+  // Sauvegarder la session quand l'utilisateur quitte la page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasJoinedRef.current && focusMinutesRef.current > 0) {
+        // Utiliser fetch avec keepalive pour envoyer les données de manière fiable
+        const token = localStorage.getItem('access_token')
+        if (token) {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/focus-rooms/${roomId}/leave`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({}),
+            keepalive: true // Important: permet d'envoyer même si la page se ferme
+          }).catch(() => {}) // Ignorer les erreurs car la page se ferme
+        }
+        // Afficher un message de confirmation
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      // Sauvegarder les minutes quand l'onglet devient invisible
+      if (document.visibilityState === 'hidden' && hasJoinedRef.current) {
+        // Envoyer un heartbeat pour sauvegarder le temps de focus actuel
+        focusRoomsService.heartbeat(roomId).catch(console.error)
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [roomId]) // Utilise des refs pour les autres valeurs
+
+  // Use refs to track current values to avoid closure issues
   const myStatusRef = useRef(myStatus)
   useEffect(() => {
     myStatusRef.current = myStatus
   }, [myStatus])
+
+  useEffect(() => {
+    focusMinutesRef.current = focusMinutes
+  }, [focusMinutes])
 
   // Focus time counter - Updates minutes every 60 seconds (not fractions)
   const secondsCounterRef = useRef(0)
@@ -189,14 +269,115 @@ export default function FocusRoomPage() {
     }
   }, []) // Empty deps - runs once on mount
 
+  // HTTP Heartbeat - Sauvegarde périodique des minutes de focus (plus fiable que WebSocket)
+  const httpHeartbeatRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    // Ne pas démarrer le heartbeat si roomId est invalide
+    if (isNaN(roomId) || roomId <= 0) return
+
+    const sendHeartbeat = async () => {
+      // Seulement si l'utilisateur a rejoint la room
+      if (!hasJoinedRef.current) return
+
+      try {
+        const result = await focusRoomsService.heartbeat(roomId)
+        console.log('[FocusRoom] HTTP Heartbeat sent, focus_minutes:', result.focus_minutes, 'xp_earned:', result.xp_earned)
+
+        // Afficher un toast si un milestone est atteint avec les XP gagnés
+        if (result.milestone) {
+          const xpText = result.xp_earned > 0 ? ` (+${result.xp_earned} XP)` : ''
+          toast({
+            title: `🎯 ${t('focusRoom.milestoneReached', { username: 'Vous', milestone: result.milestone })}${xpText}`,
+            description: t('focusRoom.congrats'),
+          })
+        }
+      } catch (error) {
+        // Silently ignore heartbeat errors - ne pas spammer l'utilisateur
+        console.warn('[FocusRoom] HTTP Heartbeat failed:', error)
+      }
+    }
+
+    // Envoyer un heartbeat immédiatement puis toutes les 30 secondes
+    // Premier heartbeat après 5 secondes pour laisser le temps de join
+    const initialTimeout = setTimeout(() => {
+      sendHeartbeat()
+      // Puis toutes les 30 secondes
+      httpHeartbeatRef.current = setInterval(sendHeartbeat, 30000)
+    }, 5000)
+
+    return () => {
+      clearTimeout(initialTimeout)
+      if (httpHeartbeatRef.current) {
+        clearInterval(httpHeartbeatRef.current)
+        httpHeartbeatRef.current = null
+      }
+    }
+  }, [roomId]) // Dépend uniquement de roomId
+
+  // Milestone detection - trigger celebrations when milestones are reached
+  const milestones = [15, 30, 45, 60, 90, 120, 180, 240]
+
+  useEffect(() => {
+    // Check if we've crossed a new milestone
+    const currentMinutes = Math.floor(focusMinutes)
+
+    // Find the highest milestone we've passed
+    for (const milestone of milestones) {
+      if (currentMinutes >= milestone && lastMilestone < milestone) {
+        setLastMilestone(milestone)
+        triggerMilestoneCelebration(milestone)
+        break
+      }
+    }
+  }, [focusMinutes, lastMilestone, triggerMilestoneCelebration])
+
+  // Check if first in room - celebrate!
+  useEffect(() => {
+    if (participants.length === 1 && !isFirstInRoom && hasJoinedRef.current) {
+      setIsFirstInRoom(true)
+      triggerCelebration('first_in_room')
+    }
+  }, [participants.length, isFirstInRoom, triggerCelebration])
+
   const fetchRoomData = async () => {
     try {
       setLoading(true)
-      const data = await focusRoomsService.getRoom(roomId)
+      let data = await focusRoomsService.getRoom(roomId)
       setRoom(data)
 
       const currentUserId = getCurrentUserId()
-      const me = data.participants?.find((p: FocusRoomParticipant) => p.user_id === currentUserId)
+      let me = data.participants?.find((p: FocusRoomParticipant) => p.user_id === currentUserId)
+
+      // Auto-join si l'utilisateur n'est pas encore participant
+      if (!me) {
+        hasJoinedRef.current = false
+        console.log('[FocusRoom] User not in participants, auto-joining...')
+        try {
+          await focusRoomsService.joinRoom(roomId)
+          // Re-fetch room data after joining
+          data = await focusRoomsService.getRoom(roomId)
+          setRoom(data)
+          me = data.participants?.find((p: FocusRoomParticipant) => p.user_id === currentUserId)
+          console.log('[FocusRoom] Auto-join successful')
+          hasJoinedRef.current = true
+        } catch (joinError: any) {
+          console.error('[FocusRoom] Auto-join failed:', joinError)
+          // Si c'est une room privée ou pleine, rediriger
+          if (joinError.response?.status === 403 || joinError.response?.status === 400) {
+            toast({
+              title: t('focusRoom.error'),
+              description: joinError.response?.data?.detail || t('focusRoom.joinError'),
+              variant: 'destructive'
+            })
+            router.push('/focus-rooms')
+            return
+          }
+        }
+      } else {
+        // L'utilisateur était déjà participant
+        hasJoinedRef.current = true
+      }
 
       // Initialiser les minutes depuis le backend
       const myMinutes = me?.focus_minutes || 0
@@ -249,7 +430,8 @@ export default function FocusRoomPage() {
   }
 
   const connectWebSocket = () => {
-    const token = localStorage.getItem('token')
+    // Essayer access_token d'abord, puis token comme fallback
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token')
     if (!token) return
 
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'
@@ -257,11 +439,9 @@ export default function FocusRoomPage() {
 
     ws.onopen = () => {
       setIsConnected(true)
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'heartbeat' }))
-        }
-      }, 30000)
+      // NOTE: Ne pas envoyer de heartbeat WebSocket ici
+      // On utilise exclusivement le HTTP heartbeat (useEffect plus haut)
+      // pour éviter le double comptage des minutes de focus
     }
 
     ws.onmessage = (event) => {
@@ -271,7 +451,6 @@ export default function FocusRoomPage() {
 
     ws.onclose = () => {
       setIsConnected(false)
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
     }
 
     wsRef.current = ws
@@ -325,6 +504,8 @@ export default function FocusRoomPage() {
           title: t('focusRoom.userJoined', { username: message.username }),
           description: t('focusRoom.newFocusBuddy'),
         })
+        // Celebrate new user joining!
+        triggerCelebration('user_joined')
         break
 
       case 'user_left':
@@ -391,10 +572,18 @@ export default function FocusRoomPage() {
         title: t('focusRoom.sessionEnded'),
         description: t('focusRoom.xpEarned', { xp: result.xp_earned }),
       })
-      router.push('/focus-rooms')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error leaving room:', error)
+      // Si l'erreur est "not in room", c'est OK - l'utilisateur n'était pas vraiment dans la room
+      if (error.response?.status === 400) {
+        toast({
+          title: t('focusRoom.sessionEnded'),
+          description: t('focusRoom.alreadyLeft') || 'Session terminée',
+        })
+      }
     }
+    // Toujours rediriger, même en cas d'erreur
+    router.push('/focus-rooms')
   }
 
   const copyInviteCode = () => {
@@ -660,17 +849,21 @@ export default function FocusRoomPage() {
             roomId={roomId}
             onStart={() => {
               handleStatusChange('focusing')
+              setDeepWorkActive(true)
               toast({
                 title: t('focusRoom.deepWorkActivated'),
                 description: t('focusRoom.notificationsBlocked'),
               })
+              triggerCelebration('deep_work_started')
             }}
             onEnd={(completed) => {
+              setDeepWorkActive(false)
               if (completed) {
                 toast({
                   title: t('focusRoom.deepWorkEnded'),
                   description: t('focusRoom.bonusXp'),
                 })
+                triggerCelebration('deep_work_completed')
               }
             }}
           />
@@ -704,21 +897,25 @@ export default function FocusRoomPage() {
           <RandomRewards
             isActive={myStatus === 'focusing' || myStatus === 'deep_work'}
             focusMinutes={Math.round(myActualMinutes)}
-            onRewardClaimed={(reward) => {
-              // Envoyer au backend pour sauvegarder l'XP
-              if (wsRef.current?.readyState === WebSocket.OPEN) {
-                wsRef.current.send(JSON.stringify({
-                  type: 'claim_reward',
-                  reward_type: reward.type,
-                  value: reward.value,
-                  name: reward.name,
-                  rarity: reward.rarity
-                }))
+            onRewardClaimed={async (reward) => {
+              // Utiliser l'endpoint HTTP pour sauvegarder l'XP (plus fiable que WebSocket)
+              try {
+                const result = await focusRoomsService.claimReward(roomId, reward.type, reward.rarity)
+                toast({
+                  title: `${reward.emoji} ${reward.name}`,
+                  description: `${reward.description} (+${result.xp_earned} XP)`,
+                })
+                // Celebrate reward!
+                triggerCelebration('reward_claimed')
+              } catch (error) {
+                console.error('Error claiming reward:', error)
+                // Afficher quand même le toast pour l'UX
+                toast({
+                  title: `${reward.emoji} ${reward.name}`,
+                  description: reward.description,
+                })
+                triggerCelebration('reward_claimed')
               }
-              toast({
-                title: `${reward.emoji} ${reward.name}`,
-                description: reward.description,
-              })
             }}
           />
 
@@ -759,7 +956,7 @@ export default function FocusRoomPage() {
                         {p.focus_minutes} min
                       </p>
                     </div>
-                    {p.milestones_reached.length > 0 && (
+                    {p.milestones_reached && p.milestones_reached.length > 0 && (
                       <span className="text-sm">
                         {p.milestones_reached[p.milestones_reached.length - 1] === '3h' ? '🏆' :
                          p.milestones_reached[p.milestones_reached.length - 1] === '2h' ? '💫' :
@@ -871,6 +1068,7 @@ export default function FocusRoomPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      </div>
   )
 }

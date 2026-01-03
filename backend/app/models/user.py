@@ -772,6 +772,11 @@ class UserAIUsage(Base):
     note_summaries = Column(Integer, default=0)
     explanations = Column(Integer, default=0)
 
+    # Compteurs Spark journaliers (quotas hybrides)
+    spark_chat_today = Column(Integer, default=0)      # Chat simple avec Spark
+    spark_tutor_today = Column(Integer, default=0)     # Mode tuteur (explications)
+    spark_ask_today = Column(Integer, default=0)       # Q&A rapide
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -825,7 +830,71 @@ class UserAIUsage(Base):
         reset_date = self.requests_reset_date
         if not reset_date or (hasattr(reset_date, 'date') and reset_date.date() < now.date()):
             self.requests_today = 0
+            # Reset aussi les compteurs Spark
+            self.spark_chat_today = 0
+            self.spark_tutor_today = 0
+            self.spark_ask_today = 0
             self.requests_reset_date = now
+
+    def can_use_spark(self, spark_type: str, subscription_type: str) -> bool:
+        """
+        Vérifie si l'utilisateur peut utiliser Spark (quotas hybrides)
+
+        Args:
+            spark_type: "chat", "tutor", ou "ask"
+            subscription_type: "FREE", "PREMIUM", "PREMIUM_PLUS", "INSTITUTIONAL"
+
+        Returns:
+            True si l'utilisateur peut utiliser, False sinon
+        """
+        self._check_reset()
+
+        # Quotas Spark par type d'abonnement
+        SPARK_QUOTAS = {
+            "FREE": {"chat": 10, "tutor": 3, "ask": 5},
+            "PREMIUM": {"chat": 100, "tutor": 50, "ask": 100},
+            "PREMIUM_PLUS": {"chat": -1, "tutor": -1, "ask": -1},  # -1 = illimité
+            "INSTITUTIONAL": {"chat": -1, "tutor": -1, "ask": -1}
+        }
+
+        quotas = SPARK_QUOTAS.get(subscription_type, SPARK_QUOTAS["FREE"])
+        limit = quotas.get(spark_type, 0)
+
+        # -1 = illimité
+        if limit == -1:
+            return True
+
+        current = getattr(self, f"spark_{spark_type}_today", 0) or 0
+        return current < limit
+
+    def record_spark_usage(self, spark_type: str) -> bool:
+        """Enregistre une utilisation de Spark"""
+        self._check_reset()
+
+        attr = f"spark_{spark_type}_today"
+        current = getattr(self, attr, 0) or 0
+        setattr(self, attr, current + 1)
+        return True
+
+    def get_spark_remaining(self, spark_type: str, subscription_type: str) -> int:
+        """Retourne le nombre de requêtes Spark restantes (-1 si illimité)"""
+        self._check_reset()
+
+        SPARK_QUOTAS = {
+            "FREE": {"chat": 10, "tutor": 3, "ask": 5},
+            "PREMIUM": {"chat": 100, "tutor": 50, "ask": 100},
+            "PREMIUM_PLUS": {"chat": -1, "tutor": -1, "ask": -1},
+            "INSTITUTIONAL": {"chat": -1, "tutor": -1, "ask": -1}
+        }
+
+        quotas = SPARK_QUOTAS.get(subscription_type, SPARK_QUOTAS["FREE"])
+        limit = quotas.get(spark_type, 0)
+
+        if limit == -1:
+            return -1
+
+        current = getattr(self, f"spark_{spark_type}_today", 0) or 0
+        return max(0, limit - current)
 
 
 # ==================== FONCTION HELPER POUR CRÉER UN UTILISATEUR COMPLET ====================

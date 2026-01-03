@@ -18,6 +18,8 @@ from app.schemas.study_session import (
     StudySessionStatsResponse
 )
 from app.services.xp_service import award_xp
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
 
 router = APIRouter()
 
@@ -78,7 +80,7 @@ async def get_study_sessions(
     if subject_id:
         query = query.where(StudySession.subject_id == subject_id)
     
-    query = query.order_by(StudySession.created_at.desc())
+    query = query.order_by(StudySession.started_at.desc())
     
     # Compte total
     count_query = select(func.count()).select_from(StudySession).where(StudySession.user_id == current_user.id)
@@ -116,7 +118,7 @@ async def get_study_session_stats(
     query = select(StudySession).where(
         and_(
             StudySession.user_id == current_user.id,
-            StudySession.created_at >= since_date,
+            StudySession.started_at >= since_date,
             StudySession.status == SessionStatus.COMPLETED
         )
     )
@@ -285,12 +287,39 @@ async def complete_study_session(
         user=current_user,
         amount=session.xp_earned,
         reason="Session d'étude terminée",
-        event_type="study_session_completed"
+        event_type="study_session_completed",
+        db=db
     )
 
     # Mettre à jour le temps d'étude total via stats
     if session.actual_duration_minutes and current_user.stats:
         current_user.stats.total_study_time_minutes = (current_user.stats.total_study_time_minutes or 0) + session.actual_duration_minutes
+
+    # Mettre à jour la quête STUDY_MINUTES avec les minutes de la session
+    if session.actual_duration_minutes:
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=current_user.id,
+            quest_type=QuestType.STUDY_MINUTES,
+            progress=session.actual_duration_minutes
+        )
+
+    # Mettre à jour la quête EARN_XP avec les XP gagnés
+    if session.xp_earned:
+        await daily_quest_service.update_quest_progress(
+            db=db,
+            user_id=current_user.id,
+            quest_type=QuestType.EARN_XP,
+            progress=session.xp_earned
+        )
+
+    # Mettre à jour la quête MAINTAIN_STREAK (session = activité du jour)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.MAINTAIN_STREAK,
+        progress=1
+    )
 
     session.status = SessionStatus.COMPLETED
     session.ended_at = utc_now()

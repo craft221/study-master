@@ -142,6 +142,22 @@ const SparkSVG: React.FC<SparkSVGProps> = ({
         <pattern id="furTexture" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
           <circle cx="2" cy="2" r="0.5" fill="#000000" opacity="0.03" />
         </pattern>
+
+        {/* Gradient pour les verres des lunettes - teinte noire classe */}
+        <linearGradient id="glassesLensGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1a1a2e" stopOpacity="0.7" />
+          <stop offset="50%" stopColor="#16213e" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#1a1a2e" stopOpacity="0.7" />
+        </linearGradient>
+
+        {/* Gradient pour la monture - or rose glamour */}
+        <linearGradient id="glassesFrameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFD700" />
+          <stop offset="25%" stopColor="#FFC0CB" />
+          <stop offset="50%" stopColor="#FFD700" />
+          <stop offset="75%" stopColor="#FF69B4" />
+          <stop offset="100%" stopColor="#FFD700" />
+        </linearGradient>
       </defs>
 
       {/* Aura de niveau (si niveau élevé) */}
@@ -493,13 +509,58 @@ const SparkSVG: React.FC<SparkSVGProps> = ({
       {/* Accessoires */}
       {accessory === 'glasses' && (
         <g className="glasses">
-          <circle cx="90" cy="68" r="11" fill="none" stroke="#FFD700" strokeWidth="3" opacity="0.9" />
-          <circle cx="110" cy="68" r="11" fill="none" stroke="#FFD700" strokeWidth="3" opacity="0.9" />
-          <path d="M 101 68 L 99 68" stroke="#FFD700" strokeWidth="2.5" />
-          <circle cx="90" cy="68" r="9" fill="#FFFFFF" opacity="0.15" />
-          <circle cx="110" cy="68" r="9" fill="#FFFFFF" opacity="0.15" />
-          <ellipse cx="87" cy="65" rx="4" ry="5" fill="#FFFFFF" opacity="0.3" />
-          <ellipse cx="107" cy="65" rx="4" ry="5" fill="#FFFFFF" opacity="0.3" />
+          {/* Ombre portée glamour */}
+          <ellipse cx="100" cy="78" rx="28" ry="4" fill="#000000" opacity="0.1" />
+
+          {/* Branches des lunettes - style cat-eye glamour */}
+          <path d="M 74 64 L 58 58 L 52 62" stroke="url(#glassesFrameGradient)" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M 126 64 L 142 58 L 148 62" stroke="url(#glassesFrameGradient)" strokeWidth="4" fill="none" strokeLinecap="round" />
+
+          {/* Décoration dorée sur les branches */}
+          <circle cx="58" cy="58" r="3" fill="#FFD700" filter="url(#glow)" />
+          <circle cx="142" cy="58" r="3" fill="#FFD700" filter="url(#glow)" />
+
+          {/* Montures cat-eye glamour */}
+          <path d="M 74 56 Q 87 52, 87 68 Q 87 78, 80 78 L 74 78 Q 68 78, 68 68 Q 68 58, 74 56"
+                fill="url(#glassesLensGradient)" stroke="url(#glassesFrameGradient)" strokeWidth="3" />
+          <path d="M 126 56 Q 113 52, 113 68 Q 113 78, 120 78 L 126 78 Q 132 78, 132 68 Q 132 58, 126 56"
+                fill="url(#glassesLensGradient)" stroke="url(#glassesFrameGradient)" strokeWidth="3" />
+
+          {/* Pont du nez élégant */}
+          <path d="M 87 65 Q 100 58, 113 65" stroke="url(#glassesFrameGradient)" strokeWidth="3" fill="none" />
+
+          {/* Décoration centrale diamant */}
+          <polygon points="100,60 103,63 100,66 97,63" fill="#FFD700" filter="url(#glow)">
+            <animate attributeName="opacity" values="0.8;1;0.8" dur="1.5s" repeatCount="indefinite" />
+          </polygon>
+
+          {/* Reflets brillants sur les verres */}
+          <ellipse cx="76" cy="62" rx="5" ry="4" fill="#FFFFFF" opacity="0.5" />
+          <ellipse cx="124" cy="62" rx="5" ry="4" fill="#FFFFFF" opacity="0.5" />
+          <ellipse cx="80" cy="72" rx="3" ry="2" fill="#FFFFFF" opacity="0.3" />
+          <ellipse cx="120" cy="72" rx="3" ry="2" fill="#FFFFFF" opacity="0.3" />
+
+          {/* Étoiles scintillantes */}
+          <g className="sparkle-stars">
+            <polygon points="72,55 73,57 75,57 73.5,58.5 74,61 72,59.5 70,61 70.5,58.5 69,57 71,57" fill="#FFD700" opacity="0.9">
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite" />
+              <animate attributeName="transform" values="scale(1);scale(1.2);scale(1)" dur="1s" repeatCount="indefinite" />
+            </polygon>
+            <polygon points="128,55 129,57 131,57 129.5,58.5 130,61 128,59.5 126,61 126.5,58.5 125,57 127,57" fill="#FFD700" opacity="0.9">
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" begin="0.5s" repeatCount="indefinite" />
+              <animate attributeName="transform" values="scale(1);scale(1.2);scale(1)" dur="1s" begin="0.5s" repeatCount="indefinite" />
+            </polygon>
+          </g>
+
+          {/* Petits brillants flottants */}
+          <circle cx="65" cy="52" r="1.5" fill="#FF69B4" opacity="0.8">
+            <animate attributeName="cy" values="52;48;52" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="135" cy="52" r="1.5" fill="#00CED1" opacity="0.8">
+            <animate attributeName="cy" values="52;48;52" dur="2s" begin="0.7s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" begin="0.7s" repeatCount="indefinite" />
+          </circle>
         </g>
       )}
 

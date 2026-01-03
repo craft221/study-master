@@ -135,6 +135,7 @@ class FocusRoom(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    last_activity_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # Pour expiration auto
 
     # Relations
     creator = relationship("User", foreign_keys=[creator_id], back_populates="created_focus_rooms")

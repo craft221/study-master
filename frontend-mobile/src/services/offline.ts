@@ -1,6 +1,7 @@
 /**
  * Study Master - Offline Sync Service
  * Gestion du mode hors ligne et synchronisation des données
+ * Utilise FSRS pour les révisions de flashcards
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +9,16 @@ import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import * as SQLite from 'expo-sqlite';
 import api from './api';
 import type { Note, Flashcard, Subject, Quiz, FlashcardReview } from '@/types';
+import {
+  FSRSScheduler,
+  Rating,
+  State,
+  createFSRSCard,
+  fsrsCardToApiFormat,
+  formatIntervalDisplay,
+  type FSRSCard,
+  type ReviewLog,
+} from './fsrs';
 
 // ============================================
 // CONSTANTS
@@ -316,12 +327,20 @@ class OfflineService {
     }
   }
 
-  // Sync flashcard review
+  // Sync flashcard review avec données FSRS
   private async syncFlashcardReview(data: Record<string, unknown>): Promise<void> {
-    await api.post(`/flashcards/${data.flashcard_id}/review`, {
+    const payload: Record<string, unknown> = {
       quality: data.quality,
       time_taken: data.time_taken,
-    });
+      review_date: data.reviewed_at || new Date().toISOString(),
+    };
+
+    // Inclure les données FSRS si disponibles
+    if (data.fsrs_data) {
+      payload.fsrs_data = data.fsrs_data;
+    }
+
+    await api.post(`/flashcards/${data.flashcard_id}/review`, payload);
   }
 
   // Sync subject
@@ -499,58 +518,133 @@ class OfflineService {
     await this.addToQueue('note', 'update', { id, ...updates });
   }
 
-  // Review flashcard offline
+  // Instance FSRS scheduler
+  private fsrsScheduler = new FSRSScheduler();
+
+  /**
+   * Convertir une flashcard vers le format FSRS
+   */
+  private flashcardToFSRS(flashcard: Flashcard): FSRSCard {
+    return createFSRSCard({
+      stability: flashcard.stability,
+      difficulty: flashcard.difficulty,
+      easeFactor: flashcard.ease_factor,
+      interval: flashcard.interval,
+      repetitions: flashcard.repetitions,
+      status: flashcard.status,
+      lastReviewedAt: flashcard.last_reviewed_at,
+      nextReviewAt: flashcard.next_review_at,
+    });
+  }
+
+  /**
+   * Review flashcard offline avec FSRS
+   * Remplace l'ancien algorithme SM-2
+   */
   async reviewFlashcardOffline(
     flashcardId: number,
     quality: number,
     timeTaken: number
-  ): Promise<void> {
-    // Update local cache with new review data
+  ): Promise<{
+    success: boolean;
+    intervalDays: number;
+    intervalDisplay: string;
+  }> {
+    // Récupérer la flashcard
     const flashcards = await this.getCachedFlashcards();
     const flashcard = flashcards.find((f) => f.id === flashcardId);
 
-    if (flashcard) {
-      // Simple SM-2 calculation for offline
-      const newEaseFactor = Math.max(
-        1.3,
-        flashcard.ease_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-      );
-
-      let newInterval: number;
-      if (quality < 3) {
-        newInterval = 1;
-      } else if (flashcard.repetitions === 0) {
-        newInterval = 1;
-      } else if (flashcard.repetitions === 1) {
-        newInterval = 6;
-      } else {
-        newInterval = Math.round(flashcard.interval * newEaseFactor);
-      }
-
-      const nextReview = new Date();
-      nextReview.setDate(nextReview.getDate() + newInterval);
-
-      const updatedFlashcard: Flashcard = {
-        ...flashcard,
-        ease_factor: newEaseFactor,
-        interval: newInterval,
-        repetitions: quality >= 3 ? flashcard.repetitions + 1 : 0,
-        next_review_at: nextReview.toISOString(),
-        last_reviewed_at: new Date().toISOString(),
-        total_reviews: flashcard.total_reviews + 1,
-        correct_reviews: flashcard.correct_reviews + (quality >= 3 ? 1 : 0),
-        incorrect_reviews: flashcard.incorrect_reviews + (quality < 3 ? 1 : 0),
-      };
-
-      await this.cacheFlashcards([updatedFlashcard]);
+    if (!flashcard) {
+      console.error(`[FSRS Offline] Flashcard ${flashcardId} non trouvée`);
+      return { success: false, intervalDays: 0, intervalDisplay: '' };
     }
 
-    // Add to sync queue
+    // Convertir en format FSRS
+    const fsrsCard = this.flashcardToFSRS(flashcard);
+
+    // Mapper quality (0-3) vers Rating FSRS
+    const ratingMap: Record<number, Rating> = {
+      0: Rating.AGAIN,
+      1: Rating.HARD,
+      2: Rating.GOOD,
+      3: Rating.EASY,
+    };
+    const rating = ratingMap[quality] ?? Rating.GOOD;
+
+    // Calculer avec FSRS
+    const now = new Date();
+    const { card: newFsrsCard, log } = this.fsrsScheduler.schedule(fsrsCard, rating, now);
+
+    // Convertir vers format API
+    const apiData = fsrsCardToApiFormat(newFsrsCard);
+
+    // Mettre à jour la flashcard localement
+    const updatedFlashcard: Flashcard = {
+      ...flashcard,
+      // Données FSRS
+      stability: apiData.stability,
+      difficulty: apiData.difficulty,
+      interval: apiData.interval_days,
+      repetitions: apiData.repetitions,
+      status: apiData.state,
+      next_review_at: apiData.next_review_at || undefined,
+      last_reviewed_at: apiData.last_reviewed_at || undefined,
+      // Statistiques
+      total_reviews: flashcard.total_reviews + 1,
+      correct_reviews: flashcard.correct_reviews + (quality >= 2 ? 1 : 0),
+      incorrect_reviews: flashcard.incorrect_reviews + (quality < 2 ? 1 : 0),
+    };
+
+    await this.cacheFlashcards([updatedFlashcard]);
+
+    console.log(`[FSRS Offline] Card ${flashcardId} reviewed: ${Rating[rating]} -> ${apiData.interval_days} days`);
+
+    // Ajouter à la queue de sync avec données FSRS
     await this.addToQueue('flashcard_review', 'create', {
       flashcard_id: flashcardId,
       quality,
       time_taken: timeTaken,
+      reviewed_at: now.toISOString(),
+      // Données FSRS pour sync
+      fsrs_data: {
+        stability: apiData.stability,
+        difficulty: apiData.difficulty,
+        interval_days: apiData.interval_days,
+        state: apiData.state,
+        retrievability: log.retrievability,
+      },
     });
+
+    return {
+      success: true,
+      intervalDays: apiData.interval_days,
+      intervalDisplay: formatIntervalDisplay(apiData.interval_days),
+    };
+  }
+
+  /**
+   * Prévisualiser les intervalles FSRS pour une flashcard
+   */
+  async getSchedulingPreview(flashcardId: number): Promise<{
+    again: string;
+    hard: string;
+    good: string;
+    easy: string;
+  } | null> {
+    const flashcards = await this.getCachedFlashcards();
+    const flashcard = flashcards.find((f) => f.id === flashcardId);
+
+    if (!flashcard) return null;
+
+    const fsrsCard = this.flashcardToFSRS(flashcard);
+    const options = this.fsrsScheduler.getSchedulingOptions(fsrsCard);
+
+    return {
+      again: options.again.display,
+      hard: options.hard.display,
+      good: options.good.display,
+      easy: options.easy.display,
+    };
   }
 
   // ============================================

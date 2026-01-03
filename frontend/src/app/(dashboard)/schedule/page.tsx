@@ -25,11 +25,13 @@ import { toast } from 'react-hot-toast'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type ViewMode = 'month' | 'week' | 'day'
 
 export default function SchedulePage() {
   const { isOnline } = useOfflineContext()
+  const { t, locale } = useLanguage()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [events, setEvents] = useState<ScheduleEvent[]>([])
@@ -41,13 +43,24 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [draggedEvent, setDraggedEvent] = useState<ScheduleEvent | null>(null)
 
+  // Translated month and day names
   const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+    t('calendar.months.january'), t('calendar.months.february'), t('calendar.months.march'),
+    t('calendar.months.april'), t('calendar.months.may'), t('calendar.months.june'),
+    t('calendar.months.july'), t('calendar.months.august'), t('calendar.months.september'),
+    t('calendar.months.october'), t('calendar.months.november'), t('calendar.months.december'),
   ]
 
-  const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
-  const dayNamesShort = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+  const dayNames = [
+    t('calendar.days.sunday'), t('calendar.days.monday'), t('calendar.days.tuesday'),
+    t('calendar.days.wednesday'), t('calendar.days.thursday'), t('calendar.days.friday'),
+    t('calendar.days.saturday')
+  ]
+  const dayNamesShort = [
+    t('calendar.daysShort.sun'), t('calendar.daysShort.mon'), t('calendar.daysShort.tue'),
+    t('calendar.daysShort.wed'), t('calendar.daysShort.thu'), t('calendar.daysShort.fri'),
+    t('calendar.daysShort.sat')
+  ]
 
   const eventTypeColors: Record<string, string> = {
     class: '#3b82f6',
@@ -61,14 +74,14 @@ export default function SchedulePage() {
   }
 
   const eventTypeLabels: Record<string, string> = {
-    class: 'Cours',
-    exam: 'Examen',
-    homework: 'Devoir',
-    deadline: 'Date limite',
-    revision: 'Révision',
-    study: 'Étude',
-    meeting: 'Réunion',
-    other: 'Autre',
+    class: t('calendar.class'),
+    exam: t('calendar.exam'),
+    homework: t('calendar.homework'),
+    deadline: t('calendar.deadline'),
+    revision: t('calendar.revision'),
+    study: t('calendar.study'),
+    meeting: t('calendar.meeting'),
+    other: t('calendar.other'),
   }
 
   // Heures pour la grille semaine/jour
@@ -126,9 +139,9 @@ export default function SchedulePage() {
             })
             setEvents(filtered)
             setIsFromCache(true)
-            toast('Données chargées depuis le cache', { icon: '📦' })
+            toast(t('calendar.dataFromCache'), { icon: '📦' })
           } else {
-            toast.error('Erreur lors du chargement des événements')
+            toast.error(t('calendar.loadError'))
           }
         }
       } else {
@@ -148,7 +161,7 @@ export default function SchedulePage() {
         }
       }
     } catch (error: any) {
-      toast.error('Erreur lors du chargement des événements')
+      toast.error(t('calendar.loadError'))
     } finally {
       setLoading(false)
     }
@@ -165,7 +178,7 @@ export default function SchedulePage() {
 
   const handleDeleteEvent = async (eventId: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) return
+    if (!confirm(t('calendar.confirmDelete'))) return
 
     // Mise à jour optimiste
     const eventToDelete = events.find(ev => ev.id === eventId)
@@ -175,7 +188,7 @@ export default function SchedulePage() {
     try {
       if (isOnline) {
         await schedulesService.delete(eventId)
-        toast.success('Événement supprimé')
+        toast.success(t('calendar.eventDeleted'))
       } else {
         // Queue pour sync offline
         await syncService.queueAction(
@@ -185,7 +198,7 @@ export default function SchedulePage() {
           'DELETE',
           { id: eventId }
         )
-        toast.success('Événement supprimé (sera synchronisé)')
+        toast.success(t('calendar.eventDeletedSync'))
       }
     } catch (error: any) {
       // Rollback en cas d'erreur
@@ -193,7 +206,7 @@ export default function SchedulePage() {
         setEvents([...events, eventToDelete])
         setUpcomingEvents([...upcomingEvents, eventToDelete])
       }
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('calendar.deleteError'))
     }
   }
 
@@ -280,10 +293,10 @@ export default function SchedulePage() {
         end_time: newEnd.toISOString(),
       })
 
-      toast.success('Événement déplacé')
+      toast.success(t('calendar.eventMoved'))
       loadEvents()
     } catch (error) {
-      toast.error('Erreur lors du déplacement')
+      toast.error(t('calendar.moveError'))
     } finally {
       setDraggedEvent(null)
     }
@@ -374,7 +387,7 @@ export default function SchedulePage() {
         <span className="font-medium truncate" style={{ color: event.color || eventTypeColors[event.event_type] }}>
           {!compact && (
             <span className="mr-1">
-              {new Date(event.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(event.start_time).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           {event.title}
@@ -402,17 +415,17 @@ export default function SchedulePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Emploi du Temps</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('calendar.title')}</h1>
             {isFromCache && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 <CloudOff className="w-3 h-3 mr-1" />
-                Cache
+                {t('calendar.cache')}
               </span>
             )}
           </div>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Planifiez et suivez vos événements d'étude
-            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+            {t('calendar.subtitle')}
+            {isFromCache && !isOnline && ` • ${t('calendar.offlineMode')}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -430,28 +443,28 @@ export default function SchedulePage() {
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Ajouter un événement
+            {t('calendar.addEvent')}
           </button>
         </div>
       </div>
 
       {/* Calendar Controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
             <button
               onClick={goToToday}
-              className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition font-medium"
+              className="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition font-medium"
             >
-              Aujourd'hui
+              {t('calendar.today')}
             </button>
-            <button onClick={previousPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition">
-              <ChevronLeft className="h-5 w-5 text-gray-700" />
+            <button onClick={previousPeriod} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+              <ChevronLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </button>
-            <button onClick={nextPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition">
-              <ChevronRight className="h-5 w-5 text-gray-700" />
+            <button onClick={nextPeriod} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+              <ChevronRight className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </button>
-            <h2 className="text-xl font-bold text-gray-900 ml-2">{getTitle()}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white ml-2">{getTitle()}</h2>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -462,10 +475,10 @@ export default function SchedulePage() {
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   viewMode === mode
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
-                {mode === 'month' ? 'Mois' : mode === 'week' ? 'Semaine' : 'Jour'}
+                {mode === 'month' ? t('calendar.month') : mode === 'week' ? t('calendar.week') : t('calendar.day')}
               </button>
             ))}
           </div>
@@ -474,22 +487,22 @@ export default function SchedulePage() {
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Calendar */}
-        <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Chargement...</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">{t('calendar.loading')}</div>
           ) : viewMode === 'month' ? (
             /* VUE MOIS */
             <>
-              <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                 {dayNamesShort.map((day) => (
-                  <div key={day} className="p-4 text-center font-semibold text-gray-700 text-sm">
+                  <div key={day} className="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 text-sm">
                     {day}
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-7">
                 {[...Array(startingDayOfWeek)].map((_, index) => (
-                  <div key={`empty-${index}`} className="min-h-[100px] p-2 border-r border-b border-gray-200 bg-gray-50" />
+                  <div key={`empty-${index}`} className="min-h-[100px] p-2 border-r border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30" />
                 ))}
                 {[...Array(daysInMonth)].map((_, index) => {
                   const day = index + 1
@@ -502,15 +515,15 @@ export default function SchedulePage() {
                       onClick={() => handleCreateEvent(date)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(date, undefined, e)}
-                      className={`min-h-[100px] p-2 border-r border-b border-gray-200 hover:bg-gray-50 transition cursor-pointer ${
-                        isToday(date) ? 'bg-blue-50' : ''
+                      className={`min-h-[100px] p-2 border-r border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition cursor-pointer ${
+                        isToday(date) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                       }`}
                     >
                       <div
                         className={`text-sm font-semibold mb-2 ${
                           isToday(date)
                             ? 'inline-flex items-center justify-center w-7 h-7 bg-primary-600 text-white rounded-full'
-                            : 'text-gray-700'
+                            : 'text-gray-700 dark:text-gray-300'
                         }`}
                       >
                         {day}
@@ -518,7 +531,7 @@ export default function SchedulePage() {
                       <div className="space-y-1">
                         {dayEvents.slice(0, 2).map((event) => renderEventCard(event, true))}
                         {dayEvents.length > 2 && (
-                          <div className="text-xs text-gray-500 font-medium">+{dayEvents.length - 2} plus</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('calendar.moreEvents', { count: dayEvents.length - 2 })}</div>
                         )}
                       </div>
                     </div>
@@ -530,23 +543,23 @@ export default function SchedulePage() {
             /* VUE SEMAINE */
             <>
               {/* Header jours */}
-              <div className="grid grid-cols-8 border-b border-gray-200">
-                <div className="p-2 text-center text-xs font-medium text-gray-500 border-r border-gray-200 bg-gray-50">
-                  Heure
+              <div className="grid grid-cols-8 border-b border-gray-200 dark:border-gray-700">
+                <div className="p-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                  {t('calendar.hour')}
                 </div>
                 {getWeekDays().map((date, i) => (
                   <div
                     key={i}
-                    className={`p-2 text-center border-r border-gray-200 ${
-                      isToday(date) ? 'bg-primary-50' : 'bg-gray-50'
+                    className={`p-2 text-center border-r border-gray-200 dark:border-gray-700 ${
+                      isToday(date) ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-gray-50 dark:bg-gray-700/50'
                     }`}
                   >
-                    <div className="text-xs text-gray-500">{dayNamesShort[date.getDay()]}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{dayNamesShort[date.getDay()]}</div>
                     <div
                       className={`text-lg font-bold ${
                         isToday(date)
                           ? 'inline-flex items-center justify-center w-8 h-8 bg-primary-600 text-white rounded-full'
-                          : 'text-gray-900'
+                          : 'text-gray-900 dark:text-white'
                       }`}
                     >
                       {date.getDate()}
@@ -557,8 +570,8 @@ export default function SchedulePage() {
               {/* Grille horaire */}
               <div className="max-h-[600px] overflow-y-auto">
                 {hours.map((hour) => (
-                  <div key={hour} className="grid grid-cols-8 border-b border-gray-100">
-                    <div className="p-2 text-right text-xs text-gray-400 border-r border-gray-200 bg-gray-50">
+                  <div key={hour} className="grid grid-cols-8 border-b border-gray-100 dark:border-gray-700/50">
+                    <div className="p-2 text-right text-xs text-gray-400 dark:text-gray-500 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                       {hour}:00
                     </div>
                     {getWeekDays().map((date, i) => {
@@ -569,8 +582,8 @@ export default function SchedulePage() {
                           onClick={() => handleCreateEvent(date, hour)}
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(date, hour, e)}
-                          className={`min-h-[50px] p-1 border-r border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                            isToday(date) ? 'bg-primary-50/30' : ''
+                          className={`min-h-[50px] p-1 border-r border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer ${
+                            isToday(date) ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''
                           }`}
                         >
                           {hourEvents.map((event) => renderEventCard(event, true))}
@@ -584,18 +597,18 @@ export default function SchedulePage() {
           ) : (
             /* VUE JOUR */
             <>
-              <div className="p-4 bg-gray-50 border-b border-gray-200 text-center">
-                <div className="text-sm text-gray-500">{dayNames[currentDate.getDay()]}</div>
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 text-center">
+                <div className="text-sm text-gray-500 dark:text-gray-400">{dayNames[currentDate.getDay()]}</div>
                 <div
                   className={`text-3xl font-bold ${
                     isToday(currentDate)
                       ? 'inline-flex items-center justify-center w-12 h-12 bg-primary-600 text-white rounded-full'
-                      : 'text-gray-900'
+                      : 'text-gray-900 dark:text-white'
                   }`}
                 >
                   {currentDate.getDate()}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </div>
               </div>
@@ -603,15 +616,15 @@ export default function SchedulePage() {
                 {hours.map((hour) => {
                   const hourEvents = getEventsForHour(currentDate, hour)
                   return (
-                    <div key={hour} className="flex border-b border-gray-100">
-                      <div className="w-20 p-3 text-right text-sm text-gray-400 border-r border-gray-200 bg-gray-50 flex-shrink-0">
+                    <div key={hour} className="flex border-b border-gray-100 dark:border-gray-700/50">
+                      <div className="w-20 p-3 text-right text-sm text-gray-400 dark:text-gray-500 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex-shrink-0">
                         {hour}:00
                       </div>
                       <div
                         onClick={() => handleCreateEvent(currentDate, hour)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(currentDate, hour, e)}
-                        className="flex-1 min-h-[60px] p-2 hover:bg-gray-50 cursor-pointer"
+                        className="flex-1 min-h-[60px] p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                       >
                         {hourEvents.map((event) => renderEventCard(event))}
                       </div>
@@ -626,45 +639,45 @@ export default function SchedulePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Événements à venir */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center">
               <CalendarIcon className="h-5 w-5 mr-2" />
-              Événements à venir
+              {t('calendar.upcomingEvents')}
             </h3>
             <div className="space-y-3">
               {upcomingEvents.length === 0 ? (
-                <p className="text-sm text-gray-500">Aucun événement à venir</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('calendar.noUpcoming')}</p>
               ) : (
                 upcomingEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="p-3 rounded-lg border-l-4 bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
+                    className="p-3 rounded-lg border-l-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer"
                     style={{ borderLeftColor: event.color || eventTypeColors[event.event_type] }}
                     onClick={() => handleEditEvent(event)}
                   >
                     <div className="flex items-start justify-between">
-                      <h4 className="font-semibold text-gray-900 text-sm mb-1">{event.title}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{event.title}</h4>
                       <div className="flex items-center gap-1">
-                        {event.is_recurring && <Repeat className="h-3 w-3 text-gray-400" />}
+                        {event.is_recurring && <Repeat className="h-3 w-3 text-gray-400 dark:text-gray-500" />}
                         {event.reminder_enabled ? (
                           <Bell className="h-3 w-3 text-green-500" />
                         ) : (
-                          <BellOff className="h-3 w-3 text-gray-300" />
+                          <BellOff className="h-3 w-3 text-gray-300 dark:text-gray-600" />
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center text-xs text-gray-600 space-x-2">
+                    <div className="flex items-center text-xs text-gray-600 dark:text-gray-400 space-x-2">
                       <span>
-                        {new Date(event.start_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {new Date(event.start_time).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                       </span>
                       <span>•</span>
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
-                        {new Date(event.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(event.start_time).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     {event.location && (
-                      <div className="mt-1 text-xs text-gray-500 flex items-center">
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
                         {event.location}
                       </div>
@@ -676,26 +689,26 @@ export default function SchedulePage() {
           </div>
 
           {/* Légende */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-bold text-gray-900 mb-4">Légende</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4">{t('calendar.legend')}</h3>
             <div className="space-y-2">
               {Object.entries(eventTypeLabels).map(([type, label]) => (
                 <div key={type} className="flex items-center space-x-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: eventTypeColors[type] }}></div>
-                  <span className="text-sm text-gray-700">{label}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Info Drag & Drop */}
-          <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-            <h4 className="font-semibold text-blue-900 text-sm mb-2 flex items-center">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-300 text-sm mb-2 flex items-center">
               <GripVertical className="h-4 w-4 mr-1" />
-              Astuce
+              {t('calendar.tip')}
             </h4>
-            <p className="text-xs text-blue-700">
-              Glissez-déposez les événements pour les déplacer rapidement vers une autre date ou heure.
+            <p className="text-xs text-blue-700 dark:text-blue-400">
+              {t('calendar.tipMessage')}
             </p>
           </div>
         </div>

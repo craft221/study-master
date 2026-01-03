@@ -43,6 +43,7 @@ class FlashcardDeck(Base):
     # Metadata
     is_ai_generated = Column(Boolean, default=False)
     is_public = Column(Boolean, default=False)
+    language = Column(String(5), default="fr")  # fr, en, es - pour filtrer dans Explore
     card_count = Column(Integer, default=0)
 
     # Timestamps
@@ -124,6 +125,7 @@ class Flashcard(Base):
     is_buried = Column(Boolean, default=False)
     is_favorite = Column(Boolean, default=False)
     is_public = Column(Boolean, default=False)  # Visible dans la page Explore
+    language = Column(String(5), default="fr")  # fr, en, es - pour filtrer dans Explore
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=utc_now, server_default=func.now())

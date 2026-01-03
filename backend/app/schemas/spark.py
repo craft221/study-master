@@ -150,6 +150,9 @@ class SparkChatResponse(BaseModel):
     conversation_id: int
     suggestions: List[str] = Field(default=[])
     timestamp: str
+    # Quotas hybrides
+    quota_remaining: Optional[int] = Field(None, description="Requêtes restantes aujourd'hui (-1 = illimité)")
+    quota_max: Optional[int] = Field(None, description="Maximum de requêtes par jour (-1 = illimité)")
 
     class Config:
         json_schema_extra = {
@@ -159,7 +162,9 @@ class SparkChatResponse(BaseModel):
                 "animation": "think",
                 "conversation_id": 42,
                 "suggestions": ["Expliquer les dérivées", "Voir un exemple", "Créer des exercices"],
-                "timestamp": "2024-01-15T10:30:00Z"
+                "timestamp": "2024-01-15T10:30:00Z",
+                "quota_remaining": 8,
+                "quota_max": 10
             }
         }
 
@@ -244,6 +249,9 @@ class TutorExplainResponse(BaseModel):
     animation: SparkAnimation
     suggestions: List[str]
     timestamp: str
+    # Quotas hybrides
+    quota_remaining: Optional[int] = Field(None, description="Requêtes restantes aujourd'hui (-1 = illimité)")
+    quota_max: Optional[int] = Field(None, description="Maximum de requêtes par jour (-1 = illimité)")
 
 
 class TutorHintRequest(BaseModel):
@@ -265,6 +273,9 @@ class TutorHintResponse(BaseModel):
     level: int
     mood: SparkMood
     animation: SparkAnimation
+    # Quotas hybrides
+    quota_remaining: Optional[int] = Field(None, description="Requêtes restantes aujourd'hui (-1 = illimité)")
+    quota_max: Optional[int] = Field(None, description="Maximum de requêtes par jour (-1 = illimité)")
 
 
 # =============================================================================
@@ -484,3 +495,6 @@ class SparkAskResponse(BaseModel):
     animation: SparkAnimation
     suggestions: List[str] = Field(default=[])
     timestamp: str
+    # Quotas hybrides
+    quota_remaining: Optional[int] = Field(None, description="Requêtes restantes aujourd'hui (-1 = illimité)")
+    quota_max: Optional[int] = Field(None, description="Maximum de requêtes par jour (-1 = illimité)")

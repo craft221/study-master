@@ -3,6 +3,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Lightbulb, X, CheckCircle } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface SparkAnswerCardProps {
   answer: string
@@ -20,6 +21,8 @@ const SparkAnswerCard: React.FC<SparkAnswerCardProps> = ({
   onClose,
   onSuggestionClick
 }) => {
+  const { t } = useLanguage()
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -42,10 +45,10 @@ const SparkAnswerCard: React.FC<SparkAnswerCardProps> = ({
             <div className="text-2xl">🐿️</div>
             <div>
               <h3 className="font-bold text-white text-sm">
-                Spark te répond
+                {t('sparkWidget.answerCard.title')}
               </h3>
               <p className="text-white/90 text-xs">
-                Avec l'aide de l'IA ⚡
+                {t('sparkWidget.answerCard.subtitle')} ⚡
               </p>
             </div>
           </div>
@@ -65,7 +68,7 @@ const SparkAnswerCard: React.FC<SparkAnswerCardProps> = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <Lightbulb className="w-4 h-4 text-amber-500" />
-                Actions suggérées
+                {t('sparkWidget.answerCard.suggestedActions')}
               </div>
 
               <div className="space-y-2">
@@ -91,7 +94,7 @@ const SparkAnswerCard: React.FC<SparkAnswerCardProps> = ({
           {/* Footer */}
           <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              💡 Besoin de plus d'aide ? Clique sur Spark pour poser une autre question !
+              💡 {t('sparkWidget.answerCard.needMoreHelp')}
             </p>
           </div>
         </div>

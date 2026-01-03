@@ -11,6 +11,7 @@ import {
   Trash2,
   Download,
   Eye,
+  ExternalLink,
   Filter,
   FolderOpen,
   File,
@@ -150,24 +151,25 @@ export default function DocumentsPage() {
           await offlineStorage.saveDocuments(docsData)
           await offlineStorage.saveSubjects(subjectsData)
 
-          // Récupérer le quota de stockage séparément (peut échouer si pas d'abonnement)
+          // Calculer l'espace utilisé depuis les stats (plus fiable)
+          const usedMb = Math.round((statsRes.data.total_size_bytes || 0) / (1024 * 1024))
+
+          // Récupérer la limite de stockage depuis l'abonnement
+          let storageLimitMb = 100 // Défaut FREE
           try {
             const subscriptionRes = await api.get('/payments/subscription')
-            if (subscriptionRes.data) {
-              setStorageQuota({
-                storage_limit_mb: subscriptionRes.data.storage_limit_mb || 100,
-                storage_used_mb: subscriptionRes.data.storage_used_mb || 0
-              })
+            if (subscriptionRes.data?.storage_limit_mb) {
+              storageLimitMb = subscriptionRes.data.storage_limit_mb
             }
           } catch (subError) {
-            // Utiliser les valeurs par défaut (plan FREE) si pas d'abonnement
-            console.log('Abonnement non trouvé, utilisation des valeurs par défaut')
-            const usedMb = stats ? Math.round((statsRes.data.total_size_bytes || 0) / (1024 * 1024)) : 0
-            setStorageQuota({
-              storage_limit_mb: 100,
-              storage_used_mb: usedMb
-            })
+            // Plan FREE par défaut si pas d'abonnement
+            console.log('Abonnement non trouvé, utilisation du plan FREE (100 MB)')
           }
+
+          setStorageQuota({
+            storage_limit_mb: storageLimitMb,
+            storage_used_mb: usedMb
+          })
         } catch (error: any) {
           // Si erreur réseau, essayer le cache
           const cachedDocs = await offlineStorage.getDocuments()
@@ -333,6 +335,48 @@ export default function DocumentsPage() {
     } catch (error) {
       toast.error('Erreur lors du téléchargement')
     }
+  }
+
+  const viewDocument = async (doc: Document) => {
+    // Ouvrir le document dans un nouvel onglet
+    // Types visualisables directement: PDF, images
+    const viewableTypes = ['pdf', 'image']
+
+    if (viewableTypes.includes(doc.file_type)) {
+      try {
+        // Récupérer le fichier avec authentification
+        const response = await api.get(`/documents/${doc.id}/view`, {
+          responseType: 'blob'
+        })
+
+        // Créer une URL blob pour l'affichage
+        const blob = new Blob([response.data], { type: doc.mime_type })
+        const blobUrl = window.URL.createObjectURL(blob)
+
+        // Ouvrir dans un nouvel onglet
+        window.open(blobUrl, '_blank')
+
+        // Nettoyer l'URL après un délai (laisser le temps au navigateur de charger)
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl)
+        }, 60000) // 1 minute
+
+        // Update view count locally
+        setDocuments(documents.map(d =>
+          d.id === doc.id ? { ...d, view_count: d.view_count + 1 } : d
+        ))
+      } catch (error) {
+        toast.error('Erreur lors de l\'ouverture du document')
+      }
+    } else {
+      // Pour les autres types (Word, Excel, etc.), télécharger
+      toast('Ce type de fichier ne peut pas être visualisé directement. Téléchargement...', { icon: '📥' })
+      downloadDocument(doc)
+    }
+  }
+
+  const canViewInBrowser = (fileType: string): boolean => {
+    return ['pdf', 'image'].includes(fileType)
   }
 
   const filteredDocuments = documents.filter((doc) => {
@@ -668,9 +712,19 @@ export default function DocumentsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2 pt-4 border-t border-gray-200">
+                  {/* Bouton Ouvrir - uniquement pour PDF et images */}
+                  {canViewInBrowser(doc.file_type) && (
+                    <button
+                      onClick={() => viewDocument(doc)}
+                      className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium flex items-center justify-center"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Ouvrir
+                    </button>
+                  )}
                   <button
                     onClick={() => downloadDocument(doc)}
-                    className="flex-1 px-3 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition text-sm font-medium flex items-center justify-center"
+                    className={`${canViewInBrowser(doc.file_type) ? 'flex-1' : 'flex-1'} px-3 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition text-sm font-medium flex items-center justify-center`}
                   >
                     <Download className="h-4 w-4 mr-1" />
                     Télécharger

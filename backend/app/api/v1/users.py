@@ -29,6 +29,44 @@ from app.core.sql_utils import escape_like_pattern
 router = APIRouter()
 
 
+@router.get("/", response_model=list)
+async def list_users(
+    page: int = Query(1, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=50),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Liste les utilisateurs actifs (pour duels, etc.)
+    Retourne une liste limitée pour la sélection d'adversaires.
+    """
+    query = select(User).where(
+        and_(
+            User.is_active.is_(True),
+            User.is_deleted.is_(False),
+            User.id != current_user.id  # Exclure l'utilisateur actuel
+        )
+    ).options(
+        selectinload(User.gamification)
+    ).order_by(User.username)
+
+    # Paginer
+    offset = (page - 1) * page_size
+    query = query.offset(offset).limit(page_size)
+
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    return [
+        {
+            "id": user.id,
+            "username": user.username,
+            "level": user.gamification.level if user.gamification else 1
+        }
+        for user in users
+    ]
+
+
 @router.get("/search", response_model=dict)
 async def search_users(
     q: str = Query(..., min_length=2, max_length=50, description="Recherche par username"),

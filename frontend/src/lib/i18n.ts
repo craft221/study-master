@@ -119,3 +119,36 @@ export function setStoredLocale(locale: Locale): void {
 export function getInitialLocale(): Locale {
   return getStoredLocale() || detectBrowserLocale();
 }
+
+/**
+ * Récupère une valeur brute par son chemin (peut être un tableau ou un objet)
+ */
+export function getRaw(locale: Locale, path: string): any {
+  const keys = path.split('.');
+  let result: any = messages[locale] || messages[DEFAULT_LOCALE];
+
+  for (const key of keys) {
+    if (result && typeof result === 'object' && key in result) {
+      result = result[key];
+    } else {
+      console.warn(`Translation path not found: ${path}`);
+      return null;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Récupère un tableau de traductions par son chemin
+ */
+export function getArray(locale: Locale, path: string): string[] {
+  const result = getRaw(locale, path);
+
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  console.warn(`Translation is not an array: ${path}`);
+  return [];
+}

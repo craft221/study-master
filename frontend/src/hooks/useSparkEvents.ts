@@ -234,7 +234,7 @@ const ENCOURAGEMENT_MESSAGES = [
 // =============================================================================
 
 export function useSparkEventMessages() {
-  const { showMessage } = useSpark();
+  const { showMessage, checkNewUnlocks } = useSpark();
 
   // Helper pour choisir un message aléatoire
   const pickRandom = useCallback((messages: string[]): string => {
@@ -401,7 +401,10 @@ export function useSparkEventMessages() {
       mood,
       animation: mood === 'excited' ? 'celebration' : 'wave',
     });
-  }, [showMessage, pickRandom, formatMessage]);
+
+    // Vérifier les nouveaux accessoires débloqués (ex: lunettes à 10 jours, couronne à 30 jours)
+    await checkNewUnlocks();
+  }, [showMessage, pickRandom, formatMessage, checkNewUnlocks]);
 
   const onStreakWarning = useCallback(async (currentDays: number) => {
     const message = formatMessage(pickRandom(STREAK_MESSAGES.warning), { days: currentDays });

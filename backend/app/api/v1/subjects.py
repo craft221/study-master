@@ -41,7 +41,8 @@ async def create_subject(
         user=current_user,
         amount=5,
         reason="Création d'une matière",
-        event_type="subject_created"
+        event_type="subject_created",
+        db=db
     )
 
     await db.commit()

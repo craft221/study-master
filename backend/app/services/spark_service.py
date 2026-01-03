@@ -410,9 +410,10 @@ Contexte: {context}
             return self._get_fallback_message(lang)
 
         try:
-            # Ajouter l'instruction de langue au system prompt
+            # Ajouter l'instruction de langue AU DÉBUT du system prompt pour la priorité
             lang_instruction = get_language_instruction(lang)
-            system_with_lang = f"{SPARK_PERSONALITY}\n\n{lang_instruction}"
+            # L'instruction de langue en premier pour qu'elle soit prioritaire
+            system_with_lang = f"⚠️ CRITICAL LANGUAGE INSTRUCTION:\n{lang_instruction}\n\n{SPARK_PERSONALITY}"
 
             response = await async_client.messages.create(
                 model=self.model,
@@ -442,6 +443,12 @@ Contexte: {context}
                 "Yo! Let's gather some knowledge nuts today! 🌰",
                 "Hi there! Your favorite mascot is back! 🐿️",
                 "Hey champ! Ready for a study session? 💪",
+            ],
+            "es": [
+                "¡Hola! ¡Spark está aquí, listo para ayudar! 🐿️⚡",
+                "¡Yo! ¿Recolectamos nueces de conocimiento hoy? 🌰",
+                "¡Hola! ¡Tu mascota favorita ha vuelto! 🐿️",
+                "¡Ey campeón! ¿Listo para estudiar? 💪",
             ],
         }
         messages = fallbacks.get(lang, fallbacks["fr"])
@@ -484,10 +491,10 @@ INSTRUCTIONS:
 
 Garde ta personnalité Spark tout en étant pédagogue !"""
 
-        # Ajouter l'instruction de langue
+        # Ajouter l'instruction de langue AU DÉBUT pour priorité
         user_lang = user.language if user else "fr"
         lang_instruction = get_language_instruction(user_lang)
-        system = SPARK_PERSONALITY + "\n\n" + SPARK_TUTOR_PROMPT + "\n\n" + lang_instruction
+        system = f"⚠️ CRITICAL LANGUAGE INSTRUCTION:\n{lang_instruction}\n\n" + SPARK_PERSONALITY + "\n\n" + SPARK_TUTOR_PROMPT
 
         try:
             response = await async_client.messages.create(
@@ -557,10 +564,10 @@ Niveau d'indice demandé: {hint_level}/3
 
 Génère UN indice approprié au niveau (1-2 phrases). Ne révèle JAMAIS la réponse directement."""
 
-        # Ajouter l'instruction de langue
+        # Ajouter l'instruction de langue AU DÉBUT pour priorité
         user_lang = user.language if user else "fr"
         lang_instruction = get_language_instruction(user_lang)
-        system = SPARK_PERSONALITY + "\n\nTu donnes des indices sans révéler la réponse.\n\n" + lang_instruction
+        system = f"⚠️ CRITICAL LANGUAGE INSTRUCTION:\n{lang_instruction}\n\n" + SPARK_PERSONALITY + "\n\nTu donnes des indices sans révéler la réponse."
 
         try:
             response = await async_client.messages.create(
@@ -590,6 +597,11 @@ Génère UN indice approprié au niveau (1-2 phrases). Ne révèle JAMAIS la ré
                     "Hmm, think about what you already know on this topic... 🤔",
                     "The answer is closer than you think! 💡",
                     "Think about the basic concepts, the answer follows! 🐿️"
+                ],
+                "es": [
+                    "Hmm, piensa bien en lo que ya sabes sobre este tema... 🤔",
+                    "¡La respuesta está más cerca de lo que crees! 💡",
+                    "¡Piensa en los conceptos básicos, la respuesta se deduce! 🐿️"
                 ]
             }
             fallbacks = hints_fallback.get(user_lang, hints_fallback["fr"])
@@ -671,17 +683,17 @@ Génère UN indice approprié au niveau (1-2 phrases). Ne révèle JAMAIS la ré
         level = user.gamification.level if hasattr(user, 'gamification') and user.gamification else 1
         xp = user.gamification.total_xp if hasattr(user, 'gamification') and user.gamification else 0
 
-        # Construire le prompt de conversation avec instruction de langue
+        # Construire le prompt de conversation avec instruction de langue AU DÉBUT pour priorité
         user_lang = user.language if user else "fr"
         lang_instruction = get_language_instruction(user_lang)
 
-        system = SPARK_PERSONALITY + "\n\n" + SPARK_CONVERSATION_PROMPT.format(
+        system = f"⚠️ CRITICAL LANGUAGE INSTRUCTION:\n{lang_instruction}\n\n" + SPARK_PERSONALITY + "\n\n" + SPARK_CONVERSATION_PROMPT.format(
             conversation_history=history,
             user_memories="\n".join(f"- {m}" for m in memories) if memories else "Pas encore de mémoires",
             streak=streak,
             level=level,
             xp=xp
-        ) + "\n\n" + lang_instruction
+        )
 
         prompt = f"""Message de {user.username}: {message}
 

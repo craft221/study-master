@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from datetime import datetime
 from enum import Enum
+
+from app.schemas.blocks import BlockContent, Block, BlockType
 
 
 class SubjectBasic(BaseModel):
@@ -31,12 +33,18 @@ class NoteVisibilityEnum(str, Enum):
 
 class NoteBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
-    content: str = Field(..., min_length=1)
+    content: str = Field(default="", description="Contenu texte (legacy) - utilisé si blocks est vide")
     subject_id: int
     parent_id: Optional[int] = None
     note_type: Optional[NoteTypeEnum] = NoteTypeEnum.REGULAR
     tags: Optional[List[str]] = []
     visibility: Optional[NoteVisibilityEnum] = NoteVisibilityEnum.PRIVATE
+    language: Optional[str] = Field("fr", max_length=5, description="Langue du contenu (fr, en, es)")
+    # Nouveau: Contenu en blocs (Notion-like)
+    blocks: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Contenu structuré en blocs (format Notion-like). Si présent, prend précédence sur 'content'"
+    )
 
 
 class NoteCreate(NoteBase):
@@ -45,7 +53,7 @@ class NoteCreate(NoteBase):
 
 class NoteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=500)
-    content: Optional[str] = Field(None, min_length=1)
+    content: Optional[str] = Field(None)
     subject_id: Optional[int] = None
     parent_id: Optional[int] = None
     note_type: Optional[NoteTypeEnum] = None
@@ -54,6 +62,9 @@ class NoteUpdate(BaseModel):
     is_pinned: Optional[bool] = None
     is_favorite: Optional[bool] = None
     is_archived: Optional[bool] = None
+    language: Optional[str] = Field(None, max_length=5)
+    # Nouveau: Mise à jour des blocs
+    blocks: Optional[List[Dict[str, Any]]] = None
 
 
 class NoteResponse(BaseModel):
@@ -69,6 +80,11 @@ class NoteResponse(BaseModel):
     tags: Optional[List[str]] = []
     visibility: Optional[NoteVisibilityEnum] = NoteVisibilityEnum.PRIVATE
     order: Optional[int] = 0
+
+    # Nouveau: Contenu en blocs
+    blocks: Optional[List[Dict[str, Any]]] = None
+    # Indique si la note utilise le format blocs
+    uses_blocks: Optional[bool] = False
 
     content_html: Optional[str] = None
     summary: Optional[str] = None
@@ -97,6 +113,7 @@ class NoteResponse(BaseModel):
 
     is_ai_generated: Optional[bool] = False
     is_indexed: Optional[bool] = False
+    language: Optional[str] = "fr"
 
     is_pinned: Optional[bool] = False
     is_favorite: Optional[bool] = False

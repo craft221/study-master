@@ -53,7 +53,7 @@ export interface FocusRoomParticipant {
   joined_at: string
   focus_minutes: number
   today_focus_minutes: number
-  milestones_reached: string[]
+  milestones_reached?: string[]
   is_visible: boolean
 }
 
@@ -141,7 +141,7 @@ export interface FocusSession {
   total_minutes: number
   focus_score: number | null
   activities_completed: number
-  milestones_reached: string[]
+  milestones_reached?: string[]
   xp_earned: number
   xp_bonus: number
 }
@@ -295,14 +295,35 @@ export const focusRoomsService = {
    * Mettre a jour le statut
    */
   updateStatus: async (roomId: number, status: ParticipantStatus): Promise<void> => {
-    await api.put(`/focus-rooms/${roomId}/status`, { status })
+    await api.patch(`/focus-rooms/${roomId}/status`, { status })
   },
 
   /**
    * Mettre a jour l'activite en cours
    */
   updateActivity: async (roomId: number, activity: string | null, subject_id?: number): Promise<void> => {
-    await api.put(`/focus-rooms/${roomId}/activity`, { activity, subject_id })
+    await api.patch(`/focus-rooms/${roomId}/activity`, { activity, subject_id })
+  },
+
+  /**
+   * Heartbeat HTTP pour sauvegarder les minutes de focus periodiquement
+   * Remplace/complete le heartbeat WebSocket qui peut ne pas fonctionner
+   */
+  heartbeat: async (roomId: number): Promise<{ success: boolean; focus_minutes: number; today_focus_minutes: number; milestone: string | null; xp_earned: number }> => {
+    const response = await api.post(`/focus-rooms/${roomId}/heartbeat`)
+    return response.data
+  },
+
+  /**
+   * Reclamer une recompense aleatoire gagnee pendant le focus
+   * Remplace le WebSocket claim_reward qui peut ne pas fonctionner
+   */
+  claimReward: async (roomId: number, rewardType: string, rarity: string): Promise<{ success: boolean; xp_earned: number; reward_name: string; reward_type: string; rarity: string }> => {
+    const response = await api.post(`/focus-rooms/${roomId}/claim-reward`, {
+      reward_type: rewardType,
+      rarity: rarity
+    })
+    return response.data
   },
 
   /**

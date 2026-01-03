@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SparkSVG from './SparkSVG';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * Spark - La Mascotte Écureuil de Study Master ⚡🐿️
@@ -50,11 +51,11 @@ interface SparkProps {
  * Émojis et représentations de Spark selon son niveau
  */
 const SPARK_LEVELS = {
-  1: { emoji: '🐿️', name: 'Spark Bébé', size: 'small' },
-  2: { emoji: '🐿️✨', name: 'Spark Junior', size: 'medium' },
-  3: { emoji: '🐿️⚡', name: 'Spark Expert', size: 'medium' },
-  4: { emoji: '🐿️📚', name: 'Spark Sage', size: 'large' },
-  5: { emoji: '🐿️👑', name: 'Spark Légendaire', size: 'large' },
+  1: { emoji: '🐿️', nameKey: 'baby', size: 'small' },
+  2: { emoji: '🐿️✨', nameKey: 'junior', size: 'medium' },
+  3: { emoji: '🐿️⚡', nameKey: 'expert', size: 'medium' },
+  4: { emoji: '🐿️📚', nameKey: 'sage', size: 'large' },
+  5: { emoji: '🐿️👑', nameKey: 'legendary', size: 'large' },
 };
 
 /**
@@ -92,10 +93,12 @@ const Spark: React.FC<SparkProps> = ({
   showMessage = true,
   className = '',
 }) => {
+  const { t } = useLanguage();
   const [isHovered, setIsHovered] = useState(false);
   const [showBubble, setShowBubble] = useState(false);
 
   const sparkData = SPARK_LEVELS[level as keyof typeof SPARK_LEVELS] || SPARK_LEVELS[1];
+  const sparkName = t(`sparkWidget.levels.${sparkData.nameKey}`);
   const accessoryEmoji = accessory ? ACCESSORIES[accessory as keyof typeof ACCESSORIES] : null;
 
   // Afficher la bulle de message si un message est fourni
@@ -276,7 +279,7 @@ const Spark: React.FC<SparkProps> = ({
           ${onClick ? 'hover:drop-shadow-2xl' : ''}
         `}
         role="button"
-        aria-label={`Spark - ${sparkData.name}`}
+        aria-label={`Spark - ${sparkName}`}
         tabIndex={0}
       >
         {/* Écureuil SVG principal */}
@@ -326,7 +329,7 @@ const Spark: React.FC<SparkProps> = ({
             className="absolute -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap"
           >
             <span className="text-xs font-bold bg-black/70 text-white px-2 py-1 rounded-full">
-              {sparkData.name}
+              {sparkName}
             </span>
           </motion.div>
         )}

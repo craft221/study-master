@@ -6,9 +6,21 @@ import remarkGfm from 'remark-gfm'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 interface MarkdownRendererProps {
   content: string
   className?: string
+}
+
+// Helper to resolve image URLs
+const resolveImageUrl = (src: string | undefined): string => {
+  if (!src) return ''
+  // If it's an API path, prepend the backend URL
+  if (src.startsWith('/api/')) {
+    return `${API_URL}${src}`
+  }
+  return src
 }
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
@@ -68,8 +80,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200" {...props} />
           ),
           hr: ({ node, ...props }) => <hr className="my-6 border-gray-300 dark:border-gray-700" {...props} />,
-          img: ({ node, ...props }) => (
-            <img className="max-w-full h-auto rounded-lg my-4" {...props} />
+          img: ({ node, src, alt, ...props }) => (
+            <img
+              src={resolveImageUrl(src)}
+              alt={alt || 'Image'}
+              className="max-w-full h-auto rounded-lg my-4 shadow-md"
+              loading="lazy"
+              {...props}
+            />
           ),
         }}
       >

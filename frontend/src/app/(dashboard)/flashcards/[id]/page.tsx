@@ -11,7 +11,9 @@ import {
   BookOpen,
   BarChart3,
   Download,
-  Sparkles
+  Sparkles,
+  Globe,
+  Lock
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
@@ -40,10 +42,13 @@ interface Deck {
   title: string
   description: string
   subject?: Subject | null
+  subject_id?: string
   cards: Flashcard[]
   total_cards: number
   cards_due: number
   mastered_cards: number
+  is_public: boolean
+  language: string
 }
 
 export default function FlashcardDeckPage() {
@@ -110,6 +115,20 @@ export default function FlashcardDeckPage() {
       router.push('/flashcards')
     } catch (error) {
       toast.error('Erreur')
+    }
+  }
+
+  const togglePublic = async () => {
+    if (!deck) return
+    try {
+      const newPublicState = !deck.is_public
+      await api.patch(`/explore/flashcards/deck/visibility?deck_name=${encodeURIComponent(deck.title)}&subject_id=${deck.subject_id || 0}`, {
+        is_public: newPublicState
+      })
+      setDeck({ ...deck, is_public: newPublicState })
+      toast.success(newPublicState ? 'Deck rendu public!' : 'Deck rendu privé')
+    } catch (error) {
+      toast.error('Erreur lors du changement de visibilité')
     }
   }
 
@@ -198,6 +217,26 @@ export default function FlashcardDeckPage() {
         >
           <Trash2 className="h-5 w-5" />
           <span>Supprimer le deck</span>
+        </button>
+        <button
+          onClick={togglePublic}
+          className={`px-6 py-3 rounded-lg transition font-semibold flex items-center space-x-2 ${
+            deck.is_public
+              ? 'bg-green-50 text-green-700 hover:bg-green-100'
+              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {deck.is_public ? (
+            <>
+              <Globe className="h-5 w-5" />
+              <span>Public</span>
+            </>
+          ) : (
+            <>
+              <Lock className="h-5 w-5" />
+              <span>Rendre public</span>
+            </>
+          )}
         </button>
       </div>
 

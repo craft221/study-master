@@ -23,6 +23,8 @@ from app.schemas.note import (
     NoteWithChildren
 )
 from app.services.xp_service import award_xp
+from app.services.daily_quest_service import daily_quest_service
+from app.models.daily_quest import QuestType
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,35 @@ router = APIRouter()
 
 # Configuration pour l'upload d'images
 UPLOAD_DIR = Path("/app/uploads/note-images")
+UPLOAD_DIR_FALLBACK = Path("/tmp/note-images")
+
+def get_user_upload_dir(user_id: int) -> Path:
+    """Récupère le dossier d'upload pour un utilisateur, avec fallback si nécessaire"""
+    # Essayer le dossier principal
+    user_dir = UPLOAD_DIR / str(user_id)
+    try:
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+    except PermissionError:
+        # Fallback vers /tmp
+        logger.warning(f"Cannot create {user_dir}, using fallback")
+        fallback_dir = UPLOAD_DIR_FALLBACK / str(user_id)
+        fallback_dir.mkdir(parents=True, exist_ok=True)
+        return fallback_dir
+
+def find_image_path(user_id: int, filename: str) -> Path | None:
+    """Cherche une image dans les emplacements possibles"""
+    # Vérifier le dossier principal
+    primary_path = UPLOAD_DIR / str(user_id) / filename
+    if primary_path.exists():
+        return primary_path
+
+    # Vérifier le fallback
+    fallback_path = UPLOAD_DIR_FALLBACK / str(user_id) / filename
+    if fallback_path.exists():
+        return fallback_path
+
+    return None
 
 # Extensions d'images autorisées
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
@@ -101,6 +132,27 @@ async def create_note(
     if note_data.visibility:
         is_public = note_data.visibility.value == "public"
 
+    # Utiliser la langue de l'utilisateur si non spécifiée
+    if not note_dict.get("language"):
+        user_lang = current_user.preferences.language if current_user.preferences else "fr"
+        note_dict["language"] = user_lang
+
+    # Si des blocs sont fournis, générer le content legacy pour la recherche
+    blocks = note_dict.get("blocks")
+    if blocks and len(blocks) > 0:
+        # Extraire le texte des blocs pour le champ content (recherche)
+        text_parts = []
+        for block in blocks:
+            if "content" in block and block["content"]:
+                text_parts.append(block["content"])
+            if "children" in block:
+                for child in block["children"]:
+                    if "content" in child and child["content"]:
+                        text_parts.append(child["content"])
+        note_dict["content"] = "\n".join(text_parts) if text_parts else " "
+    elif not note_dict.get("content"):
+        note_dict["content"] = " "  # Valeur par défaut si vide
+
     new_note = Note(
         user_id=current_user.id,
         is_public=is_public,
@@ -116,12 +168,29 @@ async def create_note(
         user=current_user,
         amount=10,
         reason="Création d'une note",
-        event_type="note_created"
+        event_type="note_created",
+        db=db
     )
 
     # Incrémenter le compteur de notes via stats
     if current_user.stats:
         current_user.stats.total_notes_created += 1
+
+    # Mettre à jour la progression des quêtes quotidiennes
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.CREATE_NOTES,
+        progress=1
+    )
+
+    # Mettre à jour la quête EARN_XP (+10 XP pour création de note)
+    await daily_quest_service.update_quest_progress(
+        db=db,
+        user_id=current_user.id,
+        quest_type=QuestType.EARN_XP,
+        progress=10
+    )
 
     await db.commit()
     await db.refresh(new_note, ["subject"])
@@ -330,6 +399,20 @@ async def update_note(
 
     # Exclure les champs qui n'existent pas dans le modèle
     update_data = note_data.model_dump(exclude_unset=True, exclude={"note_type", "visibility"})
+
+    # Si des blocs sont fournis, mettre à jour le content legacy pour la recherche
+    if "blocks" in update_data and update_data["blocks"]:
+        blocks = update_data["blocks"]
+        text_parts = []
+        for block in blocks:
+            if "content" in block and block["content"]:
+                text_parts.append(block["content"])
+            if "children" in block:
+                for child in block["children"]:
+                    if "content" in child and child["content"]:
+                        text_parts.append(child["content"])
+        update_data["content"] = "\n".join(text_parts) if text_parts else " "
+
     for field, value in update_data.items():
         if hasattr(note, field):
             setattr(note, field, value)
@@ -616,20 +699,8 @@ async def upload_note_image(
     # Générer un nom de fichier unique
     stored_filename = f"{uuid.uuid4().hex}{file_extension}"
 
-    # Créer les répertoires si nécessaires
-    try:
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    except PermissionError:
-        logger.warning(f"Cannot create {UPLOAD_DIR}, using /tmp fallback")
-        UPLOAD_DIR_FALLBACK = Path("/tmp/note-images")
-        UPLOAD_DIR_FALLBACK.mkdir(parents=True, exist_ok=True)
-
-    user_upload_dir = UPLOAD_DIR / str(current_user.id)
-    try:
-        user_upload_dir.mkdir(parents=True, exist_ok=True)
-    except PermissionError:
-        user_upload_dir = Path("/tmp/note-images") / str(current_user.id)
-        user_upload_dir.mkdir(parents=True, exist_ok=True)
+    # Obtenir le dossier d'upload (avec fallback automatique)
+    user_upload_dir = get_user_upload_dir(current_user.id)
 
     # Chemin complet du fichier
     file_path = user_upload_dir / stored_filename
@@ -683,10 +754,10 @@ async def get_note_image(
             detail="Nom de fichier invalide"
         )
 
-    # Construire le chemin du fichier
-    file_path = UPLOAD_DIR / str(user_id) / filename
+    # Chercher le fichier (vérifie les emplacements possibles)
+    file_path = find_image_path(user_id, filename)
 
-    if not file_path.exists():
+    if not file_path:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Image non trouvée"
@@ -729,17 +800,17 @@ async def delete_note_image(
             detail="Nom de fichier invalide"
         )
 
-    # Construire le chemin du fichier (dans le dossier de l'utilisateur)
-    file_path = UPLOAD_DIR / str(current_user.id) / filename
+    # Chercher le fichier (vérifie les emplacements possibles)
+    file_path = find_image_path(current_user.id, filename)
 
-    if not file_path.exists():
+    if not file_path:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Image non trouvée"
         )
 
     try:
-        os.remove(file_path)
+        os.remove(str(file_path))
         logger.info(f"Image supprimée: {filename} par utilisateur {current_user.id}")
     except Exception as e:
         logger.error(f"Erreur lors de la suppression de l'image: {e}")

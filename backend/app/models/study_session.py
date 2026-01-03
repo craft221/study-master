@@ -32,7 +32,9 @@ class StudySession(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
-    duration = Column(Integer, nullable=False)  # minutes
+    duration = Column(Integer, nullable=False, default=0)  # minutes
+    status = Column(Enum(SessionStatus), default=SessionStatus.ACTIVE)
+    session_type = Column(Enum(SessionType), default=SessionType.STUDY)
     notes_reviewed = Column(Integer, default=0)
     flashcards_reviewed = Column(Integer, default=0)
     quizzes_completed = Column(Integer, default=0)

@@ -2,7 +2,7 @@
  * Hook pour la gestion du mode hors ligne
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { offlineStorage } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 
@@ -88,6 +88,19 @@ export function useOfflineData<T>(
   const [isFromCache, setIsFromCache] = useState(false)
   const { isOnline } = useOffline()
 
+  // Utiliser des refs pour éviter les boucles infinies
+  // Les fonctions passées en paramètre sont recréées à chaque render
+  const fetchOnlineRef = useRef(fetchOnline)
+  const getOfflineRef = useRef(getOffline)
+  const saveOfflineRef = useRef(saveOffline)
+
+  // Mettre à jour les refs à chaque render
+  useEffect(() => {
+    fetchOnlineRef.current = fetchOnline
+    getOfflineRef.current = getOffline
+    saveOfflineRef.current = saveOffline
+  })
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -95,14 +108,14 @@ export function useOfflineData<T>(
     try {
       if (isOnline) {
         // Essayer de récupérer les données en ligne
-        const onlineData = await fetchOnline()
+        const onlineData = await fetchOnlineRef.current()
         setData(onlineData)
         setIsFromCache(false)
         // Sauvegarder en cache
-        await saveOffline(onlineData)
+        await saveOfflineRef.current(onlineData)
       } else {
         // Utiliser les données en cache
-        const offlineData = await getOffline()
+        const offlineData = await getOfflineRef.current()
         if (offlineData) {
           setData(offlineData)
           setIsFromCache(true)
@@ -113,7 +126,7 @@ export function useOfflineData<T>(
     } catch (err) {
       // Essayer le cache en cas d'erreur réseau
       try {
-        const offlineData = await getOffline()
+        const offlineData = await getOfflineRef.current()
         if (offlineData) {
           setData(offlineData)
           setIsFromCache(true)
@@ -126,8 +139,9 @@ export function useOfflineData<T>(
     } finally {
       setLoading(false)
     }
-  }, [isOnline, fetchOnline, getOffline, saveOffline])
+  }, [isOnline]) // Plus besoin des fonctions dans les deps
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData()
   }, [fetchData, ...deps])

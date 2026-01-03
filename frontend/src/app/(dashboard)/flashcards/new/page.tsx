@@ -2,8 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, CloudOff } from 'lucide-react'
+import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, CloudOff, Languages } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLanguage } from '@/contexts/LanguageContext'
+
+const LANGUAGE_OPTIONS = [
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+]
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -32,12 +39,14 @@ export default function NewFlashcardDeckPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { isOnline } = useOfflineContext()
+  const { locale, t } = useLanguage()
 
   const [loading, setLoading] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState('')
   const [deckName, setDeckName] = useState('')
   const [tags, setTags] = useState('')
+  const [language, setLanguage] = useState(locale || 'fr')
   const [expandedCards, setExpandedCards] = useState<number[]>([0])
 
   const [flashcards, setFlashcards] = useState<FlashcardInput[]>([
@@ -80,8 +89,8 @@ export default function NewFlashcardDeckPage() {
   const removeFlashcard = (index: number) => {
     if (flashcards.length === 1) {
       toast({
-        title: 'Attention',
-        description: 'Vous devez avoir au moins une carte',
+        title: t('newFlashcardPage.warning'),
+        description: t('newFlashcardPage.atLeastOneCard'),
         variant: 'destructive'
       })
       return
@@ -109,8 +118,8 @@ export default function NewFlashcardDeckPage() {
 
     if (!selectedSubject || !deckName) {
       toast({
-        title: 'Champs manquants',
-        description: 'Veuillez sélectionner une matière et donner un nom au deck',
+        title: t('newFlashcardPage.missingFields'),
+        description: t('newFlashcardPage.fillSubjectAndName'),
         variant: 'destructive'
       })
       return
@@ -120,8 +129,8 @@ export default function NewFlashcardDeckPage() {
 
     if (validCards.length === 0) {
       toast({
-        title: 'Aucune carte valide',
-        description: 'Ajoutez au moins une carte avec une question et une réponse',
+        title: t('newFlashcardPage.noValidCard'),
+        description: t('newFlashcardPage.addCompleteCard'),
         variant: 'destructive'
       })
       return
@@ -140,15 +149,16 @@ export default function NewFlashcardDeckPage() {
             hint: card.hint || null,
             explanation: card.explanation || null,
             tags: tags || null,
-            is_ai_generated: false
+            is_ai_generated: false,
+            language: language
           })
         )
 
         await Promise.all(promises)
 
         toast({
-          title: 'Deck créé',
-          description: `${validCards.length} carte(s) ajoutée(s) avec succès au deck "${deckName}"`,
+          title: t('newFlashcardPage.deckCreated'),
+          description: t('newFlashcardPage.deckCreatedWith', { count: validCards.length, name: deckName }),
         })
         router.push('/flashcards')
       } else {
@@ -167,6 +177,7 @@ export default function NewFlashcardDeckPage() {
           card_count: validCards.length,
           mastered_count: 0,
           tags: tags || null,
+          language: language,
           created_at: now,
           updated_at: now,
           _isOffline: true,
@@ -190,6 +201,7 @@ export default function NewFlashcardDeckPage() {
             explanation: card.explanation || null,
             tags: tags || null,
             is_ai_generated: false,
+            language: language,
             ease_factor: 2.5,
             interval: 0,
             repetitions: 0,
@@ -217,22 +229,23 @@ export default function NewFlashcardDeckPage() {
               explanation: card.explanation || null,
               tags: tags || null,
               is_ai_generated: false,
+              language: language,
               _tempId: cardTempId,
             }
           )
         }
 
         toast({
-          title: 'Deck créé localement',
-          description: `${validCards.length} carte(s) seront synchronisées quand vous serez reconnecté`,
+          title: t('newFlashcardPage.deckCreatedOffline'),
+          description: t('newFlashcardPage.deckWillSync', { count: validCards.length }),
         })
         router.push('/flashcards')
       }
     } catch (error: any) {
-      console.error('Erreur:', error)
+      console.error('Error:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors de la création du deck',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('newFlashcardPage.error'),
         variant: 'destructive'
       })
     } finally {
@@ -249,10 +262,10 @@ export default function NewFlashcardDeckPage() {
             <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             <div>
               <p className="font-medium text-orange-900 dark:text-orange-100">
-                Mode hors-ligne
+                {t('newFlashcardPage.offlineMode')}
               </p>
               <p className="text-sm text-orange-700 dark:text-orange-300">
-                Votre deck sera sauvegardé localement et synchronisé automatiquement quand vous serez reconnecté.
+                {t('newFlashcardPage.offlineSaveMessage')}
               </p>
             </div>
           </div>
@@ -263,13 +276,13 @@ export default function NewFlashcardDeckPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Nouveau Deck de Flashcards</h1>
-            <p className="text-gray-600 mt-1">Créez un nouveau deck et ajoutez vos cartes</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('newFlashcardPage.title')}</h1>
+            <p className="text-gray-600 mt-1">{t('newFlashcardPage.subtitle')}</p>
           </div>
           {!isOnline && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
               <CloudOff className="w-3 h-3 mr-1" />
-              Hors-ligne
+              {t('newFlashcardPage.offline')}
             </span>
           )}
         </div>
@@ -278,7 +291,7 @@ export default function NewFlashcardDeckPage() {
           onClick={() => router.back()}
         >
           <X className="h-4 w-4 mr-2" />
-          Annuler
+          {t('newFlashcardPage.cancel')}
         </Button>
       </div>
 
@@ -286,17 +299,17 @@ export default function NewFlashcardDeckPage() {
         {/* Deck Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Informations du Deck</CardTitle>
+            <CardTitle>{t('newFlashcardPage.deckInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="deckName">
-                  Nom du Deck <span className="text-red-500">*</span>
+                  {t('newFlashcardPage.deckName')} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="deckName"
-                  placeholder="Ex: Vocabulaire Anglais - Chapitre 1"
+                  placeholder={t('newFlashcardPage.deckNamePlaceholder')}
                   value={deckName}
                   onChange={(e) => setDeckName(e.target.value)}
                   required
@@ -305,11 +318,11 @@ export default function NewFlashcardDeckPage() {
 
               <div>
                 <Label htmlFor="subject">
-                  Matière <span className="text-red-500">*</span>
+                  {t('newFlashcardPage.subjectLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une matière" />
+                    <SelectValue placeholder={t('newFlashcardPage.selectSubject')} />
                   </SelectTrigger>
                   <SelectContent>
                     {subjects.map((subject) => (
@@ -329,13 +342,41 @@ export default function NewFlashcardDeckPage() {
             </div>
 
             <div>
-              <Label htmlFor="tags">Tags (séparés par des virgules)</Label>
+              <Label htmlFor="tags">{t('newFlashcardPage.tagsLabel')}</Label>
               <Input
                 id="tags"
-                placeholder="Ex: vocabulaire, examens, important"
+                placeholder={t('newFlashcardPage.tagsPlaceholder')}
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
+            </div>
+
+            {/* Language Selector */}
+            <div>
+              <Label className="flex items-center gap-2 mb-2">
+                <Languages className="h-4 w-4" />
+                {t('newFlashcardPage.languageLabel')}
+              </Label>
+              <div className="flex gap-3">
+                {LANGUAGE_OPTIONS.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => setLanguage(lang.code)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
+                      language === lang.code
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    }`}
+                  >
+                    <span className="text-lg">{lang.flag}</span>
+                    <span className="font-medium">{lang.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                {t('newFlashcardPage.languageNotice')}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -343,14 +384,14 @@ export default function NewFlashcardDeckPage() {
         {/* Flashcards */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Cartes ({flashcards.length})</h2>
+            <h2 className="text-xl font-semibold">{t('newFlashcardPage.cardsTitle')} ({flashcards.length})</h2>
             <Button
               type="button"
               onClick={addFlashcard}
               variant="outline"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter une carte
+              {t('newFlashcardPage.addCard')}
             </Button>
           </div>
 
@@ -366,9 +407,9 @@ export default function NewFlashcardDeckPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      Carte {index + 1}
+                      {t('newFlashcardPage.card')} {index + 1}
                       {isValid && (
-                        <span className="text-xs font-normal text-green-600">✓ Valide</span>
+                        <span className="text-xs font-normal text-green-600">✓ {t('newFlashcardPage.valid')}</span>
                       )}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -401,10 +442,10 @@ export default function NewFlashcardDeckPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>
-                          Question (Recto) <span className="text-red-500">*</span>
+                          {t('newFlashcardPage.questionFront')} <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
-                          placeholder="Entrez la question ou le terme..."
+                          placeholder={t('newFlashcardPage.questionPlaceholder')}
                           value={card.front}
                           onChange={(e) => updateFlashcard(index, 'front', e.target.value)}
                           rows={3}
@@ -415,10 +456,10 @@ export default function NewFlashcardDeckPage() {
 
                       <div>
                         <Label>
-                          Réponse (Verso) <span className="text-red-500">*</span>
+                          {t('newFlashcardPage.answerBack')} <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
-                          placeholder="Entrez la réponse..."
+                          placeholder={t('newFlashcardPage.answerPlaceholder')}
                           value={card.back}
                           onChange={(e) => updateFlashcard(index, 'back', e.target.value)}
                           rows={3}
@@ -430,18 +471,18 @@ export default function NewFlashcardDeckPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Indice (optionnel)</Label>
+                        <Label>{t('newFlashcardPage.hintOptional')}</Label>
                         <Input
-                          placeholder="Un indice pour vous aider..."
+                          placeholder={t('newFlashcardPage.hintPlaceholder')}
                           value={card.hint || ''}
                           onChange={(e) => updateFlashcard(index, 'hint', e.target.value)}
                         />
                       </div>
 
                       <div>
-                        <Label>Explication (optionnel)</Label>
+                        <Label>{t('newFlashcardPage.explanationOptional')}</Label>
                         <Input
-                          placeholder="Explication supplémentaire..."
+                          placeholder={t('newFlashcardPage.explanationPlaceholder')}
                           value={card.explanation || ''}
                           onChange={(e) => updateFlashcard(index, 'explanation', e.target.value)}
                         />
@@ -461,18 +502,18 @@ export default function NewFlashcardDeckPage() {
             variant="outline"
             onClick={() => router.back()}
           >
-            Annuler
+            {t('newFlashcardPage.cancel')}
           </Button>
           <Button
             type="submit"
             disabled={loading || !selectedSubject || !deckName}
           >
             {loading ? (
-              <>Création en cours...</>
+              <>{t('newFlashcardPage.creating')}</>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Créer le Deck ({flashcards.filter(c => c.front && c.back).length} cartes)
+                {t('newFlashcardPage.createDeck')} ({flashcards.filter(c => c.front && c.back).length})
               </>
             )}
           </Button>

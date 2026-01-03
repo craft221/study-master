@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   RotateCcw,
@@ -10,31 +10,43 @@ import {
   Check,
   X,
   ArrowLeft,
-  Trophy
+  Trophy,
+  CloudOff,
+  Clock,
+  Wifi
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { useSparkEventMessages } from '@/hooks/useSparkEvents'
+import { offlineStorage } from '@/lib/offlineStorage'
+import { formatIntervalDisplay, type SchedulingOptions } from '@/lib/fsrs'
+import { useOfflineContext } from '@/components/providers/OfflineProvider'
 
 interface Flashcard {
   id: string
   front: string
   back: string
   difficulty: number
+  stability?: number
+  state?: string
   next_review_at: string
+  last_reviewed_at?: string
 }
 
 export default function FlashcardReviewPage() {
   const params = useParams()
   const router = useRouter()
   const deckId = params.id as string
+  const { isOnline } = useOfflineContext()
 
   const [cards, setCards] = useState<Flashcard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reviewComplete, setReviewComplete] = useState(false)
+  const [isOfflineMode, setIsOfflineMode] = useState(false)
+  const [schedulingPreview, setSchedulingPreview] = useState<SchedulingOptions | null>(null)
   const [stats, setStats] = useState({
     easy: 0,
     medium: 0,
@@ -45,35 +57,111 @@ export default function FlashcardReviewPage() {
   // Hook Spark pour les messages d'événements
   const { onFlashcardDeckComplete } = useSparkEventMessages()
 
-  useEffect(() => {
-    fetchCardsToReview()
-  }, [deckId])
+  // Charger les cartes (online ou offline)
+  const fetchCardsToReview = useCallback(async () => {
+    setLoading(true)
 
-  const fetchCardsToReview = async () => {
     try {
-      const response = await api.get(`/flashcards/decks/${deckId}/due`)
-      if (response.data.length === 0) {
-        toast('Aucune carte à réviser pour le moment!', { icon: '✅' })
-        router.push(`/flashcards/${deckId}`)
-        return
+      if (isOnline) {
+        // Mode online: récupérer depuis l'API
+        const response = await api.get(`/flashcards/decks/${deckId}/due`)
+
+        if (response.data.length === 0) {
+          toast('Aucune carte à réviser pour le moment!', { icon: '✅' })
+          router.push(`/flashcards/${deckId}`)
+          return
+        }
+
+        setCards(response.data)
+        setIsOfflineMode(false)
+
+        // Sauvegarder dans IndexedDB pour usage offline
+        await offlineStorage.init()
+        await offlineStorage.saveFlashcards(response.data)
+      } else {
+        // Mode offline: charger depuis IndexedDB
+        await offlineStorage.init()
+        const offlineCards = await offlineStorage.getDueFlashcards(deckId)
+
+        if (offlineCards.length === 0) {
+          toast('Aucune carte à réviser en mode hors ligne', { icon: '📴' })
+          router.push(`/flashcards/${deckId}`)
+          return
+        }
+
+        setCards(offlineCards)
+        setIsOfflineMode(true)
+        toast('Mode hors ligne - Révisions FSRS locales', { icon: '📴' })
       }
-      setCards(response.data)
     } catch (error) {
-      toast.error('Erreur lors du chargement des cartes')
-      router.push('/flashcards')
+      console.error('Error loading cards:', error)
+
+      // Fallback vers offline si l'API échoue
+      try {
+        await offlineStorage.init()
+        const offlineCards = await offlineStorage.getDueFlashcards(deckId)
+
+        if (offlineCards.length > 0) {
+          setCards(offlineCards)
+          setIsOfflineMode(true)
+          toast('Connexion perdue - Mode FSRS local activé', { icon: '📴' })
+        } else {
+          toast.error('Aucune carte disponible hors ligne')
+          router.push('/flashcards')
+        }
+      } catch (offlineError) {
+        toast.error('Erreur lors du chargement des cartes')
+        router.push('/flashcards')
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [deckId, isOnline, router])
+
+  useEffect(() => {
+    fetchCardsToReview()
+  }, [fetchCardsToReview])
+
+  // Calculer la prévisualisation FSRS quand on retourne la carte
+  useEffect(() => {
+    if (isFlipped && cards[currentIndex]) {
+      try {
+        const preview = offlineStorage.getSchedulingPreview(cards[currentIndex])
+        setSchedulingPreview(preview)
+      } catch (error) {
+        console.warn('Could not calculate FSRS preview:', error)
+        setSchedulingPreview(null)
+      }
+    } else {
+      setSchedulingPreview(null)
+    }
+  }, [isFlipped, currentIndex, cards])
 
   const handleReview = async (quality: 0 | 1 | 2 | 3) => {
     const currentCard = cards[currentIndex]
 
     try {
-      await api.post(`/flashcards/${currentCard.id}/review`, {
-        quality,
-        review_date: new Date().toISOString(),
-      })
+      if (isOnline && !isOfflineMode) {
+        // Mode online: envoyer à l'API
+        await api.post(`/flashcards/${currentCard.id}/review`, {
+          quality,
+          review_date: new Date().toISOString(),
+        })
+      } else {
+        // Mode offline: utiliser FSRS local
+        const result = await offlineStorage.reviewFlashcardOffline(currentCard.id, quality)
+
+        if (result.success) {
+          // Mettre à jour la carte dans la liste locale
+          const updatedCards = [...cards]
+          updatedCards[currentIndex] = result.updatedCard
+          setCards(updatedCards)
+
+          // Afficher l'intervalle calculé
+          const intervalDisplay = formatIntervalDisplay(result.schedulingInfo.intervalDays)
+          console.log(`[FSRS] Next review in: ${intervalDisplay}`)
+        }
+      }
 
       // Update stats
       const newStats = { ...stats }
@@ -93,8 +181,45 @@ export default function FlashcardReviewPage() {
         const totalCards = cards.length
         onFlashcardDeckComplete(correctCount, totalCards)
         setReviewComplete(true)
+
+        if (isOfflineMode) {
+          toast.success('Révisions terminées! Synchronisation en attente...', { icon: '📴' })
+        }
       }
     } catch (error) {
+      console.error('Review error:', error)
+
+      // Fallback vers offline si l'API échoue
+      if (!isOfflineMode) {
+        try {
+          const result = await offlineStorage.reviewFlashcardOffline(currentCard.id, quality)
+          if (result.success) {
+            setIsOfflineMode(true)
+            toast('Mode hors ligne activé', { icon: '📴' })
+
+            // Continuer normalement
+            const newStats = { ...stats }
+            if (quality === 0) newStats.again++
+            else if (quality === 1) newStats.hard++
+            else if (quality === 2) newStats.medium++
+            else if (quality === 3) newStats.easy++
+            setStats(newStats)
+
+            if (currentIndex < cards.length - 1) {
+              setCurrentIndex(currentIndex + 1)
+              setIsFlipped(false)
+            } else {
+              const correctCount = newStats.easy + newStats.medium
+              onFlashcardDeckComplete(correctCount, cards.length)
+              setReviewComplete(true)
+            }
+            return
+          }
+        } catch (offlineError) {
+          console.error('Offline fallback failed:', offlineError)
+        }
+      }
+
       toast.error('Erreur lors de l\'enregistrement')
     }
   }
@@ -182,24 +307,77 @@ export default function FlashcardReviewPage() {
     )
   }
 
+  // Vérifier qu'il y a des cartes à afficher
+  if (cards.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Aucune carte à réviser</p>
+          <button
+            onClick={() => router.push('/flashcards')}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          >
+            Retour aux flashcards
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const currentCard = cards[currentIndex]
+
+  // Double vérification pour la carte actuelle
+  if (!currentCard) {
+    router.push(`/flashcards/${deckId}`)
+    return null
+  }
+
   const progress = ((currentIndex + 1) / cards.length) * 100
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Offline Mode Banner */}
+      {isOfflineMode && (
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="font-medium text-orange-900 dark:text-orange-100">
+                Mode hors ligne FSRS
+              </p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Calcul local des intervalles. Synchronisation automatique au retour en ligne.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400">
+              <Clock className="h-4 w-4" />
+              <span>En attente</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}
-          className="p-2 hover:bg-gray-100 rounded-lg transition"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
         >
-          <ArrowLeft className="h-6 w-6 text-gray-700" />
+          <ArrowLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         </button>
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900">
-            Révision en cours
-          </h2>
-          <p className="text-gray-600 text-sm">
+          <div className="flex items-center justify-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Révision en cours
+            </h2>
+            {isOfflineMode && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <CloudOff className="w-3 h-3 mr-1" />
+                Offline
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
             Carte {currentIndex + 1} sur {cards.length}
           </p>
         </div>
@@ -265,46 +443,69 @@ export default function FlashcardReviewPage() {
 
       {/* Review Buttons */}
       {isFlipped && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-center text-gray-700 font-medium mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-center text-gray-700 dark:text-gray-300 font-medium mb-4">
             Comment avez-vous trouvé cette carte?
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <button
               onClick={() => handleReview(0)}
-              className="p-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition flex flex-col items-center space-y-2 group"
+              className="p-4 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg transition flex flex-col items-center space-y-2 group"
             >
               <X className="h-6 w-6 group-hover:scale-110 transition" />
               <span className="font-medium">À revoir</span>
-              <span className="text-xs">Touche 1</span>
+              {schedulingPreview && (
+                <span className="text-xs font-semibold bg-red-100 dark:bg-red-900/50 px-2 py-0.5 rounded">
+                  {schedulingPreview.again.display}
+                </span>
+              )}
+              <span className="text-xs opacity-60">Touche 1</span>
             </button>
             <button
               onClick={() => handleReview(1)}
-              className="p-4 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg transition flex flex-col items-center space-y-2 group"
+              className="p-4 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400 rounded-lg transition flex flex-col items-center space-y-2 group"
             >
               <ThumbsDown className="h-6 w-6 group-hover:scale-110 transition" />
               <span className="font-medium">Difficile</span>
-              <span className="text-xs">Touche 2</span>
+              {schedulingPreview && (
+                <span className="text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 px-2 py-0.5 rounded">
+                  {schedulingPreview.hard.display}
+                </span>
+              )}
+              <span className="text-xs opacity-60">Touche 2</span>
             </button>
             <button
               onClick={() => handleReview(2)}
-              className="p-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition flex flex-col items-center space-y-2 group"
+              className="p-4 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg transition flex flex-col items-center space-y-2 group"
             >
               <Check className="h-6 w-6 group-hover:scale-110 transition" />
-              <span className="font-medium">Moyen</span>
-              <span className="text-xs">Touche 3</span>
+              <span className="font-medium">Bien</span>
+              {schedulingPreview && (
+                <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded">
+                  {schedulingPreview.good.display}
+                </span>
+              )}
+              <span className="text-xs opacity-60">Touche 3</span>
             </button>
             <button
               onClick={() => handleReview(3)}
-              className="p-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition flex flex-col items-center space-y-2 group"
+              className="p-4 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 rounded-lg transition flex flex-col items-center space-y-2 group"
             >
               <ThumbsUp className="h-6 w-6 group-hover:scale-110 transition" />
               <span className="font-medium">Facile</span>
-              <span className="text-xs">Touche 4</span>
+              {schedulingPreview && (
+                <span className="text-xs font-semibold bg-green-100 dark:bg-green-900/50 px-2 py-0.5 rounded">
+                  {schedulingPreview.easy.display}
+                </span>
+              )}
+              <span className="text-xs opacity-60">Touche 4</span>
             </button>
           </div>
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Votre réponse détermine quand vous reverrez cette carte (algorithme FSRS)
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+            {isOfflineMode
+              ? 'FSRS local - Les intervalles seront synchronisés au retour en ligne'
+              : 'Votre réponse détermine quand vous reverrez cette carte (algorithme FSRS)'
+            }
           </p>
         </div>
       )}

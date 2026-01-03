@@ -21,6 +21,7 @@ class FlashcardBase(BaseModel):
     tags: Optional[str] = None
     deck_name: Optional[str] = Field(None, max_length=200)
     is_ai_generated: bool = False
+    language: Optional[str] = Field("fr", max_length=5, description="Langue du contenu (fr, en, es)")
 
 
 class FlashcardCreate(FlashcardBase):
@@ -45,6 +46,7 @@ class FlashcardUpdate(BaseModel):
     is_suspended: Optional[bool] = None
     is_buried: Optional[bool] = None
     is_favorite: Optional[bool] = None
+    language: Optional[str] = Field(None, max_length=5)
 
 
 class FlashcardResponse(FlashcardBase):

@@ -544,6 +544,18 @@ export function MajorCombobox({ value, onChange, disabled, className }: MajorCom
     setMounted(true)
   }, [])
 
+  // Options par défaut - on stocke le nom, pas l'ID
+  // IMPORTANT: Ce hook doit être AVANT le return conditionnel pour respecter les règles de React
+  React.useEffect(() => {
+    if (!mounted) return // Ne pas exécuter côté serveur
+    const defaultOptions = majors.slice(0, 20).map((major: any) => ({
+      value: major.name, // Stocker le nom directement
+      label: major.name,
+      group: categoryLabels[major.category]
+    }))
+    setOptions(defaultOptions)
+  }, [majors, categoryLabels, mounted])
+
   // Rendu placeholder côté serveur
   if (!mounted) {
     return (
@@ -554,16 +566,6 @@ export function MajorCombobox({ value, onChange, disabled, className }: MajorCom
       </div>
     )
   }
-
-  // Options par défaut - on stocke le nom, pas l'ID
-  React.useEffect(() => {
-    const defaultOptions = majors.slice(0, 20).map((major: any) => ({
-      value: major.name, // Stocker le nom directement
-      label: major.name,
-      group: categoryLabels[major.category]
-    }))
-    setOptions(defaultOptions)
-  }, [majors, categoryLabels])
 
   // Recherche
   const handleSearch = (query: string) => {

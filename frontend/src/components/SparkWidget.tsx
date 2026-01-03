@@ -7,6 +7,7 @@ import Spark from './Spark';
 import SparkHelpDialog from './SparkHelpDialog';
 import SparkAnswerCard from './SparkAnswerCard';
 import { useSpark } from '@/contexts/SparkContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * SparkWidget - Widget prêt à l'emploi pour afficher Spark
@@ -29,6 +30,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
   showHelpButton = true,
   className = '',
 }) => {
+  const { t, locale } = useLanguage();
   const {
     sparkState,
     currentMessage,
@@ -155,12 +157,12 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
         <button
           onClick={() => setIsHelpDialogOpen(true)}
           className="fixed bottom-44 right-8 bg-gradient-to-r from-amber-500 to-orange-500 text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all z-[60] group"
-          aria-label="Demander de l'aide à Spark"
-          title="Pose une question à Spark !"
+          aria-label={t('sparkWidget.askSpark')}
+          title={t('sparkWidget.askSpark')}
         >
           <HelpCircle className="w-6 h-6" />
           <span className="absolute -top-10 right-0 bg-black/75 text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            Pose une question à Spark ! 💡
+            {t('sparkWidget.askSpark')} 💡
           </span>
         </button>
       )}
@@ -202,7 +204,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sun className="w-6 h-6" />
-                  <h3 className="font-bold text-lg">Briefing du jour</h3>
+                  <h3 className="font-bold text-lg">{t('sparkWidget.dailyBriefing')}</h3>
                 </div>
                 <button
                   onClick={() => setIsBriefingOpen(false)}
@@ -221,10 +223,10 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                 <Flame className="w-8 h-8 text-orange-500" />
                 <div>
                   <p className="font-semibold text-gray-900">
-                    Streak: {briefing.streakStatus?.current || 0} jours
+                    {t('sparkWidget.streak')}: {t('sparkWidget.streakDays', { count: briefing.streakStatus?.current || 0 })}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {briefing.streakStatus?.message || "Continue comme ça !"}
+                    {briefing.streakStatus?.message || t('sparkWidget.keepItUp')}
                   </p>
                 </div>
               </div>
@@ -234,7 +236,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                     <Target className="w-4 h-4 text-primary-600" />
-                    Objectifs du jour
+                    {t('sparkWidget.todayGoals')}
                   </h4>
                   <div className="space-y-2">
                     {briefing.todayGoals.slice(0, 3).map((goal: any, index: number) => (
@@ -255,10 +257,10 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                 <div className="p-3 bg-blue-50 rounded-xl">
                   <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-blue-600" />
-                    Révisions en attente
+                    {t('sparkWidget.pendingReviews')}
                   </h4>
                   <p className="text-sm text-gray-600">
-                    {briefing.pendingReviews.message || `${briefing.pendingReviews.count} éléments à réviser`}
+                    {briefing.pendingReviews.message || t('sparkWidget.itemsToReview', { count: briefing.pendingReviews.count })}
                   </p>
                 </div>
               )}
@@ -284,7 +286,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                 onClick={() => setIsBriefingOpen(false)}
                 className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:opacity-90 transition"
               >
-                C'est parti ! 🚀
+                {t('sparkWidget.letsGo')} 🚀
               </button>
             </div>
           </motion.div>
@@ -306,10 +308,10 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bell className="w-6 h-6" />
-                  <h3 className="font-bold text-lg">Notifications</h3>
+                  <h3 className="font-bold text-lg">{t('sparkWidget.notifications')}</h3>
                   {unreadNotificationCount > 0 && (
                     <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">
-                      {unreadNotificationCount} nouvelles
+                      {t('sparkWidget.newNotifications', { count: unreadNotificationCount })}
                     </span>
                   )}
                 </div>
@@ -327,8 +329,8 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm">Aucune notification</p>
-                  <p className="text-xs mt-1">Spark te préviendra si besoin !</p>
+                  <p className="text-sm">{t('sparkWidget.noNotifications')}</p>
+                  <p className="text-xs mt-1">{t('sparkWidget.sparkWillNotify')}</p>
                 </div>
               ) : (
                 <div className="divide-y">
@@ -358,7 +360,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                           <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
                           <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {new Date(notification.created_at).toLocaleString('fr-FR', {
+                            {new Date(notification.created_at).toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'es' ? 'es-ES' : 'en-US', {
                               day: 'numeric',
                               month: 'short',
                               hour: '2-digit',
@@ -389,7 +391,7 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
                   }}
                   className="w-full py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg transition"
                 >
-                  Tout marquer comme lu
+                  {t('sparkWidget.markAllRead')}
                 </button>
               </div>
             )}
