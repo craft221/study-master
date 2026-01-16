@@ -478,12 +478,12 @@ async def check_achievement_progress(
 
         # SPECIAL - Daily quests
         elif req_type == "daily_quests_completed":
-            from app.models.daily_quest import UserDailyQuest
+            from app.models.daily_quest import DailyQuest
             quests_count_query = await db.execute(
-                select(func.count(UserDailyQuest.id)).where(
+                select(func.count(DailyQuest.id)).where(
                     and_(
-                        UserDailyQuest.user_id == current_user.id,
-                        UserDailyQuest.is_claimed == True
+                        DailyQuest.user_id == current_user.id,
+                        DailyQuest.claimed_at.isnot(None)  # Quête réclamée
                     )
                 )
             )
