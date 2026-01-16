@@ -413,7 +413,7 @@ export default function FocusRoomsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="room_type">{t('focusRoom.roomType')}</Label>
                     <Select
-                      value={newRoom.room_type}
+                      value={newRoom.room_type || 'public'}
                       onValueChange={(value) => setNewRoom({ ...newRoom, room_type: value as FocusRoomType })}
                     >
                       <SelectTrigger id="room_type">
@@ -431,7 +431,7 @@ export default function FocusRoomsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="category">{t('focusRoom.category')}</Label>
                     <Select
-                      value={newRoom.category}
+                      value={newRoom.category || 'general'}
                       onValueChange={(value) => setNewRoom({ ...newRoom, category: value as FocusRoomCategory })}
                     >
                       <SelectTrigger id="category">
