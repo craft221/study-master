@@ -1680,7 +1680,7 @@ export default function ExamModePage() {
               <div className="space-y-2">
                 <Label>{t('exam_mode.hours_per_day') || "Heures d'étude par jour"}</Label>
                 <Select
-                  value={formData.study_hours_per_day?.toString()}
+                  value={formData.study_hours_per_day?.toString() || "2"}
                   onValueChange={(v) => setFormData({ ...formData, study_hours_per_day: parseFloat(v) })}
                 >
                   <SelectTrigger>
