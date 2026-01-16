@@ -56,16 +56,16 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Navbar */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Studera</span>
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
+              <span className="text-xl sm:text-2xl font-bold text-gray-900">Studera</span>
             </div>
 
             {/* Badge en direct */}
             {mounted && (
-              <div className="hidden md:flex items-center space-x-2 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+              <div className="hidden lg:flex items-center space-x-2 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -74,16 +74,16 @@ export default function Home() {
               </div>
             )}
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link
                 href="/login"
-                className="text-gray-600 hover:text-gray-900 font-medium transition"
+                className="text-gray-600 hover:text-gray-900 font-medium transition text-sm sm:text-base"
               >
                 {t('landing.nav.login')}
               </Link>
               <Link
                 href="/register"
-                className="bg-primary-600 text-white px-6 py-2.5 rounded-xl hover:bg-primary-700 transition font-semibold shadow-lg shadow-primary-500/25"
+                className="bg-primary-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-primary-700 transition font-semibold shadow-lg shadow-primary-500/25 text-sm sm:text-base whitespace-nowrap"
               >
                 {t('landing.nav.startFree')}
               </Link>
@@ -93,15 +93,15 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 pt-16 pb-24">
+      <section className="container mx-auto px-4 pt-8 sm:pt-16 pb-16 sm:pb-24">
         <div className="text-center max-w-5xl mx-auto">
           {/* Badge Nouveau */}
-          <div className="inline-flex items-center space-x-2 bg-primary-50 border border-primary-200 px-4 py-2 rounded-full mb-8">
-            <Flame className="h-4 w-4 text-orange-500" />
-            <span className="text-primary-700 text-sm font-medium">{t('landing.hero.badge')}</span>
+          <div className="inline-flex items-center space-x-2 bg-primary-50 border border-primary-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-6 sm:mb-8">
+            <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-500" />
+            <span className="text-primary-700 text-xs sm:text-sm font-medium">{t('landing.hero.badge')}</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight text-gray-900">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-4 sm:mb-6 leading-tight text-gray-900">
             {t('landing.hero.title1')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600">
@@ -109,42 +109,42 @@ export default function Home() {
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
             <strong className="text-gray-900">{t('landing.hero.subtitle')}</strong>
             <br />
             <span className="text-primary-600">{t('landing.hero.subtitleHighlight')}</span>
           </p>
 
           {/* CTA Principal */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-12 px-4">
             <Link
               href="/register"
-              className="group bg-primary-600 text-white px-8 py-4 rounded-2xl hover:bg-primary-700 transition-all font-bold text-lg flex items-center space-x-3 shadow-2xl shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-105"
+              className="group w-full sm:w-auto bg-primary-600 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl hover:bg-primary-700 transition-all font-bold text-base sm:text-lg flex items-center justify-center space-x-2 sm:space-x-3 shadow-2xl shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-105"
             >
               <span>{t('landing.hero.cta')}</span>
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="#features"
-              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition font-medium"
+              className="flex items-center space-x-2 text-gray-500 hover:text-gray-900 transition font-medium text-sm sm:text-base"
             >
-              <Play className="h-5 w-5" />
+              <Play className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>{t('landing.hero.watchFeatures')}</span>
             </Link>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-500 px-2">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
               <span>{t('landing.hero.trust1')}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
               <span>{t('landing.hero.trust2')}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
               <span>{t('landing.hero.trust3')}</span>
             </div>
           </div>
@@ -605,22 +605,22 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-12">
+      <footer className="border-t border-gray-200 bg-white py-8 sm:py-12">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col items-center gap-4 sm:gap-6 text-center">
             <div className="flex items-center space-x-2">
-              <BookOpen className="h-6 w-6 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">Studera</span>
+              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
+              <span className="text-lg sm:text-xl font-bold text-gray-900">Studera</span>
             </div>
 
-            <div className="flex items-center space-x-6 text-gray-500 text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-gray-500 text-xs sm:text-sm">
               <Link href="/about" className="hover:text-gray-900 transition">{t('landing.footer.about')}</Link>
               <Link href="/contact" className="hover:text-gray-900 transition">{t('landing.footer.contact')}</Link>
               <Link href="/privacy" className="hover:text-gray-900 transition">{t('landing.footer.privacy')}</Link>
               <Link href="/terms" className="hover:text-gray-900 transition">{t('landing.footer.terms')}</Link>
             </div>
 
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-xs sm:text-sm">
               {t('landing.footer.copyright')}
             </p>
           </div>
