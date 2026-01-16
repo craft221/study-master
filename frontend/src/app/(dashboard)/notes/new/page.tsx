@@ -17,7 +17,7 @@ interface Subject {
   color: string
 }
 
-const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS: { code: string; label: string; flag: string }[] = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -35,7 +35,7 @@ export default function NewNotePage() {
     subject_id: '',
     tags: [] as string[],
     visibility: 'private' as 'private' | 'public',
-    language: locale || 'fr',
+    language: (locale || 'fr') as string,
   })
   const [content, setContent] = useState('')
   const [tagInput, setTagInput] = useState('')
