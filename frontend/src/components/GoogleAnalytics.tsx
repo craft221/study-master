@@ -59,23 +59,12 @@ export default function GoogleAnalytics() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Vérifier si le consentement a été donné
-    const consent = localStorage.getItem('cookie_consent')
-    if (consent !== 'accepted') return
-
     const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
     pageview(url)
   }, [pathname, searchParams])
 
   // Ne pas charger si pas d'ID configuré
   if (!GA_MEASUREMENT_ID) {
-    return null
-  }
-
-  // Vérifier le consentement avant de charger les scripts
-  const hasConsent = typeof window !== 'undefined' && localStorage.getItem('cookie_consent') === 'accepted'
-
-  if (!hasConsent && typeof window !== 'undefined') {
     return null
   }
 
