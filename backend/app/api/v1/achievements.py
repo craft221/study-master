@@ -374,16 +374,30 @@ async def check_achievement_progress(
     all_achievements = await db.execute(select(Achievement))
     achievements = all_achievements.scalars().all()
     
-    # Récupérer les achievements déjà débloqués
+    # Récupérer les achievements déjà débloqués (is_unlocked = True)
     unlocked_query = await db.execute(
         select(UserAchievement.achievement_id).where(
-            UserAchievement.user_id == current_user.id
+            and_(
+                UserAchievement.user_id == current_user.id,
+                UserAchievement.is_unlocked == True
+            )
         )
     )
-    unlocked_ids = set(unlocked_query.scalars().all())
-    
+    already_unlocked_ids = set(unlocked_query.scalars().all())
+
+    # Récupérer les UserAchievements en cours (is_unlocked = False) pour mise à jour
+    pending_query = await db.execute(
+        select(UserAchievement).where(
+            and_(
+                UserAchievement.user_id == current_user.id,
+                UserAchievement.is_unlocked == False
+            )
+        )
+    )
+    pending_achievements = {ua.achievement_id: ua for ua in pending_query.scalars().all()}
+
     for achievement in achievements:
-        if achievement.id in unlocked_ids:
+        if achievement.id in already_unlocked_ids:
             continue
 
         # Vérifier les conditions selon le requirement_type et requirement_value
@@ -392,40 +406,116 @@ async def check_achievement_progress(
         req_value = achievement.requirement_value
 
         # Logique de déblocage selon le type
+        stats = current_user.stats
+        gamification = current_user.gamification
+
+        # LEARNING - Notes
         if req_type == "notes_created":
-            if current_user.total_notes_created >= req_value:
+            if stats and stats.total_notes_created >= req_value:
                 should_unlock = True
+
+        # LEARNING - Flashcards
         elif req_type == "flashcards_created":
-            if current_user.total_flashcards_created >= req_value:
+            if stats and stats.total_flashcards_created >= req_value:
                 should_unlock = True
         elif req_type == "flashcards_reviewed":
-            if current_user.total_flashcards_reviewed >= req_value:
+            if stats and stats.total_flashcards_reviewed >= req_value:
                 should_unlock = True
-        elif req_type == "quizzes_taken":
-            if current_user.total_quizzes_taken >= req_value:
+
+        # LEARNING - Quizzes
+        elif req_type in ("quizzes_taken", "quizzes_completed"):
+            if stats and stats.total_quizzes_completed >= req_value:
                 should_unlock = True
+        elif req_type == "perfect_quizzes":
+            # Note: nécessite un compteur de quiz parfaits dans stats
+            # Pour l'instant, on skip ce type
+            pass
+
+        # STREAK
         elif req_type == "streak_days":
-            if current_user.current_streak >= req_value:
+            if gamification and gamification.current_streak >= req_value:
                 should_unlock = True
-        elif req_type == "level":
-            if current_user.level >= req_value:
+
+        # MASTERY - Level
+        elif req_type in ("level", "level_reached"):
+            if gamification and gamification.level >= req_value:
                 should_unlock = True
-        elif req_type == "xp":
-            if current_user.total_xp >= req_value:
+
+        # MASTERY - XP
+        elif req_type in ("xp", "total_xp"):
+            if gamification and gamification.total_xp >= req_value:
+                should_unlock = True
+
+        # SOCIAL - Duels
+        elif req_type == "duels_participated":
+            if stats and stats.total_duels_played >= req_value:
+                should_unlock = True
+        elif req_type == "duels_won":
+            if stats and stats.duels_won >= req_value:
+                should_unlock = True
+
+        # SPECIAL - Account created (toujours vrai si l'utilisateur existe)
+        elif req_type == "account_created":
+            should_unlock = True
+
+        # SPECIAL - PDF imports
+        elif req_type == "pdf_imported":
+            # Compter les notes avec tag 'ocr'
+            from app.models.note import Note
+            pdf_count_query = await db.execute(
+                select(func.count(Note.id)).where(
+                    and_(
+                        Note.user_id == current_user.id,
+                        Note.tags.ilike('%ocr%')
+                    )
+                )
+            )
+            pdf_count = pdf_count_query.scalar() or 0
+            if pdf_count >= req_value:
+                should_unlock = True
+
+        # SPECIAL - Daily quests
+        elif req_type == "daily_quests_completed":
+            from app.models.daily_quest import UserDailyQuest
+            quests_count_query = await db.execute(
+                select(func.count(UserDailyQuest.id)).where(
+                    and_(
+                        UserDailyQuest.user_id == current_user.id,
+                        UserDailyQuest.is_claimed == True
+                    )
+                )
+            )
+            quests_count = quests_count_query.scalar() or 0
+            if quests_count >= req_value:
+                should_unlock = True
+
+        # SPECIAL - Study time
+        elif req_type == "study_minutes":
+            if stats and stats.total_study_time_minutes >= req_value:
                 should_unlock = True
 
         # Débloquer si conditions remplies
         if should_unlock:
             now = utc_now()
-            user_achievement = UserAchievement(
-                user_id=current_user.id,
-                achievement_id=achievement.id,
-                progress=100,
-                is_unlocked=True,
-                unlocked_at=now,
-                created_at=now
-            )
-            db.add(user_achievement)
+
+            # Vérifier si un UserAchievement en attente existe déjà
+            if achievement.id in pending_achievements:
+                # Mettre à jour l'existant
+                user_achievement = pending_achievements[achievement.id]
+                user_achievement.progress = 100
+                user_achievement.is_unlocked = True
+                user_achievement.unlocked_at = now
+            else:
+                # Créer un nouveau
+                user_achievement = UserAchievement(
+                    user_id=current_user.id,
+                    achievement_id=achievement.id,
+                    progress=100,
+                    is_unlocked=True,
+                    unlocked_at=now,
+                    created_at=now
+                )
+                db.add(user_achievement)
 
             # Récompenser XP
             await award_xp(
