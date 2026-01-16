@@ -362,7 +362,7 @@ INITIAL_PLANS = [
         "price_mad_cents": 0,
         "duration_days": 36500,  # ~100 ans = permanent
         "is_recurring": False,
-        "ai_requests_per_day": 5,  # 5 requêtes/jour (optimisé)
+        "ai_requests_per_day": 20,  # 20 requêtes/jour (test)
         "storage_limit_mb": 100,
         "max_notes": -1,           # Illimité (pas de coût)
         "max_flashcards": -1,      # Illimité (pas de coût)
