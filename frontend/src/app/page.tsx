@@ -74,16 +74,16 @@ export default function Home() {
               </div>
             )}
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-1 sm:space-x-4">
               <Link
                 href="/login"
-                className="text-gray-600 hover:text-gray-900 font-medium transition text-sm sm:text-base"
+                className="text-gray-600 hover:text-gray-900 font-medium transition text-xs sm:text-base px-1 sm:px-0"
               >
                 {t('landing.nav.login')}
               </Link>
               <Link
                 href="/register"
-                className="bg-primary-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-primary-700 transition font-semibold shadow-lg shadow-primary-500/25 text-sm sm:text-base whitespace-nowrap"
+                className="bg-primary-600 text-white px-2 sm:px-6 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-primary-700 transition font-semibold shadow-lg shadow-primary-500/25 text-xs sm:text-base whitespace-nowrap"
               >
                 {t('landing.nav.startFree')}
               </Link>
