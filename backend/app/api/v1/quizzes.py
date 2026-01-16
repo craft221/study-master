@@ -609,12 +609,14 @@ async def start_quiz_attempt(
     attempt_count = result.scalar()
 
     # Créer une nouvelle tentative avec les valeurs par défaut pour un nouvel attempt
+    now = utc_now()
     new_attempt = QuizAttempt(
         user_id=current_user.id,
         quiz_id=quiz_id,
         answers=[],
         score=0.0,
         time_taken=None,
+        time_started=now,  # IMPORTANT: Enregistrer le début pour les duels
         completed_at=None
     )
 
@@ -633,7 +635,7 @@ async def start_quiz_attempt(
         "points_earned": 0,
         "points_possible": quiz.total_points or 0,
         "is_passed": False,
-        "time_started": utc_now().isoformat(),
+        "time_started": new_attempt.time_started.isoformat() if new_attempt.time_started else now.isoformat(),
         "time_completed": None,
         "total_time_seconds": None,
         "is_completed": False,
@@ -642,8 +644,8 @@ async def start_quiz_attempt(
         "strengths": None,
         "weaknesses": None,
         "recommendations": None,
-        "created_at": new_attempt.completed_at.isoformat() if new_attempt.completed_at else utc_now().isoformat(),
-        "updated_at": utc_now().isoformat()
+        "created_at": new_attempt.created_at.isoformat() if new_attempt.created_at else now.isoformat(),
+        "updated_at": now.isoformat()
     }
 
 
