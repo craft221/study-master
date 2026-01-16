@@ -487,6 +487,7 @@ export default function FocusRoomPage() {
           return [...prev, {
             id: 0,
             user_id: message.user_id,
+            room_id: roomId,
             username: message.username,
             avatar_url: message.avatar_url,
             level: message.level,
