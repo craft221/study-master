@@ -181,6 +181,21 @@ async def award_xp(
         # Non bloquant si la mise à jour weekly_xp échoue
         logger.warning(f"Failed to update weekly XP for leagues: {e}")
 
+    # Mettre à jour la quête EARN_XP si une session db est fournie
+    if db is not None:
+        try:
+            from app.services.daily_quest_service import daily_quest_service
+            from app.models.daily_quest import QuestType
+            await daily_quest_service.update_quest_progress(
+                db=db,
+                user_id=user.id,
+                quest_type=QuestType.EARN_XP,
+                progress=amount
+            )
+        except Exception as e:
+            # Non bloquant si la mise à jour quest échoue
+            logger.warning(f"Failed to update EARN_XP quest progress: {e}")
+
     # Envoyer notification de level up
     if level_up and db is not None:
         try:
