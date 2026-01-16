@@ -5,8 +5,7 @@ import { useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 // Votre ID Google Analytics (format: G-XXXXXXXXXX)
-// Configurez NEXT_PUBLIC_GA_ID dans votre fichier .env.local
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || ''
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-94XV284NN7'
 
 // Fonction pour envoyer des page views
 export const pageview = (url: string) => {
