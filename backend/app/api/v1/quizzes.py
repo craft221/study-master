@@ -507,8 +507,35 @@ async def start_quiz_attempt(
         )
 
     # === VÉRIFICATION SPÉCIALE POUR LES DUELS ===
-    # Vérifier si ce quiz fait partie d'un duel actif où l'utilisateur est participant
-    # On prend le duel le plus récent pour éviter les conflits avec les duels complétés
+    # Vérifier si ce quiz fait partie d'un duel PENDING où l'utilisateur est participant
+    # Dans ce cas, bloquer le jeu jusqu'à ce que l'adversaire accepte
+    pending_duel_query = select(Duel).where(
+        and_(
+            Duel.quiz_id == quiz_id,
+            Duel.status == DuelStatus.PENDING,
+            or_(
+                Duel.challenger_id == current_user.id,
+                Duel.opponent_id == current_user.id
+            )
+        )
+    ).order_by(Duel.created_at.desc()).limit(1)
+    pending_duel_result = await db.execute(pending_duel_query)
+    pending_duel = pending_duel_result.scalar()
+
+    if pending_duel:
+        # Le duel n'est pas encore accepté - personne ne peut jouer
+        if pending_duel.challenger_id == current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Votre adversaire n'a pas encore accepté le duel. Attendez sa réponse avant de jouer."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vous devez d'abord accepter ce duel avant de pouvoir jouer."
+            )
+
+    # Vérifier si ce quiz fait partie d'un duel actif (ACCEPTED ou IN_PROGRESS)
     duel_check_query = select(Duel).where(
         and_(
             Duel.quiz_id == quiz_id,
