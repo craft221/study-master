@@ -6,7 +6,7 @@ import { Save, X, Plus, Trash2, ChevronDown, ChevronUp, CloudOff, Languages } fr
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS: { code: string; label: string; flag: string }[] = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -46,7 +46,7 @@ export default function NewFlashcardDeckPage() {
   const [selectedSubject, setSelectedSubject] = useState('')
   const [deckName, setDeckName] = useState('')
   const [tags, setTags] = useState('')
-  const [language, setLanguage] = useState(locale || 'fr')
+  const [language, setLanguage] = useState<string>(locale || 'fr')
   const [expandedCards, setExpandedCards] = useState<number[]>([0])
 
   const [flashcards, setFlashcards] = useState<FlashcardInput[]>([
