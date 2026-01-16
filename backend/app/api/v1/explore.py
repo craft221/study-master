@@ -178,8 +178,19 @@ async def toggle_flashcard_deck_visibility(
         request = MakePublicRequest()
 
     # Récupérer toutes les flashcards du deck
+    # Gérer le cas spécial "Sans deck" pour les flashcards sans deck_name
+    from sqlalchemy import or_
+
+    if deck_name == "Sans deck":
+        deck_condition = or_(
+            Flashcard.deck_name.is_(None),
+            Flashcard.deck_name == "Sans deck"
+        )
+    else:
+        deck_condition = Flashcard.deck_name == deck_name
+
     stmt = select(Flashcard).where(
-        Flashcard.deck_name == deck_name,
+        deck_condition,
         Flashcard.subject_id == subject_id,
         Flashcard.user_id == current_user.id
     )

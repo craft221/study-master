@@ -103,15 +103,81 @@ class AIService:
             logger.error(f"Erreur lors de l'appel à Claude: {e}", exc_info=True)
             raise
 
+    async def _call_claude_vision(self, prompt: str, images: List[Dict[str, Any]], system_prompt: str = "") -> str:
+        """
+        Appelle l'API Claude Vision avec des images.
+
+        Args:
+            prompt: Le prompt utilisateur
+            images: Liste de dicts avec {"data": base64_string, "media_type": "image/png"|"image/jpeg"}
+            system_prompt: Instructions système optionnelles
+
+        Returns:
+            Texte de réponse de Claude
+
+        Raises:
+            ValueError: Si la clé API n'est pas configurée ou la réponse est vide
+        """
+        if not async_client:
+            logger.error("Client Anthropic non initialisé - ANTHROPIC_API_KEY manquante")
+            raise ValueError("Service IA non disponible - clé API non configurée")
+
+        try:
+            logger.info(f"Appel Claude Vision avec {len(images)} image(s)")
+
+            # Construire le contenu avec images et texte
+            content = []
+
+            # Ajouter les images (max 20 pour éviter les limites)
+            for i, img in enumerate(images[:20]):
+                content.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": img.get("media_type", "image/png"),
+                        "data": img["data"]
+                    }
+                })
+                logger.debug(f"Image {i+1} ajoutée ({img.get('media_type', 'image/png')})")
+
+            # Ajouter le prompt texte
+            content.append({
+                "type": "text",
+                "text": prompt
+            })
+
+            message = await async_client.messages.create(
+                model=self.model,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                system=system_prompt if system_prompt else "Tu es un assistant IA expert en pédagogie et en analyse de documents.",
+                messages=[
+                    {"role": "user", "content": content}
+                ]
+            )
+
+            # Extraire le texte de la réponse
+            if message.content and len(message.content) > 0:
+                response_text = message.content[0].text
+                logger.info(f"Réponse Claude Vision reçue: {len(response_text)} caractères")
+                return response_text
+            else:
+                logger.warning("Réponse vide reçue de Claude Vision")
+                raise ValueError("Réponse vide de Claude Vision")
+
+        except Exception as e:
+            logger.error(f"Erreur lors de l'appel à Claude Vision: {e}", exc_info=True)
+            raise
+
     def _clean_json_response(self, text: str) -> str:
         """
-        Nettoie la réponse JSON de Claude en supprimant les balises markdown.
+        Nettoie et répare la réponse JSON de Claude.
 
         Args:
             text: Texte brut de la réponse
 
         Returns:
-            Texte JSON nettoyé
+            Texte JSON nettoyé et réparé
         """
         result = text.strip()
 
@@ -124,7 +190,146 @@ class AIService:
         if result.endswith("```"):
             result = result[:-3]
 
-        return result.strip()
+        result = result.strip()
+
+        # Réparer les JSON tronqués
+        result = self._repair_truncated_json(result)
+
+        return result
+
+    def _repair_truncated_json(self, text: str) -> str:
+        """
+        Tente de réparer un JSON tronqué ou malformé.
+
+        Args:
+            text: JSON potentiellement tronqué
+
+        Returns:
+            JSON réparé ou texte original si réparation impossible
+        """
+        import re
+
+        # Vérifier si le JSON est valide
+        try:
+            json.loads(text)
+            return text  # JSON valide, pas de réparation nécessaire
+        except json.JSONDecodeError as initial_error:
+            logger.warning(f"JSON invalide détecté: {initial_error}")
+
+        repaired = text
+
+        # Stratégie 1: Supprimer les virgules trailing avant ] ou }
+        repaired = re.sub(r',\s*]', ']', repaired)
+        repaired = re.sub(r',\s*}', '}', repaired)
+
+        # Vérifier si ça suffit
+        try:
+            json.loads(repaired)
+            logger.info("JSON réparé (virgules trailing)")
+            return repaired
+        except json.JSONDecodeError:
+            pass
+
+        # Stratégie 2: Trouver le dernier objet flashcard complet
+        # Pattern: chercher tous les objets complets dans le tableau flashcards
+        flashcard_pattern = r'\{[^{}]*"front"[^{}]*"back"[^{}]*\}'
+
+        # Trouver le début du tableau flashcards
+        flashcards_start = repaired.find('"flashcards"')
+        if flashcards_start > 0:
+            array_start = repaired.find('[', flashcards_start)
+            if array_start > 0:
+                # Extraire tout ce qui vient après le début du tableau
+                after_array = repaired[array_start:]
+
+                # Trouver tous les objets complets (qui ont "front" et "back")
+                complete_objects = []
+                depth = 0
+                current_obj_start = -1
+
+                for i, char in enumerate(after_array):
+                    if char == '{':
+                        if depth == 0:
+                            current_obj_start = i
+                        depth += 1
+                    elif char == '}':
+                        depth -= 1
+                        if depth == 0 and current_obj_start >= 0:
+                            obj_str = after_array[current_obj_start:i+1]
+                            # Vérifier que l'objet contient "front" et "back"
+                            if '"front"' in obj_str and '"back"' in obj_str:
+                                try:
+                                    # Vérifier que c'est un JSON valide
+                                    json.loads(obj_str)
+                                    complete_objects.append(obj_str)
+                                except json.JSONDecodeError:
+                                    pass
+                            current_obj_start = -1
+
+                if complete_objects:
+                    # Reconstruire le JSON avec seulement les objets complets
+                    repaired = '{"flashcards": [' + ', '.join(complete_objects) + ']}'
+                    try:
+                        json.loads(repaired)
+                        logger.info(f"JSON réparé avec {len(complete_objects)} flashcards complètes")
+                        return repaired
+                    except json.JSONDecodeError:
+                        pass
+
+        # Stratégie 3: Approche basée sur les positions des accolades
+        open_braces = repaired.count('{')
+        close_braces = repaired.count('}')
+        open_brackets = repaired.count('[')
+        close_brackets = repaired.count(']')
+
+        if open_braces > close_braces or open_brackets > close_brackets:
+            logger.warning(f"JSON tronqué: {open_braces} {{ vs {close_braces} }}, {open_brackets} [ vs {close_brackets} ]")
+
+            # Chercher le dernier }, suivi d'une virgule ou espace
+            last_complete = None
+            for match in re.finditer(r'\}\s*,', repaired):
+                last_complete = match
+
+            if last_complete:
+                # Couper après le dernier objet complet
+                cut_pos = last_complete.start() + 1
+                repaired = repaired[:cut_pos]
+
+                # Fermer proprement
+                missing_brackets = repaired.count('[') - repaired.count(']')
+                missing_braces = repaired.count('{') - repaired.count('}')
+
+                repaired += ']' * max(0, missing_brackets)
+                repaired += '}' * max(0, missing_braces)
+
+                try:
+                    json.loads(repaired)
+                    logger.info("JSON réparé (coupé au dernier objet)")
+                    return repaired
+                except json.JSONDecodeError:
+                    pass
+
+        # Stratégie 4: Extraire manuellement les flashcards avec regex
+        flashcards = []
+        pattern = r'"front"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*,\s*"back"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"'
+
+        for match in re.finditer(pattern, text):
+            front = match.group(1)
+            back = match.group(2)
+            flashcards.append({
+                "front": front,
+                "back": back,
+                "hint": "",
+                "explanation": ""
+            })
+
+        if flashcards:
+            logger.info(f"JSON reconstruit avec {len(flashcards)} flashcards extraites par regex")
+            return json.dumps({"flashcards": flashcards})
+
+        # Aucune réparation possible
+        logger.error("Impossible de réparer le JSON")
+        return text
 
     def _validate_flashcard_quality(self, flashcard: Dict[str, str]) -> float:
         """
@@ -883,6 +1088,243 @@ Réponds directement en Markdown formaté."""
 
         except Exception as e:
             logger.error(f"Erreur lors de l'explication du concept: {e}", exc_info=True)
+            raise
+
+    async def generate_flashcards_from_images(
+        self,
+        images: List[Dict[str, Any]],
+        document_title: str,
+        count: int = 10,
+        difficulty: str = "medium",
+        lang: str = "fr"
+    ) -> List[Dict[str, str]]:
+        """
+        Génère des flashcards directement depuis des images de document en utilisant Claude Vision.
+        Beaucoup plus efficace que l'OCR car Claude peut comprendre le contexte, les diagrammes, etc.
+
+        Args:
+            images: Liste de dicts avec {"data": base64_string, "media_type": "image/png"|"image/jpeg"}
+            document_title: Titre du document
+            count: Nombre de flashcards à générer
+            difficulty: Niveau de difficulté (easy, medium, hard)
+            lang: Langue de génération
+
+        Returns:
+            Liste de flashcards [{"front": ..., "back": ..., "hint": ..., "explanation": ...}]
+        """
+        logger.info(f"Génération de {count} flashcards depuis {len(images)} image(s) avec Claude Vision")
+
+        system_prompt = build_system_prompt_with_language(
+            "Tu es un expert en pédagogie et création de flashcards. Tu analyses des documents "
+            "visuellement et crées des flashcards de haute qualité pour faciliter l'apprentissage.",
+            lang
+        )
+
+        prompt = f"""Analyse attentivement ces images de document et génère exactement {count} flashcards de qualité pédagogique.
+
+DOCUMENT: "{document_title}"
+
+INSTRUCTIONS:
+1. Lis et comprends TOUT le contenu des images (texte, diagrammes, tableaux, formules, etc.)
+2. Identifie les concepts clés, définitions, processus et relations importantes
+3. Crée des flashcards qui couvrent les points essentiels du document
+
+NIVEAU DE DIFFICULTÉ: {difficulty}
+- easy: Définitions simples, faits de base, reconnaissance directe
+- medium: Compréhension profonde, relations causales, applications
+- hard: Analyse complexe, synthèse multi-concepts, résolution de problèmes
+
+RÈGLES DE QUALITÉ:
+✓ Front (Question): 10-80 caractères, question claire et précise testant UN concept
+✓ Back (Réponse): 50-200 caractères, réponse complète mais concise avec exemple si pertinent
+✓ Hint (Indice): Aide sans révéler la réponse (catégorie, contexte, amorce)
+✓ Explanation: Pourquoi ce concept est important, liens avec autres concepts
+
+IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (sans balises ```json):
+{{
+  "flashcards": [
+    {{
+      "front": "Question testant un concept clé du document",
+      "back": "Réponse concise et complète",
+      "hint": "Indice progressif sans révéler la réponse",
+      "explanation": "Importance du concept et contexte"
+    }}
+  ]
+}}"""
+
+        try:
+            response_text = await self._call_claude_vision(prompt, images, system_prompt)
+            result_text = self._clean_json_response(response_text)
+
+            result = json.loads(result_text)
+            flashcards = result.get("flashcards", [])
+
+            if not flashcards:
+                logger.warning("Aucune flashcard générée par Claude Vision")
+                raise ValueError("Aucune flashcard générée")
+
+            # Validation de qualité
+            validated_flashcards = []
+            for card in flashcards:
+                quality_score = self._validate_flashcard_quality(card)
+                card["quality_score"] = round(quality_score, 1)
+                if quality_score >= 40:  # Seuil plus bas car Vision est plus fiable
+                    validated_flashcards.append(card)
+
+            logger.info(f"Flashcards Vision générées: {len(validated_flashcards[:count])} sur {count} demandées")
+            return validated_flashcards[:count]
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Erreur de parsing JSON Vision: {e}", exc_info=True)
+            raise ValueError(f"Erreur de format JSON: {str(e)}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération Vision de flashcards: {e}", exc_info=True)
+            raise
+
+    async def generate_quiz_from_images(
+        self,
+        images: List[Dict[str, Any]],
+        document_title: str,
+        question_count: int = 10,
+        question_types: Optional[List[str]] = None,
+        difficulty: str = "medium",
+        lang: str = "fr"
+    ) -> List[Dict[str, Any]]:
+        """
+        Génère un quiz directement depuis des images de document en utilisant Claude Vision.
+
+        Args:
+            images: Liste de dicts avec {"data": base64_string, "media_type": "image/png"|"image/jpeg"}
+            document_title: Titre du document
+            question_count: Nombre de questions
+            question_types: Types de questions (multiple_choice, true_false, short_answer)
+            difficulty: Niveau de difficulté
+            lang: Langue de génération
+
+        Returns:
+            Liste de questions de quiz
+        """
+        logger.info(f"Génération de quiz ({question_count} questions) depuis {len(images)} image(s) avec Claude Vision")
+
+        if question_types is None:
+            question_types = ["multiple_choice", "true_false"]
+
+        system_prompt = build_system_prompt_with_language(
+            "Tu es un expert en évaluation pédagogique. Tu analyses des documents "
+            "visuellement et crées des questions de quiz pertinentes et variées.",
+            lang
+        )
+
+        types_str = ", ".join(question_types)
+
+        prompt = f"""Analyse attentivement ces images de document et génère exactement {question_count} questions de quiz.
+
+DOCUMENT: "{document_title}"
+
+TYPES DE QUESTIONS À UTILISER: {types_str}
+- multiple_choice: 4 options, 1 seule correcte
+- true_false: Vrai ou Faux
+- short_answer: Réponse courte (1-3 mots)
+
+NIVEAU DE DIFFICULTÉ: {difficulty}
+
+RÈGLES:
+1. Questions variées couvrant tout le contenu
+2. Pas de questions ambiguës ou trompeuses
+3. Options de réponse plausibles pour les QCM
+4. Explication pour chaque réponse correcte
+
+IMPORTANT: Réponds UNIQUEMENT avec un JSON valide (sans balises ```json):
+{{
+  "questions": [
+    {{
+      "type": "multiple_choice",
+      "question": "Texte de la question?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct_answer": "Option A",
+      "explanation": "Pourquoi cette réponse est correcte",
+      "points": 10
+    }},
+    {{
+      "type": "true_false",
+      "question": "Affirmation à évaluer",
+      "correct_answer": true,
+      "explanation": "Pourquoi c'est vrai/faux",
+      "points": 5
+    }}
+  ]
+}}"""
+
+        try:
+            response_text = await self._call_claude_vision(prompt, images, system_prompt)
+            result_text = self._clean_json_response(response_text)
+
+            result = json.loads(result_text)
+            questions = result.get("questions", [])
+
+            if not questions:
+                logger.warning("Aucune question générée par Claude Vision")
+                raise ValueError("Aucune question générée")
+
+            logger.info(f"Quiz Vision généré: {len(questions)} questions")
+            return questions[:question_count]
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Erreur de parsing JSON Vision Quiz: {e}", exc_info=True)
+            raise ValueError(f"Erreur de format JSON: {str(e)}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération Vision de quiz: {e}", exc_info=True)
+            raise
+
+    async def extract_text_from_document(
+        self,
+        images: List[Dict[str, Any]],
+        document_title: str,
+        lang: str = "fr"
+    ) -> str:
+        """
+        Extrait le texte d'un document (PDF converti en images) en utilisant Claude Vision.
+        Bien meilleur que l'OCR car Claude comprend le contexte et structure le contenu.
+
+        Args:
+            images: Liste de dicts avec {"data": base64_string, "media_type": "image/png"|"image/jpeg"}
+            document_title: Titre du document
+            lang: Langue du contenu
+
+        Returns:
+            Texte extrait et structuré du document
+        """
+        logger.info(f"Extraction de texte depuis {len(images)} page(s) avec Claude Vision")
+
+        system_prompt = build_system_prompt_with_language(
+            """Tu es un expert en extraction et structuration de contenu documentaire.
+Tu dois extraire tout le texte des images de document de manière fidèle et bien structurée.""",
+            lang,
+            "document_extraction"
+        )
+
+        prompt = f"""Analyse attentivement ces images de document et extrait TOUT le contenu textuel.
+
+DOCUMENT: "{document_title}"
+
+INSTRUCTIONS:
+1. Lis et extrait TOUT le texte visible (titres, paragraphes, listes, notes, etc.)
+2. Préserve la structure du document (titres, sous-titres, paragraphes)
+3. Retranscris fidèlement les formules, tableaux et diagrammes en format texte
+4. Si le contenu est en plusieurs langues, garde la langue originale
+5. Utilise le format Markdown pour structurer le contenu
+
+FORMAT DE SORTIE:
+Retourne le texte extrait en format Markdown, bien structuré et lisible.
+N'ajoute AUCUN commentaire, juste le contenu extrait."""
+
+        try:
+            response_text = await self._call_claude_vision(prompt, images, system_prompt)
+            logger.info(f"Texte extrait: {len(response_text)} caractères")
+            return response_text.strip()
+
+        except Exception as e:
+            logger.error(f"Erreur lors de l'extraction de texte: {e}", exc_info=True)
             raise
 
 

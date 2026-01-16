@@ -138,7 +138,7 @@ export default function OfflinePage() {
 
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
-            Study Master fonctionne même sans connexion grâce à la technologie PWA.
+            Studera fonctionne même sans connexion grâce à la technologie PWA.
           </p>
         </div>
       </div>

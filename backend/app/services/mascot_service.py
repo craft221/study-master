@@ -34,7 +34,7 @@ async_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY el
 
 
 class MascotService:
-    """Service pour gérer Spark, la mascotte écureuil de Study Master"""
+    """Service pour gérer Spark, la mascotte écureuil de Studera"""
 
     def __init__(self):
         self.model = "claude-sonnet-4-5-20250929"  # Claude Sonnet 4.5
@@ -158,7 +158,7 @@ class MascotService:
         # Instruction de langue
         lang_instruction = get_language_instruction(lang)
 
-        system_prompt = f"""Tu es Spark, l'écureuil pédagogue et motivant, mascotte de Study Master.
+        system_prompt = f"""Tu es Spark, l'écureuil pédagogue et motivant, mascotte de Studera.
 
 PERSONNALITÉ ADAPTATIVE selon le niveau:
 **Niveau 1-3 (Débutant)**: Encourageant, métaphores simples, célèbre chaque victoire
@@ -393,9 +393,9 @@ Réponds UNIQUEMENT avec l'indice :"""
         # Instruction de langue
         lang_instruction = get_language_instruction(lang)
 
-        system_prompt = f"""Tu es Spark, l'assistant pédagogique IA de Study Master.
+        system_prompt = f"""Tu es Spark, l'assistant pédagogique IA de Studera.
 
-CAPACITÉS de Study Master:
+CAPACITÉS de Studera:
 ✓ Créer flashcards et quiz (manuels ou IA)
 ✓ Notes avec LaTeX/Markdown
 ✓ Répétition espacée automatique
@@ -511,7 +511,7 @@ Série: {streak} jours | XP: {xp}"""
         """Réponse de fallback sans IA"""
         fallbacks = {
             "fr": {
-                "answer": "Je voudrais t'aider, mais je n'ai pas accès à mes pouvoirs magiques pour l'instant ! 🐿️ Consulte les ressources de Study Master ! 📚",
+                "answer": "Je voudrais t'aider, mais je n'ai pas accès à mes pouvoirs magiques pour l'instant ! 🐿️ Consulte les ressources de Studera ! 📚",
                 "suggestions": [
                     "Consulte tes notes",
                     "Fais un quiz pour t'entraîner",
@@ -519,7 +519,7 @@ Série: {streak} jours | XP: {xp}"""
                 ]
             },
             "en": {
-                "answer": "I'd love to help, but I can't access my magic powers right now! 🐿️ Check out Study Master's resources! 📚",
+                "answer": "I'd love to help, but I can't access my magic powers right now! 🐿️ Check out Studera's resources! 📚",
                 "suggestions": [
                     "Check your notes",
                     "Take a practice quiz",

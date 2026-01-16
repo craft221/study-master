@@ -2,7 +2,7 @@
   "$schema": "https://inlang.com/schema/inlang-message-format",
 
   "common": {
-    "appName": "Study Master",
+    "appName": "Studera",
     "loading": "Cargando...",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -28,6 +28,7 @@
     "warning": "Advertencia",
     "info": "Información",
     "upgrade_premium": "Actualizar a Premium",
+    "upgrade": "Actualizar a Premium",
     "optional": "Opcional"
   },
 
@@ -46,7 +47,7 @@
     "hasAccount": "¿Ya tienes una cuenta?",
     "loginSuccess": "¡Inicio de sesión exitoso!",
     "logoutSuccess": "Sesión cerrada correctamente",
-    "registerSuccess": "¡Registro exitoso! Bienvenido a Study Master",
+    "registerSuccess": "¡Registro exitoso! Bienvenido a Studera",
     "invalidCredentials": "Correo electrónico o contraseña incorrectos",
     "emailRequired": "El correo electrónico es obligatorio",
     "passwordRequired": "La contraseña es obligatoria",
@@ -1049,7 +1050,7 @@
 
   "explore": {
     "title": "Explorar",
-    "subtitle": "Descubre contenido creado por la comunidad Study Master",
+    "subtitle": "Descubre contenido creado por la comunidad Studera",
     "searchPlaceholder": "Buscar notas, tarjetas, cuestionarios...",
     "allContent": "Todo",
     "notesTab": "Notas",
@@ -1118,7 +1119,7 @@
   "pricing": {
     "title": "Precios",
     "subtitle": "Elige tu plan",
-    "unlockPotential": "Desbloquea todo el potencial de StudyMaster con una suscripción adaptada a tus necesidades",
+    "unlockPotential": "Desbloquea todo el potencial de Studera con una suscripción adaptada a tus necesidades",
     "currentPlan": "Plan actual",
     "popular": "Popular",
     "selected": "Seleccionado",
@@ -1274,7 +1275,9 @@
       "Los últimos corren riesgo de descenso",
       "La clasificación se reinicia cada lunes a medianoche",
       "¡Cuanto más alta sea tu liga, más bonificaciones obtienes!"
-    ]
+    ],
+    "universityNotConfigured": "Configura tu universidad en tu perfil para ver esta clasificación",
+    "loadError": "No se pudo cargar la clasificación"
   },
 
   "achievements": {
@@ -1384,7 +1387,8 @@
       "title": "Spark responde",
       "subtitle": "Con ayuda de la IA",
       "suggestedActions": "Acciones sugeridas",
-      "needMoreHelp": "¿Necesitas más ayuda? ¡Haz clic en Spark para hacer otra pregunta!"
+      "needMoreHelp": "¿Necesitas más ayuda? ¡Haz clic en Spark para hacer otra pregunta!",
+      "followUpPlaceholder": "Haz una pregunta de seguimiento..."
     },
     "levels": {
       "baby": "Spark Bebé",
@@ -1608,7 +1612,7 @@
     "shareCode": "Código para compartir",
     "qrCode": "Código QR",
     "inviteFriends": "Invitar amigos",
-    "shareMessage": "¡Únete a mí en Study Master!",
+    "shareMessage": "¡Únete a mí en Studera!",
     "platforms": {
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
@@ -1777,8 +1781,8 @@
     "problem": {
       "title": "¿Conoces esta sensación?",
       "subtitle": "Horas estudiando... para olvidarlo todo el día del examen.",
-      "without": "Sin Study Master",
-      "with": "Con Study Master",
+      "without": "Sin Studera",
+      "with": "Con Studera",
       "problems": [
         "Estudias durante horas pero lo olvidas todo",
         "Procrastinas solo en tu habitación",
@@ -1843,7 +1847,7 @@
     },
     "comparison": {
       "title": "¿Por qué cambiar?",
-      "subtitle": "Study Master vs. lo que probablemente usas",
+      "subtitle": "Studera vs. lo que probablemente usas",
       "feature": "Funcionalidad",
       "features": [
         "Plan de repaso IA (Modo Examen)",
@@ -1897,7 +1901,7 @@
         },
         {
           "q": "¿Puedo usarlo para cualquier materia?",
-          "a": "¡Absolutamente! Medicina, derecho, idiomas, ciencias, historia... Study Master funciona para todas las materias. La IA se adapta a tu campo."
+          "a": "¡Absolutamente! Medicina, derecho, idiomas, ciencias, historia... Studera funciona para todas las materias. La IA se adapta a tu campo."
         },
         {
           "q": "¿Mis datos están seguros?",
@@ -1910,7 +1914,7 @@
       "contact": "Contacto",
       "privacy": "Privacidad",
       "terms": "Términos",
-      "copyright": "© 2025 Study Master. Hecho con 💜 para estudiantes."
+      "copyright": "© 2025 Studera. Hecho con 💜 para estudiantes."
     }
   },
 
@@ -1924,9 +1928,9 @@
     },
     "story": {
       "title": "Nuestra historia",
-      "p1": "Study Master nació de una frustración compartida por millones de estudiantes: pasar horas estudiando para olvidarlo todo el día del examen.",
+      "p1": "Studera nació de una frustración compartida por millones de estudiantes: pasar horas estudiando para olvidarlo todo el día del examen.",
       "p2": "Combinamos las mejores investigaciones en ciencias cognitivas con la inteligencia artificial más avanzada para crear una herramienta que realmente se adapta a cada estudiante.",
-      "p3": "Hoy, Study Master ayuda a estudiantes de todo el mundo a aprender de manera más eficiente, ya sea en medicina, derecho, idiomas o cualquier otro campo."
+      "p3": "Hoy, Studera ayuda a estudiantes de todo el mundo a aprender de manera más eficiente, ya sea en medicina, derecho, idiomas o cualquier otro campo."
     },
     "values": {
       "title": "Nuestros valores",
@@ -1983,7 +1987,7 @@
       "button": "Comenzar gratis"
     },
     "footer": {
-      "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+      "copyright": "© 2025 Studera. Todos los derechos reservados.",
       "about": "Acerca de",
       "contact": "Contacto",
       "privacy": "Privacidad",
@@ -2046,7 +2050,7 @@
       "button": "Ver las FAQ"
     },
     "footer": {
-      "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+      "copyright": "© 2025 Studera. Todos los derechos reservados.",
       "about": "Acerca de",
       "contact": "Contacto",
       "privacy": "Privacidad",
@@ -2064,7 +2068,7 @@
         "title2": "Privacidad",
         "lastUpdate": "Última actualización: 15 de diciembre de 2025"
       },
-      "intro": "En Study Master, la protección de sus datos personales es una prioridad absoluta. Esta política de privacidad explica de manera transparente cómo recopilamos, utilizamos, almacenamos y protegemos su información.",
+      "intro": "En Studera, la protección de sus datos personales es una prioridad absoluta. Esta política de privacidad explica de manera transparente cómo recopilamos, utilizamos, almacenamos y protegemos su información.",
       "sections": {
         "dataCollected": {
           "title": "Datos recopilados",
@@ -2211,7 +2215,7 @@
         "form": "Formulario de contacto"
       },
       "footer": {
-        "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+        "copyright": "© 2025 Studera. Todos los derechos reservados.",
         "about": "Acerca de",
         "contact": "Contacto",
         "privacy": "Privacidad",
@@ -2227,12 +2231,12 @@
         "title2": "Uso",
         "lastUpdate": "Última actualización: 15 de diciembre de 2025"
       },
-      "intro": "Bienvenido a Study Master. Al utilizar nuestro servicio, acepta las presentes condiciones generales de uso. Le invitamos a leerlas atentamente.",
+      "intro": "Bienvenido a Studera. Al utilizar nuestro servicio, acepta las presentes condiciones generales de uso. Le invitamos a leerlas atentamente.",
       "articles": {
         "definitions": {
           "title": "Artículo 1 - Definiciones",
           "items": [
-            { "term": "Servicio", "definition": "La plataforma Study Master y todas sus funcionalidades (sitio web, aplicación móvil, API)." },
+            { "term": "Servicio", "definition": "La plataforma Studera y todas sus funcionalidades (sitio web, aplicación móvil, API)." },
             { "term": "Usuario", "definition": "Toda persona física que utilice el Servicio, de forma gratuita o con una suscripción de pago." },
             { "term": "Contenido", "definition": "Todo dato, texto, imagen o material creado, subido o compartido por el Usuario en el Servicio." },
             { "term": "Suscripción Premium", "definition": "Oferta de pago que ofrece acceso a funcionalidades avanzadas del Servicio." }
@@ -2250,7 +2254,7 @@
         },
         "services": {
           "title": "Artículo 3 - Descripción de los servicios",
-          "intro": "Study Master ofrece una plataforma de aprendizaje inteligente que incluye:",
+          "intro": "Studera ofrece una plataforma de aprendizaje inteligente que incluye:",
           "free": {
             "title": "Gratis",
             "items": ["Creación de notas y tarjetas", "Cuestionarios básicos", "Algoritmo FSRS estándar", "5 solicitudes de IA por día", "Focus Rooms públicas"]
@@ -2296,7 +2300,7 @@
           },
           "ourContent": {
             "title": "Nuestro contenido",
-            "description": "La marca Study Master, el logotipo, el diseño, los algoritmos y el código fuente son propiedad exclusiva nuestra y están protegidos por la ley de propiedad intelectual."
+            "description": "La marca Studera, el logotipo, el diseño, los algoritmos y el código fuente son propiedad exclusiva nuestra y están protegidos por la ley de propiedad intelectual."
           }
         },
         "premium": {
@@ -2320,7 +2324,7 @@
         },
         "liability": {
           "title": "Artículo 9 - Responsabilidad",
-          "intro": "Study Master se proporciona \"tal cual\". No garantizamos:",
+          "intro": "Studera se proporciona \"tal cual\". No garantizamos:",
           "items": [
             "Que el Servicio esté libre de errores o sea ininterrumpido",
             "Los resultados académicos obtenidos gracias al Servicio",
@@ -2356,7 +2360,7 @@
           "items": [
             { "title": "Divisibilidad", "description": "Si una disposición de las CGU fuera declarada nula, las demás permanecerían plenamente vigentes." },
             { "title": "No renuncia", "description": "El hecho de no ejercer un derecho no constituye una renuncia a este derecho." },
-            { "title": "Acuerdo completo", "description": "Las presentes CGU constituyen el acuerdo completo entre usted y Study Master." }
+            { "title": "Acuerdo completo", "description": "Las presentes CGU constituyen el acuerdo completo entre usted y Studera." }
           ]
         }
       },
@@ -2366,7 +2370,7 @@
         "form": "Formulario de contacto"
       },
       "footer": {
-        "copyright": "© 2025 Study Master. Todos los derechos reservados.",
+        "copyright": "© 2025 Studera. Todos los derechos reservados.",
         "about": "Acerca de",
         "contact": "Contacto",
         "privacy": "Privacidad",

@@ -41,7 +41,7 @@ async_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY el
 # PROMPTS SYSTÈME - La personnalité de Spark
 # =============================================================================
 
-SPARK_PERSONALITY = """Tu es Spark, l'écureuil mascotte de Study Master - une app d'apprentissage.
+SPARK_PERSONALITY = """Tu es Spark, l'écureuil mascotte de Studera - une app d'apprentissage.
 
 🎭 TA PERSONNALITÉ (NON-NÉGOCIABLE):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -176,7 +176,7 @@ class SparkService:
         )
 
         # Sauvegarder les patterns observés
-        if db and event in ["quiz_success", "quiz_failed", "login_after_absence"]:
+        if db and event in ["quiz_success", "quiz_failed", "quiz_perfect", "login_after_absence", "welcome_back"]:
             await self._observe_and_remember(db, user, event, context)
 
         return {
@@ -698,7 +698,7 @@ Génère UN indice approprié au niveau (1-2 phrases). Ne révèle JAMAIS la ré
         prompt = f"""Message de {user.username}: {message}
 
 Réponds de manière naturelle et conversationnelle (2-4 phrases généralement).
-Si c'est une question sur un sujet d'étude, guide-le vers les ressources de Study Master.
+Si c'est une question sur un sujet d'étude, guide-le vers les ressources de Studera.
 Si c'est juste du bavardage, sois fun et engageant !"""
 
         try:
@@ -863,7 +863,19 @@ Si c'est juste du bavardage, sois fun et engageant !"""
         context: Dict
     ):
         """Observe les patterns et les mémorise"""
-        if event == "quiz_success":
+        logger.info(f"🐿️ Spark observing event: {event} for user {user.username} with context: {context}")
+
+        if event == "quiz_perfect":
+            # Score parfait !
+            topic = context.get("topic", "")
+            if topic:
+                await self._store_memory(
+                    db, user, "strength", topic,
+                    f"Maîtrise parfaite de {topic} (100%)"
+                )
+                logger.info(f"🐿️ Stored perfect score memory for {user.username}: {topic}")
+
+        elif event == "quiz_success":
             score = context.get("score", 0)
             topic = context.get("topic", "")
 
@@ -873,6 +885,7 @@ Si c'est juste du bavardage, sois fun et engageant !"""
                     db, user, "strength", topic,
                     f"Excellent en {topic} (score: {score}%)"
                 )
+                logger.info(f"🐿️ Stored strength memory for {user.username}: {topic} ({score}%)")
 
         elif event == "quiz_failed":
             score = context.get("score", 0)
@@ -884,14 +897,17 @@ Si c'est juste du bavardage, sois fun et engageant !"""
                     db, user, "struggle", topic,
                     f"Difficulté avec {topic} (score: {score}%)"
                 )
+                logger.info(f"🐿️ Stored struggle memory for {user.username}: {topic} ({score}%)")
 
-        elif event == "login_after_absence":
+        elif event in ["login_after_absence", "welcome_back"]:
             # Mémoriser le pattern de retour
             hours = context.get("hours_absent", 0)
-            await self._store_memory(
-                db, user, "pattern", "absence_pattern",
-                f"Revient après ~{hours}h d'absence"
-            )
+            if hours > 0:
+                await self._store_memory(
+                    db, user, "pattern", "absence_pattern",
+                    f"Revient après ~{hours}h d'absence"
+                )
+                logger.info(f"🐿️ Stored absence pattern for {user.username}: {hours}h")
 
     async def _store_memory(
         self,

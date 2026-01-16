@@ -149,8 +149,8 @@ class ScheduleResponse(BaseModel):
     completed_at: Optional[datetime] = None
     is_cancelled: bool = False
     # Timestamps
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

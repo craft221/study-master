@@ -64,12 +64,12 @@ router = APIRouter()
 # QUOTAS SPARK (Modèle Hybride)
 # =============================================================================
 
-# Quotas par type d'abonnement
+# Quotas par type d'abonnement (PHASE TEST: 20 pour tous)
 SPARK_QUOTAS = {
-    "FREE": {"chat": 10, "tutor": 3, "ask": 5},
-    "PREMIUM": {"chat": 100, "tutor": 50, "ask": 100},
-    "PREMIUM_PLUS": {"chat": -1, "tutor": -1, "ask": -1},  # -1 = illimité
-    "INSTITUTIONAL": {"chat": -1, "tutor": -1, "ask": -1}
+    "FREE": {"chat": 20, "tutor": 20, "ask": 20},           # TEST
+    "PREMIUM": {"chat": 20, "tutor": 20, "ask": 20},        # TEST
+    "PREMIUM_PLUS": {"chat": 20, "tutor": 20, "ask": 20},   # TEST
+    "INSTITUTIONAL": {"chat": 20, "tutor": 20, "ask": 20}   # TEST
 }
 
 

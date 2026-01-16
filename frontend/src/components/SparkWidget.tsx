@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, Bell, Sun, X, Target, Flame, BookOpen } from 'lucide-react';
 import Spark from './Spark';
@@ -8,6 +8,13 @@ import SparkHelpDialog from './SparkHelpDialog';
 import SparkAnswerCard from './SparkAnswerCard';
 import { useSpark } from '@/contexts/SparkContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Type for conversation messages
+interface ConversationMessage {
+  role: 'user' | 'spark';
+  content: string;
+  timestamp: string;
+}
 
 /**
  * SparkWidget - Widget prêt à l'emploi pour afficher Spark
@@ -51,6 +58,8 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
+  const [isConversationLoading, setIsConversationLoading] = useState(false);
 
   // Attendre le montage côté client pour éviter les erreurs d'hydratation
   useEffect(() => {
@@ -106,6 +115,72 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
     }
   }, [isMounted, notifications, isBriefingOpen]);
 
+  // Handle initial question from dialog
+  const handleAskQuestion = useCallback(async (question: string) => {
+    // Reset conversation history for new conversation
+    setConversationHistory([]);
+    setIsConversationLoading(true);
+
+    try {
+      await askQuestion(question);
+      // Add user message to history after answer is received
+      setConversationHistory([{
+        role: 'user',
+        content: question,
+        timestamp: new Date().toISOString()
+      }]);
+    } finally {
+      setIsConversationLoading(false);
+    }
+
+    setIsHelpDialogOpen(false);
+  }, [askQuestion]);
+
+  // Handle follow-up questions in conversation
+  const handleFollowUp = useCallback(async (question: string) => {
+    if (!question.trim()) return;
+
+    // Add user message immediately
+    const userMessage: ConversationMessage = {
+      role: 'user',
+      content: question,
+      timestamp: new Date().toISOString()
+    };
+
+    // Save current answer to history before getting new one
+    if (currentAnswer) {
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'spark', content: currentAnswer.answer, timestamp: currentAnswer.timestamp }
+      ]);
+    }
+
+    // Add the new user message
+    setConversationHistory(prev => [...prev, userMessage]);
+    setIsConversationLoading(true);
+
+    try {
+      await askQuestion(question);
+    } finally {
+      setIsConversationLoading(false);
+    }
+  }, [askQuestion, currentAnswer]);
+
+  // Clear conversation when closing the answer card
+  const handleCloseAnswer = useCallback(() => {
+    clearAnswer();
+    setConversationHistory([]);
+  }, [clearAnswer]);
+
+  const handleSparkClick = useCallback(() => {
+    // Si une réponse est affichée, la fermer
+    if (currentAnswer) {
+      clearAnswer();
+    }
+    // Interaction normale avec Spark (messages aléatoires)
+    interactWithSpark();
+  }, [currentAnswer, clearAnswer, interactWithSpark]);
+
   // Debug logs (seulement côté client)
   if (isMounted) {
     console.log('[SparkWidget] Render - currentMessage:', currentMessage);
@@ -122,20 +197,6 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
   if (!isMounted) {
     return null;
   }
-
-  const handleAskQuestion = async (question: string) => {
-    await askQuestion(question);
-    setIsHelpDialogOpen(false);
-  };
-
-  const handleSparkClick = () => {
-    // Si une réponse est affichée, la fermer
-    if (currentAnswer) {
-      clearAnswer();
-    }
-    // Interaction normale avec Spark (messages aléatoires)
-    interactWithSpark();
-  };
 
   return (
     <>
@@ -175,16 +236,16 @@ const SparkWidget: React.FC<SparkWidgetProps> = ({
         isLoading={isLoading}
       />
 
-      {/* Carte de réponse */}
+      {/* Carte de réponse avec conversation */}
       <AnimatePresence>
         {currentAnswer && (
           <SparkAnswerCard
             answer={currentAnswer.answer}
             suggestions={currentAnswer.suggestions}
-            onClose={clearAnswer}
-            onSuggestionClick={(suggestion) => {
-              console.log('Suggestion cliquée:', suggestion);
-            }}
+            onClose={handleCloseAnswer}
+            onFollowUp={handleFollowUp}
+            isLoading={isConversationLoading}
+            conversationHistory={conversationHistory}
           />
         )}
       </AnimatePresence>

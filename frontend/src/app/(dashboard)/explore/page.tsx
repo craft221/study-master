@@ -300,7 +300,7 @@ export default function ExplorePage() {
           Explorer
         </h1>
         <p className="text-muted-foreground mt-2">
-          Découvre du contenu créé par la communauté Study Master
+          Découvre du contenu créé par la communauté Studera
         </p>
       </div>
 

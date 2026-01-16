@@ -296,6 +296,21 @@ class SparkService {
     };
   }
 
+  /**
+   * Envoie un événement au backend pour que Spark apprenne (stocke en mémoire)
+   * Fire-and-forget : n'attend pas la réponse, ne bloque pas l'UI
+   */
+  trackEvent(event: string, context: Record<string, any> = {}): void {
+    // Fire and forget - on ne bloque pas l'UI
+    api.post(`${this.baseUrl}/message`, { event, context })
+      .then(() => {
+        console.log(`🐿️ Spark tracked event: ${event}`, context);
+      })
+      .catch((error) => {
+        console.error(`🐿️ Spark failed to track event: ${event}`, error);
+      });
+  }
+
   // ---------------------------------------------------------------------------
   // CONVERSATIONS
   // ---------------------------------------------------------------------------

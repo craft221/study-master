@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePomodoro } from '@/contexts/PomodoroContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { usePathname } from 'next/navigation'
@@ -15,7 +15,8 @@ import {
   ChevronUp,
   ChevronDown,
   X,
-  Maximize2
+  Maximize2,
+  GripVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +38,13 @@ export default function FloatingPomodoroTimer() {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
 
+  // Drag state
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef<HTMLDivElement>(null)
+  const dragStartPos = useRef({ x: 0, y: 0 })
+  const initialPos = useRef({ x: 0, y: 0 })
+
   // Don't show on sessions page (it has its own timer)
   const isSessionsPage = pathname === '/sessions'
 
@@ -48,10 +56,58 @@ export default function FloatingPomodoroTimer() {
     }
   }, [isActive])
 
-  // Don't render if on sessions page, dismissed, or no active session and minimized
+  // Handle drag start
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return // Only left mouse button
+    setIsDragging(true)
+    dragStartPos.current = { x: e.clientX, y: e.clientY }
+    initialPos.current = { ...position }
+    e.preventDefault()
+  }, [position])
+
+  // Handle drag move
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
+
+      // Calculate new position (inverted because we use right/bottom positioning)
+      const newX = initialPos.current.x - deltaX
+      const newY = initialPos.current.y - deltaY
+
+      // Keep within viewport bounds
+      const maxX = window.innerWidth - 300 // Approximate timer width
+      const maxY = window.innerHeight - 400 // Approximate timer height
+
+      setPosition({
+        x: Math.max(-window.innerWidth + 350, Math.min(0, newX)),
+        y: Math.max(-window.innerHeight + 450, Math.min(0, newY))
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
+
+  // Only show floating timer when:
+  // 1. Session is active
+  // 2. Session was started from sessions page
+  // 3. User is NOT currently on sessions page
   if (isSessionsPage) return null
-  if (isDismissed && !isActive) return null
-  if (!isActive && isMinimized) return null
+  if (!isActive) return null
+  if (!state.startedFromSessionsPage) return null
+  if (isDismissed) return null
 
   const progress = getProgress()
   const isWork = state.sessionType === 'work'
@@ -85,65 +141,56 @@ export default function FloatingPomodoroTimer() {
   const currentColors = colors[state.sessionType]
 
   // Minimized pill view (just timer)
-  if (isMinimized && isActive) {
+  if (isMinimized) {
     return (
       <div
+        ref={dragRef}
         className={cn(
-          'fixed bottom-20 right-6 z-[60]',
-          'animate-in slide-in-from-right-5 duration-300'
+          'fixed z-[60]',
+          'animate-in slide-in-from-right-5 duration-300',
+          isDragging && 'cursor-grabbing'
         )}
+        style={{
+          bottom: `${80 - position.y}px`,
+          right: `${24 - position.x}px`,
+        }}
       >
-        <button
-          onClick={() => setIsMinimized(false)}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-full shadow-lg',
-            'bg-white dark:bg-gray-800 border-2',
-            currentColors.border,
-            'hover:scale-105 transition-transform cursor-pointer'
-          )}
-        >
-          {isWork ? (
-            <Target className={cn('h-4 w-4', currentColors.text)} />
-          ) : (
-            <Coffee className={cn('h-4 w-4', currentColors.text)} />
-          )}
-          <span className={cn('font-bold font-mono text-lg', currentColors.text)}>
-            {formatTime(state.timeLeft)}
-          </span>
-          {state.isPaused && (
-            <span className="text-xs text-orange-500 font-medium">PAUSE</span>
-          )}
-          <ChevronUp className="h-4 w-4 text-gray-400" />
-        </button>
-
-        {/* Progress ring behind */}
-        <svg
-          className="absolute inset-0 -z-10 w-full h-full pointer-events-none"
-          style={{ transform: 'scale(1.3)' }}
-        >
-          <circle
-            cx="50%"
-            cy="50%"
-            r="45%"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            className={cn('opacity-20', currentColors.text)}
-          />
-          <circle
-            cx="50%"
-            cy="50%"
-            r="45%"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeDasharray={`${2 * Math.PI * 45} ${2 * Math.PI * 45}`}
-            strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-            strokeLinecap="round"
-            className={currentColors.text}
-            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-          />
-        </svg>
+        <div className="flex items-center gap-1">
+          {/* Drag handle */}
+          <div
+            onMouseDown={handleMouseDown}
+            className={cn(
+              'p-1 rounded-l-full bg-white dark:bg-gray-800 border-2 border-r-0',
+              currentColors.border,
+              'cursor-grab hover:bg-gray-50 dark:hover:bg-gray-700',
+              isDragging && 'cursor-grabbing'
+            )}
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+          <button
+            onClick={() => setIsMinimized(false)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-r-full shadow-lg',
+              'bg-white dark:bg-gray-800 border-2 border-l-0',
+              currentColors.border,
+              'hover:scale-105 transition-transform cursor-pointer'
+            )}
+          >
+            {isWork ? (
+              <Target className={cn('h-4 w-4', currentColors.text)} />
+            ) : (
+              <Coffee className={cn('h-4 w-4', currentColors.text)} />
+            )}
+            <span className={cn('font-bold font-mono text-lg', currentColors.text)}>
+              {formatTime(state.timeLeft)}
+            </span>
+            {state.isPaused && (
+              <span className="text-xs text-orange-500 font-medium">PAUSE</span>
+            )}
+            <ChevronUp className="h-4 w-4 text-gray-400" />
+          </button>
+        </div>
       </div>
     )
   }
@@ -151,32 +198,47 @@ export default function FloatingPomodoroTimer() {
   // Expanded view
   return (
     <div
+      ref={dragRef}
       className={cn(
-        'fixed bottom-20 right-6 z-[60]',
+        'fixed z-[60]',
         'w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl',
         'border-2',
         currentColors.border,
-        'animate-in slide-in-from-right-5 duration-300'
+        'animate-in slide-in-from-right-5 duration-300',
+        isDragging && 'cursor-grabbing'
       )}
+      style={{
+        bottom: `${80 - position.y}px`,
+        right: `${24 - position.x}px`,
+      }}
     >
-      {/* Header */}
+      {/* Header with drag handle */}
       <div className={cn('flex items-center justify-between px-4 py-3 rounded-t-xl', currentColors.bgLight)}>
         <div className="flex items-center gap-2">
+          {/* Drag handle */}
+          <div
+            onMouseDown={handleMouseDown}
+            className={cn(
+              'cursor-grab hover:bg-white/50 dark:hover:bg-gray-700/50 rounded p-1 -ml-1',
+              isDragging && 'cursor-grabbing'
+            )}
+            title="Glisser pour déplacer"
+          >
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
           <Timer className={cn('h-5 w-5', currentColors.text)} />
           <span className={cn('font-semibold', currentColors.text)}>
             {isWork ? 'Pomodoro' : state.sessionType === 'short_break' ? 'Pause courte' : 'Pause longue'}
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {isActive && (
-            <button
-              onClick={() => setIsMinimized(true)}
-              className="p-1 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded transition"
-              title="Minimiser"
-            >
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            </button>
-          )}
+          <button
+            onClick={() => setIsMinimized(true)}
+            className="p-1 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded transition"
+            title="Minimiser"
+          >
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          </button>
           <Link
             href="/sessions"
             className="p-1 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded transition"
@@ -184,15 +246,13 @@ export default function FloatingPomodoroTimer() {
           >
             <Maximize2 className="h-4 w-4 text-gray-500" />
           </Link>
-          {!isActive && (
-            <button
-              onClick={() => setIsDismissed(true)}
-              className="p-1 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded transition"
-              title="Fermer"
-            >
-              <X className="h-4 w-4 text-gray-500" />
-            </button>
-          )}
+          <button
+            onClick={() => setIsDismissed(true)}
+            className="p-1 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded transition"
+            title="Fermer"
+          >
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
         </div>
       </div>
 
@@ -243,54 +303,37 @@ export default function FloatingPomodoroTimer() {
 
         {/* Controls */}
         <div className="flex items-center justify-center gap-3">
-          {!isActive ? (
-            // Start button
+          {/* Pause/Resume */}
+          {state.isPaused ? (
             <button
-              onClick={() => startSession()}
+              onClick={resumeSession}
               className={cn(
-                'flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white transition',
+                'p-3 rounded-full text-white transition',
                 currentColors.bg,
                 'hover:opacity-90'
               )}
+              title="Reprendre"
             >
               <Play className="h-5 w-5" />
-              Démarrer
             </button>
           ) : (
-            <>
-              {/* Pause/Resume */}
-              {state.isPaused ? (
-                <button
-                  onClick={resumeSession}
-                  className={cn(
-                    'p-3 rounded-full text-white transition',
-                    currentColors.bg,
-                    'hover:opacity-90'
-                  )}
-                  title="Reprendre"
-                >
-                  <Play className="h-5 w-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={pauseSession}
-                  className="p-3 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition"
-                  title="Pause"
-                >
-                  <Pause className="h-5 w-5" />
-                </button>
-              )}
-
-              {/* Stop */}
-              <button
-                onClick={stopSession}
-                className="p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-                title="Arrêter"
-              >
-                <Square className="h-5 w-5" />
-              </button>
-            </>
+            <button
+              onClick={pauseSession}
+              className="p-3 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition"
+              title="Pause"
+            >
+              <Pause className="h-5 w-5" />
+            </button>
           )}
+
+          {/* Stop */}
+          <button
+            onClick={stopSession}
+            className="p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            title="Arrêter"
+          >
+            <Square className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Stats */}

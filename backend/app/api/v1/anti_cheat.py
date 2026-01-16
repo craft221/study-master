@@ -192,11 +192,20 @@ async def validate_quiz_completion(
 
     # Appliquer les pénalités XP si nécessaire
     if result.penalty_xp > 0 and not result.is_disqualified:
-        if current_user.gamification:
-            old_xp = current_user.gamification.total_xp or 0
-            current_user.gamification.total_xp = max(0, old_xp - result.penalty_xp)
+        # Charger explicitement la gamification de l'utilisateur
+        from app.models.user import UserGamification
+        from sqlalchemy import select as sql_select
+
+        gamification_result = await db.execute(
+            sql_select(UserGamification).where(UserGamification.user_id == current_user.id)
+        )
+        gamification = gamification_result.scalar_one_or_none()
+
+        if gamification:
+            old_xp = gamification.total_xp or 0
+            gamification.total_xp = max(0, old_xp - result.penalty_xp)
             await db.commit()
-            logger.warning(f"Applied {result.penalty_xp} XP penalty to user {current_user.id}")
+            logger.warning(f"Applied {result.penalty_xp} XP penalty to user {current_user.id}: {old_xp} -> {gamification.total_xp}")
 
     violations_response = [
         ViolationResponse(

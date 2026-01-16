@@ -332,7 +332,7 @@ export default function PricingPage() {
             Choisissez votre plan
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Débloquez tout le potentiel de StudyMaster avec un abonnement adapté à vos besoins
+            Débloquez tout le potentiel de Studera avec un abonnement adapté à vos besoins
           </p>
 
           {/* Sélecteur de devise */}

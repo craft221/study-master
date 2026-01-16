@@ -281,7 +281,7 @@ async def record_mascot_interaction(
     """
     messages = [
         "Besoin d'aide ? Je suis là ! 🐿️",
-        "Fun fact : Les écureuils oublient 25% de leurs cachettes. Heureusement, Study Master te fait TOUT mémoriser ! 😎",
+        "Fun fact : Les écureuils oublient 25% de leurs cachettes. Heureusement, Studera te fait TOUT mémoriser ! 😎",
         "Tu veux une noisette ? Fais un quiz ! 🌰",
         "Je sens que tu vas cartonner aujourd'hui ! ⚡",
         "N'oublie pas : chaque petite session compte ! 💪",
@@ -358,7 +358,7 @@ async def ask_spark(
 
     Spark va analyser ta question avec l'IA et te donner:
     - Une réponse personnalisée adaptée à ton niveau
-    - Des suggestions d'actions concrètes dans Study Master
+    - Des suggestions d'actions concrètes dans Studera
 
     💡 Utilise l'IA avec cache sémantique (questions similaires = même réponse)
     """

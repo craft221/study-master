@@ -36,8 +36,8 @@ class SocialShareService:
     """Service pour gérer le partage social"""
 
     def __init__(self):
-        self.base_url = getattr(settings, 'FRONTEND_URL', 'https://studymaster.app')
-        self.app_name = "Study Master"
+        self.base_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
+        self.app_name = "Studera"
 
     # =========================================================================
     # GÉNÉRATION DE CONTENU DE PARTAGE

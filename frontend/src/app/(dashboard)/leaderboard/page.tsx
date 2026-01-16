@@ -57,7 +57,7 @@ const LEAGUE_STYLE_CONFIG: Record<LeagueTier, { icon: string; color: string; bgG
 }
 
 export default function LeaderboardPage() {
-  const { t } = useLanguage()
+  const { t, tArray } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
 
@@ -272,9 +272,25 @@ export default function LeaderboardPage() {
       const me = await api.get('/users/me')
       const myEntry = response.data.entries?.find((e: LeaderboardEntry) => e.user_id === me.data.id)
       setCurrentUserRank(myEntry || null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching leaderboard:', error)
-      toast.error('Impossible de charger le classement')
+
+      // Gérer l'erreur spécifique pour université non configurée
+      // Si erreur 400 sur endpoint university, c'est que l'université n'est pas configurée
+      if (error.response?.status === 400 && scope === 'university') {
+        toast.error(t('leaderboard.universityNotConfigured'))
+        // Revenir au classement global
+        setScope('global')
+        return
+      }
+
+      // Afficher le message d'erreur du serveur si disponible
+      const serverMessage = error.response?.data?.detail
+      if (serverMessage) {
+        toast.error(serverMessage)
+      } else {
+        toast.error(t('leaderboard.loadError'))
+      }
     } finally {
       setLoading(false)
     }
@@ -664,7 +680,7 @@ export default function LeaderboardPage() {
                 <div>
                   <h3 className="font-semibold mb-2">{t('leaderboard.howToClimb')}</h3>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    {(t('leaderboard.howToClimbTips') as string[]).map((tip, index) => (
+                    {tArray('leaderboard.howToClimbTips').map((tip, index) => (
                       <li key={index}>• {tip}</li>
                     ))}
                   </ul>

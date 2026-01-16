@@ -67,6 +67,7 @@ class LeaderboardType(enum.Enum):
     NOTES = "notes"
     FLASHCARDS = "flashcards"
     QUIZZES = "quizzes"
+    STUDY_TIME = "study_time"
 
 
 class LeaderboardPeriod(enum.Enum):

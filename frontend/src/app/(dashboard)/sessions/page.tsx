@@ -199,7 +199,7 @@ export default function SessionsPage() {
         <div className="flex justify-center space-x-4">
           {!state.isRunning ? (
             <button
-              onClick={() => startSession()}
+              onClick={() => startSession(undefined, true)}
               className="px-8 py-4 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition font-semibold text-lg flex items-center space-x-2 shadow-lg"
             >
               <Play className="h-6 w-6" />

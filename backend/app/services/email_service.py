@@ -37,8 +37,8 @@ class EmailService:
         self.smtp_enabled = bool(self.smtp_user and self.smtp_password)
 
         # Common config
-        self.from_email = getattr(settings, 'EMAIL_FROM', 'noreply@studymaster.app')
-        self.from_name = getattr(settings, 'EMAIL_FROM_NAME', 'Study Master')
+        self.from_email = getattr(settings, 'EMAIL_FROM', 'noreply@studera.app')
+        self.from_name = getattr(settings, 'EMAIL_FROM_NAME', 'Studera')
 
         # Determine which provider to use
         if self.resend_enabled:
@@ -189,7 +189,7 @@ class EmailService:
     # Templates d'emails
     # =========================================================================
 
-    def _base_template(self, content: str, title: str = "Study Master") -> str:
+    def _base_template(self, content: str, title: str = "Studera") -> str:
         """Template HTML de base - Design moderne"""
         return f"""
 <!DOCTYPE html>
@@ -289,15 +289,15 @@ class EmailService:
     <div class="container">
         <div class="header">
             <div class="logo">
-                <span class="logo-icon">📚</span>Study Master
+                <span class="logo-icon">🐿️</span>Studera
             </div>
         </div>
         <div class="content">
             {content}
         </div>
         <div class="footer">
-            <p>Cet email a été envoyé par Study Master.</p>
-            <p>&copy; 2024 Study Master. Tous droits réservés.</p>
+            <p>Cet email a été envoyé par Studera.</p>
+            <p>&copy; 2025 Studera. Tous droits réservés.</p>
         </div>
     </div>
 </body>
@@ -322,11 +322,11 @@ class EmailService:
         <div class="code">{code}</div>
         <p>Ce code expire dans <strong>15 minutes</strong>.</p>
         <p style="color: #666; font-size: 14px;">
-            Si tu n'as pas créé de compte sur Study Master, ignore cet email.
+            Si tu n'as pas créé de compte sur Studera, ignore cet email.
         </p>
         """
-        html = self._base_template(content, "Vérifie ton email - Study Master")
-        text = f"Salut {username}, ton code de vérification Study Master est: {code}. Ce code expire dans 15 minutes."
+        html = self._base_template(content, "Vérifie ton email - Studera")
+        text = f"Salut {username}, ton code de vérification Studera est: {code}. Ce code expire dans 15 minutes."
 
         return await self.send_async(to_email, f"Code de vérification: {code}", html, text)
 
@@ -350,7 +350,7 @@ class EmailService:
             Si tu n'as pas demandé cette réinitialisation, ignore cet email.
         </p>
         """
-        html = self._base_template(content, "Réinitialisation mot de passe - Study Master")
+        html = self._base_template(content, "Réinitialisation mot de passe - Studera")
         text = f"Salut {username}, clique sur ce lien pour réinitialiser ton mot de passe: {reset_url}"
 
         return await self.send_async(to_email, "Réinitialise ton mot de passe", html, text)
@@ -362,9 +362,9 @@ class EmailService:
     ) -> bool:
         """Email de bienvenue"""
         content = f"""
-        <h2>Bienvenue sur Study Master ! 🎉</h2>
+        <h2>Bienvenue sur Studera ! 🎉</h2>
         <p>Salut <strong>{username}</strong>,</p>
-        <p>Ton compte a été créé avec succès. Tu fais maintenant partie de la communauté Study Master !</p>
+        <p>Ton compte a été créé avec succès. Tu fais maintenant partie de la communauté Studera !</p>
         <p>Voici ce que tu peux faire :</p>
         <ul>
             <li>📝 Créer des notes et les organiser par matière</li>
@@ -375,13 +375,13 @@ class EmailService:
         </ul>
         <p>Spark, notre mascotte, sera là pour t'accompagner ! 🐿️</p>
         <p style="text-align: center;">
-            <a href="https://studymaster.app/dashboard" class="button">Commencer à étudier</a>
+            <a href="https://studera.app/dashboard" class="button">Commencer à étudier</a>
         </p>
         """
-        html = self._base_template(content, "Bienvenue sur Study Master")
-        text = f"Bienvenue {username} ! Ton compte Study Master a été créé avec succès."
+        html = self._base_template(content, "Bienvenue sur Studera")
+        text = f"Bienvenue {username} ! Ton compte Studera a été créé avec succès."
 
-        return await self.send_async(to_email, "Bienvenue sur Study Master ! 🎉", html, text)
+        return await self.send_async(to_email, "Bienvenue sur Studera ! 🎉", html, text)
 
     async def send_duel_challenge(
         self,
@@ -395,15 +395,15 @@ class EmailService:
         content = f"""
         <h2>Nouveau défi ! ⚔️</h2>
         <p>Salut <strong>{username}</strong>,</p>
-        <p><strong>{challenger_name}</strong> te lance un défi sur Study Master !</p>
+        <p><strong>{challenger_name}</strong> te lance un défi sur Studera !</p>
         <p>Enjeux: <span class="highlight">{stakes_xp} XP</span></p>
         <p>Accepte le défi et montre de quoi tu es capable !</p>
         <p style="text-align: center;">
             <a href="{duel_url}" class="button">Voir le défi</a>
         </p>
         """
-        html = self._base_template(content, "Nouveau défi sur Study Master")
-        text = f"Salut {username}, {challenger_name} te défie sur Study Master ! Enjeux: {stakes_xp} XP"
+        html = self._base_template(content, "Nouveau défi sur Studera")
+        text = f"Salut {username}, {challenger_name} te défie sur Studera ! Enjeux: {stakes_xp} XP"
 
         return await self.send_async(to_email, f"⚔️ {challenger_name} te défie !", html, text)
 
@@ -420,7 +420,7 @@ class EmailService:
         <p>Tu as une série de <span class="highlight">{current_streak} jours</span> en cours.</p>
         <p>N'oublie pas d'étudier aujourd'hui pour la maintenir !</p>
         <p style="text-align: center;">
-            <a href="https://studymaster.app/dashboard" class="button">Étudier maintenant</a>
+            <a href="https://studera.app/dashboard" class="button">Étudier maintenant</a>
         </p>
         """
         html = self._base_template(content, "Garde ta série !")
@@ -494,17 +494,17 @@ class EmailService:
         content = f"""
         <h2>Ton résumé quotidien 📊</h2>
         <p>Salut <strong>{username}</strong> !</p>
-        <p>Voici ton résumé Study Master de la journée :</p>
+        <p>Voici ton résumé Studera de la journée :</p>
         {stats_html}
         {notifs_html}
         <p style="text-align: center;">
-            <a href="https://studymaster.app/dashboard" class="button">Continuer à apprendre</a>
+            <a href="https://studera.app/dashboard" class="button">Continuer à apprendre</a>
         </p>
         """
-        html = self._base_template(content, "Ton résumé Study Master")
-        text = f"Salut {username}, voici ton résumé Study Master quotidien."
+        html = self._base_template(content, "Ton résumé Studera")
+        text = f"Salut {username}, voici ton résumé Studera quotidien."
 
-        return await self.send_async(to_email, "📊 Ton résumé Study Master du jour", html, text)
+        return await self.send_async(to_email, "📊 Ton résumé Studera du jour", html, text)
 
     async def send_achievement_unlocked(
         self,
@@ -526,7 +526,7 @@ class EmailService:
             <p><strong>+{xp_reward} XP</strong></p>
         </div>
         <p style="text-align: center;">
-            <a href="https://studymaster.app/achievements" class="button">Voir tous tes succès</a>
+            <a href="https://studera.app/achievements" class="button">Voir tous tes succès</a>
         </p>
         """
         html = self._base_template(content, f"Succès débloqué: {achievement_name}")
@@ -550,7 +550,7 @@ class EmailService:
         <p>Tu as <span class="highlight">{cards_due} flashcards</span> à réviser{subject_text}.</p>
         <p>Une petite session de révision pour garder tes connaissances fraîches ?</p>
         <p style="text-align: center;">
-            <a href="https://studymaster.app/flashcards" class="button">Réviser maintenant</a>
+            <a href="https://studera.app/flashcards" class="button">Réviser maintenant</a>
         </p>
         """
         html = self._base_template(content, "Flashcards à réviser")

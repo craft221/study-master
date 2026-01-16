@@ -47,10 +47,10 @@ class ShareType(str, Enum):
 # Templates de messages par type et langue
 SHARE_TEMPLATES = {
     ShareType.STREAK_MILESTONE: {
-        "fr": "🔥 J'ai atteint {streak} jours de série sur Study Master ! Rejoins-moi et améliore tes études !",
-        "en": "🔥 I reached a {streak}-day streak on Study Master! Join me and improve your studies!",
-        "es": "🔥 ¡Alcancé una racha de {streak} días en Study Master! ¡Únete y mejora tus estudios!",
-        "pt": "🔥 Alcancei uma sequência de {streak} dias no Study Master! Junte-se a mim e melhore seus estudos!",
+        "fr": "🔥 J'ai atteint {streak} jours de série sur Studera ! Rejoins-moi et améliore tes études !",
+        "en": "🔥 I reached a {streak}-day streak on Studera! Join me and improve your studies!",
+        "es": "🔥 ¡Alcancé una racha de {streak} días en Studera! ¡Únete y mejora tus estudios!",
+        "pt": "🔥 Alcancei uma sequência de {streak} dias no Studera! Junte-se a mim e melhore seus estudos!",
     },
     ShareType.QUIZ_SCORE: {
         "fr": "📚 J'ai obtenu {score}% à mon quiz sur {topic} ! Tu peux faire mieux ? 😏",
@@ -59,28 +59,28 @@ SHARE_TEMPLATES = {
         "pt": "📚 Tirei {score}% no meu quiz de {topic}! Você consegue fazer melhor? 😏",
     },
     ShareType.LEVEL_UP: {
-        "fr": "⚡ Je suis passé niveau {level} sur Study Master ! Mon écureuil Spark est fier de moi 🐿️",
-        "en": "⚡ I reached level {level} on Study Master! My squirrel Spark is proud of me 🐿️",
-        "es": "⚡ ¡Subí al nivel {level} en Study Master! Mi ardilla Spark está orgullosa de mí 🐿️",
-        "pt": "⚡ Cheguei ao nível {level} no Study Master! Meu esquilo Spark está orgulhoso de mim 🐿️",
+        "fr": "⚡ Je suis passé niveau {level} sur Studera ! Mon écureuil Spark est fier de moi 🐿️",
+        "en": "⚡ I reached level {level} on Studera! My squirrel Spark is proud of me 🐿️",
+        "es": "⚡ ¡Subí al nivel {level} en Studera! Mi ardilla Spark está orgullosa de mí 🐿️",
+        "pt": "⚡ Cheguei ao nível {level} no Studera! Meu esquilo Spark está orgulhoso de mim 🐿️",
     },
     ShareType.LEAGUE_PROMOTION: {
-        "fr": "🏆 Je suis monté en ligue {league} sur Study Master ! La compétition est lancée !",
-        "en": "🏆 I got promoted to {league} league on Study Master! The competition is on!",
-        "es": "🏆 ¡Subí a la liga {league} en Study Master! ¡La competencia comenzó!",
-        "pt": "🏆 Fui promovido para a liga {league} no Study Master! A competição começou!",
+        "fr": "🏆 Je suis monté en ligue {league} sur Studera ! La compétition est lancée !",
+        "en": "🏆 I got promoted to {league} league on Studera! The competition is on!",
+        "es": "🏆 ¡Subí a la liga {league} en Studera! ¡La competencia comenzó!",
+        "pt": "🏆 Fui promovido para a liga {league} no Studera! A competição começou!",
     },
     ShareType.WEEKLY_STATS: {
-        "fr": "📊 Ma semaine sur Study Master:\n• {xp} XP gagnés\n• {streak} jours de série\n• {quizzes} quiz complétés\nEt toi ?",
-        "en": "📊 My week on Study Master:\n• {xp} XP earned\n• {streak} day streak\n• {quizzes} quizzes completed\nHow about you?",
-        "es": "📊 Mi semana en Study Master:\n• {xp} XP ganados\n• {streak} días de racha\n• {quizzes} quizzes completados\n¿Y tú?",
-        "pt": "📊 Minha semana no Study Master:\n• {xp} XP ganhos\n• {streak} dias de sequência\n• {quizzes} quizzes completados\nE você?",
+        "fr": "📊 Ma semaine sur Studera:\n• {xp} XP gagnés\n• {streak} jours de série\n• {quizzes} quiz complétés\nEt toi ?",
+        "en": "📊 My week on Studera:\n• {xp} XP earned\n• {streak} day streak\n• {quizzes} quizzes completed\nHow about you?",
+        "es": "📊 Mi semana en Studera:\n• {xp} XP ganados\n• {streak} días de racha\n• {quizzes} quizzes completados\n¿Y tú?",
+        "pt": "📊 Minha semana no Studera:\n• {xp} XP ganhos\n• {streak} dias de sequência\n• {quizzes} quizzes completados\nE você?",
     },
     ShareType.ACHIEVEMENT: {
-        "fr": "🎖️ J'ai débloqué le badge '{badge}' sur Study Master ! 🏅",
-        "en": "🎖️ I unlocked the '{badge}' badge on Study Master! 🏅",
-        "es": "🎖️ ¡Desbloqueé la insignia '{badge}' en Study Master! 🏅",
-        "pt": "🎖️ Desbloqueei a medalha '{badge}' no Study Master! 🏅",
+        "fr": "🎖️ J'ai débloqué le badge '{badge}' sur Studera ! 🏅",
+        "en": "🎖️ I unlocked the '{badge}' badge on Studera! 🏅",
+        "es": "🎖️ ¡Desbloqueé la insignia '{badge}' en Studera! 🏅",
+        "pt": "🎖️ Desbloqueei a medalha '{badge}' no Studera! 🏅",
     },
 }
 

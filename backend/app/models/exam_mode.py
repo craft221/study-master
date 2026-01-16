@@ -80,6 +80,7 @@ class ExamSession(Base):
 
     # Contenu à réviser
     note_ids = Column(JSON, default=list)  # Liste des IDs de notes sélectionnées
+    document_ids = Column(JSON, default=list)  # Liste des IDs de documents sélectionnés
     total_content_pages = Column(Integer, default=0)  # Estimation du volume
     total_content_words = Column(Integer, default=0)
 

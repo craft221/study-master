@@ -444,19 +444,37 @@ export default function TakeQuizPage() {
         </h3>
 
         <div className="space-y-3">
-          {question.options.map((option, index) => (
-            <button
-              key={option}
-              onClick={() => handleAnswer(question.id, option, index)}
-              className={`w-full p-4 text-left rounded-lg border-2 transition ${
-                answers[question.id] === option
-                  ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <span className="font-medium text-gray-900 dark:text-white">{option}</span>
-            </button>
-          ))}
+          {/* Questions avec options (multiple_choice ou true_false avec options) */}
+          {question.options && question.options.length > 0 ? (
+            question.options.map((option, index) => (
+              <button
+                key={option}
+                onClick={() => handleAnswer(question.id, option, index)}
+                className={`w-full p-4 text-left rounded-lg border-2 transition ${
+                  answers[question.id] === option
+                    ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <span className="font-medium text-gray-900 dark:text-white">{option}</span>
+              </button>
+            ))
+          ) : question.question_type === 'true_false' ? (
+            /* Questions vrai/faux sans options prédéfinies */
+            ['Vrai', 'Faux'].map((option, index) => (
+              <button
+                key={option}
+                onClick={() => handleAnswer(question.id, option.toLowerCase(), index)}
+                className={`w-full p-4 text-left rounded-lg border-2 transition ${
+                  answers[question.id] === option.toLowerCase()
+                    ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <span className="font-medium text-gray-900 dark:text-white">{option}</span>
+              </button>
+            ))
+          ) : null}
         </div>
       </div>
 

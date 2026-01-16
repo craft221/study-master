@@ -126,17 +126,31 @@ async def get_flashcard_deck(
 ):
     """Récupérer un deck spécifique avec toutes ses cartes"""
 
-    # Récupérer toutes les flashcards du deck
-    result = await db.execute(
-        select(Flashcard)
-        .where(
-            and_(
-                Flashcard.user_id == current_user.id,
-                Flashcard.deck_name == deck_name
+    # Gérer le cas spécial "Sans deck" pour les flashcards sans deck_name
+    if deck_name == "Sans deck":
+        # Chercher les flashcards avec deck_name NULL
+        result = await db.execute(
+            select(Flashcard)
+            .where(
+                and_(
+                    Flashcard.user_id == current_user.id,
+                    Flashcard.deck_name.is_(None)
+                )
             )
+            .order_by(Flashcard.created_at.desc())
         )
-        .order_by(Flashcard.created_at.desc())
-    )
+    else:
+        # Récupérer toutes les flashcards du deck
+        result = await db.execute(
+            select(Flashcard)
+            .where(
+                and_(
+                    Flashcard.user_id == current_user.id,
+                    Flashcard.deck_name == deck_name
+                )
+            )
+            .order_by(Flashcard.created_at.desc())
+        )
     cards = result.scalars().all()
 
     if not cards:
@@ -340,13 +354,19 @@ async def get_deck_due_cards(
 
     now = utc_now()
 
+    # Gérer le cas spécial "Sans deck" pour les flashcards sans deck_name
+    if deck_name == "Sans deck":
+        deck_condition = Flashcard.deck_name.is_(None)
+    else:
+        deck_condition = Flashcard.deck_name == deck_name
+
     # Récupérer les flashcards à réviser du deck
     result = await db.execute(
         select(Flashcard)
         .where(
             and_(
                 Flashcard.user_id == current_user.id,
-                Flashcard.deck_name == deck_name,
+                deck_condition,
                 or_(
                     Flashcard.next_review_at.is_(None),
                     Flashcard.next_review_at <= now

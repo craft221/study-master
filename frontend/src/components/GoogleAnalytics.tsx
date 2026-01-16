@@ -28,7 +28,7 @@ export const event = (action: string, category: string, label: string, value?: n
   }
 }
 
-// Événements prédéfinis pour Study Master
+// Événements prédéfinis pour Studera
 export const analyticsEvents = {
   // Authentification
   signUp: () => event('sign_up', 'engagement', 'user_registration'),

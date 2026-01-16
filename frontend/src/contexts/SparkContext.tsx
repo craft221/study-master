@@ -140,6 +140,12 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     'quiz_perfect', 'quiz_success', 'quiz_failed', 'level_up', 'exam_reminder'
   ];
 
+  // Événements qui doivent être trackés côté backend pour que Spark apprenne
+  const TRACKED_EVENTS = [
+    'quiz_perfect', 'quiz_success', 'quiz_failed',
+    'login_after_absence', 'welcome_back'
+  ];
+
   // Moods et animations par défaut pour chaque type d'événement
   const EVENT_CONFIGS: Record<string, { mood: SparkMood; animation: SparkAnimation }> = {
     welcome: { mood: 'happy', animation: 'wave' },
@@ -169,6 +175,12 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
         setCurrentMessage(localMessage);
         console.log(`🐿️ Spark local [${event}]:`, localMessage.message);
+
+        // Tracker l'événement en arrière-plan pour que Spark apprenne
+        if (TRACKED_EVENTS.includes(event)) {
+          sparkService.trackEvent(event, context);
+        }
+
         setTimeout(() => setCurrentMessage(null), 5000);
         return;
       }
@@ -199,6 +211,12 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           };
           setCurrentMessage(localMessage);
           console.log(`🐿️ Spark local [${event}]:`, localMessage.message);
+
+          // Tracker l'événement en arrière-plan pour que Spark apprenne
+          if (TRACKED_EVENTS.includes(event)) {
+            sparkService.trackEvent(event, context);
+          }
+
           setTimeout(() => setCurrentMessage(null), 5000);
           return;
         }

@@ -357,7 +357,7 @@ export default function PlayQuizPage() {
   // Partager
   const handleShare = async (platform: string) => {
     const shareUrl = window.location.href
-    const shareText = result?.share_text || `J'ai joué à "${quiz?.title}" sur Study Master !`
+    const shareText = result?.share_text || `J'ai joué à "${quiz?.title}" sur Studera !`
 
     // Tracker le partage
     fetch(`${API_URL}/public/quiz/${shareCode}/track-share?platform=${platform}`, {
@@ -397,7 +397,7 @@ export default function PlayQuizPage() {
             href="/"
             className="inline-flex items-center gap-2 bg-white text-purple-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition"
           >
-            Découvrir Study Master
+            Découvrir Studera
           </Link>
         </div>
       </div>

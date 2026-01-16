@@ -700,7 +700,7 @@ async def get_share_card_data(
             "performance_title": title,
             "completed_at": attempt.completed_at.isoformat() if attempt.completed_at else None,
             "share_code": share_code,
-            "app_name": "Study Master",
+            "app_name": "Studera",
             "app_tagline": "Apprends. Défie. Progresse."
         },
         "share_urls": {

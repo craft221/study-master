@@ -364,9 +364,13 @@ export default function DashboardPage() {
               : `${stats.total_study_time_minutes}min`
             }
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('dashboard.todayStats')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('dashboard.totalStudyTime')}</p>
           <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span>{stats.study_time_this_month > 0 ? `${stats.study_time_this_month}min` : t('dashboard.noActivity')}</span>
+            <span>{stats.study_time_this_month > 0
+              ? `+${stats.study_time_this_month >= 60
+                  ? `${Math.floor(stats.study_time_this_month / 60)}h${stats.study_time_this_month % 60 > 0 ? stats.study_time_this_month % 60 + 'min' : ''}`
+                  : `${stats.study_time_this_month}min`} ${t('dashboard.thisMonth')}`
+              : t('dashboard.noActivity')}</span>
           </div>
         </motion.div>
 

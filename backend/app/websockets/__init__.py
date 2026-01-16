@@ -1,5 +1,5 @@
 """
-WebSocket Module pour Study Master
+WebSocket Module pour Studera
 Gère les connexions temps réel pour la collaboration
 """
 

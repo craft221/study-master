@@ -127,10 +127,10 @@ class PayDunyaService:
             invoice_data = {
                 "invoice": {
                     "total_amount": transaction.amount,
-                    "description": f"Abonnement {plan.name} - Study Master",
+                    "description": f"Abonnement {plan.name} - Studera",
                 },
                 "store": {
-                    "name": "Study Master",
+                    "name": "Studera",
                     "tagline": "Plateforme d'apprentissage intelligente",
                     "phone": getattr(settings, 'SUPPORT_PHONE', ''),
                     "postal_address": getattr(settings, 'SUPPORT_ADDRESS', ''),

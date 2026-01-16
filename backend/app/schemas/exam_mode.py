@@ -55,6 +55,7 @@ class ExamSessionCreate(BaseModel):
 
     subject_id: Optional[int] = Field(None, description="ID de la matière liée")
     note_ids: List[int] = Field(default=[], description="IDs des notes à réviser")
+    document_ids: List[int] = Field(default=[], description="IDs des documents à réviser")
 
     study_hours_per_day: float = Field(default=2.0, ge=0.5, le=12.0, description="Heures d'étude par jour")
     preferred_study_times: List[str] = Field(default=["morning", "afternoon"], description="Moments préférés")
@@ -182,6 +183,7 @@ class ExamSessionResponse(BaseModel):
     subject_name: Optional[str] = None
 
     note_ids: List[int] = []
+    document_ids: List[int] = []
     total_content_pages: int
     total_content_words: int
 
@@ -368,6 +370,7 @@ class WizardStep1Response(BaseModel):
 class WizardStep2Response(BaseModel):
     """Étape 2: Sélection du contenu"""
     notes: List[Dict[str, Any]]  # Notes disponibles pour la matière
+    documents: List[Dict[str, Any]] = []  # Documents disponibles pour la matière
     total_words: int
     estimated_pages: int
     suggested_days: int

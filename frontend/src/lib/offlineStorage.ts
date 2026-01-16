@@ -1,5 +1,5 @@
 /**
- * IndexedDB Storage Layer pour Study Master
+ * IndexedDB Storage Layer pour Studera
  * Gère le stockage local des données pour le mode hors ligne
  * Inclut support FSRS pour révisions offline
  */
@@ -14,7 +14,7 @@ import {
   type SchedulingOptions,
 } from './fsrs';
 
-const DB_NAME = 'StudyMasterDB';
+const DB_NAME = 'StuderaDB';
 const DB_VERSION = 5; // Incrémenté pour ajouter review_logs
 
 // Stores (tables) de la base de données

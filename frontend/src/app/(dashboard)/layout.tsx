@@ -183,7 +183,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
             <Link href="/dashboard" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Study Master</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Studera</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

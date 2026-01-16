@@ -16,7 +16,7 @@ export default function TermsPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Study Master</span>
+              <span className="text-2xl font-bold text-gray-900">Studera</span>
             </Link>
             <Link
               href="/"
@@ -258,7 +258,7 @@ export default function TermsPage() {
               <p>{t('legal.terms.articles.governingLaw.content1')}</p>
               <p>
                 {t('legal.terms.articles.governingLaw.content2')}{' '}
-                <a href="mailto:legal@studymaster.app" className="text-primary-600 hover:text-primary-700 font-medium">legal@studymaster.app</a>.
+                <a href="mailto:legal@studera.app" className="text-primary-600 hover:text-primary-700 font-medium">legal@studera.app</a>.
                 {' '}{t('legal.terms.articles.governingLaw.content3')}
               </p>
             </div>
@@ -284,10 +284,10 @@ export default function TermsPage() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a
-                href="mailto:legal@studymaster.app"
+                href="mailto:legal@studera.app"
                 className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition font-medium"
               >
-                legal@studymaster.app
+                legal@studera.app
               </a>
               <Link
                 href="/contact"

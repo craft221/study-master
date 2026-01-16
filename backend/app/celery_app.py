@@ -2,6 +2,7 @@
 Configuration Celery pour les tâches asynchrones
 """
 from celery import Celery
+from celery.schedules import crontab
 from app.core.config import settings
 
 # Créer l'application Celery
@@ -73,7 +74,7 @@ celery_app.conf.update(
         # Exécuté chaque lundi à 00:00 UTC
         "weekly-league-reset": {
             "task": "app.tasks.gamification_tasks.process_weekly_league_reset",
-            "schedule": 604800.0,  # 7 jours en secondes
+            "schedule": crontab(hour=0, minute=0, day_of_week=1),  # Lundi à 00:00 UTC
         },
 
         # === Rappels Calendrier Intelligents ===

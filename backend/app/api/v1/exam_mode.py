@@ -51,6 +51,7 @@ def session_to_response(session: ExamSession) -> ExamSessionResponse:
         subject_id=session.subject_id,
         subject_name=session.subject.name if session.subject else None,
         note_ids=session.note_ids or [],
+        document_ids=session.document_ids or [],
         total_content_pages=session.total_content_pages,
         total_content_words=session.total_content_words,
         study_hours_per_day=session.study_hours_per_day,
@@ -449,18 +450,8 @@ async def get_prediction(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Obtient la prédiction de réussite (PREMIUM)"""
-    # Vérifier premium
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "La prédiction de réussite est une fonctionnalité Premium",
-                "upgrade_url": "/settings/subscription"
-            }
-        )
-
+    """Obtient la prédiction de réussite (BETA: disponible pour tous)"""
+    # BETA: Vérification premium désactivée - tous les utilisateurs ont accès
     session = await exam_mode_service.get_session(db, session_id, current_user.id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
@@ -533,20 +524,40 @@ async def wizard_step2(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Étape 2 du wizard: récupère les notes et estime le plan"""
+    """Étape 2 du wizard: récupère les notes et documents, estime le plan"""
     from sqlalchemy import select
     from app.models.note import Note
+    from app.models.document import Document
 
-    query = select(Note).where(
+    # Récupérer les notes
+    notes_query = select(Note).where(
         Note.subject_id == subject_id,
         Note.user_id == current_user.id,
         Note.is_archived == False
     ).order_by(Note.created_at.desc())
 
-    result = await db.execute(query)
-    notes = result.scalars().all()
+    notes_result = await db.execute(notes_query)
+    notes = notes_result.scalars().all()
 
+    # Récupérer les documents
+    docs_query = select(Document).where(
+        Document.subject_id == subject_id,
+        Document.user_id == current_user.id,
+        Document.is_archived == False
+    ).order_by(Document.created_at.desc())
+
+    docs_result = await db.execute(docs_query)
+    documents = docs_result.scalars().all()
+
+    # Calculer le total (notes + documents)
     total_words = sum(len(n.content.split()) if n.content else 0 for n in notes)
+    # Estimer les mots des documents (300 mots par page PDF environ)
+    doc_estimated_words = sum(
+        len(d.extracted_text.split()) if d.extracted_text else (d.file_size // 500)  # ~500 bytes par "page"
+        for d in documents
+    )
+    total_words += doc_estimated_words
+
     estimated_pages = total_words // 300
 
     days_available = (exam_date - date.today()).days
@@ -561,6 +572,19 @@ async def wizard_step2(
                 "created_at": n.created_at.isoformat(),
             }
             for n in notes
+        ],
+        documents=[
+            {
+                "id": d.id,
+                "title": d.title or d.original_filename,
+                "filename": d.original_filename,
+                "file_type": d.file_type,
+                "file_size": d.file_size,
+                "file_size_formatted": d.file_size_formatted,
+                "has_extracted_text": bool(d.extracted_text),
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+            }
+            for d in documents
         ],
         total_words=total_words,
         estimated_pages=estimated_pages,
@@ -588,15 +612,7 @@ async def generate_task_content(
 
     ⚠️ Consomme 1 requête IA du quota si génération IA nécessaire.
     """
-    # Vérifier premium
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "La génération IA est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée - tous les utilisateurs ont accès
 
     # Récupérer la tâche
     from sqlalchemy import select
@@ -658,14 +674,7 @@ async def get_key_points_analysis(
 
     ⚠️ Consomme 1 requête IA du quota.
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "L'analyse IA des points clés est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée - tous les utilisateurs ont accès
 
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
@@ -716,14 +725,7 @@ async def get_weak_points_detection(
 
     ⚠️ Consomme 1 requête IA du quota.
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "La détection des points faibles est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée
 
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
@@ -769,14 +771,7 @@ async def get_personalized_advice(
 
     ⚠️ Consomme 1 requête IA du quota.
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "Les conseils personnalisés sont une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée
 
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
@@ -823,14 +818,7 @@ async def adapt_study_plan(
 
     ⚠️ Consomme 1 requête IA du quota.
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "L'adaptation dynamique est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée
 
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
@@ -874,14 +862,7 @@ async def generate_practice_exam(
 
     ⚠️ Consomme 2 requêtes IA du quota (génération intensive).
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "La génération d'examen blanc est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée
 
     # Vérifier et incrémenter le quota IA (2 requêtes pour génération d'examen)
     can_use, remaining = await check_and_increment_ai_quota(
@@ -946,14 +927,7 @@ async def get_ai_summary(
 
     ⚠️ Consomme 3 requêtes IA du quota (analyse complète).
     """
-    if current_user.subscription_type == SubscriptionType.FREE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "premium_required",
-                "message": "Le résumé IA est une fonctionnalité Premium"
-            }
-        )
+    # BETA: Vérification premium désactivée
 
     # Vérifier le quota pour 3 requêtes (key_points + weak_points + advice)
     max_requests = get_max_requests(current_user.subscription_type)

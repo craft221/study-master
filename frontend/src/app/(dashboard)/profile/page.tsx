@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { User, Mail, MapPin, GraduationCap, Calendar, Award, Trophy, Zap, BookOpen, Brain, Clock, Edit, Save, X, Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,24 @@ import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+
+// Imports dynamiques pour éviter les erreurs d'hydratation
+const UniversitySelect = dynamic(() => import('@/components/ui/UniversitySelect'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-10 w-full rounded-md border border-input bg-background animate-pulse" />
+  )
+})
+
+const MajorCombobox = dynamic(
+  () => import('@/components/ui/combobox').then(mod => ({ default: mod.MajorCombobox })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-10 w-full rounded-md border border-input bg-background animate-pulse" />
+    )
+  }
+)
 
 interface UserProfile {
   id: number
@@ -310,18 +329,16 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <Label htmlFor="university">Université</Label>
-                      <Input
-                        id="university"
+                      <UniversitySelect
                         value={editForm.university}
-                        onChange={(e) => setEditForm({ ...editForm, university: e.target.value })}
+                        onChange={(value) => setEditForm({ ...editForm, university: value })}
                       />
                     </div>
                     <div>
                       <Label htmlFor="major">Filière</Label>
-                      <Input
-                        id="major"
+                      <MajorCombobox
                         value={editForm.major}
-                        onChange={(e) => setEditForm({ ...editForm, major: e.target.value })}
+                        onChange={(value) => setEditForm({ ...editForm, major: value })}
                       />
                     </div>
                     <div>

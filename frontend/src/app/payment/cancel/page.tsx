@@ -56,7 +56,7 @@ export default function PaymentCancelPage() {
             Besoin d'aide ?
           </p>
           <a
-            href="mailto:support@studymaster.app"
+            href="mailto:support@studera.app"
             className="inline-flex items-center gap-2 text-primary hover:underline"
           >
             <MessageCircle className="w-4 h-4" />

@@ -66,6 +66,7 @@ export interface ExamSession {
   subject_id: number | null
   subject_name: string | null
   note_ids: number[]
+  document_ids: number[]
   total_content_pages: number
   total_content_words: number
   study_hours_per_day: number
@@ -188,6 +189,7 @@ export interface ExamSessionCreate {
   exam_time?: string
   subject_id?: number
   note_ids: number[]
+  document_ids?: number[]
   study_hours_per_day?: number
   preferred_study_times?: string[]
   include_weekends?: boolean

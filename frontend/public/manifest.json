@@ -1,6 +1,6 @@
 {
-  "name": "Study Master",
-  "short_name": "Study Master",
+  "name": "Studera",
+  "short_name": "Studera",
   "description": "Plateforme d'apprentissage intelligente avec gamification, flashcards, quiz et collaboration",
   "start_url": "/",
   "display": "standalone",
@@ -66,7 +66,7 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Tableau de bord Study Master"
+      "label": "Tableau de bord Studera"
     },
     {
       "src": "/screenshots/flashcards.png",
@@ -126,7 +126,7 @@
   },
   "protocol_handlers": [
     {
-      "protocol": "web+studymaster",
+      "protocol": "web+studera",
       "url": "/handle-protocol?url=%s"
     }
   ]

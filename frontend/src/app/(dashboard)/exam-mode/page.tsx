@@ -40,6 +40,7 @@ import examModeService, {
   AISummary
 } from '@/services/examMode'
 import { cn } from '@/lib/utils'
+import api from '@/lib/api'
 import subjectsService from '@/services/subjects'
 import notesService from '@/services/notes'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
@@ -57,6 +58,16 @@ interface Note {
   title: string
   subject_id: number
   subject_name?: string
+}
+
+interface Document {
+  id: number
+  title: string
+  original_filename: string
+  file_type: string
+  file_size: number
+  file_size_formatted: string
+  subject_id: number
 }
 
 // Wizard Steps
@@ -92,18 +103,20 @@ export default function ExamModePage() {
   const [premiumStatus, setPremiumStatus] = useState<PremiumStatus | null>(null)
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [notes, setNotes] = useState<Note[]>([])
+  const [documents, setDocuments] = useState<Document[]>([])
 
   // Wizard states
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState<WizardStep>('info')
   const [creating, setCreating] = useState(false)
-  const [formData, setFormData] = useState<ExamSessionCreate>({
+  const [formData, setFormData] = useState<ExamSessionCreate & { document_ids: number[] }>({
     exam_name: '',
     exam_description: '',
     exam_date: '',
     exam_time: '',
     subject_id: undefined,
     note_ids: [],
+    document_ids: [],
     study_hours_per_day: 2,
     preferred_study_times: ['morning', 'afternoon'],
     include_weekends: true,
@@ -137,17 +150,19 @@ export default function ExamModePage() {
     try {
       if (isOnline) {
         // Mode en ligne: charger depuis l'API et mettre en cache
-        const [sessionsRes, premiumRes, subjectsRes, notesRes] = await Promise.all([
+        const [sessionsRes, premiumRes, subjectsRes, notesRes, docsRes] = await Promise.all([
           examModeService.getSessions(),
           examModeService.getPremiumStatus(),
           subjectsService.getSubjects(),
-          notesService.getNotes()
+          notesService.getNotes(),
+          api.get('/documents/')
         ])
 
         setSessions(sessionsRes.sessions)
         setPremiumStatus(premiumRes)
         setSubjects(subjectsRes)
         setNotes(notesRes)
+        setDocuments(docsRes.data.documents || [])
 
         // Sauvegarder en cache
         await offlineStorage.saveExamSessions(sessionsRes.sessions)
@@ -229,10 +244,11 @@ export default function ExamModePage() {
   }
 
   const handleCreateSession = async () => {
-    if (!formData.exam_name || !formData.exam_date || formData.note_ids.length === 0) {
+    const hasContent = formData.note_ids.length > 0 || formData.document_ids.length > 0
+    if (!formData.exam_name || !formData.exam_date || !hasContent) {
       toast({
         title: t('exam_mode.validation_error') || 'Erreur',
-        description: t('exam_mode.fill_required_fields') || 'Veuillez remplir tous les champs requis',
+        description: t('exam_mode.fill_required_fields') || 'Veuillez remplir tous les champs et sélectionner du contenu',
         variant: 'destructive'
       })
       return
@@ -274,6 +290,7 @@ export default function ExamModePage() {
       exam_time: '',
       subject_id: undefined,
       note_ids: [],
+      document_ids: [],
       study_hours_per_day: 2,
       preferred_study_times: ['morning', 'afternoon'],
       include_weekends: true,
@@ -418,9 +435,9 @@ export default function ExamModePage() {
     }
   }
 
-  // AI Functions
+  // AI Functions - BETA: Accessible à tous
   const loadAISummary = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('summary')
     try {
       const data = await examModeService.getAISummary(activeSession.id)
@@ -437,7 +454,7 @@ export default function ExamModePage() {
   }
 
   const loadKeyPoints = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('keypoints')
     try {
       const data = await examModeService.getKeyPointsAnalysis(activeSession.id)
@@ -454,7 +471,7 @@ export default function ExamModePage() {
   }
 
   const loadWeakPoints = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('weakpoints')
     try {
       const data = await examModeService.getWeakPointsAnalysis(activeSession.id)
@@ -471,7 +488,7 @@ export default function ExamModePage() {
   }
 
   const loadAdvice = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('advice')
     try {
       const data = await examModeService.getPersonalizedAdvice(activeSession.id)
@@ -488,14 +505,7 @@ export default function ExamModePage() {
   }
 
   const handleGenerateTaskContent = async (taskId: number) => {
-    if (!premiumStatus?.is_premium) {
-      toast({
-        title: t('exam_mode.premium_required') || 'Premium requis',
-        description: t('exam_mode.ai_premium_desc') || 'La génération IA est réservée aux utilisateurs Premium',
-        variant: 'destructive'
-      })
-      return
-    }
+    // BETA: Vérification premium désactivée
     setActionLoading(taskId)
     try {
       const result = await examModeService.generateTaskContent(taskId)
@@ -516,7 +526,7 @@ export default function ExamModePage() {
   }
 
   const handleGeneratePracticeExam = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('practice')
     try {
       const result = await examModeService.generatePracticeExam(activeSession.id, 60)
@@ -536,7 +546,7 @@ export default function ExamModePage() {
   }
 
   const handleAdaptPlan = async () => {
-    if (!activeSession || !premiumStatus?.is_premium) return
+    if (!activeSession) return
     setAiLoading('adapt')
     try {
       const result = await examModeService.adaptStudyPlan(activeSession.id)
@@ -577,8 +587,12 @@ export default function ExamModePage() {
   }
 
   const filteredNotes = formData.subject_id
-    ? notes.filter(n => n.subject_id === formData.subject_id)
+    ? notes.filter(n => Number(n.subject_id) === Number(formData.subject_id))
     : notes
+
+  const filteredDocuments = formData.subject_id
+    ? documents.filter(d => Number(d.subject_id) === Number(formData.subject_id))
+    : documents
 
   if (loading) {
     return (
@@ -654,25 +668,7 @@ export default function ExamModePage() {
         </div>
       </div>
 
-      {/* Premium banner if needed */}
-      {premiumStatus && !premiumStatus.is_premium && premiumStatus.active_exams_count >= 1 && (
-        <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <div>
-                <p className="font-medium">{t('exam_mode.upgrade_title') || 'Passez à Premium'}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t('exam_mode.upgrade_description') || 'Préparez jusqu\'à 5 examens simultanément'}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/pricing">{t('common.upgrade') || 'Upgrade'}</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* BETA: Bannière premium masquée - tous les utilisateurs ont accès aux fonctionnalités */}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
@@ -692,7 +688,7 @@ export default function ExamModePage() {
           <TabsTrigger value="ai" className="gap-2">
             <Sparkles className="w-4 h-4" />
             {t('exam_mode.ai_insights') || 'IA Insights'}
-            {!premiumStatus?.is_premium && <Lock className="w-3 h-3 ml-1" />}
+            {/* BETA: Cadenas masqué - tous ont accès */}
           </TabsTrigger>
         </TabsList>
 
@@ -1064,30 +1060,9 @@ export default function ExamModePage() {
           )}
         </TabsContent>
 
-        {/* AI Insights Tab */}
+        {/* AI Insights Tab - BETA: Accessible à tous */}
         <TabsContent value="ai" className="mt-6 space-y-6">
-          {!premiumStatus?.is_premium ? (
-            /* Premium upsell */
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {t('exam_mode.ai_premium_title') || 'Intelligence Artificielle Premium'}
-                </h3>
-                <p className="text-muted-foreground text-center max-w-md mb-6">
-                  {t('exam_mode.ai_premium_description') || 'Débloquez les analyses IA avancées : points clés, détection des faiblesses, conseils personnalisés, et adaptation dynamique de votre plan.'}
-                </p>
-                <Button asChild className="gap-2">
-                  <Link href="/pricing">
-                    <Sparkles className="w-4 h-4" />
-                    {t('common.upgrade_premium') || 'Passer à Premium'}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : !activeSession ? (
+          {!activeSession ? (
             /* No active session */
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -1564,7 +1539,7 @@ export default function ExamModePage() {
                 <Label>{t('exam_mode.subject') || 'Matière'}</Label>
                 <Select
                   value={formData.subject_id?.toString() || ''}
-                  onValueChange={(v) => setFormData({ ...formData, subject_id: parseInt(v), note_ids: [] })}
+                  onValueChange={(v) => setFormData({ ...formData, subject_id: parseInt(v), note_ids: [], document_ids: [] })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('exam_mode.select_subject') || 'Sélectionner une matière'} />
@@ -1584,14 +1559,21 @@ export default function ExamModePage() {
           {/* Step 2: Content Selection */}
           {wizardStep === 'content' && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t('exam_mode.select_notes') || 'Notes à réviser'} *</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('exam_mode.select_notes_desc') || 'Sélectionnez les notes que vous souhaitez inclure dans votre plan de révision'}
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Sélectionnez au moins une note OU un document pour créer votre session de révision.
                 </p>
               </div>
 
-              <div className="max-h-[300px] overflow-y-auto border rounded-lg">
+              {/* Notes Selection */}
+              <div className="space-y-2">
+                <Label className="text-base font-medium">{t('exam_mode.select_notes') || 'Notes'}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('exam_mode.select_notes_desc') || 'Notes que vous avez prises sur la plateforme'}
+                </p>
+              </div>
+
+              <div className="max-h-[200px] overflow-y-auto border rounded-lg">
                 {filteredNotes.length > 0 ? (
                   filteredNotes.map((note) => (
                     <div
@@ -1617,15 +1599,77 @@ export default function ExamModePage() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-muted-foreground">
-                    <BookOpen className="w-8 h-8 mx-auto mb-2" />
-                    <p>{t('exam_mode.no_notes') || 'Aucune note disponible'}</p>
+                  <div className="p-6 text-center text-muted-foreground">
+                    <BookOpen className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">{t('exam_mode.no_notes') || 'Aucune note pour cette matière'}</p>
                   </div>
                 )}
               </div>
 
-              <div className="text-sm text-muted-foreground">
-                {formData.note_ids.length} {t('exam_mode.notes_selected') || 'note(s) sélectionnée(s)'}
+              {formData.note_ids.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {formData.note_ids.length} {t('exam_mode.notes_selected') || 'note(s) sélectionnée(s)'}
+                </div>
+              )}
+
+              {/* Documents Selection */}
+              <div className="pt-4 border-t space-y-2">
+                <Label className="text-base font-medium">{t('exam_mode.documents') || 'Documents (PDF, Word...)'}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('exam_mode.documents_hint') || 'Documents que vous avez uploadés pour cette matière'}
+                </p>
+              </div>
+
+              <div className="max-h-[200px] overflow-y-auto border rounded-lg">
+                {filteredDocuments.length > 0 ? (
+                  filteredDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className={cn(
+                        "flex items-center gap-3 p-3 border-b last:border-0 cursor-pointer hover:bg-muted/50",
+                        formData.document_ids.includes(doc.id) && "bg-primary/5"
+                      )}
+                      onClick={() => {
+                        const newIds = formData.document_ids.includes(doc.id)
+                          ? formData.document_ids.filter(id => id !== doc.id)
+                          : [...formData.document_ids, doc.id]
+                        setFormData({ ...formData, document_ids: newIds })
+                      }}
+                    >
+                      <Checkbox checked={formData.document_ids.includes(doc.id)} />
+                      <div className="flex-1">
+                        <p className="font-medium">{doc.title || doc.original_filename}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.file_type.toUpperCase()} • {doc.file_size_formatted}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <BookOpen className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucun document pour cette matière</p>
+                    <p className="text-xs mt-1">Uploadez des documents via la page Documents</p>
+                  </div>
+                )}
+              </div>
+
+              {formData.document_ids.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {formData.document_ids.length} document(s) sélectionné(s)
+                </div>
+              )}
+
+              {/* Summary */}
+              <div className="pt-2 border-t">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className={cn(
+                    "font-medium",
+                    (formData.note_ids.length > 0 || formData.document_ids.length > 0) ? "text-green-600" : "text-orange-600"
+                  )}>
+                    Total: {formData.note_ids.length} note(s), {formData.document_ids.length} document(s)
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1761,8 +1805,11 @@ export default function ExamModePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">{t('exam_mode.notes_count')}</p>
-                    <p className="font-medium">{formData.note_ids.length} notes</p>
+                    <p className="text-muted-foreground">{t('exam_mode.content_count') || 'Contenu'}</p>
+                    <p className="font-medium">
+                      {formData.note_ids.length} notes
+                      {formData.document_ids.length > 0 && `, ${formData.document_ids.length} documents`}
+                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">{t('exam_mode.hours_per_day')}</p>
@@ -1818,7 +1865,7 @@ export default function ExamModePage() {
                   }}
                   disabled={
                     (wizardStep === 'info' && (!formData.exam_name || !formData.exam_date)) ||
-                    (wizardStep === 'content' && formData.note_ids.length === 0)
+                    (wizardStep === 'content' && formData.note_ids.length === 0 && formData.document_ids.length === 0)
                   }
                 >
                   {t('common.next') || 'Suivant'}

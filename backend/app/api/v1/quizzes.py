@@ -73,6 +73,16 @@ async def invalidate_quiz_cache(user_id: int, quiz_id: int = None):
     logger.debug(f"Quiz cache invalidated for user {user_id}")
 
 
+def normalize_correct_answer(correct_answer) -> str:
+    """
+    Convertit une réponse correcte en string.
+    Gère les booléens (pour true/false) et autres types.
+    """
+    if isinstance(correct_answer, bool):
+        return "Vrai" if correct_answer else "Faux"
+    return str(correct_answer) if correct_answer is not None else ""
+
+
 from app.schemas.quiz import (
     QuizCreate,
     QuizUpdate,
@@ -379,12 +389,18 @@ async def get_quiz(
     # Transformer les questions au format attendu par le frontend
     questions_transformed = []
     for idx, q in enumerate(quiz.questions_data or []):
+        question_type = q.get("type", "multiple_choice")
+        # Pour les questions vrai/faux, générer les options si absentes
+        options = q.get("options", [])
+        if question_type == "true_false" and not options:
+            options = ["Vrai", "Faux"]
+
         questions_transformed.append({
             "id": str(idx),  # Utiliser l'index comme ID
             "question_text": q.get("question", ""),  # question -> question_text
-            "question_type": q.get("type", "multiple_choice"),  # type -> question_type
-            "options": q.get("options", []),
-            "correct_answer": q.get("correct_answer", ""),
+            "question_type": question_type,  # type -> question_type
+            "options": options,
+            "correct_answer": normalize_correct_answer(q.get("correct_answer")),
             "explanation": q.get("explanation", ""),
             "points": q.get("points", 10)
         })
@@ -710,8 +726,23 @@ async def submit_quiz_attempt(
     for user_answer in submission.answers:
         question_id = user_answer.question_id
         question = quiz.questions_data[question_id]
-        correct_answer = question["correct_answer"]
-        is_correct = user_answer.user_answer.strip().lower() == correct_answer.strip().lower()
+        correct_answer_raw = question["correct_answer"]
+
+        # Convertir la réponse correcte en string (peut être booléen pour true/false)
+        if isinstance(correct_answer_raw, bool):
+            correct_answer = "vrai" if correct_answer_raw else "faux"
+        else:
+            correct_answer = str(correct_answer_raw)
+
+        # Normaliser la réponse de l'utilisateur pour true/false
+        user_answer_normalized = user_answer.user_answer.strip().lower()
+        # Mapper les variations communes de vrai/faux
+        if user_answer_normalized in ("true", "vrai", "yes", "oui"):
+            user_answer_normalized = "vrai"
+        elif user_answer_normalized in ("false", "faux", "no", "non"):
+            user_answer_normalized = "faux"
+
+        is_correct = user_answer_normalized == correct_answer.strip().lower()
 
         points_for_question = question.get("points", 10) if is_correct else 0
         points_earned += points_for_question
@@ -726,15 +757,21 @@ async def submit_quiz_attempt(
         answers_with_correction.append({
             "question_id": question_id,
             "user_answer": user_answer.user_answer,
-            "correct_answer": correct_answer,
+            "correct_answer": correct_answer,  # Toujours string maintenant
             "is_correct": is_correct,
             "points_earned": points_for_question,
             "time_spent_seconds": user_answer.time_spent_seconds
         })
 
     # Calculer le score en pourcentage
-    score = (points_earned / quiz.total_points) * 100 if quiz.total_points > 0 else 0
-    is_passed = score >= quiz.passing_score
+    # Si total_points est None, le calculer à partir des questions
+    total_points = quiz.total_points
+    if total_points is None or total_points == 0:
+        total_points = sum(q.get("points", 10) for q in quiz.questions_data) if quiz.questions_data else 0
+
+    score = round((points_earned / total_points) * 100, 1) if total_points > 0 else 0
+    passing_score = quiz.passing_score if quiz.passing_score is not None else 60
+    is_passed = score >= passing_score
 
     # Mettre à jour la tentative avec les champs qui existent dans le modèle
     attempt.answers = answers_with_correction
@@ -823,6 +860,11 @@ async def submit_quiz_attempt(
 
     await db.commit()
 
+    # Invalider le cache des quizzes et des stats utilisateur après soumission
+    await invalidate_quiz_cache(current_user.id, quiz.id)
+    # Invalider aussi le cache des stats utilisateur pour mettre à jour le score moyen
+    await cache_service.delete_pattern(f"cache:user_stats:user:{current_user.id}*")
+
     # Attribuer XP avec broadcast temps réel - SEULEMENT si pas un duel
     if xp_earned > 0:
         await award_xp(
@@ -848,7 +890,7 @@ async def submit_quiz_attempt(
                 "question": q.get("question", ""),
                 "type": q.get("type", "multiple_choice"),
                 "user_answer": answer_data["user_answer"] if answer_data else "",
-                "correct_answer": q["correct_answer"],
+                "correct_answer": normalize_correct_answer(q["correct_answer"]),
                 "is_correct": answer_data["is_correct"] if answer_data else False,
                 "explanation": q.get("explanation"),
                 "points_earned": answer_data["points_earned"] if answer_data else 0
@@ -1072,7 +1114,8 @@ async def get_quiz_results(
     # Préparer les réponses détaillées
     detailed_answers = []
     correct_count = sum(1 for a in (attempt.answers or []) if a.get("is_correct", False))
-    is_passed = attempt.score >= quiz.passing_score
+    passing_score = quiz.passing_score if quiz.passing_score is not None else 60
+    is_passed = (attempt.score or 0) >= passing_score
 
     if quiz.show_correct_answers:
         for i, q in enumerate(quiz.questions_data or []):
@@ -1081,7 +1124,7 @@ async def get_quiz_results(
                 "question": q.get("question", ""),
                 "type": q.get("type", "multiple_choice"),
                 "user_answer": answer_data["user_answer"] if answer_data else "",
-                "correct_answer": q.get("correct_answer", ""),
+                "correct_answer": normalize_correct_answer(q.get("correct_answer")),
                 "is_correct": answer_data["is_correct"] if answer_data else False,
                 "explanation": q.get("explanation"),
                 "points_earned": answer_data.get("points_earned", 0) if answer_data else 0

@@ -314,11 +314,12 @@ class ExamModeService:
         if active_count >= limits["max_active_exams"]:
             raise ValueError(f"limit_reached:Vous avez atteint la limite de {limits['max_active_exams']} examen(s) actif(s)")
 
-        # Vérifier la limite de notes
-        if len(data.note_ids) > limits["max_notes_per_exam"]:
-            raise ValueError(f"too_many_notes:Maximum {limits['max_notes_per_exam']} notes par examen")
+        # Vérifier la limite de notes + documents
+        total_content = len(data.note_ids) + len(getattr(data, 'document_ids', []) or [])
+        if total_content > limits["max_notes_per_exam"]:
+            raise ValueError(f"too_many_notes:Maximum {limits['max_notes_per_exam']} éléments par examen")
 
-        # Calculer le contenu total
+        # Calculer le contenu total des notes
         total_words = 0
         total_pages = 0
         if data.note_ids:
@@ -334,6 +335,27 @@ class ExamModeService:
                 total_words += words
                 total_pages += math.ceil(words / 300)  # ~300 mots par page
 
+        # Calculer le contenu des documents
+        document_ids = getattr(data, 'document_ids', []) or []
+        if document_ids:
+            from app.models.document import Document
+            docs_query = select(Document).where(
+                Document.id.in_(document_ids),
+                Document.user_id == user.id
+            )
+            doc_result = await db.execute(docs_query)
+            documents = doc_result.scalars().all()
+
+            for doc in documents:
+                # Utiliser le texte extrait si disponible, sinon estimer
+                if doc.extracted_text:
+                    words = len(doc.extracted_text.split())
+                else:
+                    # Estimer ~500 bytes par "page" de texte
+                    words = doc.file_size // 500
+                total_words += words
+                total_pages += math.ceil(words / 300)
+
         # Créer la session
         session = ExamSession(
             user_id=user.id,
@@ -343,6 +365,7 @@ class ExamModeService:
             exam_time=data.exam_time,
             subject_id=data.subject_id,
             note_ids=data.note_ids,
+            document_ids=document_ids,
             total_content_words=total_words,
             total_content_pages=total_pages,
             study_hours_per_day=data.study_hours_per_day,
@@ -711,10 +734,12 @@ class ExamModeService:
             ExamSession.user_id == user_id
         )
 
+        # Toujours charger la relation subject
+        query = query.options(selectinload(ExamSession.subject))
+
         if include_days:
             query = query.options(
-                selectinload(ExamSession.study_days).selectinload(StudyDay.tasks),
-                selectinload(ExamSession.subject)
+                selectinload(ExamSession.study_days).selectinload(StudyDay.tasks)
             )
 
         result = await db.execute(query)

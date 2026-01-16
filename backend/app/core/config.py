@@ -12,8 +12,8 @@ def generate_secret_key() -> str:
 
 class Settings(BaseSettings):
     # App
-    PROJECT_NAME: str = "StudyMaster"
-    APP_NAME: str = "Study Master API"
+    PROJECT_NAME: str = "Studera"
+    APP_NAME: str = "Studera API"
     APP_VERSION: str = "1.0.0"
 
     # Security - IMPORTANT: Toujours définir en production via variables d'environnement
@@ -123,9 +123,9 @@ class Settings(BaseSettings):
     AI_MAX_TOKENS: int = 4096
     AI_TEMPERATURE: float = 0.7
 
-    # AI Rate Limiting
-    AI_DAILY_LIMIT_FREE: int = 10  # Requêtes IA par jour pour utilisateurs gratuits
-    AI_DAILY_LIMIT_PREMIUM: int = 100  # Requêtes IA par jour pour utilisateurs premium
+    # AI Rate Limiting - BETA: Limite unique pour tous les utilisateurs
+    AI_DAILY_LIMIT_FREE: int = 20  # Requêtes IA par jour pour tous (BETA)
+    AI_DAILY_LIMIT_PREMIUM: int = 20  # Même limite pour tous pendant la beta
 
     # Rate Limiting général
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
@@ -170,8 +170,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
 
     # Email Common
-    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@studymaster.app")
-    EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "Study Master")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@studera.app")
+    EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "Studera")
+
+    # Monitoring - Sentry
+    SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
+    SENTRY_TRACES_SAMPLE_RATE: float = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1"))  # 10% des requêtes
 
 
 settings = Settings()

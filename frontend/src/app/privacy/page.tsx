@@ -16,7 +16,7 @@ export default function PrivacyPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Study Master</span>
+              <span className="text-2xl font-bold text-gray-900">Studera</span>
             </Link>
             <Link
               href="/"
@@ -165,8 +165,8 @@ export default function PrivacyPage() {
               </div>
               <p className="mt-4">
                 {t('legal.privacy.sections.yourRights.contact')}{' '}
-                <a href="mailto:privacy@studymaster.app" className="text-primary-600 hover:text-primary-700 font-medium">
-                  privacy@studymaster.app
+                <a href="mailto:privacy@studera.app" className="text-primary-600 hover:text-primary-700 font-medium">
+                  privacy@studera.app
                 </a>
               </p>
             </div>
@@ -232,10 +232,10 @@ export default function PrivacyPage() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a
-                href="mailto:privacy@studymaster.app"
+                href="mailto:privacy@studera.app"
                 className="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition font-medium"
               >
-                privacy@studymaster.app
+                privacy@studera.app
               </a>
               <Link
                 href="/contact"

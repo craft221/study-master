@@ -1,6 +1,6 @@
 /**
  * Accessibility Utilities - ARIA Helpers
- * Complete ARIA implementation for Study Master
+ * Complete ARIA implementation for Studera
  */
 
 // ============================================

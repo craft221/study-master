@@ -6,7 +6,7 @@ import SparkSVG from './SparkSVG';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
- * Spark - La Mascotte Écureuil de Study Master ⚡🐿️
+ * Spark - La Mascotte Écureuil de Studera ⚡🐿️
  *
  * Composant animé qui affiche Spark avec différents états émotionnels
  * et animations selon le contexte

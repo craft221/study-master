@@ -19,6 +19,7 @@ import {
   LOCALE_NAMES,
   getMessages,
   t as translate,
+  getArray as getArrayTranslation,
   getInitialLocale,
   setStoredLocale,
   Messages,
@@ -32,6 +33,7 @@ interface LanguageContextType {
   messages: Messages;
   setLocale: (locale: Locale) => Promise<void>;
   t: (path: string, params?: Record<string, string | number>) => string;
+  tArray: (path: string) => string[];
   supportedLocales: typeof SUPPORTED_LOCALES;
   localeNames: typeof LOCALE_NAMES;
   isLoading: boolean;
@@ -120,11 +122,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return translate(locale, path, params);
   }, [locale]);
 
+  // Fonction pour récupérer un tableau de traductions
+  const tArray = useCallback((path: string) => {
+    return getArrayTranslation(locale, path);
+  }, [locale]);
+
   const value: LanguageContextType = {
     locale,
     messages,
     setLocale,
     t,
+    tArray,
     supportedLocales: SUPPORTED_LOCALES,
     localeNames: LOCALE_NAMES,
     isLoading,

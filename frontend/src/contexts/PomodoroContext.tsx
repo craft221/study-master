@@ -19,19 +19,21 @@ interface PomodoroState {
   completedPomodoros: number
   totalMinutesToday: number
   startedAt: number | null // timestamp when session started
+  startedFromSessionsPage: boolean // track if session was started from sessions page
 }
 
 interface PomodoroContextType {
   // State
   state: PomodoroState
   // Actions
-  startSession: (subject?: string) => Promise<void>
+  startSession: (subject?: string, fromSessionsPage?: boolean) => Promise<void>
   pauseSession: () => void
   resumeSession: () => void
   resetSession: () => void
   stopSession: () => Promise<void>
   setSessionType: (type: SessionType) => void
   setSubject: (subject: string) => void
+  setStartedFromSessionsPage: (value: boolean) => void
   // Helpers
   formatTime: (seconds: number) => string
   getProgress: () => number
@@ -63,6 +65,7 @@ const defaultState: PomodoroState = {
   completedPomodoros: 0,
   totalMinutesToday: 0,
   startedAt: null,
+  startedFromSessionsPage: false,
 }
 
 const PomodoroContext = createContext<PomodoroContextType | null>(null)
@@ -309,7 +312,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   }, [state.sessionId, state.sessionType, state.subject, isOnline, playSound])
 
   // Start session
-  const startSession = useCallback(async (subject?: string) => {
+  const startSession = useCallback(async (subject?: string, fromSessionsPage?: boolean) => {
     const subjectToUse = subject || state.subject || 'Session générale'
 
     // Create session in API for work sessions
@@ -383,6 +386,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       startedAt: Date.now(),
       subject: subjectToUse,
       sessionId,
+      startedFromSessionsPage: fromSessionsPage || false,
     }))
   }, [state.subject, state.sessionType, state.sessionId, isOnline, playSound])
 
@@ -472,6 +476,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       startedAt: null,
       sessionId: null,
       subject: '',
+      startedFromSessionsPage: false,
     }))
   }, [state.sessionType, state.sessionId, state.timeLeft, state.subject, isOnline])
 
@@ -489,6 +494,11 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   // Set subject
   const setSubject = useCallback((subject: string) => {
     setState(prev => ({ ...prev, subject }))
+  }, [])
+
+  // Set startedFromSessionsPage
+  const setStartedFromSessionsPage = useCallback((value: boolean) => {
+    setState(prev => ({ ...prev, startedFromSessionsPage: value }))
   }, [])
 
   // Format time helper
@@ -513,6 +523,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
     stopSession,
     setSessionType,
     setSubject,
+    setStartedFromSessionsPage,
     formatTime,
     getProgress,
     isActive: state.isRunning,

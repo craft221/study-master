@@ -62,6 +62,23 @@ export default function NotificationDropdown() {
     }
   }, [open, fetchNotifications])
 
+  // Marquer automatiquement les notifications visibles comme lues après 2 secondes
+  useEffect(() => {
+    if (open && unreadCount > 0) {
+      const timer = setTimeout(async () => {
+        try {
+          await notificationsService.markAllAsRead()
+          setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+          setUnreadCount(0)
+        } catch (error) {
+          console.error('Error auto-marking notifications as read:', error)
+        }
+      }, 2000) // 2 secondes
+
+      return () => clearTimeout(timer)
+    }
+  }, [open, unreadCount])
+
   // Marquer une notification comme lue
   const handleMarkAsRead = async (notificationId: number, e: React.MouseEvent) => {
     e.preventDefault()

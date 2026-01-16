@@ -136,14 +136,14 @@ class FlutterwaveService:
                 "redirect_url": success_url,
                 "payment_options": self._get_payment_options(transaction.payment_method, transaction.country_code),
                 "customer": {
-                    "email": f"user_{transaction.user_id}@studymaster.app",  # TODO: récupérer le vrai email
+                    "email": f"user_{transaction.user_id}@studera.app",  # TODO: récupérer le vrai email
                     "phonenumber": phone_number or "",
                     "name": f"User {transaction.user_id}"
                 },
                 "customizations": {
-                    "title": "StudyMaster",
+                    "title": "Studera",
                     "description": f"Abonnement {plan.name}",
-                    "logo": "https://studymaster.app/logo.png"
+                    "logo": "https://studera.app/logo.png"
                 },
                 "meta": {
                     "transaction_id": str(transaction.id),
@@ -309,7 +309,7 @@ class FlutterwaveService:
                 "tx_ref": tx_ref,
                 "amount": amount,
                 "currency": currency,
-                "email": f"user_{transaction.user_id}@studymaster.app",
+                "email": f"user_{transaction.user_id}@studera.app",
                 "phone_number": phone_number,
                 "fullname": f"User {transaction.user_id}",
                 "meta": {

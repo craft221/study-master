@@ -303,7 +303,7 @@ export default function NoteDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 overflow-hidden">
         {editMode ? (
           <SmartNoteEditor
             value={editedContent}
@@ -311,7 +311,7 @@ export default function NoteDetailPage() {
             placeholder="Modifie ta note ici..."
           />
         ) : (
-          <div className="prose max-w-none latex-preview">
+          <div className="prose max-w-none latex-preview overflow-x-auto">
             <MarkdownRenderer content={note.content} />
           </div>
         )}

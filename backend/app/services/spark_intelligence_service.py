@@ -505,7 +505,7 @@ class SparkIntelligenceService:
 
         lang_instruction = get_language_instruction(user_lang)
 
-        system_prompt = f"""Tu es Spark, l'écureuil mascotte de Study Master. Tu as une personnalité unique:
+        system_prompt = f"""Tu es Spark, l'écureuil mascotte de Studera. Tu as une personnalité unique:
 
 PERSONNALITÉ:
 - Sarcastique mais bienveillant (comme Duo de Duolingo mais en plus cool)
@@ -655,17 +655,48 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
         user: User,
         analysis: Dict
     ) -> List[Dict]:
-        """Génère des objectifs quotidiens personnalisés"""
+        """Génère des objectifs quotidiens personnalisés dans la langue de l'utilisateur"""
         goals = []
         upcoming = analysis.get("upcoming_needs", {})
         weaknesses = analysis.get("weaknesses", [])
+        user_lang = user.language if user else "fr"
+
+        # Traductions des objectifs
+        translations = {
+            "fr": {
+                "review_flashcards": "Réviser les flashcards",
+                "prepare_exam": "Préparer {exam}",
+                "work_weaknesses": "Travailler les points faibles",
+                "focus_on": "Focus sur: {topic}",
+                "study_session": "Session d'étude",
+                "default_topic": "révisions"
+            },
+            "en": {
+                "review_flashcards": "Review flashcards",
+                "prepare_exam": "Prepare for {exam}",
+                "work_weaknesses": "Work on weak points",
+                "focus_on": "Focus on: {topic}",
+                "study_session": "Study session",
+                "default_topic": "reviews"
+            },
+            "es": {
+                "review_flashcards": "Revisar flashcards",
+                "prepare_exam": "Preparar {exam}",
+                "work_weaknesses": "Trabajar puntos débiles",
+                "focus_on": "Enfocarse en: {topic}",
+                "study_session": "Sesión de estudio",
+                "default_topic": "repasos"
+            }
+        }
+
+        t = translations.get(user_lang, translations["fr"])
 
         # Objectif 1: Révisions
         overdue = upcoming.get("overdue_reviews", 0)
         if overdue > 0:
             goals.append({
                 "type": "review",
-                "title": "Réviser les flashcards",
+                "title": t["review_flashcards"],
                 "target": min(overdue, 20),
                 "unit": "flashcards",
                 "priority": 1
@@ -677,7 +708,7 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
             exam = exams[0]
             goals.append({
                 "type": "exam_prep",
-                "title": f"Préparer {exam['title']}",
+                "title": t["prepare_exam"].format(exam=exam['title']),
                 "target": 30,
                 "unit": "minutes",
                 "priority": 1 if exam["days_until"] <= 3 else 2
@@ -685,10 +716,11 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
 
         # Objectif 3: Travailler les faiblesses
         if weaknesses:
+            topic = weaknesses[0].get('message', t["default_topic"])
             goals.append({
                 "type": "improve",
-                "title": "Travailler les points faibles",
-                "description": f"Focus sur: {weaknesses[0].get('message', 'révisions')}",
+                "title": t["work_weaknesses"],
+                "description": t["focus_on"].format(topic=topic),
                 "target": 15,
                 "unit": "minutes",
                 "priority": 3
@@ -698,7 +730,7 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
         if not goals:
             goals.append({
                 "type": "study",
-                "title": "Session d'étude",
+                "title": t["study_session"],
                 "target": 20,
                 "unit": "minutes",
                 "priority": 2
@@ -707,51 +739,116 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
         return goals[:3]  # Max 3 objectifs
 
     async def _get_fun_fact(self, user: User) -> str:
-        """Retourne un fun fact du jour"""
-        facts = [
-            "🧠 Les écureuils cachent jusqu'à 10 000 noisettes par an mais en oublient 25%. Ces oublis font pousser des arbres ! Comme quoi, oublier a du bon 🌳",
-            "📚 Notre cerveau peut stocker l'équivalent de 2.5 millions de gigaoctets. Tu as de la place pour quelques flashcards de plus ! 🐿️",
-            "💤 Dormir après avoir étudié améliore la mémorisation de 40%. Raison de plus pour bien dormir !",
-            "🎮 Les jeux vidéo améliorent la mémoire de travail. Gaming = révisions ? Presque... 😏",
-            "🌰 Un écureuil peut retrouver ses cachettes sous 30cm de neige grâce à son odorat. Spark retrouve tes connaissances encore plus vite !",
-            "⚡ Le cerveau utilise 20% de ton énergie. Étudier = faire du sport pour le cerveau 💪",
-            "🔄 La répétition espacée peut améliorer ta mémorisation de 200%. C'est pour ça que Spark insiste tant !",
-            "🎵 Écouter de la musique classique pendant l'étude peut améliorer la concentration. Mozart approuve 🎹",
-        ]
+        """Retourne un fun fact du jour dans la langue de l'utilisateur"""
+        user_lang = user.language if user else "fr"
 
+        facts = {
+            "fr": [
+                "🧠 Les écureuils cachent jusqu'à 10 000 noisettes par an mais en oublient 25%. Ces oublis font pousser des arbres ! Comme quoi, oublier a du bon 🌳",
+                "📚 Notre cerveau peut stocker l'équivalent de 2.5 millions de gigaoctets. Tu as de la place pour quelques flashcards de plus ! 🐿️",
+                "💤 Dormir après avoir étudié améliore la mémorisation de 40%. Raison de plus pour bien dormir !",
+                "🎮 Les jeux vidéo améliorent la mémoire de travail. Gaming = révisions ? Presque... 😏",
+                "🌰 Un écureuil peut retrouver ses cachettes sous 30cm de neige grâce à son odorat. Spark retrouve tes connaissances encore plus vite !",
+                "⚡ Le cerveau utilise 20% de ton énergie. Étudier = faire du sport pour le cerveau 💪",
+                "🔄 La répétition espacée peut améliorer ta mémorisation de 200%. C'est pour ça que Spark insiste tant !",
+                "🎵 Écouter de la musique classique pendant l'étude peut améliorer la concentration. Mozart approuve 🎹",
+            ],
+            "en": [
+                "🧠 Squirrels hide up to 10,000 acorns per year but forget about 25% of them. These forgotten acorns grow into trees! So forgetting isn't all bad 🌳",
+                "📚 Our brain can store the equivalent of 2.5 million gigabytes. You have room for a few more flashcards! 🐿️",
+                "💤 Sleeping after studying improves memorization by 40%. One more reason to get good sleep!",
+                "🎮 Video games improve working memory. Gaming = studying? Almost... 😏",
+                "🌰 A squirrel can find its hidden stashes under 30cm of snow using its sense of smell. Spark finds your knowledge even faster!",
+                "⚡ The brain uses 20% of your energy. Studying = exercise for the brain 💪",
+                "🔄 Spaced repetition can improve your memorization by 200%. That's why Spark insists so much!",
+                "🎵 Listening to classical music while studying can improve concentration. Mozart approves 🎹",
+            ],
+            "es": [
+                "🧠 Las ardillas esconden hasta 10.000 bellotas al año, pero olvidan el 25%. ¡Estos olvidos hacen crecer árboles! Así que olvidar tiene su lado bueno 🌳",
+                "📚 Nuestro cerebro puede almacenar el equivalente a 2.5 millones de gigabytes. ¡Tienes espacio para algunas flashcards más! 🐿️",
+                "💤 Dormir después de estudiar mejora la memorización en un 40%. ¡Una razón más para dormir bien!",
+                "🎮 Los videojuegos mejoran la memoria de trabajo. ¿Gaming = estudiar? Casi... 😏",
+                "🌰 Una ardilla puede encontrar sus escondites bajo 30cm de nieve gracias a su olfato. ¡Spark encuentra tu conocimiento aún más rápido!",
+                "⚡ El cerebro usa el 20% de tu energía. Estudiar = ejercicio para el cerebro 💪",
+                "🔄 La repetición espaciada puede mejorar tu memorización en un 200%. ¡Por eso Spark insiste tanto!",
+                "🎵 Escuchar música clásica mientras estudias puede mejorar la concentración. Mozart aprueba 🎹",
+            ],
+        }
+
+        lang_facts = facts.get(user_lang, facts["fr"])
         # Utiliser la date pour avoir un fait différent chaque jour
         day_of_year = datetime.now().timetuple().tm_yday
-        return facts[day_of_year % len(facts)]
+        return lang_facts[day_of_year % len(lang_facts)]
 
     async def _get_motivation_quote(
         self,
         user: User,
         analysis: Dict
     ) -> str:
-        """Retourne une citation motivante adaptée"""
+        """Retourne une citation motivante adaptée dans la langue de l'utilisateur"""
         engagement = analysis.get("engagement_level", {}).get("level", "moderate")
+        user_lang = user.language if user else "fr"
 
         quotes = {
-            "highly_engaged": [
-                "« Le succès n'est pas la clé du bonheur. Le bonheur est la clé du succès. » - Albert Schweitzer",
-                "« Tu es sur la bonne voie. Continue ! » - Spark 🐿️",
-            ],
-            "engaged": [
-                "« La persévérance n'est pas une longue course, c'est plusieurs courses courtes. » - Walter Elliot",
-                "« Chaque expert était autrefois un débutant. » - Helen Hayes",
-            ],
-            "moderate": [
-                "« Le secret pour avancer, c'est de commencer. » - Mark Twain",
-                "« Petit à petit, l'oiseau fait son nid. Et l'écureuil sa réserve ! 🌰 » - Spark",
-            ],
-            "low": [
-                "« Ce n'est pas parce que c'est difficile que tu n'oses pas, c'est parce que tu n'oses pas que c'est difficile. » - Sénèque",
-                "« Hey, même les plus grands ont des jours sans. L'important c'est de revenir ! » - Spark 🐿️💪",
-            ]
+            "fr": {
+                "highly_engaged": [
+                    "« Le succès n'est pas la clé du bonheur. Le bonheur est la clé du succès. » - Albert Schweitzer",
+                    "« Tu es sur la bonne voie. Continue ! » - Spark 🐿️",
+                ],
+                "engaged": [
+                    "« La persévérance n'est pas une longue course, c'est plusieurs courses courtes. » - Walter Elliot",
+                    "« Chaque expert était autrefois un débutant. » - Helen Hayes",
+                ],
+                "moderate": [
+                    "« Le secret pour avancer, c'est de commencer. » - Mark Twain",
+                    "« Petit à petit, l'oiseau fait son nid. Et l'écureuil sa réserve ! 🌰 » - Spark",
+                ],
+                "low": [
+                    "« Ce n'est pas parce que c'est difficile que tu n'oses pas, c'est parce que tu n'oses pas que c'est difficile. » - Sénèque",
+                    "« Hey, même les plus grands ont des jours sans. L'important c'est de revenir ! » - Spark 🐿️💪",
+                ]
+            },
+            "en": {
+                "highly_engaged": [
+                    '"Success is not the key to happiness. Happiness is the key to success." - Albert Schweitzer',
+                    '"You\'re on the right track. Keep going!" - Spark 🐿️',
+                ],
+                "engaged": [
+                    '"Perseverance is not a long race; it is many short races one after the other." - Walter Elliot',
+                    '"Every expert was once a beginner." - Helen Hayes',
+                ],
+                "moderate": [
+                    '"The secret of getting ahead is getting started." - Mark Twain',
+                    '"Little by little, the bird builds its nest. And the squirrel its stash! 🌰" - Spark',
+                ],
+                "low": [
+                    '"It\'s not because things are difficult that we don\'t dare, it\'s because we don\'t dare that they are difficult." - Seneca',
+                    '"Hey, even the greatest have off days. What matters is coming back!" - Spark 🐿️💪',
+                ]
+            },
+            "es": {
+                "highly_engaged": [
+                    '"El éxito no es la clave de la felicidad. La felicidad es la clave del éxito." - Albert Schweitzer',
+                    '"¡Vas por buen camino. Sigue así!" - Spark 🐿️',
+                ],
+                "engaged": [
+                    '"La perseverancia no es una carrera larga, son muchas carreras cortas una tras otra." - Walter Elliot',
+                    '"Todo experto fue alguna vez un principiante." - Helen Hayes',
+                ],
+                "moderate": [
+                    '"El secreto para avanzar es comenzar." - Mark Twain',
+                    '"Poco a poco, el pájaro hace su nido. ¡Y la ardilla su reserva! 🌰" - Spark',
+                ],
+                "low": [
+                    '"No es porque las cosas sean difíciles que no nos atrevemos, es porque no nos atrevemos que son difíciles." - Séneca',
+                    '"Hey, incluso los más grandes tienen días malos. ¡Lo importante es volver!" - Spark 🐿️💪',
+                ]
+            }
         }
 
         import random
-        return random.choice(quotes.get(engagement, quotes["moderate"]))
+        lang_quotes = quotes.get(user_lang, quotes["fr"])
+        return random.choice(lang_quotes.get(engagement, lang_quotes["moderate"]))
 
     async def generate_proactive_notification(
         self,
@@ -839,7 +936,7 @@ Génère UNIQUEMENT le message (pas de guillemets, pas d'explication):"""
 
         lang_instruction = get_language_instruction(user_lang)
 
-        system_prompt = f"""Tu es Spark, l'écureuil mascotte sarcastique mais bienveillant de Study Master.
+        system_prompt = f"""Tu es Spark, l'écureuil mascotte sarcastique mais bienveillant de Studera.
 
 RÈGLES:
 - 1-2 phrases MAX

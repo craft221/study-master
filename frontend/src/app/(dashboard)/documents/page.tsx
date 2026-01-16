@@ -24,7 +24,11 @@ import {
   HardDrive,
   AlertTriangle,
   CloudOff,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Brain,
+  HelpCircle,
+  Loader2
 } from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
@@ -117,6 +121,25 @@ export default function DocumentsPage() {
   )
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploadDescription, setUploadDescription] = useState('')
+
+  // États pour génération IA
+  const [showAIModal, setShowAIModal] = useState(false)
+  const [selectedDocForAI, setSelectedDocForAI] = useState<Document | null>(null)
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiType, setAiType] = useState<'flashcards' | 'quiz'>('flashcards')
+  const [aiCount, setAiCount] = useState(10)
+  const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
+  // Options quiz supplémentaires
+  const [quizIsTimed, setQuizIsTimed] = useState(false)
+  const [quizTimeLimit, setQuizTimeLimit] = useState(30)
+  const [quizQuestionTypes, setQuizQuestionTypes] = useState<string[]>(['multiple_choice', 'true_false'])
+
+  // États pour tâches IA en arrière-plan
+  const [aiTaskId, setAiTaskId] = useState<number | null>(null)
+  const [aiTaskProgress, setAiTaskProgress] = useState(0)
+  const [aiTaskStatus, setAiTaskStatus] = useState<string>('')
+  const [aiTaskMessage, setAiTaskMessage] = useState<string>('')
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -377,6 +400,127 @@ export default function DocumentsPage() {
 
   const canViewInBrowser = (fileType: string): boolean => {
     return ['pdf', 'image'].includes(fileType)
+  }
+
+  // Vérifier si le document supporte la génération IA (PDF, images, Word, Excel, PowerPoint)
+  const canGenerateAI = (fileType: string): boolean => {
+    return ['pdf', 'image', 'word', 'excel', 'powerpoint'].includes(fileType)
+  }
+
+  // Ouvrir le modal de génération IA
+  const openAIModal = (doc: Document, type: 'flashcards' | 'quiz') => {
+    setSelectedDocForAI(doc)
+    setAiType(type)
+    setAiCount(type === 'flashcards' ? 10 : 10)
+    setAiDifficulty('medium')
+    setShowAIModal(true)
+  }
+
+  // Vérifier le statut d'une tâche IA
+  const pollTaskStatus = async (taskId: number): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const poll = async () => {
+        try {
+          const response = await api.get(`/ai/task/${taskId}`)
+          const task = response.data
+
+          setAiTaskProgress(task.progress)
+          setAiTaskStatus(task.status)
+          setAiTaskMessage(task.progress_message || '')
+
+          if (task.status === 'completed') {
+            resolve(task)
+          } else if (task.status === 'failed') {
+            reject(new Error(task.error_message || 'La tâche a échoué'))
+          } else {
+            // Continuer à vérifier toutes les 2 secondes
+            setTimeout(poll, 2000)
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+      poll()
+    })
+  }
+
+  // Générer flashcards ou quiz depuis un document (version async avec polling)
+  const generateFromDocument = async () => {
+    if (!selectedDocForAI) return
+
+    setAiGenerating(true)
+    setAiTaskProgress(0)
+    setAiTaskStatus('pending')
+    setAiTaskMessage('Lancement de la génération...')
+
+    try {
+      // Utiliser les endpoints async pour traitement en arrière-plan
+      const endpoint = aiType === 'flashcards'
+        ? '/ai/document/generate-flashcards-async'
+        : '/ai/document/generate-quiz-async'
+
+      const payload = aiType === 'flashcards'
+        ? {
+            document_id: selectedDocForAI.id,
+            count: aiCount,
+            difficulty: aiDifficulty,
+            language: 'fra'
+          }
+        : {
+            document_id: selectedDocForAI.id,
+            question_count: aiCount,
+            difficulty: aiDifficulty,
+            language: 'fra',
+            question_types: quizQuestionTypes,
+            time_limit_minutes: quizIsTimed ? quizTimeLimit : null,
+            quiz_type: 'practice'
+          }
+
+      // Lancer la tâche
+      const startResponse = await api.post(endpoint, payload)
+      const taskId = startResponse.data.task_id
+      setAiTaskId(taskId)
+      setAiTaskMessage('Tâche démarrée, traitement en cours...')
+
+      // Polling pour suivre la progression
+      const completedTask = await pollTaskStatus(taskId)
+
+      // Succès!
+      if (aiType === 'flashcards') {
+        const count = completedTask.result_count || completedTask.flashcards?.length || 0
+        toast.success(`${count} flashcards générées avec succès!`, {
+          icon: '🎴',
+          duration: 5000
+        })
+      } else {
+        const quiz = completedTask.quiz
+        toast.success(`Quiz "${quiz?.title || 'Quiz'}" créé avec ${completedTask.result_count || 0} questions!`, {
+          icon: '📝',
+          duration: 5000
+        })
+      }
+
+      // Mettre à jour le document si le texte a été extrait
+      setDocuments(documents.map(d =>
+        d.id === selectedDocForAI.id ? { ...d, is_text_extracted: true } : d
+      ))
+
+      // Reset et fermer
+      setShowAIModal(false)
+      setSelectedDocForAI(null)
+      setAiTaskId(null)
+
+    } catch (error: any) {
+      console.error('Erreur génération IA:', error)
+      const message = error.response?.data?.detail || error.message || 'Erreur lors de la génération'
+      toast.error(message)
+    } finally {
+      setAiGenerating(false)
+      setAiTaskId(null)
+      setAiTaskProgress(0)
+      setAiTaskStatus('')
+      setAiTaskMessage('')
+    }
   }
 
   const filteredDocuments = documents.filter((doc) => {
@@ -711,34 +855,318 @@ export default function DocumentsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center space-x-2 pt-4 border-t border-gray-200">
-                  {/* Bouton Ouvrir - uniquement pour PDF et images */}
-                  {canViewInBrowser(doc.file_type) && (
-                    <button
-                      onClick={() => viewDocument(doc)}
-                      className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium flex items-center justify-center"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Ouvrir
-                    </button>
+                <div className="space-y-2 pt-4 border-t border-gray-200">
+                  {/* Boutons IA - uniquement pour PDF et images */}
+                  {canGenerateAI(doc.file_type) && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => openAIModal(doc, 'flashcards')}
+                        className="flex-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-medium flex items-center justify-center"
+                        title="Générer des flashcards avec l'IA"
+                      >
+                        <Brain className="h-4 w-4 mr-1" />
+                        Flashcards
+                      </button>
+                      <button
+                        onClick={() => openAIModal(doc, 'quiz')}
+                        className="flex-1 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium flex items-center justify-center"
+                        title="Générer un quiz avec l'IA"
+                      >
+                        <HelpCircle className="h-4 w-4 mr-1" />
+                        Quiz
+                      </button>
+                    </div>
                   )}
-                  <button
-                    onClick={() => downloadDocument(doc)}
-                    className={`${canViewInBrowser(doc.file_type) ? 'flex-1' : 'flex-1'} px-3 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition text-sm font-medium flex items-center justify-center`}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Télécharger
-                  </button>
-                  <button
-                    onClick={() => deleteDocument(doc.id)}
-                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+
+                  {/* Boutons standards */}
+                  <div className="flex items-center space-x-2">
+                    {/* Bouton Ouvrir - uniquement pour PDF et images */}
+                    {canViewInBrowser(doc.file_type) && (
+                      <button
+                        onClick={() => viewDocument(doc)}
+                        className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium flex items-center justify-center"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Ouvrir
+                      </button>
+                    )}
+                    <button
+                      onClick={() => downloadDocument(doc)}
+                      className={`${canViewInBrowser(doc.file_type) ? 'flex-1' : 'flex-1'} px-3 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition text-sm font-medium flex items-center justify-center`}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Télécharger
+                    </button>
+                    <button
+                      onClick={() => deleteDocument(doc.id)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal Génération IA */}
+      {showAIModal && selectedDocForAI && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Générer {aiType === 'flashcards' ? 'des Flashcards' : 'un Quiz'}
+                  </h2>
+                  <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                    {selectedDocForAI.title || selectedDocForAI.original_filename}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAIModal(false)
+                  setSelectedDocForAI(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Type de génération */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type de contenu
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setAiType('flashcards')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition flex items-center justify-center space-x-2 ${
+                      aiType === 'flashcards'
+                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Brain className="h-5 w-5" />
+                    <span>Flashcards</span>
+                  </button>
+                  <button
+                    onClick={() => setAiType('quiz')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 transition flex items-center justify-center space-x-2 ${
+                      aiType === 'quiz'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                    <span>Quiz</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {aiType === 'flashcards' ? 'Nombre de flashcards' : 'Nombre de questions'}
+                </label>
+                <input
+                  type="range"
+                  min={aiType === 'flashcards' ? 1 : 5}
+                  max="20"
+                  value={aiCount}
+                  onChange={(e) => setAiCount(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-sm text-gray-500 mt-1">
+                  <span>{aiType === 'flashcards' ? '1' : '5'}</span>
+                  <span className="font-bold text-primary-600">{aiCount}</span>
+                  <span>20</span>
+                </div>
+              </div>
+
+              {/* Difficulté */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Difficulté
+                </label>
+                <div className="flex space-x-2">
+                  {(['easy', 'medium', 'hard'] as const).map((diff) => (
+                    <button
+                      key={diff}
+                      onClick={() => setAiDifficulty(diff)}
+                      className={`flex-1 py-2 px-3 rounded-lg border transition text-sm ${
+                        aiDifficulty === diff
+                          ? diff === 'easy'
+                            ? 'border-green-500 bg-green-50 text-green-700'
+                            : diff === 'medium'
+                            ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                            : 'border-red-500 bg-red-50 text-red-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {diff === 'easy' ? 'Facile' : diff === 'medium' ? 'Moyen' : 'Difficile'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Options spécifiques au Quiz */}
+              {aiType === 'quiz' && (
+                <>
+                  {/* Types de questions */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Types de questions
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 'multiple_choice', label: 'Choix multiple', icon: '🔘' },
+                        { value: 'true_false', label: 'Vrai/Faux', icon: '✓✗' },
+                        { value: 'short_answer', label: 'Réponse courte', icon: '✏️' }
+                      ].map((type) => (
+                        <button
+                          key={type.value}
+                          type="button"
+                          onClick={() => {
+                            if (quizQuestionTypes.includes(type.value)) {
+                              // Ne pas permettre de tout désélectionner
+                              if (quizQuestionTypes.length > 1) {
+                                setQuizQuestionTypes(quizQuestionTypes.filter(t => t !== type.value))
+                              }
+                            } else {
+                              setQuizQuestionTypes([...quizQuestionTypes, type.value])
+                            }
+                          }}
+                          className={`px-3 py-2 rounded-lg border-2 transition text-sm flex items-center gap-2 ${
+                            quizQuestionTypes.includes(type.value)
+                              ? 'border-primary-500 bg-primary-50 text-primary-700'
+                              : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          }`}
+                        >
+                          <span>{type.icon}</span>
+                          <span>{type.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Limite de temps */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Quiz chronométré
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setQuizIsTimed(!quizIsTimed)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          quizIsTimed ? 'bg-primary-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            quizIsTimed ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {quizIsTimed && (
+                      <div className="flex items-center gap-3 mt-2">
+                        <input
+                          type="number"
+                          min="5"
+                          max="180"
+                          value={quizTimeLimit}
+                          onChange={(e) => setQuizTimeLimit(Math.max(5, Math.min(180, parseInt(e.target.value) || 30)))}
+                          className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-center"
+                        />
+                        <span className="text-sm text-gray-600">minutes</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Info OCR */}
+              {!selectedDocForAI.is_text_extracted && !aiGenerating && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+                  <p className="flex items-center">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Le texte sera extrait automatiquement du document (OCR)
+                  </p>
+                </div>
+              )}
+
+              {/* Barre de progression */}
+              {aiGenerating && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {aiTaskStatus === 'extracting_text' ? 'Extraction du texte...' :
+                       aiTaskStatus === 'generating' ? 'Génération en cours...' :
+                       aiTaskStatus === 'processing' ? 'Traitement...' :
+                       'Démarrage...'}
+                    </span>
+                    <span className="text-sm font-bold text-primary-600">{aiTaskProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${aiTaskProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">
+                    {aiTaskMessage || 'Veuillez patienter...'}
+                  </p>
+                  <p className="text-xs text-gray-400 text-center">
+                    Les gros documents peuvent prendre quelques minutes
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  if (!aiGenerating) {
+                    setShowAIModal(false)
+                    setSelectedDocForAI(null)
+                  }
+                }}
+                disabled={aiGenerating}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {aiGenerating ? 'Traitement...' : 'Annuler'}
+              </button>
+              <button
+                onClick={generateFromDocument}
+                disabled={aiGenerating}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-medium flex items-center justify-center disabled:opacity-50"
+              >
+                {aiGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    {aiTaskProgress > 0 ? `${aiTaskProgress}%` : 'Lancement...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Générer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -430,6 +430,235 @@ class SparkNotificationMessages:
 
         return random.choice(messages).format(count=count), title
 
+    # ============================================
+    # ACHIEVEMENTS DÉBLOQUÉS
+    # ============================================
+    ACHIEVEMENT_UNLOCKED: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "Succès débloqué ! 🏆",
+            "message": "Tu as débloqué '{name}' ! +{xp} XP",
+        },
+        "en": {
+            "title": "Achievement unlocked! 🏆",
+            "message": "You unlocked '{name}'! +{xp} XP",
+        },
+        "es": {
+            "title": "¡Logro desbloqueado! 🏆",
+            "message": "¡Desbloqueaste '{name}'! +{xp} XP",
+        },
+    }
+
+    # ============================================
+    # LEVEL UP
+    # ============================================
+    LEVEL_UP: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "Niveau {level} atteint ! 🎉",
+            "message": "Félicitations ! Tu es maintenant niveau {level} !",
+        },
+        "en": {
+            "title": "Level {level} reached! 🎉",
+            "message": "Congratulations! You're now level {level}!",
+        },
+        "es": {
+            "title": "¡Nivel {level} alcanzado! 🎉",
+            "message": "¡Felicidades! ¡Ahora eres nivel {level}!",
+        },
+    }
+
+    # ============================================
+    # DUELS
+    # ============================================
+    DUEL_CHALLENGE: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "Nouveau défi ! ⚔️",
+            "message": "{challenger} vous défie ! Enjeux: {xp} XP",
+        },
+        "en": {
+            "title": "New challenge! ⚔️",
+            "message": "{challenger} challenges you! Stakes: {xp} XP",
+        },
+        "es": {
+            "title": "¡Nuevo desafío! ⚔️",
+            "message": "¡{challenger} te desafía! Apuesta: {xp} XP",
+        },
+    }
+
+    # ============================================
+    # FOCUS ROOMS
+    # ============================================
+    FOCUS_ROOM_INVITE: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "Invitation Focus Room 📚",
+            "message": "{inviter} t'invite à rejoindre la salle '{room}'",
+        },
+        "en": {
+            "title": "Focus Room Invitation 📚",
+            "message": "{inviter} invites you to join the room '{room}'",
+        },
+        "es": {
+            "title": "Invitación Focus Room 📚",
+            "message": "{inviter} te invita a unirte a la sala '{room}'",
+        },
+    }
+
+    FOCUS_ROOM_INVITE_ACCEPTED: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "Invitation acceptée ! 🎉",
+            "message": "{invitee} a rejoint ta salle '{room}'",
+        },
+        "en": {
+            "title": "Invitation accepted! 🎉",
+            "message": "{invitee} joined your room '{room}'",
+        },
+        "es": {
+            "title": "¡Invitación aceptada! 🎉",
+            "message": "{invitee} se unió a tu sala '{room}'",
+        },
+    }
+
+    # ============================================
+    # ÉVÉNEMENTS CALENDRIER
+    # ============================================
+    EVENT_REMINDER: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title_exam": "Examen {time} !",
+            "title_deadline": "Date limite {time} !",
+            "title_default": "{type} {time}",
+            "message_exam": "'{event}' commence le {date} à {hour}",
+            "message_deadline": "'{event}' expire le {date} à {hour}",
+            "message_default": "'{event}' commence à {hour}",
+        },
+        "en": {
+            "title_exam": "Exam {time}!",
+            "title_deadline": "Deadline {time}!",
+            "title_default": "{type} {time}",
+            "message_exam": "'{event}' starts on {date} at {hour}",
+            "message_deadline": "'{event}' expires on {date} at {hour}",
+            "message_default": "'{event}' starts at {hour}",
+        },
+        "es": {
+            "title_exam": "¡Examen {time}!",
+            "title_deadline": "¡Fecha límite {time}!",
+            "title_default": "{type} {time}",
+            "message_exam": "'{event}' comienza el {date} a las {hour}",
+            "message_deadline": "'{event}' expira el {date} a las {hour}",
+            "message_default": "'{event}' comienza a las {hour}",
+        },
+    }
+
+    EVENT_TYPE_LABELS: Dict[str, Dict[str, str]] = {
+        "fr": {"exam": "Examen", "class": "Cours", "deadline": "Date limite", "study": "Session d'étude", "meeting": "Réunion", "other": "Événement"},
+        "en": {"exam": "Exam", "class": "Class", "deadline": "Deadline", "study": "Study session", "meeting": "Meeting", "other": "Event"},
+        "es": {"exam": "Examen", "class": "Clase", "deadline": "Fecha límite", "study": "Sesión de estudio", "meeting": "Reunión", "other": "Evento"},
+    }
+
+    # ============================================
+    # LIGUES - PROMOTIONS / RÉLÉGATIONS
+    # ============================================
+    LEAGUE_TIER_NAMES: Dict[str, Dict[str, str]] = {
+        "fr": {"bronze": "Bronze", "silver": "Argent", "gold": "Or", "diamond": "Diamant", "master": "Maître"},
+        "en": {"bronze": "Bronze", "silver": "Silver", "gold": "Gold", "diamond": "Diamond", "master": "Master"},
+        "es": {"bronze": "Bronce", "silver": "Plata", "gold": "Oro", "diamond": "Diamante", "master": "Maestro"},
+    }
+
+    LEAGUE_PROMOTION: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "🎉 PROMOTION ! Ligue {to_tier} !",
+            "message": "Félicitations ! Tu passes de la ligue {from_tier} à la ligue {to_tier} ! Spark est tellement fier de toi ! 🐿️⭐",
+        },
+        "en": {
+            "title": "🎉 PROMOTION! {to_tier} League!",
+            "message": "Congratulations! You're moving from {from_tier} to {to_tier} league! Spark is so proud of you! 🐿️⭐",
+        },
+        "es": {
+            "title": "🎉 ¡PROMOCIÓN! ¡Liga {to_tier}!",
+            "message": "¡Felicidades! ¡Pasas de la liga {from_tier} a la liga {to_tier}! ¡Spark está muy orgulloso de ti! 🐿️⭐",
+        },
+    }
+
+    LEAGUE_DEMOTION: Dict[str, Dict[str, str]] = {
+        "fr": {
+            "title": "😔 Rétrogradation - Ligue {to_tier}",
+            "message": "Tu redescends en ligue {to_tier}... Mais ne t'inquiète pas ! Spark croit en toi pour remonter ! 🐿️💪",
+        },
+        "en": {
+            "title": "😔 Demotion - {to_tier} League",
+            "message": "You're moving back to {to_tier} league... But don't worry! Spark believes in you to climb back up! 🐿️💪",
+        },
+        "es": {
+            "title": "😔 Descenso - Liga {to_tier}",
+            "message": "Bajas a la liga {to_tier}... ¡Pero no te preocupes! ¡Spark cree en ti para volver a subir! 🐿️💪",
+        },
+    }
+
+    @classmethod
+    def get_achievement_unlocked(cls, lang: str, name: str, xp: int) -> Tuple[str, str]:
+        """Obtient message et titre pour achievement débloqué"""
+        lang = get_spark_language(lang)
+        data = cls.ACHIEVEMENT_UNLOCKED.get(lang, cls.ACHIEVEMENT_UNLOCKED["fr"])
+        return data["message"].format(name=name, xp=xp), data["title"]
+
+    @classmethod
+    def get_level_up(cls, lang: str, level: int) -> Tuple[str, str]:
+        """Obtient message et titre pour level up"""
+        lang = get_spark_language(lang)
+        data = cls.LEVEL_UP.get(lang, cls.LEVEL_UP["fr"])
+        return data["message"].format(level=level), data["title"].format(level=level)
+
+    @classmethod
+    def get_duel_challenge(cls, lang: str, challenger: str, xp: int) -> Tuple[str, str]:
+        """Obtient message et titre pour défi de duel"""
+        lang = get_spark_language(lang)
+        data = cls.DUEL_CHALLENGE.get(lang, cls.DUEL_CHALLENGE["fr"])
+        return data["message"].format(challenger=challenger, xp=xp), data["title"]
+
+    @classmethod
+    def get_focus_room_invite(cls, lang: str, inviter: str, room: str) -> Tuple[str, str]:
+        """Obtient message et titre pour invitation focus room"""
+        lang = get_spark_language(lang)
+        data = cls.FOCUS_ROOM_INVITE.get(lang, cls.FOCUS_ROOM_INVITE["fr"])
+        return data["message"].format(inviter=inviter, room=room), data["title"]
+
+    @classmethod
+    def get_focus_room_invite_accepted(cls, lang: str, invitee: str, room: str) -> Tuple[str, str]:
+        """Obtient message et titre pour invitation acceptée"""
+        lang = get_spark_language(lang)
+        data = cls.FOCUS_ROOM_INVITE_ACCEPTED.get(lang, cls.FOCUS_ROOM_INVITE_ACCEPTED["fr"])
+        return data["message"].format(invitee=invitee, room=room), data["title"]
+
+    @classmethod
+    def get_event_type_label(cls, lang: str, event_type: str) -> str:
+        """Obtient le label traduit pour un type d'événement"""
+        lang = get_spark_language(lang)
+        labels = cls.EVENT_TYPE_LABELS.get(lang, cls.EVENT_TYPE_LABELS["fr"])
+        return labels.get(event_type, labels["other"])
+
+    @classmethod
+    def get_tier_name(cls, lang: str, tier: str) -> str:
+        """Obtient le nom traduit d'une ligue"""
+        lang = get_spark_language(lang)
+        names = cls.LEAGUE_TIER_NAMES.get(lang, cls.LEAGUE_TIER_NAMES["fr"])
+        return names.get(tier, tier.capitalize())
+
+    @classmethod
+    def get_league_promotion(cls, lang: str, from_tier: str, to_tier: str) -> Tuple[str, str]:
+        """Obtient message et titre pour promotion de ligue"""
+        lang = get_spark_language(lang)
+        data = cls.LEAGUE_PROMOTION.get(lang, cls.LEAGUE_PROMOTION["fr"])
+        from_name = cls.get_tier_name(lang, from_tier)
+        to_name = cls.get_tier_name(lang, to_tier)
+        return data["message"].format(from_tier=from_name, to_tier=to_name), data["title"].format(to_tier=to_name)
+
+    @classmethod
+    def get_league_demotion(cls, lang: str, from_tier: str, to_tier: str) -> Tuple[str, str]:
+        """Obtient message et titre pour rétrogradation de ligue"""
+        lang = get_spark_language(lang)
+        data = cls.LEAGUE_DEMOTION.get(lang, cls.LEAGUE_DEMOTION["fr"])
+        from_name = cls.get_tier_name(lang, from_tier)
+        to_name = cls.get_tier_name(lang, to_tier)
+        return data["message"].format(from_tier=from_name, to_tier=to_name), data["title"].format(to_tier=to_name)
+
 
 # Instance globale pour faciliter l'import
 spark_messages = SparkNotificationMessages()

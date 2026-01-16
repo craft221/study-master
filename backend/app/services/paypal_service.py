@@ -125,7 +125,7 @@ class PayPalService:
                 "intent": "CAPTURE",
                 "purchase_units": [{
                     "reference_id": str(transaction.id),
-                    "description": f"Abonnement {plan.name} - StudyMaster",
+                    "description": f"Abonnement {plan.name} - Studera",
                     "amount": {
                         "currency_code": currency,
                         "value": amount_str
@@ -133,7 +133,7 @@ class PayPalService:
                     "custom_id": str(transaction.id)
                 }],
                 "application_context": {
-                    "brand_name": "StudyMaster",
+                    "brand_name": "Studera",
                     "landing_page": "LOGIN",
                     "user_action": "PAY_NOW",
                     "return_url": success_url,
@@ -310,7 +310,7 @@ class PayPalService:
                         "currency_code": currency,
                         "value": amount_str
                     },
-                    "note_to_payer": reason or "Remboursement StudyMaster"
+                    "note_to_payer": reason or "Remboursement Studera"
                 }
 
             async with httpx.AsyncClient() as client:

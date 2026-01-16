@@ -91,6 +91,11 @@ from app.models.exam_mode import (
     TASK_DURATION_ESTIMATES,
     SPACED_REPETITION_INTERVALS
 )
+from app.models.ai_task import (
+    AITask,
+    AITaskType,
+    AITaskStatus
+)
 
 __all__ = [
     # User et sous-modèles
@@ -182,4 +187,8 @@ __all__ = [
     "EXAM_MODE_XP_REWARDS",
     "TASK_DURATION_ESTIMATES",
     "SPACED_REPETITION_INTERVALS",
+    # AI Tasks
+    "AITask",
+    "AITaskType",
+    "AITaskStatus",
 ]

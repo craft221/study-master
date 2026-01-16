@@ -1,5 +1,5 @@
 """
-Service de Cache Redis Asynchrone pour Study Master
+Service de Cache Redis Asynchrone pour Studera
 Cache distribué haute performance avec métriques et observabilité
 """
 

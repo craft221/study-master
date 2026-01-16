@@ -267,7 +267,10 @@ async def register(
         email=register_data.email,
         username=register_data.username,
         hashed_password=get_password_hash(register_data.password),
-        full_name=register_data.full_name
+        full_name=register_data.full_name,
+        university=register_data.university,
+        major=register_data.major,
+        promotion=register_data.promotion
     )
     new_user.is_verified = False  # Explicitement non vérifié
 

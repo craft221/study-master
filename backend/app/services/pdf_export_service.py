@@ -127,7 +127,7 @@ class PDFExportService:
             topMargin=2*cm,
             bottomMargin=2*cm,
             title=note_data.get('title', 'Note'),
-            author=note_data.get('author', 'Study Master')
+            author=note_data.get('author', 'Studera')
         )
         
         # Construire le contenu
@@ -215,7 +215,7 @@ class PDFExportService:
         # Pied de page
         story.append(Spacer(1, 0.5*inch))
         story.append(Paragraph(
-            f"Exporté le {utc_now().strftime('%d/%m/%Y à %H:%M')} | Study Master",
+            f"Exporté le {utc_now().strftime('%d/%m/%Y à %H:%M')} | Studera",
             self.styles['Metadata']
         ))
         

@@ -14,6 +14,37 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
+
+# Initialisation de Sentry pour le monitoring des erreurs
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        release=settings.APP_VERSION,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            SqlalchemyIntegration(),
+            RedisIntegration(),
+            LoggingIntegration(
+                level=logging.INFO,
+                event_level=logging.ERROR
+            ),
+        ],
+        # Ne pas capturer les données sensibles
+        send_default_pii=False,
+        # Filtrer les erreurs 404 et autres erreurs communes
+        before_send=lambda event, hint: event if event.get("level") != "error" or "404" not in str(hint.get("exc_info", "")) else None,
+    )
+    logging.info(f"🔍 Sentry initialized for environment: {settings.ENVIRONMENT}")
+
 from app.services.cache_service import cache_service
 from app.services.search_cache_service import search_cache
 from app.core.exceptions import register_exception_handlers
@@ -79,7 +110,7 @@ from app.api.v1.exam_mode import router as exam_mode_router
 # Create FastAPI app
 app = FastAPI(
     title=settings.APP_NAME,
-    description="API pour Study Master - L'application ultime d'apprentissage avec IA",
+    description="API pour Studera - L'application ultime d'apprentissage avec IA",
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -102,7 +133,7 @@ async def health_check():
     """Health check endpoint basique"""
     return {
         "status": "ok",
-        "message": "Study Master API is running",
+        "message": "Studera API is running",
         "version": settings.APP_VERSION
     }
 
@@ -323,7 +354,7 @@ async def startup_event():
     app_start_time = datetime.now(timezone.utc)
 
     logger.info("=" * 60)
-    logger.info("Study Master API démarrée")
+    logger.info("Studera API démarrée")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info("=" * 60)
@@ -362,7 +393,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Événement à l'arrêt de l'application"""
-    logger.info("Arrêt de Study Master API...")
+    logger.info("Arrêt de Studera API...")
 
     # Fermer la connexion Redis
     await cache_service.close()
@@ -376,7 +407,7 @@ async def shutdown_event():
     logger.info(f"  - Total requests: {request_count}")
     logger.info(f"  - Total errors: {error_count}")
 
-    logger.info("Study Master API arrêtée")
+    logger.info("Studera API arrêtée")
 
 
 # ============================================

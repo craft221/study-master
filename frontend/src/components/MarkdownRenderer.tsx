@@ -84,7 +84,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <img
               src={resolveImageUrl(src)}
               alt={alt || 'Image'}
-              className="max-w-full h-auto rounded-lg my-4 shadow-md"
+              className="max-w-full h-auto rounded-lg my-4 shadow-md block"
+              style={{ maxWidth: '100%', height: 'auto' }}
               loading="lazy"
               {...props}
             />
@@ -95,6 +96,14 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       </ReactMarkdown>
 
       <style jsx global>{`
+        .markdown-content {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        .markdown-content img {
+          max-width: 100% !important;
+          height: auto !important;
+        }
         .markdown-content .katex {
           font-size: 1.1em;
         }
@@ -105,6 +114,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         }
         .markdown-content .katex-display > .katex {
           text-align: center;
+        }
+        .markdown-content pre,
+        .markdown-content code {
+          max-width: 100%;
+          overflow-x: auto;
         }
       `}</style>
     </div>

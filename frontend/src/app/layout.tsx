@@ -10,7 +10,7 @@ import CookieConsent from '@/components/CookieConsent'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Study Master - Votre assistant d\'apprentissage intelligent',
+  title: 'Studera - Votre assistant d\'apprentissage intelligent',
   description: 'Application d\'apprentissage avec IA, flashcards, quiz et gamification',
   keywords: ['étude', 'apprentissage', 'IA', 'flashcards', 'quiz', 'notes'],
   icons: {

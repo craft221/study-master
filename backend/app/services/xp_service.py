@@ -181,6 +181,25 @@ async def award_xp(
         # Non bloquant si la mise à jour weekly_xp échoue
         logger.warning(f"Failed to update weekly XP for leagues: {e}")
 
+    # Envoyer notification de level up
+    if level_up and db is not None:
+        try:
+            from app.services.notification_service import notification_service
+            await notification_service.notify_level_up(
+                db=db,
+                user_id=user.id,
+                new_level=new_level
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send level up notification: {e}")
+
+    # Déclencher la vérification des achievements (tâche async)
+    try:
+        from app.tasks.gamification_tasks import check_achievements
+        check_achievements.delay(user.id)
+    except Exception as e:
+        logger.warning(f"Failed to trigger achievement check: {e}")
+
     # Broadcaster la mise à jour
     try:
         broadcast_func = get_broadcast_func()

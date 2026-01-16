@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Constantes
 BACKUP_CODES_COUNT = 10
 BACKUP_CODE_LENGTH = 8
-ISSUER_NAME = "StudyMaster"
+ISSUER_NAME = "Studera"
 
 
 def generate_mfa_secret() -> str:

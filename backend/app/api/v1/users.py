@@ -13,6 +13,7 @@ from app.models.subject import Subject
 from app.models.note import Note
 from app.models.flashcard import Flashcard
 from app.models.quiz import Quiz, QuizAttempt
+from app.models.focus_room import UserFocusRoomStats, FocusSession
 from app.schemas.user import (
     UserProfileResponse,
     UserStatsResponse,
@@ -186,13 +187,27 @@ async def update_user_profile(
                 detail="Ce nom d'utilisateur est déjà utilisé"
             )
     
+    # Champs qui vont dans profile (UserProfile)
+    profile_fields = {"bio", "country", "city", "avatar_url", "student_id", "phone", "timezone", "university", "major", "promotion"}
+    # Champs qui vont dans preferences (UserPreferences)
+    preferences_fields = {"notifications_enabled", "email_notifications", "language", "theme"}
+    # Champs directement sur User
+    user_fields = {"full_name", "username", "email"}
+
     # Mettre à jour les champs
     for field, value in update_data.items():
-        setattr(current_user, field, value)
-    
+        if field in profile_fields:
+            if current_user.profile:
+                setattr(current_user.profile, field, value)
+        elif field in preferences_fields:
+            if current_user.preferences:
+                setattr(current_user.preferences, field, value)
+        elif field in user_fields:
+            setattr(current_user, field, value)
+
     await db.commit()
     await db.refresh(current_user)
-    
+
     return current_user
 
 
@@ -312,18 +327,41 @@ async def get_user_stats(
     )
     quizzes_taken_this_week = result.scalar()
 
-    # Temps d'étude ce mois-ci (basé sur les sessions d'étude)
-    from app.models.study_session import StudySession
+    # Temps d'étude ce mois-ci (basé sur les sessions d'étude Pomodoro)
+    from app.models.study_session import StudySession, SessionStatus
     month_start = utc_now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     result = await db.execute(
-        select(func.sum(StudySession.duration)).where(
+        select(func.sum(StudySession.actual_duration_minutes)).where(
             and_(
                 StudySession.user_id == current_user.id,
-                StudySession.started_at >= month_start
+                StudySession.started_at >= month_start,
+                StudySession.status == SessionStatus.COMPLETED
             )
         )
     )
-    study_time_this_month = result.scalar() or 0
+    pomodoro_time_this_month = result.scalar() or 0
+
+    # Temps Focus Room ce mois-ci
+    result = await db.execute(
+        select(func.sum(FocusSession.focus_minutes)).where(
+            and_(
+                FocusSession.user_id == current_user.id,
+                FocusSession.started_at >= month_start
+            )
+        )
+    )
+    focus_room_time_this_month = result.scalar() or 0
+
+    # Combiner les deux
+    study_time_this_month = pomodoro_time_this_month + focus_room_time_this_month
+
+    # Récupérer le temps total Focus Room
+    result = await db.execute(
+        select(UserFocusRoomStats.total_focus_room_minutes).where(
+            UserFocusRoomStats.user_id == current_user.id
+        )
+    )
+    focus_room_total_minutes = result.scalar() or 0
 
     # Récupérer le streak directement depuis gamification
     # Le streak est mis à jour lors du login et des actions utilisateur
@@ -365,7 +403,8 @@ async def get_user_stats(
         "total_quizzes": total_quizzes,
         "completed_quiz_attempts": completed_quiz_attempts,
         "average_quiz_score": round(average_quiz_score, 2),
-        "total_study_time_minutes": current_user.total_study_time_minutes or 0,
+        # Combiner temps Pomodoro + Focus Room
+        "total_study_time_minutes": (current_user.total_study_time_minutes or 0) + focus_room_total_minutes,
         "study_time_this_month": study_time_this_month,
         "notes_this_week": notes_this_week,
         "flashcards_reviewed_this_week": flashcards_reviewed_this_week,

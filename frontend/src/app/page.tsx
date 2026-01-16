@@ -60,17 +60,19 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Study Master</span>
+              <span className="text-2xl font-bold text-gray-900">Studera</span>
             </div>
 
             {/* Badge en direct */}
-            <div className="hidden md:flex items-center space-x-2 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <span className="text-green-700 text-sm font-medium">{t('landing.nav.studentsOnline', { count: studentsOnline ?? '--' })}</span>
-            </div>
+            {mounted && (
+              <div className="hidden md:flex items-center space-x-2 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span className="text-green-700 text-sm font-medium">{t('landing.nav.studentsOnline', { count: studentsOnline ?? '--' })}</span>
+              </div>
+            )}
 
             <div className="flex items-center space-x-4">
               <Link
@@ -286,13 +288,15 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               {t('landing.features.focusRooms.description')}
             </p>
-            <div className="flex items-center gap-2 text-blue-600 text-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-              <span>{studentsOnline ?? '--'} {t('landing.features.focusRooms.studying')}</span>
-            </div>
+            {mounted && (
+              <div className="flex items-center gap-2 text-blue-600 text-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <span>{studentsOnline ?? '--'} {t('landing.features.focusRooms.studying')}</span>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -438,7 +442,7 @@ export default function Home() {
                   <th className="text-left py-4 px-4 text-gray-600 font-medium">{t('landing.comparison.feature')}</th>
                   <th className="py-4 px-4 text-center">
                     <div className="bg-primary-600 text-white px-4 py-2 rounded-xl font-bold">
-                      Study Master
+                      Studera
                     </div>
                   </th>
                   <th className="py-4 px-4 text-center text-gray-500">Anki</th>
@@ -606,7 +610,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center space-x-2">
               <BookOpen className="h-6 w-6 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">Study Master</span>
+              <span className="text-xl font-bold text-gray-900">Studera</span>
             </div>
 
             <div className="flex items-center space-x-6 text-gray-500 text-sm">

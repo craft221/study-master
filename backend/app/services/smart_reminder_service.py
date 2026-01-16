@@ -332,7 +332,7 @@ class SmartReminderService:
                 username=user.username,
                 event_title=event.title,
                 event_time=event_start_local,
-                event_url=f"https://studymaster.app/schedule?event={event.id}"
+                event_url=f"https://studera.app/schedule?event={event.id}"
             )
         except Exception as e:
             logger.error(f"Error sending reminder email: {e}")

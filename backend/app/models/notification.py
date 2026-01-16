@@ -39,6 +39,10 @@ class NotificationType(enum.Enum):
     LEVEL_UP = "level_up"
     XP_GAINED = "xp_gained"
 
+    # Ligues
+    LEAGUE_PROMOTION = "league_promotion"
+    LEAGUE_DEMOTION = "league_demotion"
+
     # Social
     GROUP_INVITE = "group_invite"
     GROUP_MESSAGE = "group_message"

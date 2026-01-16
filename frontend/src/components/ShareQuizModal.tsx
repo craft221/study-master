@@ -101,7 +101,7 @@ const ShareQuizModal: React.FC<ShareQuizModalProps> = ({
 
   const handleShare = (platform: string) => {
     const url = getFullShareUrl()
-    const text = `J'ai créé un quiz "${quizTitle}" sur Study Master ! Teste tes connaissances !`
+    const text = `J'ai créé un quiz "${quizTitle}" sur Studera ! Teste tes connaissances !`
 
     trackShare(platform)
 

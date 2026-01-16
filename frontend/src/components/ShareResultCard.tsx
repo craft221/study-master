@@ -164,7 +164,7 @@ const ShareResultCard: React.FC<ShareResultCardProps> = ({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
-                  <span className="text-sm font-medium opacity-90">Study Master</span>
+                  <span className="text-sm font-medium opacity-90">Studera</span>
                 </div>
                 <div className={`p-2 bg-white/20 rounded-lg backdrop-blur-sm`}>
                   <IconComponent className="w-6 h-6" />

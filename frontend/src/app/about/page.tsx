@@ -16,7 +16,7 @@ export default function AboutPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Study Master</span>
+              <span className="text-2xl font-bold text-gray-900">Studera</span>
             </Link>
             <Link
               href="/"
@@ -35,7 +35,7 @@ export default function AboutPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
             {t('about.hero.title')}{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600">
-              Study Master
+              Studera
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8">

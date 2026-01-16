@@ -231,7 +231,7 @@ class ExamModeAIService:
         db: AsyncSession,
         task: StudyTask
     ) -> Optional[Dict[str, str]]:
-        """Récupère le contenu associé à une tâche"""
+        """Récupère le contenu associé à une tâche (notes + documents)"""
 
         # Si la tâche a une note directement associée
         if task.note_id:
@@ -257,21 +257,35 @@ class ExamModeAIService:
                     "content": combined_content
                 }
 
-        # Sinon, récupérer les notes de la session
+        # Sinon, récupérer les notes ET documents de la session
         exam_session = study_day.exam_session
+        content_parts = []
+
+        # Récupérer les notes
         if exam_session.note_ids:
             query = select(Note).where(Note.id.in_(exam_session.note_ids))
             result = await db.execute(query)
             notes = result.scalars().all()
-            if notes:
-                combined_content = "\n\n".join([
-                    f"## {note.title}\n{note.content or ''}"
-                    for note in notes
-                ])
-                return {
-                    "title": exam_session.exam_name,
-                    "content": combined_content
-                }
+            for note in notes:
+                content_parts.append(f"## {note.title}\n{note.content or ''}")
+
+        # Récupérer les documents (utiliser le texte extrait)
+        document_ids = getattr(exam_session, 'document_ids', None) or []
+        if document_ids:
+            from app.models.document import Document
+            doc_query = select(Document).where(Document.id.in_(document_ids))
+            doc_result = await db.execute(doc_query)
+            documents = doc_result.scalars().all()
+            for doc in documents:
+                if doc.extracted_text:
+                    doc_title = doc.title or doc.original_filename
+                    content_parts.append(f"## Document: {doc_title}\n{doc.extracted_text}")
+
+        if content_parts:
+            return {
+                "title": exam_session.exam_name,
+                "content": "\n\n".join(content_parts)
+            }
 
         return None
 
@@ -306,22 +320,37 @@ class ExamModeAIService:
             logger.info(f"Cache HIT for key points analysis (session {session.id})")
             return cached_result
 
-        # Récupérer tout le contenu
-        if not session.note_ids:
-            return {"error": "Aucune note associée à cette session"}
+        # Récupérer tout le contenu (notes + documents)
+        document_ids = getattr(session, 'document_ids', None) or []
+        if not session.note_ids and not document_ids:
+            return {"error": "Aucun contenu associé à cette session"}
 
-        query = select(Note).where(Note.id.in_(session.note_ids))
-        result = await db.execute(query)
-        notes = list(result.scalars().all())
+        content_parts = []
 
-        if not notes:
-            return {"error": "Notes non trouvées"}
+        # Récupérer les notes
+        if session.note_ids:
+            query = select(Note).where(Note.id.in_(session.note_ids))
+            result = await db.execute(query)
+            notes = list(result.scalars().all())
+            for note in notes:
+                content_parts.append(f"=== {note.title} ===\n{note.content or ''}")
+
+        # Récupérer les documents
+        if document_ids:
+            from app.models.document import Document
+            doc_query = select(Document).where(Document.id.in_(document_ids))
+            doc_result = await db.execute(doc_query)
+            documents = doc_result.scalars().all()
+            for doc in documents:
+                if doc.extracted_text:
+                    doc_title = doc.title or doc.original_filename
+                    content_parts.append(f"=== Document: {doc_title} ===\n{doc.extracted_text}")
+
+        if not content_parts:
+            return {"error": "Contenu non trouvé"}
 
         # Combiner le contenu
-        all_content = "\n\n".join([
-            f"=== {note.title} ===\n{note.content or ''}"
-            for note in notes
-        ])
+        all_content = "\n\n".join(content_parts)
 
         # Limiter la taille pour l'API
         max_chars = 15000

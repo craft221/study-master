@@ -18,6 +18,7 @@ from app.models.focus_room import FocusRoom
 from app.services.cache_service import cache_service
 from app.services.xp_service import calculate_level, get_level_progress
 from app.services.leaderboard_service import leaderboard_service
+from app.services.notification_service import notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -503,12 +504,37 @@ def check_achievements(self, user_id: int) -> Dict[str, Any]:
 
                 if new_achievements:
                     gamification.unlocked_achievements = unlocked
+
+                    # Sauvegarder le niveau actuel pour détecter un level up
+                    old_level = gamification.level
+
                     # Recalculer le niveau
                     gamification.level = gamification.calculate_level()
+                    new_level = gamification.level
 
                     # Mettre à jour weekly_xp pour les ligues
                     if total_achievement_xp > 0:
                         await leaderboard_service.add_weekly_xp(db, user_id, total_achievement_xp)
+
+                    await db.commit()
+
+                    # Envoyer les notifications pour chaque achievement débloqué
+                    for achievement in new_achievements:
+                        await notification_service.notify_achievement_unlocked(
+                            db=db,
+                            user_id=user_id,
+                            achievement_name=achievement["name"],
+                            achievement_id=achievement["id"],
+                            xp_reward=achievement["xp_reward"]
+                        )
+
+                    # Envoyer notification de level up si le niveau a changé
+                    if new_level > old_level:
+                        await notification_service.notify_level_up(
+                            db=db,
+                            user_id=user_id,
+                            new_level=new_level
+                        )
 
                     await db.commit()
 
@@ -624,21 +650,35 @@ def award_daily_bonus(self, user_id: int) -> Dict[str, Any]:
                 else:
                     gamification.current_streak = 1
 
+                # Sauvegarder le niveau actuel pour détecter un level up
+                old_level = gamification.level
+
                 # Attribuer le bonus
                 gamification.total_xp += bonus_xp
                 gamification.last_activity_date = utc_now()
                 gamification.level = gamification.calculate_level()
+                new_level = gamification.level
 
                 # Mettre à jour weekly_xp pour les ligues
                 await leaderboard_service.add_weekly_xp(db, user_id, bonus_xp)
 
                 await db.commit()
 
+                # Envoyer notification de level up si le niveau a changé
+                if new_level > old_level:
+                    await notification_service.notify_level_up(
+                        db=db,
+                        user_id=user_id,
+                        new_level=new_level
+                    )
+                    await db.commit()
+
                 return {
                     "bonus_xp": bonus_xp,
                     "current_streak": gamification.current_streak,
                     "total_xp": gamification.total_xp,
-                    "level": gamification.level
+                    "level": gamification.level,
+                    "leveled_up": new_level > old_level
                 }
 
             except Exception as e:
@@ -678,6 +718,7 @@ def process_weekly_league_reset(self) -> Dict[str, Any]:
     - Promeut le top X de chaque ligue
     - Rétrograde le bottom Y de chaque ligue
     - Remet les XP hebdomadaires à zéro
+    - Envoie des notifications aux utilisateurs promus/rétrogradés
 
     Exécuté chaque lundi à 00:00 UTC par Celery Beat
 
@@ -688,6 +729,40 @@ def process_weekly_league_reset(self) -> Dict[str, Any]:
         async with async_session_maker() as db:
             try:
                 result = await leaderboard_service.process_weekly_reset(db)
+
+                # Envoyer les notifications de promotion
+                notifications_sent = 0
+                for promoted in result.get("promoted_users", []):
+                    try:
+                        await notification_service.notify_league_promotion(
+                            db=db,
+                            user_id=promoted["user_id"],
+                            from_tier=promoted["from_tier"],
+                            to_tier=promoted["to_tier"],
+                            final_rank=promoted["rank"],
+                            final_xp=promoted["xp"]
+                        )
+                        notifications_sent += 1
+                    except Exception as e:
+                        logger.warning(f"Erreur notification promotion user {promoted['user_id']}: {e}")
+
+                # Envoyer les notifications de rétrogradation
+                for demoted in result.get("demoted_users", []):
+                    try:
+                        await notification_service.notify_league_demotion(
+                            db=db,
+                            user_id=demoted["user_id"],
+                            from_tier=demoted["from_tier"],
+                            to_tier=demoted["to_tier"],
+                            final_rank=demoted["rank"],
+                            final_xp=demoted["xp"]
+                        )
+                        notifications_sent += 1
+                    except Exception as e:
+                        logger.warning(f"Erreur notification demotion user {demoted['user_id']}: {e}")
+
+                await db.commit()
+                result["notifications_sent"] = notifications_sent
                 return result
             except Exception as e:
                 await db.rollback()

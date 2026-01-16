@@ -326,7 +326,11 @@ async def get_current_user(
 
     result = await db.execute(
         select(User)
-        .options(selectinload(User.subscription))  # Charger la subscription pour subscription_type
+        .options(
+            selectinload(User.subscription),  # Charger la subscription pour subscription_type
+            selectinload(User.gamification),  # Charger gamification pour Spark (level, xp, streak)
+            selectinload(User.stats)          # Charger stats pour le temps d'étude
+        )
         .where(
             User.id == int(user_id),
             User.is_deleted == False  # Ne pas retourner les users supprimés

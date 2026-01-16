@@ -903,7 +903,10 @@ def create_user_with_defaults(
     username: str,
     hashed_password: str,
     full_name: str = None,
-    role: UserRole = UserRole.STUDENT
+    role: UserRole = UserRole.STUDENT,
+    university: str = None,
+    major: str = None,
+    promotion: str = None
 ) -> User:
     """
     Crée un utilisateur avec tous les sous-modèles initialisés
@@ -914,6 +917,9 @@ def create_user_with_defaults(
         hashed_password: Mot de passe hashé
         full_name: Nom complet (optionnel)
         role: Rôle (défaut: STUDENT)
+        university: Université (optionnel)
+        major: Filière (optionnel)
+        promotion: Promotion (optionnel)
 
     Returns:
         User avec tous les sous-modèles
@@ -932,7 +938,12 @@ def create_user_with_defaults(
 
     # Créer les sous-modèles avec valeurs par défaut explicites
     # (SQLAlchemy default ne s'applique qu'au commit en DB)
-    user.profile = UserProfile(timezone="UTC")
+    user.profile = UserProfile(
+        timezone="UTC",
+        university=university,
+        major=major,
+        promotion=promotion
+    )
     user.preferences = UserPreferences(
         language="fr",
         theme="light",

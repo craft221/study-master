@@ -149,7 +149,7 @@ async def upload_document(
         select(func.coalesce(func.sum(Document.file_size), 0))
         .where(Document.user_id == current_user.id)
     )
-    current_storage_bytes = result.scalar() or 0
+    current_storage_bytes = float(result.scalar() or 0)
     current_storage_mb = current_storage_bytes / (1024 * 1024)
 
     # Récupérer la limite de stockage de l'abonnement

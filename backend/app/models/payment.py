@@ -353,7 +353,7 @@ INITIAL_PLANS = [
     {
         "code": "free",
         "name": "Gratuit",
-        "description": "Parfait pour découvrir StudyMaster",
+        "description": "Parfait pour découvrir Studera",
         "price_eur_cents": 0,
         "price_usd_cents": 0,
         "price_xof": 0,

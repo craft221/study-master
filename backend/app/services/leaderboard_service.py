@@ -156,6 +156,14 @@ class LeaderboardService:
             "highest_tier": user_league.highest_tier_reached,
         }
 
+    def _get_tier_rank(self, tier_value: str) -> int:
+        """Retourne le rang numérique d'une ligue (pour comparaison)"""
+        tier_order = ["bronze", "silver", "gold", "diamond", "master"]
+        try:
+            return tier_order.index(tier_value)
+        except ValueError:
+            return 0
+
     async def process_weekly_reset(self, db: AsyncSession) -> Dict[str, Any]:
         """
         Traite le reset hebdomadaire des ligues.
@@ -168,20 +176,24 @@ class LeaderboardService:
 
         promotions = 0
         demotions = 0
+        promoted_users = []
+        demoted_users = []
 
         for tier in LeagueTier:
             tier_config = LEAGUE_CONFIG[tier]
+            tier_value = tier.value  # String pour comparaison DB
 
             # Récupérer tous les utilisateurs de cette ligue ordonnés par XP
             query = (
                 select(UserLeague)
-                .where(UserLeague.current_tier == tier)
+                .where(UserLeague.current_tier == tier_value)
                 .order_by(desc(UserLeague.weekly_xp))
             )
             result = await db.execute(query)
             users = result.scalars().all()
 
             total_users = len(users)
+            logger.info(f"Processing {tier_value} league: {total_users} users")
 
             for rank, user_league in enumerate(users, 1):
                 # Sauvegarder dans l'historique du leaderboard
@@ -192,19 +204,21 @@ class LeaderboardService:
                     period_key=period_key,
                     score=user_league.weekly_xp,
                     rank=rank,
-                    league_tier=tier
+                    league_tier=tier_value
                 )
                 db.add(entry)
 
                 # Promotion (top X, sauf si déjà Master)
-                if rank <= tier_config["promotion_slots"] and tier != LeagueTier.MASTER:
+                if rank <= tier_config["promotion_slots"] and tier != LeagueTier.MASTER and user_league.weekly_xp > 0:
                     new_tier = user_league.next_tier
                     if new_tier:
+                        new_tier_value = new_tier.value
+
                         # Enregistrer l'historique
                         history = LeagueHistory(
                             user_id=user_league.user_id,
-                            from_tier=tier,
-                            to_tier=new_tier,
+                            from_tier=tier_value,
+                            to_tier=new_tier_value,
                             period_key=period_key,
                             final_rank=rank,
                             final_xp=user_league.weekly_xp,
@@ -213,39 +227,65 @@ class LeaderboardService:
                         db.add(history)
 
                         # Mettre à jour l'utilisateur
-                        user_league.current_tier = new_tier
+                        user_league.current_tier = new_tier_value
                         user_league.total_promotions += 1
                         user_league.last_promotion_at = now
                         user_league.weeks_in_current_tier = 0
 
-                        if new_tier.value > user_league.highest_tier_reached.value:
-                            user_league.highest_tier_reached = new_tier
+                        # Comparer les rangs numériques des ligues
+                        if self._get_tier_rank(new_tier_value) > self._get_tier_rank(user_league.highest_tier_reached):
+                            user_league.highest_tier_reached = new_tier_value
 
                         promotions += 1
+                        promoted_users.append({
+                            "user_id": user_league.user_id,
+                            "from_tier": tier_value,
+                            "to_tier": new_tier_value,
+                            "rank": rank,
+                            "xp": user_league.weekly_xp
+                        })
+
+                        logger.info(f"User {user_league.user_id} promoted from {tier_value} to {new_tier_value} (rank {rank}, {user_league.weekly_xp} XP)")
 
                 # Rétrogradation (bottom Y, sauf si Bronze)
-                elif rank > (total_users - tier_config["demotion_slots"]) and tier != LeagueTier.BRONZE:
-                    new_tier = user_league.previous_tier
-                    if new_tier:
-                        history = LeagueHistory(
-                            user_id=user_league.user_id,
-                            from_tier=tier,
-                            to_tier=new_tier,
-                            period_key=period_key,
-                            final_rank=rank,
-                            final_xp=user_league.weekly_xp,
-                            is_promotion=False
-                        )
-                        db.add(history)
+                elif tier != LeagueTier.BRONZE and tier_config["demotion_slots"] > 0 and total_users > 0:
+                    demotion_threshold = total_users - tier_config["demotion_slots"]
+                    if rank > demotion_threshold:
+                        new_tier = user_league.previous_tier
+                        if new_tier:
+                            new_tier_value = new_tier.value
 
-                        user_league.current_tier = new_tier
-                        user_league.total_demotions += 1
-                        user_league.last_demotion_at = now
-                        user_league.weeks_in_current_tier = 0
+                            history = LeagueHistory(
+                                user_id=user_league.user_id,
+                                from_tier=tier_value,
+                                to_tier=new_tier_value,
+                                period_key=period_key,
+                                final_rank=rank,
+                                final_xp=user_league.weekly_xp,
+                                is_promotion=False
+                            )
+                            db.add(history)
 
-                        demotions += 1
+                            user_league.current_tier = new_tier_value
+                            user_league.total_demotions += 1
+                            user_league.last_demotion_at = now
+                            user_league.weeks_in_current_tier = 0
+
+                            demotions += 1
+                            demoted_users.append({
+                                "user_id": user_league.user_id,
+                                "from_tier": tier_value,
+                                "to_tier": new_tier_value,
+                                "rank": rank,
+                                "xp": user_league.weekly_xp
+                            })
+
+                            logger.info(f"User {user_league.user_id} demoted from {tier_value} to {new_tier_value} (rank {rank}/{total_users})")
+                    else:
+                        # Reste dans la même ligue
+                        user_league.weeks_in_current_tier += 1
                 else:
-                    # Reste dans la même ligue
+                    # Reste dans la même ligue (Bronze ou pas de mouvement)
                     user_league.weeks_in_current_tier += 1
 
                 # Reset des XP hebdomadaires
@@ -253,13 +293,15 @@ class LeaderboardService:
 
         await db.commit()
 
-        logger.info(f"Weekly league reset: {promotions} promotions, {demotions} demotions")
+        logger.info(f"Weekly league reset completed: {promotions} promotions, {demotions} demotions")
 
         return {
             "success": True,
             "period_key": period_key,
             "promotions": promotions,
-            "demotions": demotions
+            "demotions": demotions,
+            "promoted_users": promoted_users,
+            "demoted_users": demoted_users
         }
 
     # =========================================================================

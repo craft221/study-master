@@ -1,0 +1,55 @@
+# ===========================================
+# STUDERA.APP - Caddy Reverse Proxy
+# ===========================================
+# Caddy gere automatiquement les certificats SSL (HTTPS)
+#
+# DNS requis chez ton registrar:
+#   A    @      -> IP_SERVEUR
+#   A    www    -> IP_SERVEUR
+#   A    api    -> IP_SERVEUR
+# ===========================================
+
+# Site principal (Frontend Next.js)
+studera.app {
+    # Rediriger vers le frontend
+    reverse_proxy frontend:3000
+
+    # Compression pour performance
+    encode gzip
+
+    # Headers de securite
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
+
+# Redirection www vers non-www
+www.studera.app {
+    redir https://studera.app{uri} permanent
+}
+
+# API Backend (FastAPI)
+api.studera.app {
+    reverse_proxy backend:8000
+
+    # Compression
+    encode gzip
+
+    # Headers CORS sont geres par FastAPI
+    # Mais on ajoute des headers de securite
+    header {
+        X-Content-Type-Options nosniff
+    }
+}
+
+# Flower (Monitoring Celery) - Protege par auth basique
+# Login: admin / Password: StuderaFlower2024!
+# Pour changer le mot de passe: docker run caddy caddy hash-password --plaintext 'NOUVEAU_MDP'
+flower.studera.app {
+    basicauth {
+        admin $2a$14$rMCwpPGJxGv9O7rjCNxnYOVPHIFBi.Rk8RWiVvPNQsJxNmhQXKV5S
+    }
+    reverse_proxy flower:5555
+}

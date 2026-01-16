@@ -1,5 +1,5 @@
 """
-Service de Notifications - Study Master
+Service de Notifications - Studera
 Gère les notifications in-app, push et email
 """
 
@@ -21,12 +21,26 @@ from app.models.notification import (
 )
 from app.models.user import User
 from app.services.cache_service import cache_service, CachePrefix, CacheTTL
+from app.core.spark_translations import spark_messages, get_spark_language
 
 logger = logging.getLogger(__name__)
 
 
 class NotificationService:
     """Service centralisé pour les notifications"""
+
+    # =========================================================================
+    # Helpers
+    # =========================================================================
+
+    async def _get_user(self, db: AsyncSession, user_id: int) -> Optional[User]:
+        """Récupère un utilisateur par son ID"""
+        try:
+            from sqlalchemy import select
+            result = await db.execute(select(User).where(User.id == user_id))
+            return result.scalar_one_or_none()
+        except Exception:
+            return None
 
     # =========================================================================
     # Création de notifications
@@ -144,12 +158,17 @@ class NotificationService:
         duel_id: int
     ):
         """Notification de défi reçu"""
+        # Récupérer la langue de l'utilisateur
+        user = await self._get_user(db, opponent_id)
+        lang = get_spark_language(user.language if user else "fr")
+        message, title = spark_messages.get_duel_challenge(lang, challenger_username, stakes_xp)
+
         return await self.create_notification(
             db=db,
             user_id=opponent_id,
             notification_type=NotificationType.DUEL_CHALLENGE,
-            title="Nouveau défi ! ⚔️",
-            message=f"{challenger_username} vous défie ! Enjeux: {stakes_xp} XP",
+            title=title,
+            message=message,
             priority=NotificationPriority.HIGH,
             action_url=f"/duels/{duel_id}",
             data={"duel_id": duel_id, "challenger": challenger_username, "stakes": stakes_xp}
@@ -241,12 +260,17 @@ class NotificationService:
         xp_reward: int
     ):
         """Notification de succès débloqué"""
+        # Récupérer la langue de l'utilisateur
+        user = await self._get_user(db, user_id)
+        lang = get_spark_language(user.language if user else "fr")
+        message, title = spark_messages.get_achievement_unlocked(lang, achievement_name, xp_reward)
+
         return await self.create_notification(
             db=db,
             user_id=user_id,
             notification_type=NotificationType.ACHIEVEMENT_UNLOCKED,
-            title="Succès débloqué ! 🏆",
-            message=f"Tu as débloqué '{achievement_name}' ! +{xp_reward} XP",
+            title=title,
+            message=message,
             priority=NotificationPriority.HIGH,
             action_url=f"/achievements#{achievement_id}",
             data={"achievement_id": achievement_id, "xp_reward": xp_reward}
@@ -259,12 +283,17 @@ class NotificationService:
         new_level: int
     ):
         """Notification de niveau supérieur"""
+        # Récupérer la langue de l'utilisateur
+        user = await self._get_user(db, user_id)
+        lang = get_spark_language(user.language if user else "fr")
+        message, title = spark_messages.get_level_up(lang, new_level)
+
         return await self.create_notification(
             db=db,
             user_id=user_id,
             notification_type=NotificationType.LEVEL_UP,
-            title=f"Niveau {new_level} atteint ! 🎉",
-            message=f"Félicitations ! Tu es maintenant niveau {new_level} !",
+            title=title,
+            message=message,
             priority=NotificationPriority.HIGH,
             action_url="/profile",
             data={"new_level": new_level}
@@ -281,7 +310,11 @@ class NotificationService:
         message: Optional[str] = None
     ):
         """Notification d'invitation à une Focus Room"""
-        notif_message = f"{inviter_username} t'invite à rejoindre la salle '{room_name}'"
+        # Récupérer la langue de l'utilisateur
+        user = await self._get_user(db, invitee_id)
+        lang = get_spark_language(user.language if user else "fr")
+        notif_message, title = spark_messages.get_focus_room_invite(lang, inviter_username, room_name)
+
         if message:
             notif_message += f" - \"{message}\""
 
@@ -289,7 +322,7 @@ class NotificationService:
             db=db,
             user_id=invitee_id,
             notification_type=NotificationType.FOCUS_ROOM_INVITE,
-            title="Invitation Focus Room 📚",
+            title=title,
             message=notif_message,
             priority=NotificationPriority.HIGH,
             action_url=f"/focus-rooms/{room_id}",
@@ -310,18 +343,83 @@ class NotificationService:
         room_id: int
     ):
         """Notification quand une invitation Focus Room est acceptée"""
+        # Récupérer la langue de l'utilisateur
+        user = await self._get_user(db, inviter_id)
+        lang = get_spark_language(user.language if user else "fr")
+        notif_message, title = spark_messages.get_focus_room_invite_accepted(lang, invitee_username, room_name)
+
         return await self.create_notification(
             db=db,
             user_id=inviter_id,
             notification_type=NotificationType.FOCUS_ROOM_INVITE_ACCEPTED,
-            title="Invitation acceptée ! 🎉",
-            message=f"{invitee_username} a rejoint ta salle '{room_name}'",
+            title=title,
+            message=notif_message,
             priority=NotificationPriority.NORMAL,
             action_url=f"/focus-rooms/{room_id}",
             data={
                 "room_id": room_id,
                 "room_name": room_name,
                 "invitee": invitee_username
+            }
+        )
+
+    async def notify_league_promotion(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        from_tier: str,
+        to_tier: str,
+        final_rank: int,
+        final_xp: int
+    ):
+        """Notification quand un utilisateur monte de ligue"""
+        user = await self._get_user(db, user_id)
+        lang = get_spark_language(user.language if user else "fr")
+        message, title = spark_messages.get_league_promotion(lang, from_tier, to_tier)
+
+        return await self.create_notification(
+            db=db,
+            user_id=user_id,
+            notification_type=NotificationType.LEAGUE_PROMOTION,
+            title=title,
+            message=message,
+            priority=NotificationPriority.HIGH,
+            action_url="/leaderboard",
+            data={
+                "from_tier": from_tier,
+                "to_tier": to_tier,
+                "final_rank": final_rank,
+                "final_xp": final_xp
+            }
+        )
+
+    async def notify_league_demotion(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        from_tier: str,
+        to_tier: str,
+        final_rank: int,
+        final_xp: int
+    ):
+        """Notification quand un utilisateur descend de ligue"""
+        user = await self._get_user(db, user_id)
+        lang = get_spark_language(user.language if user else "fr")
+        message, title = spark_messages.get_league_demotion(lang, from_tier, to_tier)
+
+        return await self.create_notification(
+            db=db,
+            user_id=user_id,
+            notification_type=NotificationType.LEAGUE_DEMOTION,
+            title=title,
+            message=message,
+            priority=NotificationPriority.NORMAL,
+            action_url="/leaderboard",
+            data={
+                "from_tier": from_tier,
+                "to_tier": to_tier,
+                "final_rank": final_rank,
+                "final_xp": final_xp
             }
         )
 
@@ -686,7 +784,7 @@ class NotificationService:
                 </div>
                 <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px;">
                     <p>{notification.message}</p>
-                    <a href="https://studymaster.app/notifications"
+                    <a href="https://studera.app/notifications"
                        style="display: inline-block; background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                         Voir la notification
                     </a>
@@ -697,7 +795,7 @@ class NotificationService:
             # Envoyer l'email
             success = await email_service.send_async(
                 to_email=user.email,
-                subject=f"Study Master: {notification.title}",
+                subject=f"Studera: {notification.title}",
                 html_content=html_content,
                 text_content=f"{notification.title}\n\n{notification.message}"
             )

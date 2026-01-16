@@ -44,7 +44,7 @@ export default function ContactPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">Study Master</span>
+              <span className="text-2xl font-bold text-gray-900">Studera</span>
             </Link>
             <Link
               href="/"
@@ -85,10 +85,10 @@ export default function ContactPage() {
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.info.email.title')}</h3>
                 <p className="text-gray-600 mb-2">{t('contact.info.email.description')}</p>
                 <a
-                  href="mailto:contact@studymaster.app"
+                  href="mailto:contact@studera.app"
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  contact@studymaster.app
+                  contact@studera.app
                 </a>
               </div>
 
@@ -99,10 +99,10 @@ export default function ContactPage() {
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{t('contact.info.support.title')}</h3>
                 <p className="text-gray-600 mb-2">{t('contact.info.support.description')}</p>
                 <a
-                  href="mailto:support@studymaster.app"
+                  href="mailto:support@studera.app"
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  support@studymaster.app
+                  support@studera.app
                 </a>
               </div>
 
