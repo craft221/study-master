@@ -38,7 +38,7 @@ router = APIRouter()
 # Helper Functions
 # ============================================================================
 
-def serialize_duel(duel: Duel) -> dict:
+def serialize_duel(duel: Duel, challenger_has_played: bool = None, opponent_has_played: bool = None) -> dict:
     """Sérialise un duel pour la réponse API"""
     result = {
         "id": duel.id,
@@ -56,6 +56,9 @@ def serialize_duel(duel: Duel) -> dict:
         "ended_at": duel.ended_at.isoformat() if duel.ended_at else None,
         "created_at": duel.created_at.isoformat() if duel.created_at else None,
         "updated_at": duel.updated_at.isoformat() if duel.updated_at else None,
+        # Nouveaux champs pour savoir qui a joué
+        "challenger_has_played": challenger_has_played,
+        "opponent_has_played": opponent_has_played,
     }
 
     # Ajouter les relations si chargées
@@ -82,6 +85,44 @@ def serialize_duel(duel: Duel) -> dict:
         }
 
     return result
+
+
+async def serialize_duel_with_progress(duel: Duel, db: AsyncSession) -> dict:
+    """Sérialise un duel avec les infos de progression (qui a joué)"""
+    challenger_has_played = False
+    opponent_has_played = False
+
+    # Vérifier si les joueurs ont joué (seulement pour duels actifs avec quiz)
+    if duel.quiz_id and duel.status in [DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]:
+        duel_start = duel.started_at or duel.created_at
+
+        # Vérifier si le challenger a joué
+        challenger_attempt = await db.execute(
+            select(QuizAttempt.id).where(
+                and_(
+                    QuizAttempt.quiz_id == duel.quiz_id,
+                    QuizAttempt.user_id == duel.challenger_id,
+                    QuizAttempt.time_started >= duel_start,
+                    QuizAttempt.completed_at.isnot(None)
+                )
+            ).limit(1)
+        )
+        challenger_has_played = challenger_attempt.scalar() is not None
+
+        # Vérifier si l'adversaire a joué
+        opponent_attempt = await db.execute(
+            select(QuizAttempt.id).where(
+                and_(
+                    QuizAttempt.quiz_id == duel.quiz_id,
+                    QuizAttempt.user_id == duel.opponent_id,
+                    QuizAttempt.time_started >= duel_start,
+                    QuizAttempt.completed_at.isnot(None)
+                )
+            ).limit(1)
+        )
+        opponent_has_played = opponent_attempt.scalar() is not None
+
+    return serialize_duel(duel, challenger_has_played, opponent_has_played)
 
 
 async def invalidate_duel_cache(user_ids: List[int]):
@@ -325,15 +366,20 @@ async def get_duels(
     result = await db.execute(query)
     duels = result.scalars().all()
 
+    # Sérialiser avec les infos de progression (qui a joué)
+    serialized_duels = []
+    for d in duels:
+        serialized_duels.append(await serialize_duel_with_progress(d, db))
+
     response_data = {
-        "duels": [serialize_duel(d) for d in duels],
+        "duels": serialized_duels,
         "total": total or 0,
         "page": page,
         "page_size": page_size
     }
 
-    # Mettre en cache (2 minutes)
-    await cache_service.set(cache_key, response_data, ttl=CacheTTL.SHORT)
+    # Ne pas mettre en cache car les infos de progression changent fréquemment
+    # await cache_service.set(cache_key, response_data, ttl=CacheTTL.SHORT)
 
     return response_data
 

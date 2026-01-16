@@ -1012,6 +1012,16 @@ async def submit_quiz_attempt(
             challenger_attempt = challenger_result.scalar_one_or_none()
             opponent_attempt = opponent_result.scalar_one_or_none()
 
+            # Mettre à jour le score individuel dès qu'un joueur termine
+            # (même si l'adversaire n'a pas encore joué)
+            if challenger_attempt and duel.challenger_score is None:
+                duel.challenger_score = int(challenger_attempt.score)
+                logger.info(f"Duel {duel.id}: challenger score updated to {duel.challenger_score}")
+
+            if opponent_attempt and duel.opponent_score is None:
+                duel.opponent_score = int(opponent_attempt.score)
+                logger.info(f"Duel {duel.id}: opponent score updated to {duel.opponent_score}")
+
             # Si les deux ont terminé, auto-compléter le duel
             if challenger_attempt and opponent_attempt:
                 logger.info(f"Auto-completing duel {duel.id}: both players have finished")

@@ -699,6 +699,20 @@ export default function DuelsPage() {
               const isChallenger = duel.challenger_id === currentUserId
               const opponent = isChallenger ? duel.opponent : duel.challenger
 
+              // Vérifier si l'utilisateur actuel a joué
+              const currentUserHasPlayed = isChallenger
+                ? duel.challenger_has_played
+                : duel.opponent_has_played
+
+              // Vérifier si l'adversaire a joué
+              const opponentHasPlayed = isChallenger
+                ? duel.opponent_has_played
+                : duel.challenger_has_played
+
+              // Récupérer les scores
+              const myScore = isChallenger ? duel.challenger_score : duel.opponent_score
+              const opponentScore = isChallenger ? duel.opponent_score : duel.challenger_score
+
               return (
                 <Card key={duel.id}>
                   <CardContent className="p-6">
@@ -718,14 +732,49 @@ export default function DuelsPage() {
                             <Badge variant="outline">Niveau {opponent?.level || '?'}</Badge>
                             {getStatusBadge(duel.status)}
                           </div>
+
+                          {/* Afficher les scores si l'utilisateur a joué */}
+                          {currentUserHasPlayed && (
+                            <div className="flex gap-4 mt-3 p-3 bg-muted/50 rounded-lg">
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Votre score:</span>{' '}
+                                <span className="font-bold text-primary">{myScore ?? '?'}</span>
+                              </div>
+                              {opponentHasPlayed ? (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Score adverse:</span>{' '}
+                                  <span className="font-bold">{opponentScore ?? '?'}</span>
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {opponent?.username || 'L\'adversaire'} n'a pas encore joué
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {duel.quiz && (
-                        <Button onClick={() => startDuel(duel.quiz!.id, duel.id)}>
-                          <Play className="h-4 w-4 mr-2" />
-                          Commencer
-                        </Button>
+                        <div className="flex flex-col items-end gap-2">
+                          {!currentUserHasPlayed ? (
+                            <Button onClick={() => startDuel(duel.quiz!.id, duel.id)}>
+                              <Play className="h-4 w-4 mr-2" />
+                              Commencer
+                            </Button>
+                          ) : (
+                            <Badge variant="secondary" className="text-green-600 bg-green-100 dark:bg-green-900/30">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Vous avez joué
+                            </Badge>
+                          )}
+                          {currentUserHasPlayed && !opponentHasPlayed && (
+                            <p className="text-xs text-muted-foreground">
+                              En attente de l'adversaire...
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </CardContent>

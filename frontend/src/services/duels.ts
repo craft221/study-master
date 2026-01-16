@@ -36,6 +36,9 @@ export interface Duel {
   ended_at: string | null
   created_at: string
   updated_at: string | null
+  // Infos de progression
+  challenger_has_played: boolean | null
+  opponent_has_played: boolean | null
   // Relations
   challenger?: UserBrief
   opponent?: UserBrief
