@@ -91,9 +91,16 @@ async def upload_pdf_and_extract_text(
 
         db.add(new_note)
 
-        # XP bonus - utiliser les objets sous-jacents
-        if current_user.gamification:
-            current_user.gamification.total_xp += 15
+        # Attribuer XP via le service centralisé (gère level up + notifications)
+        from app.services.xp_service import award_xp
+        await award_xp(
+            user=current_user,
+            amount=15,
+            reason="Import PDF avec OCR",
+            event_type="pdf_imported",
+            db=db
+        )
+
         if current_user.stats:
             current_user.stats.total_notes_created += 1
 

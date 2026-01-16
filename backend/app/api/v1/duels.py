@@ -948,9 +948,14 @@ async def complete_duel(
             detail="Scores requis (pas de quiz associé)"
         )
 
-    # Déterminer le gagnant
-    challenger = await db.get(User, duel.challenger_id)
-    opponent = await db.get(User, duel.opponent_id)
+    # Déterminer le gagnant (avec chargement de gamification pour XP)
+    from sqlalchemy.orm import selectinload
+    challenger_query = select(User).options(selectinload(User.gamification)).where(User.id == duel.challenger_id)
+    opponent_query = select(User).options(selectinload(User.gamification)).where(User.id == duel.opponent_id)
+    challenger_result = await db.execute(challenger_query)
+    opponent_result = await db.execute(opponent_query)
+    challenger = challenger_result.scalar_one()
+    opponent = opponent_result.scalar_one()
 
     winner = None
     loser = None
@@ -971,9 +976,15 @@ async def complete_duel(
 
     # Transfert XP (CORRIGÉ: perdant perd 50%, pas 100%)
     if winner and loser:
-        # Gagnant gagne l'enjeu complet
-        winner.total_xp += duel.stakes_xp
-        winner.level = (winner.total_xp // 100) + 1
+        # Attribuer XP au gagnant via le service centralisé (gère level up + notifications)
+        from app.services.xp_service import award_xp
+        await award_xp(
+            user=winner,
+            amount=duel.stakes_xp,
+            reason=f"Victoire en duel contre {loser.username}",
+            event_type="duel_won",
+            db=db
+        )
 
         # Mettre à jour la quête WIN_DUEL pour le gagnant
         await daily_quest_service.update_quest_progress(
@@ -983,18 +994,13 @@ async def complete_duel(
             progress=1
         )
 
-        # Mettre à jour la quête EARN_XP pour le gagnant
-        await daily_quest_service.update_quest_progress(
-            db=db,
-            user_id=winner.id,
-            quest_type=QuestType.EARN_XP,
-            progress=duel.stakes_xp
-        )
-
-        # Perdant perd la MOITIÉ de l'enjeu (50%)
+        # Perdant perd la MOITIÉ de l'enjeu (50%) - pas de notification pour la perte
         xp_loss = duel.stakes_xp // 2
-        loser.total_xp = max(0, loser.total_xp - xp_loss)
-        loser.level = (loser.total_xp // 100) + 1
+        if loser.gamification:
+            loser.gamification.total_xp = max(0, (loser.gamification.total_xp or 0) - xp_loss)
+            # Recalculer le niveau après perte d'XP
+            from app.services.xp_service import calculate_level
+            loser.gamification.level = calculate_level(loser.gamification.total_xp)
 
         logger.info(
             f"Duel {duel_id} terminé: {winner.username} gagne +{duel.stakes_xp}XP, "

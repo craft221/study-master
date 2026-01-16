@@ -474,20 +474,29 @@ class DailyQuestService:
         quest.status = QuestStatus.CLAIMED
         quest.claimed_at = utc_now()
 
-        # Ajouter les XP à l'utilisateur via gamification
+        # Ajouter les XP à l'utilisateur via le service centralisé
         user_query = select(User).options(
             selectinload(User.gamification)
         ).where(User.id == user_id)
         user_result = await db.execute(user_query)
         user = user_result.scalar_one()
 
-        if user.gamification:
-            user.gamification.total_xp = (user.gamification.total_xp or 0) + quest.xp_reward
-        else:
-            # Créer gamification si n'existe pas
+        # Créer gamification si n'existe pas
+        if not user.gamification:
             from app.models.gamification import UserGamification
-            user.gamification = UserGamification(user_id=user_id, total_xp=quest.xp_reward)
+            user.gamification = UserGamification(user_id=user_id, total_xp=0)
             db.add(user.gamification)
+            await db.flush()
+
+        # Attribuer XP via le service centralisé (gère level up + notifications)
+        from app.services.xp_service import award_xp
+        await award_xp(
+            user=user,
+            amount=quest.xp_reward,
+            reason="Quête quotidienne complétée",
+            event_type="quest_claimed",
+            db=db
+        )
 
         await db.commit()
 
@@ -533,19 +542,29 @@ class DailyQuestService:
             if quest_streak.last_perfect_day.date() == today.date():
                 raise ValueError("Bonus déjà réclamé aujourd'hui")
 
-        # Ajouter XP bonus via gamification
+        # Ajouter XP bonus via le service centralisé
         user_query = select(User).options(
             selectinload(User.gamification)
         ).where(User.id == user_id)
         user_result = await db.execute(user_query)
         user = user_result.scalar_one()
 
-        if user.gamification:
-            user.gamification.total_xp = (user.gamification.total_xp or 0) + DAILY_BONUS_XP
-        else:
+        # Créer gamification si n'existe pas
+        if not user.gamification:
             from app.models.gamification import UserGamification
-            user.gamification = UserGamification(user_id=user_id, total_xp=DAILY_BONUS_XP)
+            user.gamification = UserGamification(user_id=user_id, total_xp=0)
             db.add(user.gamification)
+            await db.flush()
+
+        # Attribuer XP via le service centralisé (gère level up + notifications)
+        from app.services.xp_service import award_xp
+        await award_xp(
+            user=user,
+            amount=DAILY_BONUS_XP,
+            reason="Bonus quotidien (3/3 quêtes)",
+            event_type="daily_bonus_claimed",
+            db=db
+        )
 
         # Créer le coffre mystère
         chest = MysteryChest(
@@ -630,7 +649,7 @@ class DailyQuestService:
         chest.is_opened = True
         chest.opened_at = utc_now()
 
-        # Appliquer les récompenses via gamification
+        # Appliquer les récompenses via le service centralisé
         user_query = select(User).options(
             selectinload(User.gamification)
         ).where(User.id == user_id)
@@ -638,12 +657,22 @@ class DailyQuestService:
         user = user_result.scalar_one()
 
         if "xp" in contents:
-            if user.gamification:
-                user.gamification.total_xp = (user.gamification.total_xp or 0) + contents["xp"]
-            else:
+            # Créer gamification si n'existe pas
+            if not user.gamification:
                 from app.models.gamification import UserGamification
-                user.gamification = UserGamification(user_id=user_id, total_xp=contents["xp"])
+                user.gamification = UserGamification(user_id=user_id, total_xp=0)
                 db.add(user.gamification)
+                await db.flush()
+
+            # Attribuer XP via le service centralisé (gère level up + notifications)
+            from app.services.xp_service import award_xp
+            await award_xp(
+                user=user,
+                amount=contents["xp"],
+                reason=f"Coffre mystère ({chest.rarity})",
+                event_type="chest_opened",
+                db=db
+            )
 
         # TODO: Si accessoire, l'ajouter à l'utilisateur
 

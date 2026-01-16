@@ -277,8 +277,16 @@ async def add_card_to_deck(
     if subject:
         subject.total_flashcards_count += 1
 
-    if current_user.gamification:
-        current_user.gamification.total_xp += 5
+    # Attribuer XP via le service centralisé (gère level up + notifications)
+    from app.services.xp_service import award_xp
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Création de flashcard",
+        event_type="flashcard_created",
+        db=db
+    )
+
     if current_user.stats:
         current_user.stats.total_flashcards_created += 1
 
@@ -537,8 +545,16 @@ async def review_flashcard(
     difficulty_bonus = int(card.fsrs_difficulty / 3) if quality >= 2 else 0
     xp_reward = base_xp + difficulty_bonus
 
-    if current_user.gamification:
-        current_user.gamification.total_xp += xp_reward
+    # Attribuer XP via le service centralisé (gère level up + notifications)
+    from app.services.xp_service import award_xp
+    await award_xp(
+        user=current_user,
+        amount=xp_reward,
+        reason="Révision de flashcard",
+        event_type="flashcard_reviewed",
+        db=db
+    )
+
     if current_user.stats:
         current_user.stats.total_flashcards_reviewed += 1
 
@@ -645,8 +661,17 @@ async def create_flashcard(
 
     # Mettre à jour les statistiques utilisateur et matière
     subject.total_flashcards_count += 1
-    if current_user.gamification:
-        current_user.gamification.total_xp += 5
+
+    # Attribuer XP via le service centralisé (gère level up + notifications)
+    from app.services.xp_service import award_xp
+    await award_xp(
+        user=current_user,
+        amount=5,
+        reason="Création de flashcard",
+        event_type="flashcard_created",
+        db=db
+    )
+
     if current_user.stats:
         current_user.stats.total_flashcards_created += 1
 
@@ -656,14 +681,6 @@ async def create_flashcard(
         user_id=current_user.id,
         quest_type=QuestType.CREATE_FLASHCARDS,
         progress=1
-    )
-
-    # Mettre à jour la quête EARN_XP (+5 XP pour création)
-    await daily_quest_service.update_quest_progress(
-        db=db,
-        user_id=current_user.id,
-        quest_type=QuestType.EARN_XP,
-        progress=5
     )
 
     await db.commit()
