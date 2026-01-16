@@ -108,6 +108,17 @@ from app.models.spark import (
     SparkMoodType,
     InsightType
 )
+from app.models.payment import (
+    SubscriptionPlan,
+    Transaction,
+    PaymentWebhookLog,
+    PromoCode,
+    PaymentProvider,
+    PaymentMethod,
+    TransactionStatus,
+    Currency,
+    INITIAL_PLANS
+)
 
 __all__ = [
     # User et sous-modèles
@@ -214,4 +225,14 @@ __all__ = [
     "MessageRole",
     "SparkMoodType",
     "InsightType",
+    # Payments
+    "SubscriptionPlan",
+    "Transaction",
+    "PaymentWebhookLog",
+    "PromoCode",
+    "PaymentProvider",
+    "PaymentMethod",
+    "TransactionStatus",
+    "Currency",
+    "INITIAL_PLANS",
 ]
