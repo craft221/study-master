@@ -29,7 +29,8 @@ import focusRoomsService, {
   CreateRoomRequest,
   RoomFilters,
   UserFocusStats,
-  FocusRoomInvitation
+  FocusRoomInvitation,
+  FocusRoomParticipant
 } from '@/services/focusRooms'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
@@ -70,7 +71,7 @@ export default function FocusRoomsPage() {
   const [rooms, setRooms] = useState<FocusRoom[]>([])
   const [myStats, setMyStats] = useState<UserFocusStats | null>(null)
   const [subjects, setSubjects] = useState<Subject[]>([])
-  const [currentRoom, setCurrentRoom] = useState<FocusRoom | null>(null)
+  const [currentRoom, setCurrentRoom] = useState<FocusRoomParticipant | null>(null)
 
   // Create room dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
