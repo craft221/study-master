@@ -206,10 +206,10 @@ export default function QuizzesPage() {
     quiz.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const totalAttempts = quizzes.reduce((sum, quiz) => sum + quiz.attempts.length, 0)
-  const completedQuizzes = quizzes.filter(q => q.attempts.some(a => a.is_completed)).length
+  const totalAttempts = quizzes.reduce((sum, quiz) => sum + (quiz.attempts?.length || 0), 0)
+  const completedQuizzes = quizzes.filter(q => q.attempts?.some(a => a.is_completed)).length
   const averageScore = quizzes.reduce((sum, quiz) => {
-    const completed = quiz.attempts.filter(a => a.is_completed)
+    const completed = quiz.attempts?.filter(a => a.is_completed) || []
     if (completed.length === 0) return sum
     const avgQuizScore = completed.reduce((s, a) => s + a.score, 0) / completed.length
     return sum + avgQuizScore
@@ -425,7 +425,7 @@ export default function QuizzesPage() {
                       </>
                     ) : (
                       <button
-                        onClick={() => enableSharing(quiz.id)}
+                        onClick={() => enableSharing(Number(quiz.id))}
                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                         title="Activer le partage"
                       >
@@ -434,7 +434,7 @@ export default function QuizzesPage() {
                     )}
 
                     <button
-                      onClick={() => deleteQuiz(quiz.id)}
+                      onClick={() => deleteQuiz(Number(quiz.id))}
                       className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                     >
                       <Trash2 className="h-4 w-4" />

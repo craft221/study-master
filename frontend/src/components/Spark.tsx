@@ -19,7 +19,11 @@ export type SparkMood =
   | 'thinking'
   | 'encouraging'
   | 'sleeping'
-  | 'helpful';
+  | 'helpful'
+  | 'sarcastic'
+  | 'proud'
+  | 'worried'
+  | 'playful';
 
 export type SparkAnimation =
   | 'idle'

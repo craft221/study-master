@@ -9,7 +9,7 @@ import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService, generateTempId } from '@/services/syncService'
 
-const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS: { code: string; label: string; flag: string }[] = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -52,7 +52,7 @@ export default function NewQuizPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubject, setSelectedSubject] = useState('')
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([0])
-  const [language, setLanguage] = useState(locale || 'fr')
+  const [language, setLanguage] = useState<string>(locale || 'fr')
 
   // Quiz Info
   const [title, setTitle] = useState('')
@@ -400,7 +400,7 @@ export default function NewQuizPage() {
 
               <div>
                 <Label htmlFor="difficulty">{t('newQuizPage.difficultyLabel')}</Label>
-                <Select value={difficulty} onValueChange={(value: QuizDifficulty) => setDifficulty(value)}>
+                <Select value={difficulty} onValueChange={(value) => setDifficulty(value as QuizDifficulty)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -590,7 +590,7 @@ export default function NewQuizPage() {
                         <Label>{t('newQuizPage.typeLabel')}</Label>
                         <Select
                           value={question.type}
-                          onValueChange={(value: QuestionType) => updateQuestion(qIndex, 'type', value)}
+                          onValueChange={(value) => updateQuestion(qIndex, 'type', value as QuestionType)}
                         >
                           <SelectTrigger>
                             <SelectValue />

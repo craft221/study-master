@@ -16,6 +16,7 @@ interface User {
   total_xp: number
   current_streak: number
   subscription_type: string
+  language?: string
 }
 
 interface RegisterData {

@@ -486,14 +486,10 @@ export class FSRSScheduler {
    * Obtient les prévisions pour toutes les options
    */
   getSchedulingOptions(card: FSRSCard, now: Date = new Date()): SchedulingOptions {
-    const options: Record<string, SchedulingOption> = {};
-
-    for (const rating of [Rating.AGAIN, Rating.HARD, Rating.GOOD, Rating.EASY]) {
+    const getOption = (rating: Rating): SchedulingOption => {
       const cardCopy: FSRSCard = { ...card };
       const { card: newCard } = this.schedule(cardCopy, rating, now);
-
-      const ratingName = Rating[rating].toLowerCase();
-      options[ratingName] = {
+      return {
         intervalDays: newCard.scheduledDays,
         due: newCard.due?.toISOString() || null,
         stability: Math.round(newCard.stability * 100) / 100,
@@ -501,9 +497,14 @@ export class FSRSScheduler {
         state: State[newCard.state],
         display: formatIntervalDisplay(newCard.scheduledDays),
       };
-    }
+    };
 
-    return options as SchedulingOptions;
+    return {
+      again: getOption(Rating.AGAIN),
+      hard: getOption(Rating.HARD),
+      good: getOption(Rating.GOOD),
+      easy: getOption(Rating.EASY),
+    };
   }
 }
 

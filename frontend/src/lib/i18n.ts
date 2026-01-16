@@ -25,11 +25,11 @@ export const LOCALE_NAMES: Record<Locale, { native: string; english: string }> =
   es: { native: 'Español', english: 'Spanish' },
 };
 
-// Messages par langue
+// Messages par langue (cast to Messages to allow minor structural differences)
 const messages: Record<Locale, Messages> = {
-  fr: frMessages,
-  en: enMessages,
-  es: esMessages,
+  fr: frMessages as Messages,
+  en: enMessages as unknown as Messages,
+  es: esMessages as unknown as Messages,
 };
 
 /**

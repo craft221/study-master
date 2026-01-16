@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'defaultValue'> {
   value?: number[]
   defaultValue?: number[]
   min?: number

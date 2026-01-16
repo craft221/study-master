@@ -83,6 +83,8 @@
     "welcome": "Bienvenido",
     "welcomeBack": "Bienvenido de nuevo",
     "todayStats": "Estadísticas de hoy",
+    "totalStudyTime": "Tiempo de estudio total",
+    "thisMonth": "este mes",
     "weeklyProgress": "Progreso semanal",
     "studyStreak": "Racha de estudio",
     "days": "días",
@@ -1932,6 +1934,10 @@
       "p2": "Combinamos las mejores investigaciones en ciencias cognitivas con la inteligencia artificial más avanzada para crear una herramienta que realmente se adapta a cada estudiante.",
       "p3": "Hoy, Studera ayuda a estudiantes de todo el mundo a aprender de manera más eficiente, ya sea en medicina, derecho, idiomas o cualquier otro campo."
     },
+    "mission": {
+      "title": "Nuestra misión",
+      "description": "Democratizar el acceso al aprendizaje efectivo mediante la inteligencia artificial y métodos científicamente probados."
+    },
     "values": {
       "title": "Nuestros valores",
       "innovation": {
@@ -1942,8 +1948,8 @@
         "title": "Accesibilidad",
         "description": "La educación de calidad debe ser accesible para todos, sin importar los recursos financieros."
       },
-      "science": {
-        "title": "Ciencia",
+      "passion": {
+        "title": "Pasión",
         "description": "Cada funcionalidad se basa en investigaciones científicas validadas en ciencias cognitivas."
       },
       "community": {
@@ -1984,6 +1990,7 @@
     },
     "cta": {
       "title": "¿Listo para revolucionar tu aprendizaje?",
+      "subtitle": "Únete a miles de estudiantes que tienen éxito con Studera.",
       "button": "Comenzar gratis"
     },
     "footer": {
@@ -2009,13 +2016,13 @@
         "title": "Correo electrónico",
         "description": "Para cualquier consulta general"
       },
+      "support": {
+        "title": "Soporte técnico",
+        "description": "Para problemas técnicos"
+      },
       "response": {
         "title": "Tiempo de respuesta",
-        "description": "Generalmente en 24 horas"
-      },
-      "social": {
-        "title": "Redes sociales",
-        "description": "Síguenos para novedades"
+        "description": "Generalmente respondemos <strong>en 24 horas</strong> en días hábiles."
       }
     },
     "form": {

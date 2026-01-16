@@ -8,7 +8,7 @@ import React from 'react';
  */
 
 interface SparkSVGProps {
-  mood?: 'happy' | 'excited' | 'sad' | 'thinking' | 'encouraging' | 'sleeping';
+  mood?: 'happy' | 'excited' | 'sad' | 'thinking' | 'encouraging' | 'sleeping' | 'helpful' | 'sarcastic' | 'proud' | 'worried' | 'playful';
   level?: number;
   accessory?: string | null;
   size?: number;

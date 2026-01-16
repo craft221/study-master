@@ -8,7 +8,12 @@ export type SparkMood =
   | 'sad'
   | 'thinking'
   | 'encouraging'
-  | 'sleeping';
+  | 'sleeping'
+  | 'helpful'
+  | 'sarcastic'
+  | 'proud'
+  | 'worried'
+  | 'playful';
 
 export type SparkAnimation =
   | 'idle'
