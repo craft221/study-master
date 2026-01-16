@@ -96,6 +96,18 @@ from app.models.ai_task import (
     AITaskType,
     AITaskStatus
 )
+from app.models.spark import (
+    SparkConversation,
+    SparkMessage,
+    SparkUserInsight,
+    SparkNotification,
+    SparkMemory,
+    SparkDailyBriefing,
+    ConversationStatus,
+    MessageRole,
+    SparkMoodType,
+    InsightType
+)
 
 __all__ = [
     # User et sous-modèles
@@ -191,4 +203,15 @@ __all__ = [
     "AITask",
     "AITaskType",
     "AITaskStatus",
+    # Spark
+    "SparkConversation",
+    "SparkMessage",
+    "SparkUserInsight",
+    "SparkNotification",
+    "SparkMemory",
+    "SparkDailyBriefing",
+    "ConversationStatus",
+    "MessageRole",
+    "SparkMoodType",
+    "InsightType",
 ]
