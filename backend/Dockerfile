@@ -40,6 +40,9 @@ RUN mkdir -p /app/uploads/documents /app/uploads/note-images
 # Créer les répertoires de cache pour LibreOffice
 RUN mkdir -p /home/appuser/.cache/dconf /home/appuser/.config/libreoffice
 
+# Rendre le script entrypoint exécutable
+RUN chmod +x /app/entrypoint.sh
+
 # Changer le propriétaire des fichiers vers l'utilisateur non-root
 RUN chown -R appuser:appgroup /app /home/appuser
 
@@ -49,5 +52,5 @@ USER appuser
 # Exposer le port
 EXPOSE 8000
 
-# Commande pour lancer FastAPI
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Utiliser entrypoint pour les migrations et seeding au démarrage
+ENTRYPOINT ["/app/entrypoint.sh"]
