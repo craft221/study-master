@@ -134,20 +134,42 @@ export default function EventDialog({
         subject_id: event.subject_id || undefined,
       })
     } else if (initialDate) {
-      const dateStr = initialDate.toISOString().split('T')[0]
+      // Utiliser la date locale pour éviter le décalage de fuseau horaire
+      const year = initialDate.getFullYear()
+      const month = String(initialDate.getMonth() + 1).padStart(2, '0')
+      const day = String(initialDate.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
+
+      // Si l'heure est déjà définie dans initialDate, l'utiliser
+      const hours = String(initialDate.getHours()).padStart(2, '0')
+      const minutes = String(initialDate.getMinutes()).padStart(2, '0')
+      const startTime = initialDate.getHours() !== 0 ? `${dateStr}T${hours}:${minutes}` : `${dateStr}T09:00`
+
+      // Fin = début + 1 heure
+      const endDate = new Date(initialDate)
+      endDate.setHours(endDate.getHours() + 1)
+      const endHours = String(endDate.getHours()).padStart(2, '0')
+      const endMinutes = String(endDate.getMinutes()).padStart(2, '0')
+      const endTime = initialDate.getHours() !== 0 ? `${dateStr}T${endHours}:${endMinutes}` : `${dateStr}T10:00`
+
       setFormData((prev) => ({
         ...prev,
-        start_time: `${dateStr}T09:00`,
-        end_time: `${dateStr}T10:00`,
+        start_time: startTime,
+        end_time: endTime,
       }))
     }
   }, [event, initialDate])
 
-  // Format datetime pour input
+  // Format datetime pour input (utilise la date locale pour éviter le décalage)
   const formatDateTimeForInput = (dateStr: string): string => {
     try {
       const date = new Date(dateStr)
-      return date.toISOString().slice(0, 16)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
     } catch {
       return dateStr
     }

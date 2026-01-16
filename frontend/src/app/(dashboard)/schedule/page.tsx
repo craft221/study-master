@@ -314,8 +314,22 @@ export default function SchedulePage() {
   }
 
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
-    return events.filter((event) => event.start_time.startsWith(dateStr))
+    // Utiliser la date locale au lieu de UTC pour éviter le décalage de fuseau horaire
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const dateStr = `${year}-${month}-${day}`
+
+    return events.filter((event) => {
+      // Convertir la date de l'événement en date locale
+      const eventDate = new Date(event.start_time)
+      const eventYear = eventDate.getFullYear()
+      const eventMonth = String(eventDate.getMonth() + 1).padStart(2, '0')
+      const eventDay = String(eventDate.getDate()).padStart(2, '0')
+      const eventDateStr = `${eventYear}-${eventMonth}-${eventDay}`
+
+      return eventDateStr === dateStr
+    })
   }
 
   const getEventsForHour = (date: Date, hour: number) => {
