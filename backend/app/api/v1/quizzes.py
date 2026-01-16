@@ -523,12 +523,23 @@ async def start_quiz_attempt(
     duel_for_quiz = duel_check_result.scalar()
 
     if duel_for_quiz:
-        # Vérifier si l'utilisateur a déjà complété sa partie du duel
-        is_challenger = duel_for_quiz.challenger_id == current_user.id
-        user_score = duel_for_quiz.challenger_score if is_challenger else duel_for_quiz.opponent_score
+        # Vérifier si l'utilisateur a déjà joué ce quiz APRÈS le début du duel
+        # Cela empêche les tentatives multiples pendant un duel
+        duel_start = duel_for_quiz.started_at or duel_for_quiz.created_at
 
-        if user_score is not None:
-            # Message différent selon le statut du duel
+        existing_duel_attempt_query = select(QuizAttempt).where(
+            and_(
+                QuizAttempt.quiz_id == quiz_id,
+                QuizAttempt.user_id == current_user.id,
+                QuizAttempt.time_started >= duel_start,
+                QuizAttempt.completed_at.isnot(None)  # Tentative complétée
+            )
+        ).limit(1)
+        existing_duel_attempt_result = await db.execute(existing_duel_attempt_query)
+        existing_duel_attempt = existing_duel_attempt_result.scalar_one_or_none()
+
+        if existing_duel_attempt:
+            # L'utilisateur a déjà joué ce quiz dans le cadre de ce duel
             if duel_for_quiz.status == DuelStatus.COMPLETED:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -537,7 +548,7 @@ async def start_quiz_attempt(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Vous avez déjà complété votre partie de ce duel. Attendez que votre adversaire termine."
+                    detail="Vous avez déjà joué votre partie de ce duel. Attendez que votre adversaire termine."
                 )
 
     # Vérifier si plusieurs tentatives sont autorisées (pour les quiz normaux)

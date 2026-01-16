@@ -271,8 +271,11 @@ export default function DuelsPage() {
     )
   }
 
-  // Filtrer les duels par statut (accepté ou en cours = actifs)
+  // Filtrer les duels par statut
+  // Actifs = accepté ou en cours (les deux joueurs peuvent jouer)
   const activeDuels = duels.filter(d => ['accepted', 'in_progress'].includes(d.status))
+  // Envoyés = pending où je suis le challenger (en attente de réponse)
+  const sentDuels = duels.filter(d => d.status === 'pending' && d.challenger_id === currentUserId)
   const completedDuels = duels.filter(d => d.status === 'completed')
 
   return (
@@ -548,9 +551,12 @@ export default function DuelsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending">
             Demandes ({pendingDuels.length})
+          </TabsTrigger>
+          <TabsTrigger value="sent">
+            Envoyés ({sentDuels.length})
           </TabsTrigger>
           <TabsTrigger value="active">
             Actifs ({activeDuels.length})
@@ -605,6 +611,73 @@ export default function DuelsPage() {
                         Accepter
                       </Button>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* Sent Duels - Duels envoyés en attente de réponse */}
+        <TabsContent value="sent" className="space-y-4">
+          {sentDuels.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Aucun défi en attente de réponse</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Lancez un défi pour commencer !
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            sentDuels.map(duel => (
+              <Card key={duel.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-950">
+                        <Clock className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          Défi envoyé à {duel.opponent?.username || 'Adversaire'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="outline">Niveau {duel.opponent?.level || '?'}</Badge>
+                          <Badge variant="secondary" className="text-blue-600">
+                            <Clock className="h-3 w-3 mr-1" />
+                            En attente
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await duelsService.cancel(duel.id)
+                          toast({
+                            title: 'Défi annulé',
+                            description: 'Le défi a été annulé'
+                          })
+                          fetchData()
+                        } catch (error: any) {
+                          toast({
+                            title: 'Erreur',
+                            description: error.response?.data?.detail || 'Impossible d\'annuler le défi',
+                            variant: 'destructive'
+                          })
+                        }
+                      }}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Annuler
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
