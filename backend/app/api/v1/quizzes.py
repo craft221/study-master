@@ -940,12 +940,20 @@ async def submit_quiz_attempt(
         duel = duel_result.scalar()
 
         if duel:
-            # Vérifier si les deux joueurs ont complété leur quiz
+            # IMPORTANT: Seules les tentatives APRÈS le début du duel comptent
+            # Cela empêche d'utiliser des scores d'anciennes tentatives
+            duel_start_time = duel.started_at
+            if not duel_start_time:
+                # Si started_at n'est pas défini, utiliser created_at comme fallback
+                duel_start_time = duel.created_at
+
+            # Vérifier si les deux joueurs ont complété leur quiz APRÈS le début du duel
             challenger_attempt_query = select(QuizAttempt).where(
                 and_(
                     QuizAttempt.quiz_id == duel.quiz_id,
                     QuizAttempt.user_id == duel.challenger_id,
-                    QuizAttempt.completed_at.isnot(None)
+                    QuizAttempt.completed_at.isnot(None),
+                    QuizAttempt.time_started >= duel_start_time  # Tentative après début du duel
                 )
             ).order_by(QuizAttempt.completed_at.desc()).limit(1)
 
@@ -953,7 +961,8 @@ async def submit_quiz_attempt(
                 and_(
                     QuizAttempt.quiz_id == duel.quiz_id,
                     QuizAttempt.user_id == duel.opponent_id,
-                    QuizAttempt.completed_at.isnot(None)
+                    QuizAttempt.completed_at.isnot(None),
+                    QuizAttempt.time_started >= duel_start_time  # Tentative après début du duel
                 )
             ).order_by(QuizAttempt.completed_at.desc()).limit(1)
 

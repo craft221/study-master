@@ -918,11 +918,15 @@ async def complete_duel(
         duel.opponent_score = scores.opponent_score
     elif duel.quiz_id:
         # Récupérer depuis les QuizAttempt
+        # IMPORTANT: Utiliser time_started (pas started_at) et filtrer par duel.started_at
+        # Cela garantit que seules les tentatives APRÈS l'acceptation du duel comptent
+        duel_start = duel.started_at or duel.created_at
+
         challenger_query = select(QuizAttempt).where(
             and_(
                 QuizAttempt.quiz_id == duel.quiz_id,
                 QuizAttempt.user_id == duel.challenger_id,
-                QuizAttempt.started_at >= duel.started_at
+                QuizAttempt.time_started >= duel_start
             )
         ).order_by(QuizAttempt.score.desc()).limit(1)
 
@@ -930,7 +934,7 @@ async def complete_duel(
             and_(
                 QuizAttempt.quiz_id == duel.quiz_id,
                 QuizAttempt.user_id == duel.opponent_id,
-                QuizAttempt.started_at >= duel.started_at
+                QuizAttempt.time_started >= duel_start
             )
         ).order_by(QuizAttempt.score.desc()).limit(1)
 
