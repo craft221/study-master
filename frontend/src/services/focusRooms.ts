@@ -44,6 +44,7 @@ export interface FocusRoom {
 export interface FocusRoomParticipant {
   id: number
   user_id: number
+  room_id: number
   username: string
   avatar_url: string | null
   level: number
