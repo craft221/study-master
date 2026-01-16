@@ -56,7 +56,7 @@ interface Subject {
 interface Note {
   id: number
   title: string
-  subject_id: number
+  subject_id: number | null
   subject_name?: string
 }
 

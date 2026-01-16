@@ -66,3 +66,6 @@ nul
 
 # IMPORTANT: Don't ignore these!
 # .claude/  <- Keep this for Claude Code config
+# Production env files
+backend/.env.production
+frontend/.env.production
