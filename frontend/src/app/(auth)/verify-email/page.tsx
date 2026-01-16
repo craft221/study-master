@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { BookOpen, Mail, ArrowRight, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react'
+import { BookOpen, Mail, ArrowRight, AlertCircle, RefreshCw, CheckCircle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { useTranslation } from '@/contexts/LanguageContext'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
@@ -260,5 +260,17 @@ export default function VerifyEmailPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }

@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, Crown, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
 import { handlePaymentCallback, type PaymentSuccess } from '@/services/payments'
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -186,5 +186,17 @@ export default function PaymentSuccessPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <Loader2 className="w-16 h-16 animate-spin text-primary" />
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }

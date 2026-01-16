@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CreditCard, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react'
 import { simulatePayment } from '@/services/payments'
 
-export default function PaymentSimulatePage() {
+function PaymentSimulateContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
@@ -146,5 +146,17 @@ export default function PaymentSimulatePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentSimulatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <Loader2 className="w-16 h-16 animate-spin text-primary" />
+      </div>
+    }>
+      <PaymentSimulateContent />
+    </Suspense>
   )
 }
