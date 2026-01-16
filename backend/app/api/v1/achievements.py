@@ -460,13 +460,15 @@ async def check_achievement_progress(
 
         # SPECIAL - PDF imports
         elif req_type == "pdf_imported":
-            # Compter les notes avec tag 'ocr'
+            # Compter les notes avec tag 'ocr' ou 'pdf-import'
+            # Note: tags est un champ JSON (liste), on utilise cast pour chercher
             from app.models.note import Note
+            from sqlalchemy import cast, String
             pdf_count_query = await db.execute(
                 select(func.count(Note.id)).where(
                     and_(
                         Note.user_id == current_user.id,
-                        Note.tags.ilike('%ocr%')
+                        cast(Note.tags, String).ilike('%ocr%')
                     )
                 )
             )

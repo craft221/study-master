@@ -217,10 +217,12 @@ async def get_ocr_stats(
 ):
     """Statistiques d'utilisation OCR de l'utilisateur"""
     # Compter les notes créées via OCR (basé sur les tags)
+    # Note: tags est un champ JSON, on utilise cast pour chercher
+    from sqlalchemy import cast, String
     query = select(Note).where(
         and_(
             Note.user_id == current_user.id,
-            Note.tags.ilike('%ocr%')
+            cast(Note.tags, String).ilike('%ocr%')
         )
     )
 
