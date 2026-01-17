@@ -265,58 +265,60 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 p-6">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Groupes d'Étude</h1>
-          <p className="text-gray-600 mt-1">Collaborez et apprenez ensemble</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Groupes d'Étude</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">Collaborez et apprenez ensemble</p>
         </div>
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-5 w-5 mr-2" />
               Créer un groupe
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Créer un groupe d'étude</DialogTitle>
-              <DialogDescription>
-                Créez un nouveau groupe pour collaborer avec d'autres étudiants
+              <DialogTitle className="text-lg sm:text-xl">Créer un groupe</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
+                Créez un groupe pour collaborer avec d'autres étudiants
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom du groupe *</Label>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="name" className="text-sm">Nom du groupe *</Label>
                 <Input
                   id="name"
                   placeholder="Ex: Préparation Examen Math"
                   value={newGroup.name}
                   onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  className="text-sm sm:text-base"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="description" className="text-sm">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Décrivez l'objectif du groupe..."
                   value={newGroup.description}
                   onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-                  rows={3}
+                  rows={2}
+                  className="text-sm sm:text-base resize-none"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="subject">Matière (optionnel)</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="subject" className="text-sm">Matière (optionnel)</Label>
                 <Select
                   value={newGroup.subject_id?.toString() || ''}
                   onValueChange={(value) => setNewGroup({ ...newGroup, subject_id: value ? parseInt(value) : null })}
                 >
-                  <SelectTrigger id="subject">
+                  <SelectTrigger id="subject" className="text-sm sm:text-base">
                     <SelectValue placeholder="Sélectionner une matière" />
                   </SelectTrigger>
                   <SelectContent>
@@ -330,8 +332,8 @@ export default function GroupsPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max_members">Nombre maximum de membres</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="max_members" className="text-sm">Max. membres</Label>
                 <Input
                   id="max_members"
                   type="number"
@@ -339,6 +341,7 @@ export default function GroupsPage() {
                   max={100}
                   value={newGroup.max_members}
                   onChange={(e) => setNewGroup({ ...newGroup, max_members: parseInt(e.target.value) || 20 })}
+                  className="text-sm sm:text-base"
                 />
               </div>
 
@@ -348,17 +351,17 @@ export default function GroupsPage() {
                   checked={newGroup.is_private}
                   onCheckedChange={(checked) => setNewGroup({ ...newGroup, is_private: checked as boolean })}
                 />
-                <Label htmlFor="is_private" className="cursor-pointer">
-                  Groupe privé (sur invitation uniquement)
+                <Label htmlFor="is_private" className="cursor-pointer text-xs sm:text-sm">
+                  Groupe privé (sur invitation)
                 </Label>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="w-full sm:w-auto order-2 sm:order-1">
                 Annuler
               </Button>
-              <Button onClick={handleCreateGroup} disabled={creating}>
+              <Button onClick={handleCreateGroup} disabled={creating} className="w-full sm:w-auto order-1 sm:order-2">
                 {creating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -375,34 +378,36 @@ export default function GroupsPage() {
 
       {/* Pending Invitations */}
       {pendingInvitations.length > 0 && (
-        <Card className="border-primary-200 bg-primary-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Mail className="h-5 w-5 text-primary-600" />
-              Invitations en attente ({pendingInvitations.length})
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2 px-4 sm:px-6">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              Invitations ({pendingInvitations.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <div className="space-y-3">
               {pendingInvitations.map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-background rounded-lg shadow-sm"
                 >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
                       <AvatarImage src={invitation.inviter_avatar || undefined} />
                       <AvatarFallback>{invitation.inviter_username.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium text-gray-900">{invitation.group_name}</p>
-                      <p className="text-sm text-gray-600">Invité par {invitation.inviter_username}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground truncate">{invitation.group_name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        Invité par {invitation.inviter_username}
+                      </p>
                       {invitation.message && (
-                        <p className="text-sm text-gray-500 italic">"{invitation.message}"</p>
+                        <p className="text-xs text-muted-foreground italic truncate">"{invitation.message}"</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -431,79 +436,85 @@ export default function GroupsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            <div className="flex items-center justify-center sm:justify-start mb-2 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{myGroupIds.length}</h3>
-            <p className="text-gray-600 text-sm">Mes groupes</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">{myGroupIds.length}</h3>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Mes groupes</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Globe className="h-6 w-6 text-green-600" />
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            <div className="flex items-center justify-center sm:justify-start mb-2 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Globe className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{groups.length}</h3>
-            <p className="text-gray-600 text-sm">Groupes disponibles</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">{groups.length}</h3>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Disponibles</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-purple-600" />
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            <div className="flex items-center justify-center sm:justify-start mb-2 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">
               {groups.reduce((acc, g) => acc + g.total_study_hours, 0)}
             </h3>
-            <p className="text-gray-600 text-sm">Heures d'étude totales</p>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Heures</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters and Search */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
             {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Rechercher un groupe..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9 sm:pl-10 text-sm sm:text-base"
               />
             </div>
 
-            {/* Filter Buttons */}
-            <div className="flex gap-2">
+            {/* Filter Buttons - Scrollable on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilter('all')}
+                size="sm"
+                className="flex-shrink-0 text-xs sm:text-sm"
               >
                 Tous
               </Button>
               <Button
                 variant={filter === 'my_groups' ? 'default' : 'outline'}
                 onClick={() => setFilter('my_groups')}
+                size="sm"
+                className="flex-shrink-0 text-xs sm:text-sm whitespace-nowrap"
               >
                 Mes groupes
               </Button>
               <Button
                 variant={filter === 'discover' ? 'default' : 'outline'}
                 onClick={() => setFilter('discover')}
+                size="sm"
+                className="flex-shrink-0 text-xs sm:text-sm"
               >
                 Découvrir
               </Button>
@@ -515,18 +526,18 @@ export default function GroupsPage() {
       {/* Groups List */}
       {filteredGroups.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <CardContent className="p-8 sm:p-12 text-center">
+            <Users className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
               {searchQuery ? 'Aucun groupe trouvé' : 'Aucun groupe disponible'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-muted-foreground mb-6">
               {searchQuery
                 ? 'Essayez de modifier votre recherche'
-                : 'Créez votre premier groupe pour commencer à collaborer'}
+                : 'Créez votre premier groupe pour commencer'}
             </p>
             {!searchQuery && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
+              <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-5 w-5 mr-2" />
                 Créer un groupe
               </Button>
@@ -534,33 +545,37 @@ export default function GroupsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredGroups.map((group) => {
             const isMember = myGroupIds.includes(group.id)
             const subjectName = subjects.find(s => s.id === group.subject_id)?.name
 
             return (
               <Card key={group.id} className="hover:shadow-md transition">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{group.name}</h3>
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 mb-2">
+                        <h3 className="text-base sm:text-xl font-bold text-foreground truncate max-w-[180px] sm:max-w-none">
+                          {group.name}
+                        </h3>
                         {group.is_private ? (
-                          <Lock className="h-4 w-4 text-gray-500" />
+                          <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                         ) : (
-                          <Globe className="h-4 w-4 text-green-500" />
+                          <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
                         )}
                         {isMember && (
-                          <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded">
+                          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 text-primary text-[10px] sm:text-xs font-medium rounded flex-shrink-0">
                             Membre
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{group.description || 'Pas de description'}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {group.description || 'Pas de description'}
+                      </p>
                       {subjectName && (
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                        <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs font-medium rounded">
                           {subjectName}
                         </span>
                       )}
@@ -568,27 +583,27 @@ export default function GroupsPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center justify-between py-4 border-t border-b border-gray-200 mb-4">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Users className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        {group.current_members}/{group.max_members} membres
+                  <div className="flex items-center justify-between py-3 sm:py-4 border-t border-b border-border mb-3 sm:mb-4">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 text-muted-foreground">
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm font-medium">
+                        {group.current_members}/{group.max_members}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <MessageCircle className="h-4 w-4" />
-                      <span className="text-sm">{group.total_shared_notes} notes</span>
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 text-muted-foreground">
+                      <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm">{group.total_shared_notes} notes</span>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
-                      Activité: {getTimeAgo(group.updated_at)}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                      {getTimeAgo(group.updated_at)}
                     </span>
                     {isMember ? (
                       <Link href={`/groups/${group.id}`}>
-                        <Button size="sm">Ouvrir</Button>
+                        <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">Ouvrir</Button>
                       </Link>
                     ) : (
                       <Button
@@ -596,6 +611,7 @@ export default function GroupsPage() {
                         variant="outline"
                         onClick={() => handleJoinGroup(group.id)}
                         disabled={group.current_members >= group.max_members}
+                        className="text-xs sm:text-sm h-8 sm:h-9"
                       >
                         {group.current_members >= group.max_members ? 'Complet' : 'Rejoindre'}
                       </Button>
@@ -609,22 +625,21 @@ export default function GroupsPage() {
       )}
 
       {/* Info Section */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-white rounded-lg shadow-sm">
-              <Users className="h-6 w-6 text-blue-600" />
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-blue-200 dark:border-blue-800">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-background rounded-lg shadow-sm flex-shrink-0">
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Pourquoi rejoindre un groupe d'étude?
+            <div className="min-w-0">
+              <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base">
+                Pourquoi rejoindre un groupe ?
               </h3>
-              <ul className="space-y-1 text-sm text-gray-700">
-                <li>• Partagez vos notes et ressources avec d'autres étudiants</li>
-                <li>• Posez des questions et obtenez de l'aide rapidement</li>
-                <li>• Organisez des sessions d'étude en groupe</li>
-                <li>• Motivez-vous mutuellement et progressez ensemble</li>
-                <li>• Participez à des défis et compétitions amicales</li>
+              <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+                <li>• Partagez vos notes et ressources</li>
+                <li>• Posez des questions et obtenez de l'aide</li>
+                <li>• Organisez des sessions d'étude</li>
+                <li>• Motivez-vous mutuellement</li>
               </ul>
             </div>
           </div>
