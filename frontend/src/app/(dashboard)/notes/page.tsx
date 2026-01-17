@@ -23,7 +23,6 @@ import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslations } from 'next-intl'
 import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
@@ -46,7 +45,6 @@ interface Note {
 
 export default function NotesPage() {
   const { t } = useLanguage()
-  const tt = useTranslations()
   // Utiliser le hook offline pour les notes
   const { data: notesData, loading, error, isFromCache, refetch } = useOfflineNotes()
   const { isOnline } = useOfflineContext()
@@ -192,7 +190,7 @@ export default function NotesPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <HelpTooltip content={tt('tooltips.notes.search')} size="sm" />
+              <HelpTooltip content={t('tooltips.notes.search')} size="sm" />
             </div>
           </div>
 
@@ -208,7 +206,7 @@ export default function NotesPage() {
             >
               <Star className={`h-5 w-5 ${showFavorites ? 'fill-yellow-400' : ''}`} />
             </button>
-            <HelpTooltip content={tt('tooltips.notes.favorites')} size="sm" />
+            <HelpTooltip content={t('tooltips.notes.favorites')} size="sm" />
           </div>
         </div>
       </div>
@@ -230,7 +228,7 @@ export default function NotesPage() {
           {!searchQuery && (
             <>
               <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
-                {tt('tooltips.emptyStates.notes')}
+                {t('tooltips.emptyStates.notes')}
               </p>
               <Link
                 href="/notes/new"

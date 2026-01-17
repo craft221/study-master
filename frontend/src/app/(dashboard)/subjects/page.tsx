@@ -9,7 +9,7 @@ import { useOfflineSubjects } from '@/hooks/useOffline'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
-import { useTranslations } from 'next-intl'
+import { useTranslation } from '@/contexts/LanguageContext'
 import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
@@ -35,7 +35,7 @@ const PRESET_COLORS = [
 ]
 
 export default function SubjectsPage() {
-  const t = useTranslations()
+  const { t } = useTranslation()
   // Utiliser le hook offline pour les matières
   const { data: subjectsData, loading, error, isFromCache, refetch } = useOfflineSubjects()
   const { isOnline } = useOfflineContext()

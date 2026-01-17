@@ -24,7 +24,6 @@ import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslations } from 'next-intl'
 import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface FlashcardDeck {
@@ -49,7 +48,6 @@ export default function FlashcardsPage() {
   const { data: decksData, loading, error, isFromCache, refetch } = useOfflineDecks()
   const { isOnline } = useOfflineContext()
   const { t } = useLanguage()
-  const tt = useTranslations()
   const [decks, setDecks] = useState<FlashcardDeck[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -153,7 +151,7 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600 dark:text-orange-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.flashcards.cardsDue')} size="sm" />
+            <HelpTooltip content={t('tooltips.flashcards.cardsDue')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalCardsDue}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.cardsToReview')}</p>
@@ -174,7 +172,7 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.flashcards.totalCards')} size="sm" />
+            <HelpTooltip content={t('tooltips.flashcards.totalCards')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalCards}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.totalCards')}</p>
@@ -185,7 +183,7 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 dark:text-green-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.flashcards.mastered')} size="sm" />
+            <HelpTooltip content={t('tooltips.flashcards.mastered')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalMastered}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.masteredCards')}</p>
@@ -203,10 +201,10 @@ export default function FlashcardsPage() {
           </div>
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
-              {tt('flashcards.spacedRepetitionTitle') || 'Répétition espacée'}
+              {t('flashcards.spacedRepetitionTitle') || 'Répétition espacée'}
             </h4>
             <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">
-              {tt('tooltips.flashcards.spacedRepetition')}
+              {t('tooltips.flashcards.spacedRepetition')}
             </p>
           </div>
         </div>
@@ -243,7 +241,7 @@ export default function FlashcardsPage() {
           {!searchQuery && (
             <>
               <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
-                {tt('tooltips.emptyStates.flashcards')}
+                {t('tooltips.emptyStates.flashcards')}
               </p>
               <Link
                 href="/flashcards/new"

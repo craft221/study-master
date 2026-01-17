@@ -26,7 +26,6 @@ import { toast } from 'react-hot-toast'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { offlineStorage } from '@/lib/offlineStorage'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { useTranslations } from 'next-intl'
 import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
@@ -70,7 +69,6 @@ interface LeaderboardEntry {
 export default function QuizzesPage() {
   const { isOnline } = useOfflineContext()
   const { t } = useLanguage()
-  const tt = useTranslations()
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -251,7 +249,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Brain className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.quizzes.attempts')} size="sm" />
+            <HelpTooltip content={t('tooltips.quizzes.attempts')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalAttempts}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.totalAttempts')}</p>
@@ -262,7 +260,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 dark:text-green-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.quizzes.completed')} size="sm" />
+            <HelpTooltip content={t('tooltips.quizzes.completed')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{completedQuizzes}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.completedQuizzes')}</p>
@@ -273,7 +271,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <HelpTooltip content={tt('tooltips.quizzes.avgScore')} size="sm" />
+            <HelpTooltip content={t('tooltips.quizzes.avgScore')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">
             {averageScore.toFixed(0)}%
@@ -313,7 +311,7 @@ export default function QuizzesPage() {
           {!searchQuery && (
             <>
               <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
-                {tt('tooltips.emptyStates.quizzes')}
+                {t('tooltips.emptyStates.quizzes')}
               </p>
               <Link
                 href="/quizzes/new"
