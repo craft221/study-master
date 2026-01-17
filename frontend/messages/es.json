@@ -180,7 +180,15 @@
     "addContentFirst": "Agrega contenido primero",
     "generatingFlashcards": "Generando tarjetas con IA...",
     "flashcardsGenerated": "¡{count} tarjetas generadas!",
-    "aiGenerationError": "Error durante la generación con IA"
+    "aiGenerationError": "Error durante la generación con IA",
+    "difficulty": "Dificultad",
+    "easy": "Fácil",
+    "medium": "Medio",
+    "hard": "Difícil",
+    "aiRequiresOnline": "Se requiere conexión a internet para las funciones de IA",
+    "noteSavedForAI": "Nota guardada",
+    "quizCreated": "¡Cuestionario creado con éxito!",
+    "summaryGenerated": "¡Resumen generado!"
   },
 
   "quizzesPage": {

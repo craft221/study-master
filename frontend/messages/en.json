@@ -180,7 +180,15 @@
     "addContentFirst": "Add content first",
     "generatingFlashcards": "Generating flashcards with AI...",
     "flashcardsGenerated": "{count} flashcards generated!",
-    "aiGenerationError": "Error during AI generation"
+    "aiGenerationError": "Error during AI generation",
+    "difficulty": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "aiRequiresOnline": "Internet connection required for AI features",
+    "noteSavedForAI": "Note saved",
+    "quizCreated": "Quiz created successfully!",
+    "summaryGenerated": "Summary generated!"
   },
 
   "quizzesPage": {
