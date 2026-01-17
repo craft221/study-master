@@ -392,7 +392,7 @@ async def get_user_stats(
         select(func.count()).select_from(Duel).where(
             or_(
                 Duel.challenger_id == current_user.id,
-                Duel.challenged_id == current_user.id
+                Duel.opponent_id == current_user.id
             )
         )
     )
