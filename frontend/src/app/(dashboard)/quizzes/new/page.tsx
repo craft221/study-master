@@ -304,17 +304,17 @@ export default function NewQuizPage() {
   const totalPoints = questions.reduce((sum, q) => sum + q.points, 0)
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Offline Banner */}
       {!isOnline && (
-        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <div>
-              <p className="font-medium text-orange-900 dark:text-orange-100">
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <CloudOff className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-medium text-orange-900 dark:text-orange-100 text-sm sm:text-base">
                 {t('newQuizPage.offlineMode')}
               </p>
-              <p className="text-sm text-orange-700 dark:text-orange-300">
+              <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300">
                 {t('newQuizPage.offlineSaveMessage')}
               </p>
             </div>
@@ -323,35 +323,37 @@ export default function NewQuizPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('newQuizPage.title')}</h1>
-            <p className="text-gray-600 mt-1">{t('newQuizPage.subtitle')}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{t('newQuizPage.title')}</h1>
+              {!isOnline && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 shrink-0">
+                  <CloudOff className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">{t('newQuizPage.offline')}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 text-sm sm:text-base">{t('newQuizPage.subtitle')}</p>
           </div>
-          {!isOnline && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-              <CloudOff className="w-3 h-3 mr-1" />
-              {t('newQuizPage.offline')}
-            </span>
-          )}
         </div>
-        <Button variant="outline" onClick={() => router.back()}>
-          <X className="h-4 w-4 mr-2" />
-          {t('newQuizPage.cancel')}
+        <Button variant="outline" onClick={() => router.back()} className="self-end sm:self-auto shrink-0">
+          <X className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">{t('newQuizPage.cancel')}</span>
         </Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Quiz Info */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t('newQuizPage.quizInfo')}</CardTitle>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">{t('newQuizPage.quizInfo')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="title">
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="sm:col-span-2">
+                <Label htmlFor="title" className="text-sm">
                   {t('newQuizPage.titleLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -360,26 +362,28 @@ export default function NewQuizPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
+                  className="mt-1.5"
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <Label htmlFor="description">{t('newQuizPage.descriptionLabel')}</Label>
+              <div className="sm:col-span-2">
+                <Label htmlFor="description" className="text-sm">{t('newQuizPage.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
                   placeholder={t('newQuizPage.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
+                  className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="subject">
+                <Label htmlFor="subject" className="text-sm">
                   {t('newQuizPage.subjectLabel')} <span className="text-red-500">*</span>
                 </Label>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1.5">
                     <SelectValue placeholder={t('newQuizPage.selectSubject')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -387,10 +391,10 @@ export default function NewQuizPage() {
                       <SelectItem key={subject.id} value={subject.id.toString()}>
                         <div className="flex items-center gap-2">
                           <div
-                            className="w-3 h-3 rounded-full"
+                            className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: subject.color }}
                           />
-                          {subject.name}
+                          <span className="truncate">{subject.name}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -399,9 +403,9 @@ export default function NewQuizPage() {
               </div>
 
               <div>
-                <Label htmlFor="difficulty">{t('newQuizPage.difficultyLabel')}</Label>
+                <Label htmlFor="difficulty" className="text-sm">{t('newQuizPage.difficultyLabel')}</Label>
                 <Select value={difficulty} onValueChange={(value) => setDifficulty(value as QuizDifficulty)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1.5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -419,36 +423,36 @@ export default function NewQuizPage() {
               </div>
 
               {/* Language Selector */}
-              <div className="md:col-span-2">
-                <Label className="flex items-center gap-2 mb-2">
+              <div className="sm:col-span-2">
+                <Label className="flex items-center gap-1.5 sm:gap-2 mb-2 text-sm">
                   <Languages className="h-4 w-4" />
                   {t('newQuizPage.languageLabel')}
                 </Label>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
                   {LANGUAGE_OPTIONS.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
                       onClick={() => setLanguage(lang.code)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
+                      className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg border-2 transition text-sm ${
                         language === lang.code
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-400'
                       }`}
                     >
-                      <span className="text-lg">{lang.flag}</span>
-                      <span className="font-medium">{lang.label}</span>
+                      <span className="text-base sm:text-lg">{lang.flag}</span>
+                      <span className="font-medium text-xs sm:text-sm">{lang.label}</span>
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                   {t('newQuizPage.languageNotice')}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="passingScore">
-                  {t('newQuizPage.passingScore')} <Award className="inline h-4 w-4 ml-1" />
+                <Label htmlFor="passingScore" className="text-sm flex items-center gap-1">
+                  {t('newQuizPage.passingScore')} <Award className="inline h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Label>
                 <Input
                   id="passingScore"
@@ -457,16 +461,17 @@ export default function NewQuizPage() {
                   max="100"
                   value={passingScore}
                   onChange={(e) => setPassingScore(parseInt(e.target.value) || 60)}
+                  className="mt-1.5"
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <Switch
                   id="timed"
                   checked={isTimed}
                   onCheckedChange={setIsTimed}
                 />
-                <Label htmlFor="timed" className="flex items-center gap-2">
+                <Label htmlFor="timed" className="flex items-center gap-1.5 sm:gap-2 text-sm cursor-pointer">
                   <Clock className="h-4 w-4" />
                   {t('newQuizPage.timedQuiz')}
                 </Label>
@@ -474,7 +479,7 @@ export default function NewQuizPage() {
 
               {isTimed && (
                 <div>
-                  <Label htmlFor="timeLimit">{t('newQuizPage.timeLimit')}</Label>
+                  <Label htmlFor="timeLimit" className="text-sm">{t('newQuizPage.timeLimit')}</Label>
                   <Input
                     id="timeLimit"
                     type="number"
@@ -482,14 +487,15 @@ export default function NewQuizPage() {
                     max="480"
                     value={timeLimitMinutes}
                     onChange={(e) => setTimeLimitMinutes(parseInt(e.target.value) || 30)}
+                    className="mt-1.5"
                   />
                 </div>
               )}
             </div>
 
-            <div className="space-y-3 pt-4 border-t">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="showAnswers">{t('newQuizPage.showCorrectAnswers')}</Label>
+            <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="showAnswers" className="text-sm cursor-pointer flex-1">{t('newQuizPage.showCorrectAnswers')}</Label>
                 <Switch
                   id="showAnswers"
                   checked={showCorrectAnswers}
@@ -497,8 +503,8 @@ export default function NewQuizPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="randomizeQ">{t('newQuizPage.shuffleQuestions')}</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="randomizeQ" className="text-sm cursor-pointer flex-1">{t('newQuizPage.shuffleQuestions')}</Label>
                 <Switch
                   id="randomizeQ"
                   checked={randomizeQuestions}
@@ -506,8 +512,8 @@ export default function NewQuizPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="randomizeO">{t('newQuizPage.shuffleOptions')}</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="randomizeO" className="text-sm cursor-pointer flex-1">{t('newQuizPage.shuffleOptions')}</Label>
                 <Switch
                   id="randomizeO"
                   checked={randomizeOptions}
@@ -519,15 +525,15 @@ export default function NewQuizPage() {
         </Card>
 
         {/* Questions */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
-              <h2 className="text-xl font-semibold">{t('newQuizPage.questionsTitle')} ({questions.length})</h2>
-              <p className="text-sm text-gray-600">{t('newQuizPage.totalPoints', { count: totalPoints })}</p>
+              <h2 className="text-lg sm:text-xl font-semibold">{t('newQuizPage.questionsTitle')} ({questions.length})</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('newQuizPage.totalPoints', { count: totalPoints })}</p>
             </div>
-            <Button type="button" onClick={addQuestion} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('newQuizPage.addQuestion')}
+            <Button type="button" onClick={addQuestion} variant="outline" size="sm" className="self-start sm:self-auto">
+              <Plus className="h-4 w-4 mr-1.5 sm:mr-2" />
+              <span className="text-sm">{t('newQuizPage.addQuestion')}</span>
             </Button>
           </div>
 
@@ -538,23 +544,24 @@ export default function NewQuizPage() {
             return (
               <Card
                 key={qIndex}
-                className={`border-l-4 ${isValid ? 'border-l-green-500' : 'border-l-gray-300'}`}
+                className={`border-l-4 ${isValid ? 'border-l-green-500' : 'border-l-gray-300 dark:border-l-gray-600'}`}
               >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {t('newQuizPage.question')} {qIndex + 1}
-                      <Badge variant="outline">{question.points} {t('newQuizPage.pts')}</Badge>
+                <CardHeader className="p-3 sm:p-6">
+                  <div className="flex items-start sm:items-center justify-between gap-2">
+                    <CardTitle className="text-sm sm:text-lg flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <span>{t('newQuizPage.question')} {qIndex + 1}</span>
+                      <Badge variant="outline" className="text-xs">{question.points} {t('newQuizPage.pts')}</Badge>
                       {isValid && (
-                        <span className="text-xs font-normal text-green-600">✓ {t('newQuizPage.valid')}</span>
+                        <span className="text-[10px] sm:text-xs font-normal text-green-600">✓ <span className="hidden sm:inline">{t('newQuizPage.valid')}</span></span>
                       )}
                     </CardTitle>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 shrink-0">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleExpand(qIndex)}
+                        className="h-8 w-8 p-0"
                       >
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
@@ -563,6 +570,7 @@ export default function NewQuizPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeQuestion(qIndex)}
+                        className="h-8 w-8 p-0"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -571,10 +579,10 @@ export default function NewQuizPage() {
                 </CardHeader>
 
                 {isExpanded && (
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2">
-                        <Label>
+                  <CardContent className="p-3 sm:p-6 pt-0 space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                      <div>
+                        <Label className="text-sm">
                           {t('newQuizPage.questionLabel')} <span className="text-red-500">*</span>
                         </Label>
                         <Textarea
@@ -583,16 +591,17 @@ export default function NewQuizPage() {
                           onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
                           rows={2}
                           required
+                          className="mt-1.5"
                         />
                       </div>
 
                       <div>
-                        <Label>{t('newQuizPage.typeLabel')}</Label>
+                        <Label className="text-sm">{t('newQuizPage.typeLabel')}</Label>
                         <Select
                           value={question.type}
                           onValueChange={(value) => updateQuestion(qIndex, 'type', value as QuestionType)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="mt-1.5">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -608,28 +617,31 @@ export default function NewQuizPage() {
                     {question.type !== 'short_answer' && question.options && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <Label>{t('newQuizPage.optionsLabel')}</Label>
+                          <Label className="text-sm">{t('newQuizPage.optionsLabel')}</Label>
                           {question.type === 'multiple_choice' && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => addOption(qIndex)}
+                              className="h-7 text-xs"
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              {t('newQuizPage.addOption')}
+                              <span className="hidden sm:inline">{t('newQuizPage.addOption')}</span>
+                              <span className="sm:hidden">+</span>
                             </Button>
                           )}
                         </div>
                         <div className="space-y-2">
                           {question.options.map((option, oIndex) => (
-                            <div key={oIndex} className="flex items-center gap-2">
-                              <span className="text-sm font-medium w-8">{String.fromCharCode(65 + oIndex)}.</span>
+                            <div key={oIndex} className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="text-xs sm:text-sm font-medium w-6 sm:w-8 shrink-0">{String.fromCharCode(65 + oIndex)}.</span>
                               <Input
                                 placeholder={`Option ${oIndex + 1}`}
                                 value={option}
                                 onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                                 disabled={question.type === 'true_false'}
+                                className="text-sm"
                               />
                               {question.type === 'multiple_choice' && question.options!.length > 2 && (
                                 <Button
@@ -637,6 +649,7 @@ export default function NewQuizPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => removeOption(qIndex, oIndex)}
+                                  className="h-8 w-8 p-0 shrink-0"
                                 >
                                   <X className="h-4 w-4 text-red-500" />
                                 </Button>
@@ -647,9 +660,9 @@ export default function NewQuizPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <Label>
+                        <Label className="text-sm">
                           {t('newQuizPage.correctAnswer')} <span className="text-red-500">*</span>
                         </Label>
                         {question.type === 'short_answer' ? (
@@ -658,13 +671,14 @@ export default function NewQuizPage() {
                             value={question.correct_answer}
                             onChange={(e) => updateQuestion(qIndex, 'correct_answer', e.target.value)}
                             required
+                            className="mt-1.5"
                           />
                         ) : (
                           <Select
                             value={question.correct_answer}
                             onValueChange={(value) => updateQuestion(qIndex, 'correct_answer', value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="mt-1.5">
                               <SelectValue placeholder={t('newQuizPage.selectCorrectAnswer')} />
                             </SelectTrigger>
                             <SelectContent>
@@ -679,24 +693,26 @@ export default function NewQuizPage() {
                       </div>
 
                       <div>
-                        <Label>{t('newQuizPage.pointsLabel')}</Label>
+                        <Label className="text-sm">{t('newQuizPage.pointsLabel')}</Label>
                         <Input
                           type="number"
                           min="1"
                           max="100"
                           value={question.points}
                           onChange={(e) => updateQuestion(qIndex, 'points', parseInt(e.target.value) || 10)}
+                          className="mt-1.5"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label>{t('newQuizPage.explanationLabel')}</Label>
+                      <Label className="text-sm">{t('newQuizPage.explanationLabel')}</Label>
                       <Textarea
                         placeholder={t('newQuizPage.explanationPlaceholder')}
                         value={question.explanation || ''}
                         onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
                         rows={2}
+                        className="mt-1.5"
                       />
                     </div>
                   </CardContent>
@@ -706,18 +722,18 @@ export default function NewQuizPage() {
           })}
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+        {/* Actions - Sticky on mobile */}
+        <div className="sticky bottom-0 left-0 right-0 sm:static bg-white dark:bg-gray-900 sm:bg-transparent border-t border-gray-200 dark:border-gray-700 sm:border-0 p-3 sm:p-0 -mx-3 sm:mx-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-4">
+          <Button type="button" variant="outline" onClick={() => router.back()} className="order-2 sm:order-1">
             {t('newQuizPage.cancel')}
           </Button>
-          <Button type="submit" disabled={loading || !selectedSubject || !title}>
+          <Button type="submit" disabled={loading || !selectedSubject || !title} className="order-1 sm:order-2">
             {loading ? (
-              <>{t('newQuizPage.creating')}</>
+              <span className="text-sm">{t('newQuizPage.creating')}</span>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                {t('newQuizPage.createQuiz', { count: questions.filter(q => q.question && q.correct_answer).length })}
+                <Save className="h-4 w-4 mr-1.5 sm:mr-2" />
+                <span className="text-sm">{t('newQuizPage.createQuiz', { count: questions.filter(q => q.question && q.correct_answer).length })}</span>
               </>
             )}
           </Button>
