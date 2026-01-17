@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Trophy, Star, Zap, Users, BookOpen, Brain, Swords, Flame, Lock, CheckCircle2 } from 'lucide-react'
 import api from '@/lib/api'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Achievement {
   id: number
@@ -43,6 +44,7 @@ interface UserStats {
 }
 
 export default function AchievementsPage() {
+  const { t } = useLanguage()
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
@@ -161,12 +163,12 @@ export default function AchievementsPage() {
   }
 
   const categories = [
-    { value: 'all', label: 'Tous', icon: Trophy },
-    { value: 'learning', label: 'Apprentissage', icon: BookOpen },
-    { value: 'streak', label: 'Série', icon: Flame },
-    { value: 'mastery', label: 'Maîtrise', icon: Brain },
-    { value: 'social', label: 'Social', icon: Users },
-    { value: 'special', label: 'Spécial', icon: Star }
+    { value: 'all', label: t('achievements.categories.all'), icon: Trophy },
+    { value: 'learning', label: t('achievements.categories.learning'), icon: BookOpen },
+    { value: 'streak', label: t('achievements.categories.streak'), icon: Flame },
+    { value: 'mastery', label: t('achievements.categories.mastery'), icon: Brain },
+    { value: 'social', label: t('achievements.categories.social'), icon: Users },
+    { value: 'special', label: t('achievements.categories.special'), icon: Star }
   ]
 
   const filteredAchievements = selectedCategory === 'all'
@@ -187,97 +189,103 @@ export default function AchievementsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-3 sm:p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary"></div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header Stats */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-yellow-500" />
-            Succès & Achievements
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+            {t('achievements.title')}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Débloquez des badges en progressant dans vos études
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            {t('achievements.subtitle')}
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Succès Débloqués</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('achievements.successUnlocked')}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{unlockedCount} / {totalCount}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{unlockedCount} / {totalCount}</div>
             <Progress value={totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              {totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0}% complété
+              {totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0}% {t('achievements.completed')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">XP Gagné</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('achievements.xpEarned')}</CardTitle>
             <Zap className="h-4 w-4 text-yellow-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalXP} XP</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{totalXP} XP</div>
             <p className="text-xs text-muted-foreground mt-2">
-              Grâce aux achievements
+              {t('achievements.thanksToAchievements')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rareté</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('achievements.rarity')}</CardTitle>
             <Star className="h-4 w-4 text-purple-500" />
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mt-1">
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="flex gap-1 sm:gap-2 mt-1 flex-wrap">
               {['common', 'rare', 'epic', 'legendary'].map(rarity => {
                 const count = userAchievements.filter(
                   ua => ua.achievement?.rarity?.toLowerCase() === rarity
                 ).length
                 return (
-                  <Badge key={rarity} variant="outline" className={getRarityColor(rarity)}>
+                  <Badge key={rarity} variant="outline" className={`${getRarityColor(rarity)} text-xs`}>
                     {count}
                   </Badge>
                 )
               })}
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Par niveau de rareté</p>
+            <p className="text-xs text-muted-foreground mt-2">{t('achievements.byRarity')}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full">
-          {categories.map(cat => {
-            const Icon = cat.icon
-            return (
-              <TabsTrigger key={cat.value} value={cat.value} className="flex items-center gap-2">
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{cat.label}</span>
-              </TabsTrigger>
-            )
-          })}
-        </TabsList>
+        <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 pb-2">
+          <TabsList className="inline-flex sm:grid sm:grid-cols-6 w-auto sm:w-full min-w-max sm:min-w-0 h-auto">
+            {categories.map(cat => {
+              const Icon = cat.icon
+              return (
+                <TabsTrigger
+                  key={cat.value}
+                  value={cat.value}
+                  className="flex items-center gap-1 sm:gap-2 px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+                >
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span>{cat.label}</span>
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
+        </div>
 
-        <TabsContent value={selectedCategory} className="mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <TabsContent value={selectedCategory} className="mt-4 sm:mt-6">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredAchievements.map(achievement => {
               const unlocked = isUnlocked(achievement.id)
               const progress = getUserProgress(achievement)
@@ -296,32 +304,32 @@ export default function AchievementsPage() {
                     unlocked ? getRarityColor(achievement.rarity).replace('text-', 'bg-').replace(' border-', '') : 'bg-gray-300'
                   }`} />
 
-                  <CardHeader>
+                  <CardHeader className="p-3 sm:p-6">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-lg ${
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                           unlocked
                             ? getRarityBgColor(achievement.rarity)
                             : 'bg-gray-100 dark:bg-gray-800'
                         }`}>
                           {unlocked ? (
-                            <Icon className={`h-6 w-6 ${getRarityColor(achievement.rarity).split(' ')[0]}`} />
+                            <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${getRarityColor(achievement.rarity).split(' ')[0]}`} />
                           ) : (
-                            <Lock className="h-6 w-6 text-gray-400" />
+                            <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                           )}
                         </div>
-                        <div>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            {achievement.name}
+                        <div className="min-w-0">
+                          <CardTitle className="text-sm sm:text-lg flex items-center gap-1 sm:gap-2 flex-wrap">
+                            <span className="truncate">{achievement.name}</span>
                             {unlocked && (
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                             )}
                           </CardTitle>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="outline" className={getRarityColor(achievement.rarity)}>
+                          <div className="flex gap-1 sm:gap-2 mt-1 flex-wrap">
+                            <Badge variant="outline" className={`${getRarityColor(achievement.rarity)} text-xs`}>
                               {achievement.rarity}
                             </Badge>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="text-xs">
                               {achievement.xp_reward} XP
                             </Badge>
                           </div>
@@ -330,31 +338,31 @@ export default function AchievementsPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent>
-                    <CardDescription className="mb-4">
+                  <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                    <CardDescription className="mb-3 sm:mb-4 text-xs sm:text-sm">
                       {achievement.description}
                     </CardDescription>
 
                     {!unlocked && (
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Progression</span>
+                        <div className="flex justify-between text-xs sm:text-sm">
+                          <span className="text-muted-foreground">{t('achievements.progress')}</span>
                           <span className="font-medium">
                             {progress} / {achievement.requirement_value}
                           </span>
                         </div>
-                        <Progress value={progressPercent} className="h-2" />
+                        <Progress value={progressPercent} className="h-1.5 sm:h-2" />
                         <p className="text-xs text-muted-foreground">
-                          {Math.round(progressPercent)}% complété
+                          {Math.round(progressPercent)}% {t('achievements.completed')}
                         </p>
                       </div>
                     )}
 
                     {unlocked && (
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs sm:text-sm">
                         <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                          <CheckCircle2 className="h-4 w-4" />
-                          Débloqué
+                          <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          {t('achievements.unlockedLabel')}
                         </span>
                         <span className="text-muted-foreground text-xs">
                           {new Date(
@@ -371,9 +379,11 @@ export default function AchievementsPage() {
 
           {filteredAchievements.length === 0 && (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun achievement dans cette catégorie</p>
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-muted-foreground text-sm sm:text-base text-center px-4">
+                  {t('achievements.noAchievementInCategory')}
+                </p>
               </CardContent>
             </Card>
           )}
