@@ -347,14 +347,18 @@ export default function LeaderboardPage() {
   const top3 = leaderboard.slice(0, 3)
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Trophy className="h-8 w-8 text-yellow-500" />
-          {t('leaderboard.title')}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+              {t('leaderboard.title')}
+            </h1>
+          </div>
           {/* Indicateur temps réel */}
-          <div className={`ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+          <div className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium ${
             wsConnected
               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
               : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
@@ -362,48 +366,48 @@ export default function LeaderboardPage() {
             {wsConnected ? (
               <>
                 <Wifi className="h-3 w-3" />
-                <span>{t('leaderboard.online')}</span>
+                <span className="hidden sm:inline">{t('leaderboard.online')}</span>
               </>
             ) : (
               <>
                 <WifiOff className="h-3 w-3" />
-                <span>{t('leaderboard.offline')}</span>
+                <span className="hidden sm:inline">{t('leaderboard.offline')}</span>
               </>
             )}
           </div>
-        </h1>
-        <p className="text-muted-foreground">
+        </div>
+        <p className="text-sm sm:text-base text-muted-foreground">
           {t('leaderboard.subtitle')}
         </p>
       </div>
 
       {/* Onglets Classement / Ligues */}
       <div className="flex justify-center">
-        <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 gap-1">
+        <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 gap-1 w-full sm:w-auto max-w-md">
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+            className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base ${
               activeTab === 'leaderboard'
                 ? 'bg-white dark:bg-gray-700 shadow-md text-purple-600 dark:text-purple-400'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center justify-center gap-1.5 sm:gap-2">
               <Trophy className="w-4 h-4" />
-              {t('leaderboard.leaderboardTab')}
+              <span className="truncate">{t('leaderboard.leaderboardTab')}</span>
             </span>
           </button>
           <button
             onClick={() => setActiveTab('leagues')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+            className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base ${
               activeTab === 'leagues'
                 ? 'bg-white dark:bg-gray-700 shadow-md text-purple-600 dark:text-purple-400'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center justify-center gap-1.5 sm:gap-2">
               <Crown className="w-4 h-4" />
-              {t('leaderboard.leagues')}
+              <span className="truncate">{t('leaderboard.leagues')}</span>
             </span>
           </button>
         </div>
@@ -458,9 +462,9 @@ export default function LeaderboardPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 justify-center">
+      <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-4 sm:justify-center">
         <Select value={leaderboardType} onValueChange={setLeaderboardType}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -474,7 +478,7 @@ export default function LeaderboardPage() {
         </Select>
 
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -486,7 +490,7 @@ export default function LeaderboardPage() {
         </Select>
 
         <Select value={scope} onValueChange={setScope}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -498,40 +502,40 @@ export default function LeaderboardPage() {
 
       {/* Top 3 Podium */}
       {top3.length >= 3 && (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6 items-end">
           {/* 2nd Place */}
-          <Card className="md:order-1 md:mt-8">
-            <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full mb-4">
-                <Medal className="h-8 w-8 text-white" />
+          <Card className="order-1">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <div className="inline-flex items-center justify-center w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full mb-2 sm:mb-4">
+                <Medal className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="font-bold text-lg mb-1">{top3[1].username}</h3>
-              <p className="text-sm text-muted-foreground mb-3">Niveau {top3[1].level}</p>
-              <div className="text-2xl font-bold mb-1">
+              <h3 className="font-bold text-sm sm:text-lg mb-0.5 sm:mb-1 truncate">{top3[1].username}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-3">Niv. {top3[1].level}</p>
+              <div className="text-lg sm:text-2xl font-bold mb-0.5 sm:mb-1">
                 {top3[1].score.toLocaleString()}
               </div>
-              <div className="text-sm text-muted-foreground">{getTypeLabel(leaderboardType)}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground hidden sm:block">{getTypeLabel(leaderboardType)}</div>
             </CardContent>
           </Card>
 
           {/* 1st Place */}
-          <Card className="bg-gradient-to-r from-yellow-400 to-yellow-600 md:order-2 transform md:scale-105 border-none">
-            <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4">
-                <Trophy className="h-10 w-10 text-yellow-600" />
+          <Card className="bg-gradient-to-r from-yellow-400 to-yellow-600 order-2 transform scale-105 sm:scale-110 border-none -mt-2 sm:-mt-4">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-20 sm:h-20 bg-white rounded-full mb-2 sm:mb-4">
+                <Trophy className="h-6 w-6 sm:h-10 sm:w-10 text-yellow-600" />
               </div>
-              <h3 className="font-bold text-white text-xl mb-1">{top3[0].username}</h3>
-              <p className="text-yellow-100 mb-3">Niveau {top3[0].level}</p>
-              <div className="text-3xl font-bold text-white mb-1">
+              <h3 className="font-bold text-white text-sm sm:text-xl mb-0.5 sm:mb-1 truncate">{top3[0].username}</h3>
+              <p className="text-yellow-100 text-xs sm:text-base mb-1 sm:mb-3">Niv. {top3[0].level}</p>
+              <div className="text-xl sm:text-3xl font-bold text-white mb-0.5 sm:mb-1">
                 {top3[0].score.toLocaleString()}
               </div>
-              <div className="text-yellow-100">{getTypeLabel(leaderboardType)}</div>
-              <div className="mt-4 flex items-center justify-center space-x-4 text-white">
+              <div className="text-yellow-100 text-xs sm:text-base hidden sm:block">{getTypeLabel(leaderboardType)}</div>
+              <div className="mt-2 sm:mt-4 flex items-center justify-center space-x-2 sm:space-x-4 text-white">
                 <div className="flex items-center">
-                  <Flame className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{top3[0].streak}</span>
+                  <Flame className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                  <span className="text-xs sm:text-sm">{top3[0].streak}</span>
                 </div>
-                <div className="flex items-center">
+                <div className="hidden sm:flex items-center">
                   <Star className="h-4 w-4 mr-1" />
                   <span className="text-sm">Niveau {top3[0].level}</span>
                 </div>
@@ -540,17 +544,17 @@ export default function LeaderboardPage() {
           </Card>
 
           {/* 3rd Place */}
-          <Card className="md:order-3 md:mt-8">
-            <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full mb-4">
-                <Medal className="h-8 w-8 text-white" />
+          <Card className="order-3">
+            <CardContent className="p-3 sm:p-6 text-center">
+              <div className="inline-flex items-center justify-center w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full mb-2 sm:mb-4">
+                <Medal className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="font-bold text-lg mb-1">{top3[2].username}</h3>
-              <p className="text-sm text-muted-foreground mb-3">Niveau {top3[2].level}</p>
-              <div className="text-2xl font-bold mb-1">
+              <h3 className="font-bold text-sm sm:text-lg mb-0.5 sm:mb-1 truncate">{top3[2].username}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-3">Niv. {top3[2].level}</p>
+              <div className="text-lg sm:text-2xl font-bold mb-0.5 sm:mb-1">
                 {top3[2].score.toLocaleString()}
               </div>
-              <div className="text-sm text-muted-foreground">{getTypeLabel(leaderboardType)}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground hidden sm:block">{getTypeLabel(leaderboardType)}</div>
             </CardContent>
           </Card>
         </div>
@@ -558,50 +562,68 @@ export default function LeaderboardPage() {
 
       {/* Full Leaderboard */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('leaderboard.fullLeaderboard')}</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">{t('leaderboard.fullLeaderboard')}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
+        <CardContent className="p-2 sm:p-6 pt-0">
+          <div className="space-y-1.5 sm:space-y-2">
             {leaderboard.map((entry) => {
               const TypeIcon = getTypeIcon(leaderboardType)
 
               return (
                 <div
                   key={entry.user_id}
-                  className={`p-4 rounded-lg transition-colors ${
+                  className={`p-2.5 sm:p-4 rounded-lg transition-colors ${
                     entry.rank <= 3
                       ? getRankBadge(entry.rank)
                       : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4">
                     {/* Rank */}
-                    <div className="flex-shrink-0 w-12 flex items-center justify-center">
-                      {getRankIcon(entry.rank)}
+                    <div className="flex-shrink-0 w-8 sm:w-12 flex items-center justify-center">
+                      {entry.rank <= 3 ? (
+                        getRankIcon(entry.rank)
+                      ) : (
+                        <span className="text-sm sm:text-lg font-bold text-gray-600">#{entry.rank}</span>
+                      )}
                     </div>
 
                     {/* Avatar */}
                     <div className="flex-shrink-0">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                      <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg ${
                         entry.rank <= 3 ? 'bg-white text-gray-900' : 'bg-primary text-primary-foreground'
                       }`}>
                         {entry.username.charAt(0).toUpperCase()}
                       </div>
                     </div>
 
-                    {/* User Info */}
+                    {/* User Info + Mobile Stats */}
                     <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold ${entry.rank <= 3 ? 'text-white' : ''}`}>
+                      <h3 className={`font-semibold text-sm sm:text-base truncate ${entry.rank <= 3 ? 'text-white' : ''}`}>
                         {entry.username}
                       </h3>
-                      <p className={`text-sm ${entry.rank <= 3 ? 'text-white/80' : 'text-muted-foreground'}`}>
-                        Niveau {entry.level}
-                      </p>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <p className={`text-xs sm:text-sm ${entry.rank <= 3 ? 'text-white/80' : 'text-muted-foreground'}`}>
+                          Niv. {entry.level}
+                        </p>
+                        {/* Mobile stats inline */}
+                        <div className="flex sm:hidden items-center gap-2">
+                          <span className={`text-xs font-bold ${entry.rank <= 3 ? 'text-white' : ''}`}>
+                            {entry.score.toLocaleString()}
+                          </span>
+                          {entry.streak > 0 && (
+                            <span className={`text-xs flex items-center ${entry.rank <= 3 ? 'text-white/80' : 'text-orange-600'}`}>
+                              <Flame className="h-3 w-3 mr-0.5" />
+                              {entry.streak}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="hidden md:flex items-center gap-6">
+                    {/* Desktop Stats */}
+                    <div className="hidden sm:flex items-center gap-6">
                       <div className="text-center">
                         <div className={`text-lg font-bold flex items-center gap-1 ${entry.rank <= 3 ? 'text-white' : ''}`}>
                           <TypeIcon className="h-4 w-4" />
@@ -631,9 +653,9 @@ export default function LeaderboardPage() {
           </div>
 
           {leaderboard.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Trophy className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>{t('leaderboard.noData')}</p>
+            <div className="text-center py-8 sm:py-12 text-muted-foreground">
+              <Trophy className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm sm:text-base">{t('leaderboard.noData')}</p>
             </div>
           )}
         </CardContent>
@@ -642,27 +664,27 @@ export default function LeaderboardPage() {
           {/* Current User Position */}
           {currentUserRank && (
             <Card className="bg-gradient-to-r from-primary to-purple-600 text-white border-none">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary font-bold text-2xl">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full flex items-center justify-center text-primary font-bold text-lg sm:text-2xl shrink-0">
                       #{currentUserRank.rank}
                     </div>
                     <div>
-                      <h3 className="font-bold text-xl mb-1">{t('leaderboard.yourPosition')}</h3>
-                      <p className="text-white/80">{t('leaderboard.level')} {currentUserRank.level}</p>
+                      <h3 className="font-bold text-base sm:text-xl mb-0.5 sm:mb-1">{t('leaderboard.yourPosition')}</h3>
+                      <p className="text-white/80 text-sm sm:text-base">{t('leaderboard.level')} {currentUserRank.level}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold mb-1">
-                      {currentUserRank.score.toLocaleString()}
-                    </div>
-                    <div className="text-white/80">{getTypeLabel(leaderboardType)}</div>
-                    <div className="mt-2 flex items-center justify-end gap-4">
-                      <div className="flex items-center">
-                        <Flame className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{currentUserRank.streak} {t('leaderboard.days')}</span>
+                  <div className="flex sm:flex-col items-center sm:items-end gap-3 sm:gap-0 w-full sm:w-auto justify-between sm:justify-start">
+                    <div className="sm:text-right">
+                      <div className="text-xl sm:text-3xl font-bold sm:mb-1">
+                        {currentUserRank.score.toLocaleString()}
                       </div>
+                      <div className="text-white/80 text-xs sm:text-base hidden sm:block">{getTypeLabel(leaderboardType)}</div>
+                    </div>
+                    <div className="flex items-center gap-1 sm:mt-2">
+                      <Flame className="h-4 w-4" />
+                      <span className="text-sm">{currentUserRank.streak} {t('leaderboard.days')}</span>
                     </div>
                   </div>
                 </div>
@@ -672,14 +694,14 @@ export default function LeaderboardPage() {
 
           {/* Info Card */}
           <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900 rounded-lg shrink-0">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-2">{t('leaderboard.howToClimb')}</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="font-semibold mb-1.5 sm:mb-2 text-sm sm:text-base">{t('leaderboard.howToClimb')}</h3>
+                  <ul className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm text-muted-foreground">
                     {tArray('leaderboard.howToClimbTips').map((tip, index) => (
                       <li key={index}>• {tip}</li>
                     ))}
@@ -707,90 +729,92 @@ export default function LeaderboardPage() {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <Card className={`border-2 ${getLeagueConfig(myLeaguePosition.tier).borderColor} overflow-hidden`}>
-                    <div className={`bg-gradient-to-r ${getLeagueConfig(myLeaguePosition.tier).bgGradient} p-6 text-white`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="text-5xl">{getLeagueConfig(myLeaguePosition.tier).icon}</div>
+                    <div className={`bg-gradient-to-r ${getLeagueConfig(myLeaguePosition.tier).bgGradient} p-4 sm:p-6 text-white`}>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="text-3xl sm:text-5xl">{getLeagueConfig(myLeaguePosition.tier).icon}</div>
                           <div>
-                            <h2 className="text-2xl font-bold">Ligue {getLeagueConfig(myLeaguePosition.tier).name}</h2>
-                            <p className="text-white/80">Semaine {myLeaguePosition.weeks_in_tier} dans cette ligue</p>
+                            <h2 className="text-lg sm:text-2xl font-bold">Ligue {getLeagueConfig(myLeaguePosition.tier).name}</h2>
+                            <p className="text-white/80 text-xs sm:text-base">Semaine {myLeaguePosition.weeks_in_tier} dans cette ligue</p>
                           </div>
                         </div>
                         <button
                           onClick={handleShareLeague}
-                          className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
+                          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-sm sm:text-base"
                         >
                           <Share2 className="w-4 h-4" />
-                          Partager
+                          <span className="hidden sm:inline">Partager</span>
                         </button>
                       </div>
                     </div>
-                    <CardContent className="p-6">
-                      <div className="grid md:grid-cols-4 gap-6">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                         {/* Rang actuel */}
                         <div className="text-center">
-                          <div className="text-4xl font-bold text-purple-600">#{myLeaguePosition.rank}</div>
-                          <div className="text-sm text-muted-foreground">Rang actuel</div>
-                          <div className="text-xs text-gray-400">sur {myLeaguePosition.total_in_league}</div>
+                          <div className="text-2xl sm:text-4xl font-bold text-purple-600">#{myLeaguePosition.rank}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Rang actuel</div>
+                          <div className="text-[10px] sm:text-xs text-gray-400">sur {myLeaguePosition.total_in_league}</div>
                         </div>
 
                         {/* XP hebdomadaire */}
                         <div className="text-center">
-                          <div className="text-4xl font-bold text-green-600">{myLeaguePosition.weekly_xp.toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">XP cette semaine</div>
+                          <div className="text-2xl sm:text-4xl font-bold text-green-600">{myLeaguePosition.weekly_xp.toLocaleString()}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">XP semaine</div>
                         </div>
 
                         {/* Zone de promotion/rétrogradation */}
                         <div className="text-center">
                           {myLeaguePosition.is_promotion_zone ? (
                             <div className="flex flex-col items-center">
-                              <div className="flex items-center gap-1 text-2xl font-bold text-green-500">
-                                <ChevronUp className="w-6 h-6" />
-                                Promotion
+                              <div className="flex items-center gap-0.5 sm:gap-1 text-lg sm:text-2xl font-bold text-green-500">
+                                <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" />
+                                <span className="hidden sm:inline">Promotion</span>
+                                <span className="sm:hidden">Promo</span>
                               </div>
-                              <div className="text-sm text-green-600">Zone de promotion!</div>
+                              <div className="text-xs sm:text-sm text-green-600">Zone de promotion!</div>
                               {myLeaguePosition.next_tier && (
-                                <div className="text-xs text-gray-400 mt-1">
+                                <div className="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">
                                   Vers {getLeagueConfig(myLeaguePosition.next_tier).name} {getLeagueConfig(myLeaguePosition.next_tier).icon}
                                 </div>
                               )}
                             </div>
                           ) : myLeaguePosition.is_demotion_zone ? (
                             <div className="flex flex-col items-center">
-                              <div className="flex items-center gap-1 text-2xl font-bold text-red-500">
-                                <ChevronDown className="w-6 h-6" />
-                                Rétrogradation
+                              <div className="flex items-center gap-0.5 sm:gap-1 text-lg sm:text-2xl font-bold text-red-500">
+                                <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />
+                                <span className="hidden sm:inline">Rétrogradation</span>
+                                <span className="sm:hidden">Danger</span>
                               </div>
-                              <div className="text-sm text-red-600">Zone de danger!</div>
+                              <div className="text-xs sm:text-sm text-red-600">Zone de danger!</div>
                               {myLeaguePosition.previous_tier && (
-                                <div className="text-xs text-gray-400 mt-1">
+                                <div className="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">
                                   Vers {getLeagueConfig(myLeaguePosition.previous_tier).name} {getLeagueConfig(myLeaguePosition.previous_tier).icon}
                                 </div>
                               )}
                             </div>
                           ) : (
                             <div className="flex flex-col items-center">
-                              <div className="text-2xl font-bold text-gray-500">—</div>
-                              <div className="text-sm text-muted-foreground">Zone stable</div>
+                              <div className="text-lg sm:text-2xl font-bold text-gray-500">—</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground">Zone stable</div>
                             </div>
                           )}
                         </div>
 
                         {/* Meilleur rang */}
                         <div className="text-center">
-                          <div className="text-2xl">{getLeagueConfig(myLeaguePosition.highest_tier).icon}</div>
-                          <div className="text-sm text-muted-foreground">Meilleure ligue</div>
-                          <div className="text-xs font-medium">{getLeagueConfig(myLeaguePosition.highest_tier).name}</div>
+                          <div className="text-xl sm:text-2xl">{getLeagueConfig(myLeaguePosition.highest_tier).icon}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Meilleure ligue</div>
+                          <div className="text-[10px] sm:text-xs font-medium">{getLeagueConfig(myLeaguePosition.highest_tier).name}</div>
                         </div>
                       </div>
 
                       {/* Barre de progression vers promotion/rétrogradation */}
-                      <div className="mt-6">
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-red-500">Zone de rétrogradation</span>
-                          <span className="text-green-500">Zone de promotion</span>
+                      <div className="mt-4 sm:mt-6">
+                        <div className="flex justify-between text-[10px] sm:text-sm mb-1.5 sm:mb-2">
+                          <span className="text-red-500">Rétrogradation</span>
+                          <span className="text-green-500">Promotion</span>
                         </div>
-                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{
@@ -806,9 +830,9 @@ export default function LeaderboardPage() {
                             style={{ marginLeft: `${100 - (myLeaguePosition.rank / myLeaguePosition.total_in_league) * 100}%` }}
                           />
                         </div>
-                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <div className="flex justify-between text-[10px] sm:text-xs text-gray-400 mt-1">
                           <span>#{myLeaguePosition.total_in_league}</span>
-                          <span>Votre position: #{myLeaguePosition.rank}</span>
+                          <span>Vous: #{myLeaguePosition.rank}</span>
                           <span>#1</span>
                         </div>
                       </div>
@@ -818,20 +842,20 @@ export default function LeaderboardPage() {
               )}
 
               {/* Sélecteur de ligue */}
-              <div className="flex justify-center">
-                <div className="flex flex-wrap gap-2 justify-center">
+              <div className="w-full overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible">
+                <div className="flex gap-1.5 sm:gap-2 justify-start sm:justify-center min-w-max sm:min-w-0 sm:flex-wrap">
                   {(['bronze', 'silver', 'gold', 'diamond', 'master'] as LeagueTier[]).map((tier) => (
                     <button
                       key={tier}
                       onClick={() => setSelectedLeagueTier(tier)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                      className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                         selectedLeagueTier === tier
                           ? `bg-gradient-to-r ${getLeagueConfig(tier).bgGradient} text-white shadow-lg scale-105`
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                     >
                       <span>{getLeagueConfig(tier).icon}</span>
-                      <span>{getLeagueConfig(tier).name}</span>
+                      <span className="hidden sm:inline">{getLeagueConfig(tier).name}</span>
                     </button>
                   ))}
                 </div>
@@ -840,14 +864,14 @@ export default function LeaderboardPage() {
               {/* Classement de la ligue sélectionnée */}
               {selectedLeagueTier && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <span className="text-2xl">{getLeagueConfig(selectedLeagueTier).icon}</span>
-                      Classement Ligue {getLeagueConfig(selectedLeagueTier).name}
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+                      <span className="text-xl sm:text-2xl">{getLeagueConfig(selectedLeagueTier).icon}</span>
+                      <span className="truncate">Ligue {getLeagueConfig(selectedLeagueTier).name}</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
+                  <CardContent className="p-2 sm:p-6 pt-0">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {leagueEntries.map((entry, index) => {
                         const isCurrentUser = myLeaguePosition?.user_id === entry.user_id
                         const tierConfig = getLeagueConfig(selectedLeagueTier)
@@ -858,7 +882,7 @@ export default function LeaderboardPage() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.03 }}
-                            className={`p-4 rounded-lg transition-all ${
+                            className={`p-2.5 sm:p-4 rounded-lg transition-all ${
                               isCurrentUser
                                 ? `bg-gradient-to-r ${tierConfig.bgGradient} text-white`
                                 : entry.is_promotion_zone
@@ -868,17 +892,17 @@ export default function LeaderboardPage() {
                                 : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'
                             }`}
                           >
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4">
                               {/* Rank */}
-                              <div className="flex-shrink-0 w-12 flex items-center justify-center">
+                              <div className="flex-shrink-0 w-8 sm:w-12 flex items-center justify-center">
                                 {entry.rank === 1 ? (
-                                  <Trophy className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-yellow-500'}`} />
+                                  <Trophy className={`h-5 w-5 sm:h-6 sm:w-6 ${isCurrentUser ? 'text-white' : 'text-yellow-500'}`} />
                                 ) : entry.rank === 2 ? (
-                                  <Medal className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-gray-400'}`} />
+                                  <Medal className={`h-5 w-5 sm:h-6 sm:w-6 ${isCurrentUser ? 'text-white' : 'text-gray-400'}`} />
                                 ) : entry.rank === 3 ? (
-                                  <Medal className={`h-6 w-6 ${isCurrentUser ? 'text-white' : 'text-orange-600'}`} />
+                                  <Medal className={`h-5 w-5 sm:h-6 sm:w-6 ${isCurrentUser ? 'text-white' : 'text-orange-600'}`} />
                                 ) : (
-                                  <span className={`text-lg font-bold ${isCurrentUser ? 'text-white' : 'text-gray-600'}`}>
+                                  <span className={`text-sm sm:text-lg font-bold ${isCurrentUser ? 'text-white' : 'text-gray-600'}`}>
                                     #{entry.rank}
                                   </span>
                                 )}
@@ -886,36 +910,50 @@ export default function LeaderboardPage() {
 
                               {/* Avatar */}
                               <div className="flex-shrink-0">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                                <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg ${
                                   isCurrentUser ? 'bg-white text-gray-900' : 'bg-primary text-primary-foreground'
                                 }`}>
                                   {entry.username.charAt(0).toUpperCase()}
                                 </div>
                               </div>
 
-                              {/* User Info */}
+                              {/* User Info + Mobile Stats */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h3 className={`font-semibold ${isCurrentUser ? 'text-white' : ''}`}>
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                  <h3 className={`font-semibold text-sm sm:text-base truncate ${isCurrentUser ? 'text-white' : ''}`}>
                                     {entry.username}
                                   </h3>
                                   {isCurrentUser && (
-                                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">Vous</span>
+                                    <span className="px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs">Vous</span>
                                   )}
                                   {entry.is_promotion_zone && !isCurrentUser && (
-                                    <ChevronUp className="w-4 h-4 text-green-500" />
+                                    <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
                                   )}
                                   {entry.is_demotion_zone && !isCurrentUser && (
-                                    <ChevronDown className="w-4 h-4 text-red-500" />
+                                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
                                   )}
                                 </div>
-                                <p className={`text-sm ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
-                                  Niveau {entry.level}
-                                </p>
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                  <p className={`text-xs sm:text-sm ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
+                                    Niv. {entry.level}
+                                  </p>
+                                  {/* Mobile stats inline */}
+                                  <div className="flex sm:hidden items-center gap-2">
+                                    <span className={`text-xs font-bold ${isCurrentUser ? 'text-white' : ''}`}>
+                                      {entry.weekly_xp.toLocaleString()} XP
+                                    </span>
+                                    {entry.current_streak > 0 && (
+                                      <span className={`text-xs flex items-center ${isCurrentUser ? 'text-white/80' : 'text-orange-600'}`}>
+                                        <Flame className="h-3 w-3 mr-0.5" />
+                                        {entry.current_streak}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
 
-                              {/* Stats */}
-                              <div className="hidden md:flex items-center gap-6">
+                              {/* Desktop Stats */}
+                              <div className="hidden sm:flex items-center gap-6">
                                 <div className="text-center">
                                   <div className={`text-lg font-bold flex items-center gap-1 ${isCurrentUser ? 'text-white' : ''}`}>
                                     <Zap className="h-4 w-4" />
@@ -945,9 +983,9 @@ export default function LeaderboardPage() {
                     </div>
 
                     {leagueEntries.length === 0 && (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Crown className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Aucun joueur dans cette ligue pour le moment</p>
+                      <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                        <Crown className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 opacity-20" />
+                        <p className="text-sm sm:text-base">Aucun joueur dans cette ligue</p>
                       </div>
                     )}
                   </CardContent>
@@ -956,19 +994,19 @@ export default function LeaderboardPage() {
 
               {/* Info sur les ligues */}
               <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                      <Crown className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900 rounded-lg shrink-0">
+                      <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Comment fonctionnent les ligues?</h3>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• Gagnez de l'XP chaque semaine pour monter dans le classement</li>
-                        <li>• Les top 3 de chaque ligue sont promus à la ligue supérieure</li>
-                        <li>• Les derniers du classement risquent la rétrogradation</li>
-                        <li>• Le classement se réinitialise chaque lundi à minuit</li>
-                        <li>• Plus votre ligue est élevée, plus vous gagnez de bonus!</li>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold mb-1.5 sm:mb-2 text-sm sm:text-base">Comment fonctionnent les ligues?</h3>
+                      <ul className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm text-muted-foreground">
+                        <li>• Gagnez de l'XP chaque semaine pour monter</li>
+                        <li>• Les top 3 sont promus à la ligue supérieure</li>
+                        <li>• Les derniers risquent la rétrogradation</li>
+                        <li>• Reset chaque lundi à minuit</li>
+                        <li>• Plus de bonus dans les ligues élevées!</li>
                       </ul>
                     </div>
                   </div>
