@@ -711,27 +711,28 @@ export default function FocusRoomPage() {
 
       {/* Top Bar */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-black/20 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <Link href="/focus-rooms">
-              <Button variant="ghost" size="icon" className="text-white/70 hover:text-white">
-                <ChevronLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="text-white/70 hover:text-white h-8 w-8 sm:h-10 sm:w-10">
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
 
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">{room.emoji}</span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-white">{room.name}</h1>
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <span className="text-xl sm:text-3xl flex-shrink-0">{room.emoji}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-sm sm:text-lg font-bold text-white truncate max-w-[100px] sm:max-w-none">{room.name}</h1>
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
                 </div>
-                <p className="text-xs text-white/60">{participants.length} {t('focusRoom.participants')}</p>
+                <p className="text-[10px] sm:text-xs text-white/60">{participants.length} {t('focusRoom.participants')}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-2">
             {/* Invite Friend Button */}
             <Button
               variant="ghost"
@@ -782,19 +783,49 @@ export default function FocusRoomPage() {
               {t('focusRoom.leave')}
             </Button>
           </div>
+
+          {/* Mobile actions */}
+          <div className="flex md:hidden items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openInviteDialog}
+              className="text-white/70 hover:text-white h-8 w-8"
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-white/70 hover:text-white h-8 w-8"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleLeaveRoom}
+              className="h-8 px-2"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="fixed top-16 right-4 z-50 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 p-4 w-64">
-          <h3 className="text-sm font-semibold text-white mb-3">{t('focusRoom.visualTheme')}</h3>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="fixed top-12 sm:top-16 right-2 sm:right-4 z-50 bg-gray-900/95 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 w-56 sm:w-64">
+          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3">{t('focusRoom.visualTheme')}</h3>
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {Object.entries(THEMES).map(([key, themeItem]) => (
               <button
                 key={key}
                 onClick={() => setCurrentTheme(key as keyof typeof THEMES)}
-                className={`p-2 rounded-lg text-xs transition ${
+                className={`p-1.5 sm:p-2 rounded-lg text-[10px] sm:text-xs transition ${
                   currentTheme === key
                     ? 'bg-purple-500 text-white'
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -804,33 +835,74 @@ export default function FocusRoomPage() {
               </button>
             ))}
           </div>
+
+          {/* Mobile: Show invite code here */}
+          {room.invite_code && (
+            <div className="mt-3 pt-3 border-t border-white/10 md:hidden">
+              <p className="text-[10px] text-white/60 mb-1.5">{t('focusRoom.inviteCode')}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyInviteCode}
+                className="w-full text-white/80 border-white/20 text-xs h-8"
+              >
+                {copied ? <Check className="h-3 w-3 mr-1.5" /> : <Copy className="h-3 w-3 mr-1.5" />}
+                {room.invite_code}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-4 grid lg:grid-cols-12 gap-6">
+      <main className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6">
         {/* Left Sidebar - Social Pressure & Leaderboard */}
-        <aside className="lg:col-span-3 space-y-4">
-          <SocialPressure
-            viewerCount={participants.length}
-            focusingCount={focusingParticipants.length}
-            myFocusMinutes={Math.round(myActualMinutes)}
-            roomAverage={roomAverage}
-            myRank={leaderboardEntries.find(e => e.userId === currentUserId)?.rank}
-            totalParticipants={participants.length}
-          />
+        <aside className="lg:col-span-3 space-y-3 sm:space-y-4">
+          {/* Mobile: Horizontal scroll for stats */}
+          <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory">
+            <div className="snap-start flex-shrink-0 w-[85%] sm:w-auto sm:flex-1">
+              <SocialPressure
+                viewerCount={participants.length}
+                focusingCount={focusingParticipants.length}
+                myFocusMinutes={Math.round(myActualMinutes)}
+                roomAverage={roomAverage}
+                myRank={leaderboardEntries.find(e => e.userId === currentUserId)?.rank}
+                totalParticipants={participants.length}
+              />
+            </div>
+            <div className="snap-start flex-shrink-0 w-[85%] sm:w-auto sm:flex-1">
+              <LiveLeaderboard
+                entries={leaderboardEntries}
+                currentUserId={getCurrentUserId() || undefined}
+              />
+            </div>
+          </div>
 
-          <LiveLeaderboard
-            entries={leaderboardEntries}
-            currentUserId={getCurrentUserId() || undefined}
-          />
+          {/* Desktop: Normal stack */}
+          <div className="hidden lg:block">
+            <SocialPressure
+              viewerCount={participants.length}
+              focusingCount={focusingParticipants.length}
+              myFocusMinutes={Math.round(myActualMinutes)}
+              roomAverage={roomAverage}
+              myRank={leaderboardEntries.find(e => e.userId === currentUserId)?.rank}
+              totalParticipants={participants.length}
+            />
+          </div>
+
+          <div className="hidden lg:block">
+            <LiveLeaderboard
+              entries={leaderboardEntries}
+              currentUserId={getCurrentUserId() || undefined}
+            />
+          </div>
         </aside>
 
         {/* Center - Main Focus Area */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-6 space-y-3 sm:space-y-6">
           {/* Pomodoro Timer */}
           <Card className="bg-gray-900/50 backdrop-blur-xl border-white/10">
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-8">
               <PomodoroTimer
                 onStatusChange={(status) => handleStatusChange(status === 'focusing' ? 'focusing' : 'break')}
                 onComplete={(type) => {
@@ -890,75 +962,105 @@ export default function FocusRoomPage() {
         </div>
 
         {/* Right Sidebar - Ambiance & Participants */}
-        <aside className="lg:col-span-3 space-y-4">
-          {/* Ambient Sounds */}
-          <AmbientSounds />
+        <aside className="lg:col-span-3 space-y-3 sm:space-y-4">
+          {/* Mobile: Grid layout for smaller components */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:hidden">
+            <div className="col-span-1">
+              <AmbientSounds />
+            </div>
+            <div className="col-span-1">
+              <RandomRewards
+                isActive={myStatus === 'focusing' || myStatus === 'deep_work'}
+                focusMinutes={Math.round(myActualMinutes)}
+                onRewardClaimed={async (reward) => {
+                  try {
+                    const result = await focusRoomsService.claimReward(roomId, reward.type, reward.rarity)
+                    toast({
+                      title: `${reward.emoji} ${reward.name}`,
+                      description: `${reward.description} (+${result.xp_earned} XP)`,
+                    })
+                    triggerCelebration('reward_claimed')
+                  } catch (error) {
+                    console.error('Error claiming reward:', error)
+                    toast({
+                      title: `${reward.emoji} ${reward.name}`,
+                      description: reward.description,
+                    })
+                    triggerCelebration('reward_claimed')
+                  }
+                }}
+              />
+            </div>
+          </div>
 
-          {/* Random Rewards */}
-          <RandomRewards
-            isActive={myStatus === 'focusing' || myStatus === 'deep_work'}
-            focusMinutes={Math.round(myActualMinutes)}
-            onRewardClaimed={async (reward) => {
-              // Utiliser l'endpoint HTTP pour sauvegarder l'XP (plus fiable que WebSocket)
-              try {
-                const result = await focusRoomsService.claimReward(roomId, reward.type, reward.rarity)
-                toast({
-                  title: `${reward.emoji} ${reward.name}`,
-                  description: `${reward.description} (+${result.xp_earned} XP)`,
-                })
-                // Celebrate reward!
-                triggerCelebration('reward_claimed')
-              } catch (error) {
-                console.error('Error claiming reward:', error)
-                // Afficher quand même le toast pour l'UX
-                toast({
-                  title: `${reward.emoji} ${reward.name}`,
-                  description: reward.description,
-                })
-                triggerCelebration('reward_claimed')
-              }
-            }}
-          />
+          {/* Desktop: Normal layout */}
+          <div className="hidden lg:block">
+            <AmbientSounds />
+          </div>
+
+          <div className="hidden lg:block">
+            <RandomRewards
+              isActive={myStatus === 'focusing' || myStatus === 'deep_work'}
+              focusMinutes={Math.round(myActualMinutes)}
+              onRewardClaimed={async (reward) => {
+                try {
+                  const result = await focusRoomsService.claimReward(roomId, reward.type, reward.rarity)
+                  toast({
+                    title: `${reward.emoji} ${reward.name}`,
+                    description: `${reward.description} (+${result.xp_earned} XP)`,
+                  })
+                  triggerCelebration('reward_claimed')
+                } catch (error) {
+                  console.error('Error claiming reward:', error)
+                  toast({
+                    title: `${reward.emoji} ${reward.name}`,
+                    description: reward.description,
+                  })
+                  triggerCelebration('reward_claimed')
+                }
+              }}
+            />
+          </div>
 
           {/* Participants List */}
           <Card className="bg-gray-900/50 backdrop-blur-xl border-white/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between text-white">
-                <span className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
+              <CardTitle className="text-sm sm:text-base flex items-center justify-between text-white">
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   {t('focusRoom.online')}
                 </span>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                <Badge variant="secondary" className="bg-green-500/20 text-green-400 text-[10px] sm:text-xs px-1.5 sm:px-2">
                   {focusingParticipants.length} {t('focusRoom.status.focusing')}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-64 overflow-y-auto">
-              <div className="space-y-2">
+            <CardContent className="max-h-48 sm:max-h-64 overflow-y-auto px-3 sm:px-6">
+              <div className="space-y-1.5 sm:space-y-2">
                 {participants.map((p) => (
                   <div
                     key={p.user_id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition"
+                    className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition"
                   >
-                    <div className="relative">
-                      <Avatar className="h-8 w-8 border border-white/10">
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="h-6 w-6 sm:h-8 sm:w-8 border border-white/10">
                         <AvatarImage src={p.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gray-700 text-white text-xs">
+                        <AvatarFallback className="bg-gray-700 text-white text-[10px] sm:text-xs">
                           {p.username.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${STATUS_CONFIG[p.status].color}`} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border-2 border-gray-900 ${STATUS_CONFIG[p.status].color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
+                      <p className="text-xs sm:text-sm font-medium text-white truncate">
                         {p.username}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-[10px] sm:text-xs text-white/50">
                         {p.focus_minutes} min
                       </p>
                     </div>
                     {p.milestones_reached && p.milestones_reached.length > 0 && (
-                      <span className="text-sm">
+                      <span className="text-xs sm:text-sm">
                         {p.milestones_reached[p.milestones_reached.length - 1] === '3h' ? '🏆' :
                          p.milestones_reached[p.milestones_reached.length - 1] === '2h' ? '💫' :
                          p.milestones_reached[p.milestones_reached.length - 1] === '1h' ? '⭐' : '🌟'}
@@ -973,30 +1075,30 @@ export default function FocusRoomPage() {
       </main>
 
       {/* XP Bonus Banner */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
-        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-500/30 rounded-full px-6 py-2 flex items-center gap-2">
-          <span className="text-lg">⚡</span>
-          <span className="text-sm font-medium text-purple-300">
+      <div className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 w-[90%] sm:w-auto max-w-sm">
+        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-500/30 rounded-full px-3 sm:px-6 py-1.5 sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
+          <span className="text-sm sm:text-lg">⚡</span>
+          <span className="text-xs sm:text-sm font-medium text-purple-300 truncate">
             {t('focusRoom.xpBonusActive')}
           </span>
-          <span className="text-lg">⚡</span>
+          <span className="text-sm sm:text-lg">⚡</span>
         </div>
       </div>
 
       {/* Invite User Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md mx-2 sm:mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-purple-600" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               {t('focusRoom.inviteFriendTitle')}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {t('focusRoom.inviteFriendDesc')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1004,44 +1106,45 @@ export default function FocusRoomPage() {
                 placeholder={t('focusRoom.searchUser')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm sm:text-base"
               />
             </div>
 
             {/* Optional message */}
-            <div className="space-y-2">
-              <Label htmlFor="invite_message">{t('focusRoom.inviteMessage')} ({t('common.optional')})</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="invite_message" className="text-xs sm:text-sm">{t('focusRoom.inviteMessage')} ({t('common.optional')})</Label>
               <Input
                 id="invite_message"
                 placeholder={t('focusRoom.inviteMessagePlaceholder')}
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
+                className="text-sm sm:text-base"
               />
             </div>
 
             {/* Users list */}
-            <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
+            <div className="max-h-48 sm:max-h-64 overflow-y-auto space-y-1.5 sm:space-y-2 border rounded-lg p-2">
               {filteredUsers.length === 0 ? (
-                <p className="text-center text-gray-500 py-4">
+                <p className="text-center text-gray-500 py-4 text-sm">
                   {searchQuery ? t('focusRoom.noUserFound') : t('focusRoom.typeToSearch')}
                 </p>
               ) : (
                 filteredUsers.slice(0, 20).map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-1.5 sm:p-2 hover:bg-gray-50 rounded-lg gap-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                         <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback className="bg-purple-100 text-purple-700">
+                        <AvatarFallback className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
                           {user.username.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium text-gray-900">{user.username}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{user.username}</p>
                         {user.full_name && (
-                          <p className="text-sm text-gray-500">{user.full_name}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{user.full_name}</p>
                         )}
                       </div>
                     </div>
@@ -1049,9 +1152,10 @@ export default function FocusRoomPage() {
                       size="sm"
                       onClick={() => handleInviteUser(user.id)}
                       disabled={invitingUserId === user.id}
+                      className="flex-shrink-0 h-7 sm:h-8 text-xs sm:text-sm"
                     >
                       {invitingUserId === user.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                       ) : (
                         t('focusRoom.invite')
                       )}
@@ -1063,7 +1167,7 @@ export default function FocusRoomPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setInviteDialogOpen(false)} className="w-full sm:w-auto">
               {t('common.close')}
             </Button>
           </DialogFooter>
