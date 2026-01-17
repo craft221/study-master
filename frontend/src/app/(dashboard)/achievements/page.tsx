@@ -43,6 +43,54 @@ interface UserStats {
   level: number
 }
 
+// Mapping des noms français vers les clés de traduction
+const achievementKeyMap: Record<string, string> = {
+  "Première Note": "first_note",
+  "Écrivain Amateur": "amateur_writer",
+  "Écrivain Confirmé": "confirmed_writer",
+  "Écrivain Expert": "expert_writer",
+  "Bibliothécaire Légendaire": "legendary_librarian",
+  "Première Flashcard": "first_flashcard",
+  "Collectionneur de Cartes": "card_collector",
+  "Maître des Flashcards": "flashcard_master",
+  "Légende des Flashcards": "flashcard_legend",
+  "Premier Quiz": "first_quiz",
+  "Amateur de Quiz": "quiz_amateur",
+  "Expert en Quiz": "quiz_expert",
+  "Maître des Quiz": "quiz_master",
+  "Premier Jour": "first_day",
+  "Semaine de Feu": "fire_week",
+  "Deux Semaines Intenses": "two_intense_weeks",
+  "Mois de Détermination": "determination_month",
+  "Engagement Trimestriel": "quarterly_commitment",
+  "Année de Persévérance": "year_perseverance",
+  "Score Parfait": "perfect_score",
+  "Perfectionniste": "perfectionist",
+  "Sans Faute": "flawless",
+  "Niveau 5": "level_5",
+  "Niveau 10": "level_10",
+  "Niveau 25": "level_25",
+  "Niveau 50": "level_50",
+  "1000 XP": "xp_1000",
+  "10 000 XP": "xp_10000",
+  "100 000 XP": "xp_100000",
+  "Premier Duel": "first_duel",
+  "Duelliste": "duelist",
+  "Champion de Duels": "duel_champion",
+  "Légende des Duels": "duel_legend",
+  "Première Victoire": "first_victory",
+  "Bienvenue!": "welcome",
+  "Import PDF": "pdf_import",
+  "Scanner Pro": "scanner_pro",
+  "Explorateur": "explorer",
+  "Quête Journalière": "daily_quest",
+  "Quêteur Assidu": "diligent_quester",
+  "Maître des Quêtes": "quest_master",
+  "Session d'Étude": "study_session",
+  "Étudiant Dévoué": "devoted_student",
+  "Scholar": "scholar"
+}
+
 export default function AchievementsPage() {
   const { t } = useLanguage()
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
@@ -50,6 +98,30 @@ export default function AchievementsPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+  // Helper pour obtenir le nom/description traduit
+  const getTranslatedName = (achievement: Achievement): string => {
+    const key = achievementKeyMap[achievement.name]
+    if (key) {
+      const translated = t(`achievements.items.${key}.name`)
+      // Si la traduction existe et n'est pas la clé elle-même, l'utiliser
+      if (translated && !translated.includes('achievements.items')) {
+        return translated
+      }
+    }
+    return achievement.name
+  }
+
+  const getTranslatedDescription = (achievement: Achievement): string => {
+    const key = achievementKeyMap[achievement.name]
+    if (key) {
+      const translated = t(`achievements.items.${key}.description`)
+      if (translated && !translated.includes('achievements.items')) {
+        return translated
+      }
+    }
+    return achievement.description
+  }
 
   useEffect(() => {
     fetchAchievements()
@@ -320,7 +392,7 @@ export default function AchievementsPage() {
                         </div>
                         <div className="min-w-0">
                           <CardTitle className="text-sm sm:text-lg flex items-center gap-1 sm:gap-2 flex-wrap">
-                            <span className="truncate">{achievement.name}</span>
+                            <span className="truncate">{getTranslatedName(achievement)}</span>
                             {unlocked && (
                               <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                             )}
@@ -340,7 +412,7 @@ export default function AchievementsPage() {
 
                   <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
                     <CardDescription className="mb-3 sm:mb-4 text-xs sm:text-sm">
-                      {achievement.description}
+                      {getTranslatedDescription(achievement)}
                     </CardDescription>
 
                     {!unlocked && (
