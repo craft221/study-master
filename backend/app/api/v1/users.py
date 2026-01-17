@@ -15,7 +15,7 @@ from app.models.flashcard import Flashcard
 from app.models.quiz import Quiz, QuizAttempt
 from app.models.focus_room import UserFocusRoomStats, FocusSession
 from app.models.gamification import Duel, DuelStatus
-from app.models.daily_quest import UserDailyQuest
+from app.models.daily_quest import DailyQuest, QuestStatus
 from app.models.document import Document
 from app.schemas.user import (
     UserProfileResponse,
@@ -434,10 +434,10 @@ async def get_user_stats(
 
     # Quêtes journalières complétées
     result = await db.execute(
-        select(func.count()).select_from(UserDailyQuest).where(
+        select(func.count()).select_from(DailyQuest).where(
             and_(
-                UserDailyQuest.user_id == current_user.id,
-                UserDailyQuest.is_completed == True
+                DailyQuest.user_id == current_user.id,
+                DailyQuest.status == QuestStatus.COMPLETED
             )
         )
     )
