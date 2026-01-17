@@ -224,79 +224,80 @@ export default function QuizzesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('quizzesPage.title')}</h1>
-          <p className="text-gray-600 mt-1">{t('quizzesPage.quizzesAvailable', { count: quizzes.length })}</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{t('quizzesPage.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">{t('quizzesPage.quizzesAvailable', { count: quizzes.length })}</p>
         </div>
         <Link
           href="/quizzes/new"
-          className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+          className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
         >
-          <Plus className="h-5 w-5 mr-2" />
-          {t('quizzesPage.createQuiz')}
+          <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">{t('quizzesPage.createQuiz')}</span>
+          <span className="sm:hidden">Créer</span>
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Brain className="h-6 w-6 text-blue-600" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 sm:p-4 lg:p-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Brain className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalAttempts}</h3>
-          <p className="text-gray-600 text-sm">{t('quizzesPage.totalAttempts')}</p>
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalAttempts}</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.totalAttempts')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 sm:p-4 lg:p-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">{completedQuizzes}</h3>
-          <p className="text-gray-600 text-sm">{t('quizzesPage.completedQuizzes')}</p>
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{completedQuizzes}</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.completedQuizzes')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Trophy className="h-6 w-6 text-purple-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 sm:p-4 lg:p-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">
             {averageScore.toFixed(0)}%
           </h3>
-          <p className="text-gray-600 text-sm">{t('quizzesPage.averageScore')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.averageScore')}</p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
           <input
             type="text"
             placeholder={t('quizzesPage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>
 
       {/* Quizzes Grid */}
       {filteredQuizzes.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-12 text-center">
+          <Brain className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {searchQuery ? t('quizzesPage.noQuizFound') : t('quizzesPage.noQuizAvailable')}
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
             {searchQuery
               ? t('quizzesPage.tryDifferentSearch')
               : t('quizzesPage.createFirstQuiz')}
@@ -304,15 +305,15 @@ export default function QuizzesPage() {
           {!searchQuery && (
             <Link
               href="/quizzes/new"
-              className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+              className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
               {t('quizzesPage.createMyFirstQuiz')}
             </Link>
           )}
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
           {filteredQuizzes.map((quiz) => {
             const lastAttempt = quiz.attempts?.[0]
             const bestScore = quiz.best_score
@@ -320,15 +321,15 @@ export default function QuizzesPage() {
             return (
               <div
                 key={quiz.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition"
               >
-                <div className="p-6">
+                <div className="p-3 sm:p-4 lg:p-6">
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2 sm:mb-4">
+                    <div className="flex-1 min-w-0">
                       {quiz.subject && (
                         <span
-                          className="px-3 py-1 rounded-full text-xs font-medium inline-block mb-2"
+                          className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium inline-block mb-2 truncate max-w-[120px] sm:max-w-none"
                           style={{
                             backgroundColor: `${quiz.subject.color}20`,
                             color: quiz.subject.color,
@@ -337,8 +338,8 @@ export default function QuizzesPage() {
                           {quiz.subject.name}
                         </span>
                       )}
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                      <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
                           {quiz.title}
                         </h3>
                         {quiz._isOffline && (
@@ -348,59 +349,60 @@ export default function QuizzesPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                         {quiz.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Info */}
-                  <div className="flex items-center justify-between py-4 border-t border-b border-gray-200 mb-4">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{quiz.total_questions || quiz.question_count || 0}</div>
-                      <div className="text-xs text-gray-500">{t('quizzesPage.questions')}</div>
+                  <div className="flex items-center justify-between py-2 sm:py-4 border-t border-b border-gray-200 dark:border-gray-700 mb-2 sm:mb-4">
+                    <div className="text-center flex-1">
+                      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{quiz.total_questions || quiz.question_count || 0}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('quizzesPage.questions')}</div>
                     </div>
-                    <div className="border-l border-r border-gray-200 px-4 text-center">
-                      <div className="text-lg font-bold text-gray-900">
+                    <div className="border-l border-r border-gray-200 dark:border-gray-700 px-2 sm:px-4 text-center flex-1">
+                      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                         {quiz.time_limit_minutes || '∞'}
                       </div>
-                      <div className="text-xs text-gray-500">{t('quizzesPage.minutes')}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('quizzesPage.minutes')}</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{quiz.attempts?.length || 0}</div>
-                      <div className="text-xs text-gray-500">{t('quizzesPage.attempts')}</div>
+                    <div className="text-center flex-1">
+                      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{quiz.attempts?.length || 0}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{t('quizzesPage.attempts')}</div>
                     </div>
                   </div>
 
                   {/* Best Score */}
                   {bestScore !== null && (
-                    <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
+                    <div className="mb-2 sm:mb-4 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{t('quizzesPage.bestScore')}</span>
-                        <div className="flex items-center space-x-2">
-                          <Trophy className="h-4 w-4 text-yellow-600" />
-                          <span className="font-bold text-yellow-700">{bestScore}%</span>
+                        <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{t('quizzesPage.bestScore')}</span>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 dark:text-yellow-400" />
+                          <span className="font-bold text-yellow-700 dark:text-yellow-400 text-sm sm:text-base">{bestScore}%</span>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
                     {quiz._isOffline ? (
                       <div
-                        className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm font-medium text-center flex items-center justify-center cursor-not-allowed"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs sm:text-sm font-medium text-center flex items-center justify-center cursor-not-allowed"
                         title={t('quizzesPage.waitingSync')}
                       >
-                        <CloudOff className="h-4 w-4 mr-1" />
-                        {t('quizzesPage.waitingSync')}
+                        <CloudOff className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span className="hidden sm:inline">{t('quizzesPage.waitingSync')}</span>
+                        <span className="sm:hidden">Sync...</span>
                       </div>
                     ) : (
                       <Link
                         href={`/quizzes/${quiz.id}`}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium text-center flex items-center justify-center"
+                        className="flex-1 px-2 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-xs sm:text-sm font-medium text-center flex items-center justify-center"
                       >
-                        <Play className="h-4 w-4 mr-1" />
+                        <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                         {t('quizzesPage.start')}
                       </Link>
                     )}

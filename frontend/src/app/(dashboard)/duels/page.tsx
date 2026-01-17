@@ -279,15 +279,15 @@ export default function DuelsPage() {
   const completedDuels = duels.filter(d => d.status === 'completed')
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Swords className="h-8 w-8 text-orange-500" />
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Swords className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-orange-500" />
             Duels
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Défiez vos amis et gagnez de l'XP !
           </p>
         </div>
@@ -295,9 +295,10 @@ export default function DuelsPage() {
         <div className="flex gap-2">
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <Target className="h-5 w-5" />
-                Lancer un défi
+              <Button size="default" className="gap-1 sm:gap-2 text-sm sm:text-base px-3 sm:px-4">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Lancer un défi</span>
+                <span className="sm:hidden">Défier</span>
               </Button>
             </DialogTrigger>
           <DialogContent>
@@ -451,41 +452,41 @@ export default function DuelsPage() {
       {/* Recommended Opponents */}
       {recommendedOpponents.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-500" />
+          <CardHeader className="p-3 sm:p-4 lg:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
               Adversaires recommandés
             </CardTitle>
-            <CardDescription>
-              Joueurs avec un niveau similaire au vôtre pour des matchs équilibrés
+            <CardDescription className="text-xs sm:text-sm">
+              Joueurs avec un niveau similaire
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
               {recommendedOpponents.map(opponent => (
                 <div
                   key={opponent.id}
-                  className="flex flex-col items-center p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
+                  className="flex flex-col items-center p-2 sm:p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
                 >
-                  <div className="p-3 rounded-full bg-primary/10 mb-2">
-                    <User className="h-6 w-6 text-primary" />
+                  <div className="p-2 sm:p-3 rounded-full bg-primary/10 mb-1 sm:mb-2">
+                    <User className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                  <h4 className="font-semibold text-center">{opponent.username}</h4>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Star className="h-3 w-3" />
-                    Niveau {opponent.level}
+                  <h4 className="font-semibold text-center text-xs sm:text-sm truncate max-w-full">{opponent.username}</h4>
+                  <div className="flex items-center gap-1 text-[10px] sm:text-sm text-muted-foreground">
+                    <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    Niv. {opponent.level}
                   </div>
-                  <div className="text-xs text-muted-foreground mb-2">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2 hidden sm:block">
                     {opponent.total_xp} XP ({opponent.xp_difference > 0 ? '+' : ''}{opponent.xp_difference})
                   </div>
-                  {getMatchQualityBadge(opponent.match_quality)}
+                  <div className="hidden sm:block">{getMatchQualityBadge(opponent.match_quality)}</div>
                   <Button
                     size="sm"
-                    className="mt-3 w-full"
+                    className="mt-2 sm:mt-3 w-full text-xs sm:text-sm h-7 sm:h-9"
                     onClick={() => handleChallengeRecommended(opponent)}
                     disabled={opponent.has_pending_duel}
                   >
-                    {opponent.has_pending_duel ? 'Duel en cours' : 'Défier'}
+                    {opponent.has_pending_duel ? 'En cours' : 'Défier'}
                   </Button>
                 </div>
               ))}
@@ -495,54 +496,54 @@ export default function DuelsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duels actifs</CardTitle>
-            <Swords className="h-4 w-4 text-purple-500" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+        <Card className="p-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Actifs</CardTitle>
+            <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeDuels.length}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{activeDuels.length}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Demandes</CardTitle>
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
+        <Card className="p-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Demandes</CardTitle>
+            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingDuels.length}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{pendingDuels.length}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Victoires</CardTitle>
-            <Trophy className="h-4 w-4 text-yellow-500" />
+        <Card className="p-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Victoires</CardTitle>
+            <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.wins || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Taux: {stats?.win_rate || 0}%
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{stats?.wins || 0}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
+              {stats?.win_rate || 0}%
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">XP Net</CardTitle>
+        <Card className="p-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">XP Net</CardTitle>
             {(stats?.net_xp || 0) >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
             ) : (
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
             )}
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${(stats?.net_xp || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className={`text-lg sm:text-2xl font-bold ${(stats?.net_xp || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {(stats?.net_xp || 0) >= 0 ? '+' : ''}{stats?.net_xp || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
               +{stats?.xp_won || 0} / -{stats?.xp_lost || 0}
             </p>
           </CardContent>
@@ -551,64 +552,75 @@ export default function DuelsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pending">
-            Demandes ({pendingDuels.length})
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger value="pending" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
+            <span className="hidden sm:inline">Demandes</span>
+            <span className="sm:hidden">📥</span>
+            <span className="ml-1">({pendingDuels.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="sent">
-            Envoyés ({sentDuels.length})
+          <TabsTrigger value="sent" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
+            <span className="hidden sm:inline">Envoyés</span>
+            <span className="sm:hidden">📤</span>
+            <span className="ml-1">({sentDuels.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="active">
-            Actifs ({activeDuels.length})
+          <TabsTrigger value="active" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
+            <span className="hidden sm:inline">Actifs</span>
+            <span className="sm:hidden">⚔️</span>
+            <span className="ml-1">({activeDuels.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="history">
-            Historique ({completedDuels.length})
+          <TabsTrigger value="history" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
+            <span className="hidden sm:inline">Historique</span>
+            <span className="sm:hidden">📜</span>
+            <span className="ml-1">({completedDuels.length})</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Pending Duels */}
-        <TabsContent value="pending" className="space-y-4">
+        <TabsContent value="pending" className="space-y-2 sm:space-y-4">
           {pendingDuels.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucune demande de duel</p>
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+                <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-muted-foreground text-sm sm:text-base">Aucune demande de duel</p>
               </CardContent>
             </Card>
           ) : (
             pendingDuels.map(duel => (
               <Card key={duel.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-950">
-                        <User className="h-6 w-6 text-orange-600" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-2 sm:p-3 rounded-full bg-orange-100 dark:bg-orange-950 flex-shrink-0">
+                        <User className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-lg truncate">
                           {duel.challenger?.username || 'Utilisateur'} vous défie !
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                          {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
                         </p>
-                        <div className="flex gap-2 mt-2">
-                          <Badge variant="outline">Niveau {duel.challenger?.level || '?'}</Badge>
+                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
+                          <Badge variant="outline" className="text-xs">Niv. {duel.challenger?.level || '?'}</Badge>
                           {getStatusBadge(duel.status)}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end">
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => handleDeclineDuel(duel.id)}
+                        className="text-xs sm:text-sm"
                       >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Refuser
+                        <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Refuser</span>
                       </Button>
-                      <Button onClick={() => handleAcceptDuel(duel.id)}>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Accepter
+                      <Button size="sm" onClick={() => handleAcceptDuel(duel.id)} className="text-xs sm:text-sm">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Accepter</span>
+                        <span className="sm:hidden">OK</span>
                       </Button>
                     </div>
                   </div>
@@ -619,38 +631,38 @@ export default function DuelsPage() {
         </TabsContent>
 
         {/* Sent Duels - Duels envoyés en attente de réponse */}
-        <TabsContent value="sent" className="space-y-4">
+        <TabsContent value="sent" className="space-y-2 sm:space-y-4">
           {sentDuels.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun défi en attente de réponse</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Lancez un défi pour commencer !
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+                <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-muted-foreground text-sm sm:text-base">Aucun défi en attente</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+                  Lancez un défi !
                 </p>
               </CardContent>
             </Card>
           ) : (
             sentDuels.map(duel => (
               <Card key={duel.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-950">
-                        <Clock className="h-6 w-6 text-blue-600" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-950 flex-shrink-0">
+                        <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          Défi envoyé à {duel.opponent?.username || 'Adversaire'}
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-lg truncate">
+                          Défi à {duel.opponent?.username || 'Adversaire'}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                          {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
                         </p>
-                        <div className="flex gap-2 mt-2">
-                          <Badge variant="outline">Niveau {duel.opponent?.level || '?'}</Badge>
-                          <Badge variant="secondary" className="text-blue-600">
-                            <Clock className="h-3 w-3 mr-1" />
-                            En attente
+                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
+                          <Badge variant="outline" className="text-xs">Niv. {duel.opponent?.level || '?'}</Badge>
+                          <Badge variant="secondary" className="text-blue-600 text-xs">
+                            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                            Attente
                           </Badge>
                         </div>
                       </div>
@@ -658,6 +670,8 @@ export default function DuelsPage() {
 
                     <Button
                       variant="outline"
+                      size="sm"
+                      className="text-xs sm:text-sm"
                       onClick={async () => {
                         try {
                           await duelsService.cancel(duel.id)
@@ -675,8 +689,8 @@ export default function DuelsPage() {
                         }
                       }}
                     >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Annuler
+                      <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Annuler</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -686,12 +700,12 @@ export default function DuelsPage() {
         </TabsContent>
 
         {/* Active Duels */}
-        <TabsContent value="active" className="space-y-4">
+        <TabsContent value="active" className="space-y-2 sm:space-y-4">
           {activeDuels.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Swords className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun duel actif</p>
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+                <Swords className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-muted-foreground text-sm sm:text-base">Aucun duel actif</p>
               </CardContent>
             </Card>
           ) : (
@@ -715,40 +729,41 @@ export default function DuelsPage() {
 
               return (
                 <Card key={duel.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-950">
-                          <Swords className="h-6 w-6 text-purple-600" />
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                        <div className="p-2 sm:p-3 rounded-full bg-purple-100 dark:bg-purple-950 flex-shrink-0">
+                          <Swords className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            Duel contre {opponent?.username || 'Adversaire'}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-sm sm:text-lg truncate">
+                            vs {opponent?.username || 'Adversaire'}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Quiz: {duel.quiz?.title || 'Non défini'} • Enjeux: {duel.stakes_xp} XP
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                            {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
                           </p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">Niveau {opponent?.level || '?'}</Badge>
+                          <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
+                            <Badge variant="outline" className="text-xs">Niv. {opponent?.level || '?'}</Badge>
                             {getStatusBadge(duel.status)}
                           </div>
 
                           {/* Afficher les scores si l'utilisateur a joué */}
                           {currentUserHasPlayed && (
-                            <div className="flex gap-4 mt-3 p-3 bg-muted/50 rounded-lg">
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Votre score:</span>{' '}
+                            <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 sm:mt-3 p-2 sm:p-3 bg-muted/50 rounded-lg text-xs sm:text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Vous:</span>{' '}
                                 <span className="font-bold text-primary">{myScore ?? '?'}</span>
                               </div>
                               {opponentHasPlayed ? (
-                                <div className="text-sm">
-                                  <span className="text-muted-foreground">Score adverse:</span>{' '}
+                                <div>
+                                  <span className="text-muted-foreground">Adverse:</span>{' '}
                                   <span className="font-bold">{opponentScore ?? '?'}</span>
                                 </div>
                               ) : (
-                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {opponent?.username || 'L\'adversaire'} n'a pas encore joué
+                                <div className="text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                  <span className="hidden sm:inline">{opponent?.username || 'Adversaire'} n'a pas joué</span>
+                                  <span className="sm:hidden">En attente</span>
                                 </div>
                               )}
                             </div>
@@ -759,19 +774,19 @@ export default function DuelsPage() {
                       {duel.quiz && (
                         <div className="flex flex-col items-end gap-2">
                           {!currentUserHasPlayed ? (
-                            <Button onClick={() => startDuel(duel.quiz!.id, duel.id)}>
-                              <Play className="h-4 w-4 mr-2" />
-                              Commencer
+                            <Button size="sm" onClick={() => startDuel(duel.quiz!.id, duel.id)} className="text-xs sm:text-sm">
+                              <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              Jouer
                             </Button>
                           ) : (
-                            <Badge variant="secondary" className="text-green-600 bg-green-100 dark:bg-green-900/30">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Vous avez joué
+                            <Badge variant="secondary" className="text-green-600 bg-green-100 dark:bg-green-900/30 text-xs">
+                              <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                              Joué
                             </Badge>
                           )}
                           {currentUserHasPlayed && !opponentHasPlayed && (
-                            <p className="text-xs text-muted-foreground">
-                              En attente de l'adversaire...
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">
+                              Attente adversaire...
                             </p>
                           )}
                         </div>
@@ -785,12 +800,12 @@ export default function DuelsPage() {
         </TabsContent>
 
         {/* History */}
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-2 sm:space-y-4">
           {completedDuels.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun duel terminé</p>
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-muted-foreground text-sm sm:text-base">Aucun duel terminé</p>
               </CardContent>
             </Card>
           ) : (
@@ -804,60 +819,61 @@ export default function DuelsPage() {
 
               return (
                 <Card key={duel.id} className={isWinner ? 'border-yellow-500/50' : isDraw ? 'border-blue-500/50' : ''}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         {isWinner ? (
-                          <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-950">
-                            <Crown className="h-6 w-6 text-yellow-600" />
+                          <div className="p-2 sm:p-3 rounded-full bg-yellow-100 dark:bg-yellow-950 flex-shrink-0">
+                            <Crown className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-600" />
                           </div>
                         ) : isDraw ? (
-                          <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-950">
-                            <Star className="h-6 w-6 text-blue-600" />
+                          <div className="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-950 flex-shrink-0">
+                            <Star className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                           </div>
                         ) : (
-                          <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-800">
-                            <Trophy className="h-6 w-6 text-gray-400" />
+                          <div className="p-2 sm:p-3 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                            <Trophy className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
                           </div>
                         )}
-                        <div>
-                          <h3 className="font-semibold text-lg flex items-center gap-2">
-                            Duel contre {opponent?.username || 'Adversaire'}
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-sm sm:text-lg flex flex-wrap items-center gap-1 sm:gap-2">
+                            <span className="truncate">vs {opponent?.username || 'Adversaire'}</span>
                             {isWinner && (
-                              <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                                <Crown className="h-3 w-3 mr-1" />
-                                Victoire
+                              <Badge variant="outline" className="text-yellow-600 border-yellow-600 text-xs">
+                                <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                                <span className="hidden sm:inline">Victoire</span>
+                                <span className="sm:hidden">W</span>
                               </Badge>
                             )}
                             {isDraw && (
-                              <Badge variant="outline" className="text-blue-600 border-blue-600">
-                                <Star className="h-3 w-3 mr-1" />
-                                Égalité
+                              <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
+                                <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                                <span className="hidden sm:inline">Égalité</span>
+                                <span className="sm:hidden">=</span>
                               </Badge>
                             )}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Quiz: {duel.quiz?.title || 'Non défini'}
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                            {duel.quiz?.title || 'Quiz'}
                           </p>
-                          <div className="flex gap-4 mt-2">
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">Votre score:</span>{' '}
+                          <div className="flex flex-wrap gap-2 sm:gap-4 mt-1 sm:mt-2 text-xs sm:text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Vous:</span>{' '}
                               <span className="font-bold">{myScore ?? '?'}</span>
                             </div>
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">Score adverse:</span>{' '}
+                            <div>
+                              <span className="text-muted-foreground">Adv:</span>{' '}
                               <span className="font-bold">{opponentScore ?? '?'}</span>
                             </div>
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">XP:</span>{' '}
+                            <div>
                               <span className={`font-bold ${isWinner ? 'text-green-600' : isDraw ? 'text-blue-600' : 'text-red-600'}`}>
-                                {isDraw ? '0' : (isWinner ? `+${duel.stakes_xp}` : `-${Math.round(duel.stakes_xp / 2)}`)}
+                                {isDraw ? '0' : (isWinner ? `+${duel.stakes_xp}` : `-${Math.round(duel.stakes_xp / 2)}`)} XP
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-right">
                         {new Date(duel.ended_at || duel.created_at).toLocaleDateString()}
                       </div>
                     </div>

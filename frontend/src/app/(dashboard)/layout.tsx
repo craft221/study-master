@@ -180,23 +180,23 @@ function DashboardContent({ children }: { children: ReactNode }) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200 dark:border-gray-700">
             <Link href="/dashboard" className="flex items-center space-x-2">
-              <BookOpen className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Studera</span>
+              <BookOpen className="h-7 w-7 text-primary-600 dark:text-primary-400" />
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Studera</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* User Info */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
-              <div className="h-12 w-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
+              <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -204,39 +204,40 @@ function DashboardContent({ children }: { children: ReactNode }) {
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
               </div>
             </div>
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-sm mb-2">
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="text-gray-600 dark:text-gray-400">{t('dashboard.level')} {user.level}</span>
                 <span className="text-gray-600 dark:text-gray-400">{user.total_xp} XP</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-primary-600 dark:bg-primary-500 h-2 rounded-full transition-all"
+                  className="bg-primary-600 dark:bg-primary-500 h-1.5 rounded-full transition-all"
                   style={{ width: `${Math.min((user.xp_progress / user.xp_needed) * 100, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-                {user.xp_progress}/{user.xp_needed} → {t('dashboard.level')} {user.level + 1}
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 text-right">
+                {user.xp_progress}/{user.xp_needed} → Niv. {user.level + 1}
               </p>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
             {navigationItems.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
               return (
                 <Link
                   key={item.key}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors',
+                    'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-sm',
                     isActive
                       ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-4.5 w-4.5" />
                   <span>{t(item.key)}</span>
                 </Link>
               )
@@ -244,19 +245,20 @@ function DashboardContent({ children }: { children: ReactNode }) {
           </nav>
 
           {/* Bottom Actions */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-1">
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700 space-y-0.5">
             <Link
               href="/settings"
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm"
             >
-              <Settings className="h-5 w-5" />
+              <Settings className="h-4.5 w-4.5" />
               <span>{t('nav.settings')}</span>
             </Link>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4.5 w-4.5" />
               <span>{t('auth.logout')}</span>
             </button>
           </div>
@@ -267,45 +269,46 @@ function DashboardContent({ children }: { children: ReactNode }) {
       <div className="lg:pl-64">
         {/* Top Bar */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between h-16 px-6">
+          <div className="flex items-center justify-between h-14 px-3 sm:px-4 lg:px-6">
             {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1.5 -ml-1"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
 
             {/* Search */}
-            <div className="flex-1 max-w-2xl mx-4">
+            <div className="flex-1 max-w-xl mx-2 sm:mx-4">
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="w-full flex items-center gap-3 pl-4 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 hover:ring-2 hover:ring-primary-500/20 transition-all text-left"
+                className="w-full flex items-center gap-2 sm:gap-3 px-3 py-1.5 sm:py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 hover:ring-2 hover:ring-primary-500/20 transition-all text-left"
               >
-                <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                <span className="text-gray-400 dark:text-gray-500">{t('common.search')}...</span>
-                <kbd className="ml-auto hidden sm:inline-flex px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">Ctrl+K</kbd>
+                <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <span className="text-sm text-gray-400 dark:text-gray-500 hidden sm:inline">{t('common.search')}...</span>
+                <span className="text-sm text-gray-400 dark:text-gray-500 sm:hidden">...</span>
+                <kbd className="ml-auto hidden md:inline-flex px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">Ctrl+K</kbd>
               </button>
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <OfflineIndicator compact showSyncButton={false} />
               <NotificationDropdown />
-              <LanguageToggle />
+              <span className="hidden sm:block"><LanguageToggle /></span>
               <button
                 onClick={toggleDarkMode}
-                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                className="p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
                 title={darkMode ? t('settings.lightTheme') : t('settings.darkTheme')}
               >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {darkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
               </button>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-3 sm:p-4 lg:p-6">
           <ErrorBoundary fallback={<PageErrorFallback />}>
             {children}
           </ErrorBoundary>
