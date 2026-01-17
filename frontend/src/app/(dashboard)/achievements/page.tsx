@@ -41,6 +41,13 @@ interface UserStats {
   current_streak: number
   total_xp: number
   level: number
+  total_study_time_minutes: number
+  // Achievement progress stats
+  duels_participated: number
+  duels_won: number
+  perfect_quizzes: number
+  pdfs_imported: number
+  daily_quests_completed: number
 }
 
 // Mapping des noms français vers les clés de traduction
@@ -206,6 +213,7 @@ export default function AchievementsPage() {
     let currentValue = 0
 
     switch (reqType) {
+      // Learning
       case 'notes_created':
         currentValue = userStats.total_notes || 0
         break
@@ -215,18 +223,52 @@ export default function AchievementsPage() {
       case 'flashcards_reviewed':
         currentValue = userStats.total_flashcards_reviewed || 0
         break
-      case 'quizzes_taken':
+      case 'quizzes_completed':
         currentValue = userStats.completed_quiz_attempts || 0
         break
+
+      // Streak
       case 'streak_days':
         currentValue = userStats.current_streak || 0
         break
-      case 'xp':
+
+      // Mastery
+      case 'total_xp':
         currentValue = userStats.total_xp || 0
         break
-      case 'level':
+      case 'level_reached':
         currentValue = userStats.level || 1
         break
+      case 'perfect_quizzes':
+        currentValue = userStats.perfect_quizzes || 0
+        break
+
+      // Social
+      case 'duels_participated':
+        currentValue = userStats.duels_participated || 0
+        break
+      case 'duels_won':
+        currentValue = userStats.duels_won || 0
+        break
+
+      // Special
+      case 'account_created':
+        currentValue = 1 // Toujours accompli si l'utilisateur existe
+        break
+      case 'pdf_imported':
+        currentValue = userStats.pdfs_imported || 0
+        break
+      case 'sections_visited':
+        // Non tracké pour l'instant
+        currentValue = 0
+        break
+      case 'daily_quests_completed':
+        currentValue = userStats.daily_quests_completed || 0
+        break
+      case 'study_minutes':
+        currentValue = userStats.total_study_time_minutes || 0
+        break
+
       default:
         currentValue = 0
     }

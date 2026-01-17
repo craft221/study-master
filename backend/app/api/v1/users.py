@@ -14,6 +14,9 @@ from app.models.note import Note
 from app.models.flashcard import Flashcard
 from app.models.quiz import Quiz, QuizAttempt
 from app.models.focus_room import UserFocusRoomStats, FocusSession
+from app.models.gamification import Duel, DuelStatus
+from app.models.daily_quest import UserDailyQuest
+from app.models.document import Document
 from app.schemas.user import (
     UserProfileResponse,
     UserStatsResponse,
@@ -382,7 +385,64 @@ async def get_user_stats(
 
     # Longest streak depuis la base de données
     longest_streak = current_user.longest_streak
-    
+
+    # Statistiques pour achievements
+    # Duels participés
+    result = await db.execute(
+        select(func.count()).select_from(Duel).where(
+            or_(
+                Duel.challenger_id == current_user.id,
+                Duel.challenged_id == current_user.id
+            )
+        )
+    )
+    duels_participated = result.scalar() or 0
+
+    # Duels gagnés
+    result = await db.execute(
+        select(func.count()).select_from(Duel).where(
+            and_(
+                Duel.winner_id == current_user.id,
+                Duel.status == DuelStatus.COMPLETED
+            )
+        )
+    )
+    duels_won = result.scalar() or 0
+
+    # Quiz parfaits (score = 100%)
+    result = await db.execute(
+        select(func.count()).select_from(QuizAttempt).where(
+            and_(
+                QuizAttempt.user_id == current_user.id,
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score == 100
+            )
+        )
+    )
+    perfect_quizzes = result.scalar() or 0
+
+    # PDFs importés (documents de type PDF)
+    result = await db.execute(
+        select(func.count()).select_from(Document).where(
+            and_(
+                Document.user_id == current_user.id,
+                Document.file_type == 'pdf'
+            )
+        )
+    )
+    pdfs_imported = result.scalar() or 0
+
+    # Quêtes journalières complétées
+    result = await db.execute(
+        select(func.count()).select_from(UserDailyQuest).where(
+            and_(
+                UserDailyQuest.user_id == current_user.id,
+                UserDailyQuest.is_completed == True
+            )
+        )
+    )
+    daily_quests_completed = result.scalar() or 0
+
     response_data = {
         "user_id": current_user.id,
         "username": current_user.username,
@@ -410,7 +470,13 @@ async def get_user_stats(
         "flashcards_reviewed_this_week": flashcards_reviewed_this_week,
         "quizzes_taken_this_week": quizzes_taken_this_week,
         "member_since": current_user.created_at.isoformat() if current_user.created_at else None,
-        "last_login": current_user.last_login_at.isoformat() if current_user.last_login_at else None
+        "last_login": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+        # Champs pour achievements
+        "duels_participated": duels_participated,
+        "duels_won": duels_won,
+        "perfect_quizzes": perfect_quizzes,
+        "pdfs_imported": pdfs_imported,
+        "daily_quests_completed": daily_quests_completed
     }
 
     # Mettre en cache pour 2 minutes (120s)

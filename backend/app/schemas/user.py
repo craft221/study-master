@@ -259,6 +259,13 @@ class UserStatsResponse(BaseModel):
     member_since: datetime
     last_login: Optional[datetime]
 
+    # Achievement Progress Stats
+    duels_participated: int = 0
+    duels_won: int = 0
+    perfect_quizzes: int = 0
+    pdfs_imported: int = 0
+    daily_quests_completed: int = 0
+
     class Config:
         from_attributes = True
 
