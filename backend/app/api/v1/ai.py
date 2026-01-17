@@ -556,7 +556,7 @@ async def generate_quiz_from_note(
             source_note_id=note.id,
             title=quiz_data.get("title", f"Quiz - {note.title}"),
             description=f"Quiz généré automatiquement par IA depuis la note '{note.title}'",
-            questions=quiz_data["questions"],
+            questions_data=quiz_data["questions"],
             total_points=total_points,
             difficulty=request.difficulty,
             is_ai_generated=True,
@@ -1937,13 +1937,12 @@ async def generate_quiz_from_document(
         )
 
         # Créer le quiz en base
-        import json
         quiz = Quiz(
             title=f"Quiz - {doc_title}",
             description=f"Quiz généré automatiquement depuis le document '{doc_title}'",
             subject_id=document.subject_id,
             user_id=current_user.id,
-            questions=json.dumps(quiz_data.get("questions", [])),
+            questions_data=quiz_data.get("questions", []),
             difficulty=request.difficulty,
             time_limit_minutes=request.question_count * 2,  # 2 min par question
             total_points=sum(q.get("points", 1) for q in quiz_data.get("questions", [])),
