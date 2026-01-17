@@ -19,6 +19,7 @@ class GroupMessage(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     is_edited = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)  # Soft delete for WhatsApp-style "message deleted"
     reply_to_message_id = Column(Integer, ForeignKey("group_messages.id", ondelete="SET NULL"), nullable=True, index=True)
     mentions = Column(JSON, nullable=True)  # List of user IDs mentioned in the message
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

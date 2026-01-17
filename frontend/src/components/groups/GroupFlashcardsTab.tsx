@@ -145,19 +145,20 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Header with Share Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Flashcards partagés</h3>
-          <p className="text-sm text-gray-500">{sharedDecks.length} deck(s) disponible(s)</p>
+          <h3 className="text-base sm:text-lg font-semibold">Flashcards partagés</h3>
+          <p className="text-xs sm:text-sm text-gray-500">{sharedDecks.length} deck(s) disponible(s)</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto">
               <Share2 className="h-4 w-4 mr-2" />
-              Partager un deck
+              <span className="hidden sm:inline">Partager un deck</span>
+              <span className="sm:hidden">Partager</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -208,52 +209,51 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
       {/* Shared Decks List */}
       {sharedDecks.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <CreditCard className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">Aucun deck partagé</p>
-            <p className="text-sm text-gray-400 mt-1">
+          <CardContent className="py-8 sm:py-12 text-center">
+            <CreditCard className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
+            <p className="text-gray-500 text-sm sm:text-base">Aucun deck partagé</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">
               Soyez le premier à partager un deck!
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {sharedDecks.map((deck) => (
             <Card key={deck.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-5 w-5 text-purple-600" />
-                      <h4 className="font-semibold text-gray-900">{deck.deck_name}</h4>
-                      <Badge variant="secondary">{deck.card_count} cartes</Badge>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{deck.deck_name}</h4>
+                      <Badge variant="secondary" className="text-xs">{deck.card_count} cartes</Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>Partagé par {deck.shared_by_username}</span>
-                      <span>•</span>
-                      <span>{formatDate(deck.shared_at)}</span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="truncate">Partagé par {deck.shared_by_username}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="text-xs">{formatDate(deck.shared_at)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      onClick={() => handleCopyDeck(deck.id, deck.deck_name)}
-                      disabled={copying === deck.id}
-                    >
-                      {copying === deck.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Copie...
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copier
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleCopyDeck(deck.id, deck.deck_name)}
+                    disabled={copying === deck.id}
+                    className="w-full sm:w-auto mt-2 sm:mt-0"
+                  >
+                    {copying === deck.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Copie...
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copier
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

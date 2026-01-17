@@ -115,19 +115,20 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Header with Share Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Quiz partagés</h3>
-          <p className="text-sm text-gray-500">{sharedQuizzes.length} quiz disponible(s)</p>
+          <h3 className="text-base sm:text-lg font-semibold">Quiz partagés</h3>
+          <p className="text-xs sm:text-sm text-gray-500">{sharedQuizzes.length} quiz disponible(s)</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto">
               <Share2 className="h-4 w-4 mr-2" />
-              Partager un quiz
+              <span className="hidden sm:inline">Partager un quiz</span>
+              <span className="sm:hidden">Partager</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -178,45 +179,44 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
       {/* Shared Quizzes List */}
       {sharedQuizzes.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <Brain className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">Aucun quiz partagé</p>
-            <p className="text-sm text-gray-400 mt-1">
+          <CardContent className="py-8 sm:py-12 text-center">
+            <Brain className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
+            <p className="text-gray-500 text-sm sm:text-base">Aucun quiz partagé</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-1">
               Soyez le premier à partager un quiz!
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {sharedQuizzes.map((quiz) => (
             <Card key={quiz.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Brain className="h-5 w-5 text-green-600" />
-                      <h4 className="font-semibold text-gray-900">{quiz.quiz_title}</h4>
-                      <Badge variant="secondary">{quiz.question_count} questions</Badge>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{quiz.quiz_title}</h4>
+                      <Badge variant="secondary" className="text-xs">{quiz.question_count} questions</Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                      <span>Partagé par {quiz.shared_by_username}</span>
-                      <span>•</span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      <span className="truncate">Partagé par {quiz.shared_by_username}</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>{formatDate(quiz.shared_at)}</span>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       <span className="font-medium">{quiz.completed_by_count}</span> membre(s) ont complété ce quiz
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Démarrer
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
+                    className="w-full sm:w-auto mt-2 sm:mt-0"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Démarrer
+                  </Button>
                 </div>
               </CardContent>
             </Card>

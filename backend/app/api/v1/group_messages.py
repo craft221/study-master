@@ -165,6 +165,7 @@ async def get_group_messages(
                 avatar_url=user.avatar_url,
                 content=msg.content,
                 is_edited=msg.is_edited,
+                is_deleted=msg.is_deleted if hasattr(msg, 'is_deleted') else False,
                 reply_to_message_id=msg.reply_to_message_id,
                 reply_to=reply_to_info,
                 mentions=msg.mentions,
@@ -329,7 +330,7 @@ async def delete_group_message(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Supprimer un message"""
+    """Supprimer un message (soft delete - marque comme supprimé)"""
     message = await db.get(GroupMessage, message_id)
 
     if not message or message.group_id != group_id:
@@ -360,7 +361,9 @@ async def delete_group_message(
             detail="You can only delete your own messages or be an admin"
         )
 
-    await db.delete(message)
+    # Soft delete - mark as deleted instead of removing from database
+    message.is_deleted = True
+    message.content = ""  # Clear content for privacy
     await db.commit()
 
     return None

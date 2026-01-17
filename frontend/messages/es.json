@@ -724,7 +724,26 @@
     "typeToSearch": "Escribe para buscar usuarios",
     "invite": "Invitar",
     "invitationSent": "Invitación enviada",
-    "invitationSentDesc": "El usuario recibirá una notificación"
+    "invitationSentDesc": "El usuario recibirá una notificación",
+    "messages": {
+      "placeholder": "Escribe tu mensaje... (@ para mencionar)",
+      "inputHelp": "Enter para enviar, Shift+Enter nueva línea, @ para mencionar",
+      "reply": "Responder",
+      "react": "Reaccionar",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "editing": "Editando...",
+      "edited": "editado",
+      "deletedMessage": "Este mensaje fue eliminado",
+      "confirmDelete": "¿Estás seguro de que quieres eliminar este mensaje?",
+      "messageEdited": "Mensaje editado",
+      "messageEditedDesc": "Tu mensaje ha sido actualizado",
+      "messageDeleted": "Mensaje eliminado",
+      "editError": "No se pudo editar el mensaje",
+      "deleteError": "No se pudo eliminar el mensaje",
+      "noMessages": "Aún no hay mensajes",
+      "startConversation": "¡Sé el primero en iniciar la conversación!"
+    }
   },
 
   "profile": {

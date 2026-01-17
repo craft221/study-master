@@ -724,7 +724,26 @@
     "typeToSearch": "Tapez pour rechercher des utilisateurs",
     "invite": "Inviter",
     "invitationSent": "Invitation envoyée",
-    "invitationSentDesc": "L'utilisateur recevra une notification"
+    "invitationSentDesc": "L'utilisateur recevra une notification",
+    "messages": {
+      "placeholder": "Écrivez votre message... (@ pour mentionner)",
+      "inputHelp": "Entrée pour envoyer, Shift+Entrée nouvelle ligne, @ pour mentionner",
+      "reply": "Répondre",
+      "react": "Réagir",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "editing": "Modification en cours...",
+      "edited": "modifié",
+      "deletedMessage": "Ce message a été supprimé",
+      "confirmDelete": "Voulez-vous vraiment supprimer ce message ?",
+      "messageEdited": "Message modifié",
+      "messageEditedDesc": "Votre message a été mis à jour",
+      "messageDeleted": "Message supprimé",
+      "editError": "Impossible de modifier le message",
+      "deleteError": "Impossible de supprimer le message",
+      "noMessages": "Aucun message pour le moment",
+      "startConversation": "Soyez le premier à démarrer la conversation!"
+    }
   },
 
   "profile": {

@@ -724,7 +724,26 @@
     "typeToSearch": "Type to search for users",
     "invite": "Invite",
     "invitationSent": "Invitation sent",
-    "invitationSentDesc": "The user will receive a notification"
+    "invitationSentDesc": "The user will receive a notification",
+    "messages": {
+      "placeholder": "Write your message... (@ to mention)",
+      "inputHelp": "Enter to send, Shift+Enter for new line, @ to mention",
+      "reply": "Reply",
+      "react": "React",
+      "edit": "Edit",
+      "delete": "Delete",
+      "editing": "Editing...",
+      "edited": "edited",
+      "deletedMessage": "This message was deleted",
+      "confirmDelete": "Are you sure you want to delete this message?",
+      "messageEdited": "Message edited",
+      "messageEditedDesc": "Your message has been updated",
+      "messageDeleted": "Message deleted",
+      "editError": "Unable to edit message",
+      "deleteError": "Unable to delete message",
+      "noMessages": "No messages yet",
+      "startConversation": "Be the first to start the conversation!"
+    }
   },
 
   "profile": {

@@ -49,6 +49,7 @@ class GroupMessageResponse(BaseModel):
     avatar_url: Optional[str]
     content: str
     is_edited: bool
+    is_deleted: bool = False
     reply_to_message_id: Optional[int] = None
     reply_to: Optional[ReplyToMessage] = None
     mentions: Optional[list[int]] = None
