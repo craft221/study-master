@@ -263,7 +263,8 @@ def raise_quota_exceeded_error(subscription_type: SubscriptionType, max_requests
 async def check_and_increment_ai_quota(
     user_id: int,
     subscription_type: SubscriptionType,
-    db: AsyncSession
+    db: AsyncSession,
+    request_type: str = None
 ) -> Tuple[bool, int]:
     """
     Vérifie ET incrémente le quota IA de manière ATOMIQUE.
@@ -276,6 +277,7 @@ async def check_and_increment_ai_quota(
         user_id: ID de l'utilisateur
         subscription_type: Type d'abonnement de l'utilisateur
         db: Session de base de données
+        request_type: Type de requête ("quiz", "flashcard", "summary", "explanation")
 
     Returns:
         Tuple (can_use, remaining_after_this_request)
@@ -321,6 +323,20 @@ async def check_and_increment_ai_quota(
         # Incrémenter les compteurs de manière atomique
         ai_usage.requests_today = requests_today + 1
         ai_usage.total_requests = (ai_usage.total_requests or 0) + 1
+
+        # Incrémenter le compteur par type de requête
+        if request_type:
+            type_mapping = {
+                "quiz": "quiz_generations",
+                "flashcard": "flashcard_generations",
+                "summary": "note_summaries",
+                "explanation": "explanations"
+            }
+            if request_type in type_mapping:
+                attr = type_mapping[request_type]
+                current_val = getattr(ai_usage, attr) or 0
+                setattr(ai_usage, attr, current_val + 1)
+                logger.info(f"Compteur {attr} incrémenté à {current_val + 1} pour user {user_id}")
 
         # Calculer les requêtes restantes APRÈS cette requête
         remaining = max_requests - ai_usage.requests_today
@@ -376,12 +392,13 @@ async def generate_flashcards_from_note(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="flashcard"
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
         raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-    
+
     # Récupérer la note
     result = await db.execute(
         select(Note).where(
@@ -392,19 +409,19 @@ async def generate_flashcards_from_note(
         )
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
+
     if not note.content or len(note.content) < 50:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La note doit contenir au moins 50 caractères pour générer des flashcards"
         )
-    
+
     # Générer les flashcards avec IA
     try:
         flashcards = await ai_service.generate_flashcards_from_note(
@@ -488,7 +505,8 @@ async def generate_quiz_from_note(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="quiz"
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
@@ -504,19 +522,19 @@ async def generate_quiz_from_note(
         )
     )
     note = result.scalar_one_or_none()
-    
+
     if not note:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note non trouvée"
         )
-    
+
     if not note.content or len(note.content) < 100:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La note doit contenir au moins 100 caractères pour générer un quiz"
         )
-    
+
     # Générer le quiz avec IA
     try:
         quiz_data = await ai_service.generate_quiz_from_note(
@@ -604,7 +622,8 @@ async def summarize_note(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="summary"
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
@@ -664,7 +683,8 @@ async def extract_keywords(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="summary"  # Keywords extraction counts as summary/analysis
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
@@ -723,7 +743,8 @@ async def explain_concept(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="explanation"
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
@@ -1425,7 +1446,8 @@ async def generate_flashcards_from_document_async(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="flashcard"
     )
 
     if not can_use:
@@ -1511,7 +1533,8 @@ async def generate_quiz_from_document_async(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="quiz"
     )
 
     if not can_use:
@@ -1713,7 +1736,8 @@ async def generate_flashcards_from_document(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="flashcard"
     )
     logger.info(f"Quota check: can_use={can_use}, remaining={remaining}")
 
@@ -1852,7 +1876,8 @@ async def generate_quiz_from_document(
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
         subscription_type=current_user.subscription_type,
-        db=db
+        db=db,
+        request_type="quiz"
     )
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
