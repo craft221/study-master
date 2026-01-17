@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, update
 from typing import Optional
 from datetime import datetime
 
@@ -9,6 +9,8 @@ from app.core.datetime_utils import utc_now
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.subject import Subject
+from app.models.quiz import Quiz
+from app.models.gamification import Duel
 from app.schemas.subject import (
     SubjectCreate,
     SubjectUpdate,
@@ -158,8 +160,8 @@ async def delete_subject(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Supprimer une matière"""
-    
+    """Supprimer une matière et toutes ses dépendances"""
+
     result = await db.execute(
         select(Subject).where(
             and_(
@@ -169,16 +171,33 @@ async def delete_subject(
         )
     )
     subject = result.scalar_one_or_none()
-    
+
     if not subject:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Matière non trouvée"
         )
-    
+
+    # 1. Récupérer les IDs des quizzes de cette matière
+    quiz_ids_result = await db.execute(
+        select(Quiz.id).where(Quiz.subject_id == subject_id)
+    )
+    quiz_ids = [row[0] for row in quiz_ids_result.fetchall()]
+
+    # 2. Mettre à NULL les références dans les duels (pour quiz_id et subject_id)
+    if quiz_ids:
+        await db.execute(
+            update(Duel).where(Duel.quiz_id.in_(quiz_ids)).values(quiz_id=None)
+        )
+
+    await db.execute(
+        update(Duel).where(Duel.subject_id == subject_id).values(subject_id=None)
+    )
+
+    # 3. Maintenant on peut supprimer la matière (cascade s'occupe du reste)
     await db.delete(subject)
     await db.commit()
-    
+
     return None
 
 
