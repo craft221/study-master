@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, X, Tag, Sparkles, Globe, Lock, CloudOff, Wifi, Languages } from 'lucide-react'
+import { Save, X, Tag, Sparkles, Globe, Lock, CloudOff, Wifi, Languages, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
@@ -39,6 +39,11 @@ export default function NewNotePage() {
   })
   const [content, setContent] = useState('')
   const [tagInput, setTagInput] = useState('')
+  const [aiLoading, setAiLoading] = useState<'flashcards' | 'quiz' | 'summary' | null>(null)
+  const [savedNoteId, setSavedNoteId] = useState<number | null>(null)
+  const [flashcardCount, setFlashcardCount] = useState(10)
+  const [quizCount, setQuizCount] = useState(10)
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
 
   useEffect(() => {
     fetchSubjects()
@@ -154,21 +159,147 @@ export default function NewNotePage() {
     })
   }
 
-  const generateWithAI = async () => {
+  // Fonction utilitaire pour sauvegarder la note d'abord si nécessaire
+  const saveNoteFirst = async (): Promise<number | null> => {
+    // Si la note est déjà sauvegardée, retourner l'ID
+    if (savedNoteId) return savedNoteId
+
+    // Vérifier les champs requis
+    if (!formData.title || !content.trim() || !formData.subject_id) {
+      toast.error(t('newNotePage.fillRequired'))
+      return null
+    }
+
+    if (!isOnline) {
+      toast.error(t('newNotePage.aiRequiresOnline') || 'Les fonctionnalités IA nécessitent une connexion internet')
+      return null
+    }
+
+    try {
+      const submitData = {
+        ...formData,
+        content: content,
+      }
+      const response = await api.post('/notes/', submitData)
+      const noteId = response.data.id
+      setSavedNoteId(noteId)
+      toast.success(t('newNotePage.noteSavedForAI') || 'Note sauvegardée')
+      return noteId
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la sauvegarde')
+      return null
+    }
+  }
+
+  // Générer des flashcards
+  const generateFlashcards = async () => {
     if (!content.trim()) {
       toast.error(t('newNotePage.addContentFirst'))
       return
     }
 
+    setAiLoading('flashcards')
     try {
-      toast.loading(t('newNotePage.generatingFlashcards'), { duration: 3000 })
+      // Sauvegarder la note d'abord
+      const noteId = await saveNoteFirst()
+      if (!noteId) {
+        setAiLoading(null)
+        return
+      }
+
+      // Générer les flashcards
       const response = await api.post('/ai/generate-flashcards', {
-        content: content,
-        count: 10,
+        note_id: noteId,
+        count: flashcardCount,
+        difficulty: difficulty,
       })
-      toast.success(t('newNotePage.flashcardsGenerated', { count: response.data.flashcards.length }))
-    } catch (error) {
-      toast.error(t('newNotePage.aiGenerationError'))
+
+      const count = response.data.flashcards?.length || response.data.count || 0
+      toast.success(t('newNotePage.flashcardsGenerated', { count }) || `${count} flashcards générées !`)
+
+      // Rediriger vers les flashcards
+      router.push(`/flashcards?highlight=new`)
+    } catch (error: any) {
+      console.error('Erreur génération flashcards:', error)
+      toast.error(error.response?.data?.detail || t('newNotePage.aiGenerationError'))
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  // Créer un quiz
+  const createQuiz = async () => {
+    if (!content.trim()) {
+      toast.error(t('newNotePage.addContentFirst'))
+      return
+    }
+
+    setAiLoading('quiz')
+    try {
+      // Sauvegarder la note d'abord
+      const noteId = await saveNoteFirst()
+      if (!noteId) {
+        setAiLoading(null)
+        return
+      }
+
+      // Générer le quiz
+      const response = await api.post('/ai/generate-quiz', {
+        note_id: noteId,
+        question_count: quizCount,
+        question_types: ['multiple_choice', 'true_false'],
+        difficulty: difficulty,
+      })
+
+      const quizId = response.data.quiz_id
+      toast.success(t('newNotePage.quizCreated') || 'Quiz créé avec succès !')
+
+      // Rediriger vers le quiz
+      if (quizId) {
+        router.push(`/quizzes/${quizId}`)
+      } else {
+        router.push('/quizzes?highlight=new')
+      }
+    } catch (error: any) {
+      console.error('Erreur génération quiz:', error)
+      toast.error(error.response?.data?.detail || t('newNotePage.aiGenerationError'))
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  // Résumer la note
+  const summarizeNote = async () => {
+    if (!content.trim()) {
+      toast.error(t('newNotePage.addContentFirst'))
+      return
+    }
+
+    setAiLoading('summary')
+    try {
+      // Sauvegarder la note d'abord
+      const noteId = await saveNoteFirst()
+      if (!noteId) {
+        setAiLoading(null)
+        return
+      }
+
+      // Générer le résumé
+      const response = await api.post('/ai/summarize-note', {
+        note_id: noteId,
+        max_length: 500,
+      })
+
+      const summary = response.data.summary
+      toast.success(t('newNotePage.summaryGenerated') || 'Résumé généré !')
+
+      // Rediriger vers la note avec le résumé affiché
+      router.push(`/notes/${noteId}?showSummary=true`)
+    } catch (error: any) {
+      console.error('Erreur génération résumé:', error)
+      toast.error(error.response?.data?.detail || t('newNotePage.aiGenerationError'))
+    } finally {
+      setAiLoading(null)
     }
   }
 
@@ -389,37 +520,157 @@ export default function NewNotePage() {
         </div>
 
         {/* AI Actions */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200 p-6">
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-white rounded-lg shadow-sm">
-              <Sparkles className="h-6 w-6 text-purple-600" />
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border border-purple-200 dark:border-purple-800 p-4 sm:p-6">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm shrink-0">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-2">{t('newNotePage.aiActions')}</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 sm:mb-2">{t('newNotePage.aiActions')}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
                 {t('newNotePage.aiActionsDesc')}
               </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={generateWithAI}
-                  className="px-4 py-2 bg-white border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition text-sm font-medium"
-                >
-                  {t('newNotePage.generateFlashcards')}
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-white border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition text-sm font-medium"
-                >
-                  {t('newNotePage.createQuiz')}
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-white border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition text-sm font-medium"
-                >
-                  {t('newNotePage.summarize')}
-                </button>
+
+              {/* Sélecteur de difficulté */}
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('newNotePage.difficulty') || 'Difficulté'}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDifficulty('easy')}
+                    disabled={aiLoading !== null}
+                    className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                      difficulty === 'easy'
+                        ? 'bg-green-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:border-green-400'
+                    } disabled:opacity-50`}
+                  >
+                    🟢 {t('newNotePage.easy') || 'Facile'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDifficulty('medium')}
+                    disabled={aiLoading !== null}
+                    className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                      difficulty === 'medium'
+                        ? 'bg-yellow-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:border-yellow-400'
+                    } disabled:opacity-50`}
+                  >
+                    🟡 {t('newNotePage.medium') || 'Moyen'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDifficulty('hard')}
+                    disabled={aiLoading !== null}
+                    className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                      difficulty === 'hard'
+                        ? 'bg-red-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:border-red-400'
+                    } disabled:opacity-50`}
+                  >
+                    🔴 {t('newNotePage.hard') || 'Difficile'}
+                  </button>
+                </div>
               </div>
+
+              {/* Actions grid - responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Flashcards */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Flashcards</span>
+                    <select
+                      value={flashcardCount}
+                      onChange={(e) => setFlashcardCount(Number(e.target.value))}
+                      disabled={aiLoading !== null}
+                      className="px-2 py-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={15}>15</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateFlashcards}
+                    disabled={aiLoading !== null || !isOnline}
+                    className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {aiLoading === 'flashcards' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>🃏</span>
+                    )}
+                    <span className="truncate">{t('newNotePage.generateFlashcards') || 'Générer'}</span>
+                  </button>
+                </div>
+
+                {/* Quiz */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Quiz</span>
+                    <select
+                      value={quizCount}
+                      onChange={(e) => setQuizCount(Number(e.target.value))}
+                      disabled={aiLoading !== null}
+                      className="px-2 py-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={15}>15</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={createQuiz}
+                    disabled={aiLoading !== null || !isOnline}
+                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {aiLoading === 'quiz' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>❓</span>
+                    )}
+                    <span className="truncate">{t('newNotePage.createQuiz') || 'Créer'}</span>
+                  </button>
+                </div>
+
+                {/* Résumé */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 sm:col-span-2 lg:col-span-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('newNotePage.summarize') || 'Résumé'}</span>
+                    <span className="text-xs text-gray-400">Auto</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={summarizeNote}
+                    disabled={aiLoading !== null || !isOnline}
+                    className="w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {aiLoading === 'summary' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>📝</span>
+                    )}
+                    <span className="truncate">{t('newNotePage.summarize') || 'Résumer'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Offline warning */}
+              {!isOnline && (
+                <div className="mt-3 p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <p className="text-xs text-orange-700 dark:text-orange-400 flex items-center gap-1.5">
+                    <CloudOff className="h-3.5 w-3.5 shrink-0" />
+                    <span>{t('newNotePage.aiRequiresOnline') || 'Connexion internet requise pour les fonctionnalités IA'}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
