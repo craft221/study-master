@@ -76,7 +76,14 @@
     "leaderboard": "Classements",
     "export": "Exporter",
     "pricing": "Tarifs",
-    "examMode": "Exam Mode"
+    "examMode": "Exam Mode",
+    "category": {
+      "main": "Accueil",
+      "study": "Études",
+      "tools": "Outils",
+      "social": "Social",
+      "more": "Plus"
+    }
   },
 
   "dashboard": {
@@ -97,6 +104,68 @@
     "quickActions": "Actions rapides",
     "noActivity": "Aucune activité récente",
     "startStudying": "Commencer à étudier"
+  },
+
+  "onboarding": {
+    "step": "Étape",
+    "skip": "Passer",
+    "start": "Commencer",
+    "welcome": {
+      "title": "Bienvenue sur Studera ! 🎉",
+      "subtitle": "Ta plateforme d'apprentissage intelligente",
+      "description": "En quelques étapes, tu vas configurer ton espace d'étude personnalisé et découvrir les fonctionnalités qui vont transformer ta façon d'apprendre."
+    },
+    "subjects": {
+      "title": "Crée tes matières 📚",
+      "subtitle": "Tout commence par là !",
+      "description": "Les matières sont le cœur de Studera. Elles organisent tes notes, flashcards, quiz et tout ton contenu. Crée au moins une matière pour commencer."
+    },
+    "features": {
+      "title": "Découvre les outils 🛠️",
+      "subtitle": "Tout ce dont tu as besoin",
+      "description": "Studera regroupe tous les outils pour réussir tes études."
+    },
+    "gamification": {
+      "title": "Apprends en t'amusant 🎮",
+      "subtitle": "XP, niveaux et récompenses",
+      "description": "Gagne de l'XP à chaque action, monte en niveau, débloque des achievements et défie tes amis en duel !"
+    },
+    "ready": {
+      "title": "Tu es prêt ! 🚀",
+      "subtitle": "Commence ton aventure",
+      "description": "Ton espace est configuré. Il est temps de créer ta première note ou tes premières flashcards !"
+    },
+    "feature": {
+      "notes": "Notes",
+      "notesDesc": "Prends des notes avec support Markdown et LaTeX",
+      "flashcards": "Flashcards",
+      "flashcardsDesc": "Mémorise avec la répétition espacée",
+      "quizzes": "Quiz",
+      "quizzesDesc": "Teste tes connaissances",
+      "ai": "IA Spark",
+      "aiDesc": "Un assistant IA pour t'aider",
+      "calendar": "Calendrier",
+      "calendarDesc": "Planifie tes révisions",
+      "pomodoro": "Pomodoro",
+      "pomodoroDesc": "Sessions d'étude minutées"
+    },
+    "subjectPlaceholder": "Ex: Mathématiques, Physique, Histoire...",
+    "chooseColor": "Couleur",
+    "chooseIcon": "Icône",
+    "createSubject": "Créer",
+    "addSubject": "Ajouter une matière",
+    "needSubject": "Tu dois créer au moins une matière pour continuer",
+    "xpPerNote": "par note créée",
+    "achievementsToUnlock": "achievements à débloquer",
+    "tip": "Astuce",
+    "streakTip": "Connecte-toi chaque jour pour maintenir ton streak et gagner des bonus !",
+    "allSet": "Tout est prêt !",
+    "createdSubjects": "Tu as créé",
+    "subjectsCount": "matière(s)",
+    "noSubjectsYet": "Tu pourras créer des matières plus tard",
+    "suggestion1": "Commence par créer une note dans une de tes matières",
+    "suggestion2": "Consulte tes quêtes journalières pour gagner des XP",
+    "suggestion3": "Demande à Spark si tu as besoin d'aide !"
   },
 
   "sessionsPage": {

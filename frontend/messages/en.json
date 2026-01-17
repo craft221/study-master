@@ -76,7 +76,14 @@
     "leaderboard": "Leaderboard",
     "export": "Export",
     "pricing": "Pricing",
-    "examMode": "Exam Mode"
+    "examMode": "Exam Mode",
+    "category": {
+      "main": "Home",
+      "study": "Study",
+      "tools": "Tools",
+      "social": "Social",
+      "more": "More"
+    }
   },
 
   "dashboard": {
@@ -97,6 +104,68 @@
     "quickActions": "Quick actions",
     "noActivity": "No recent activity",
     "startStudying": "Start studying"
+  },
+
+  "onboarding": {
+    "step": "Step",
+    "skip": "Skip",
+    "start": "Get Started",
+    "welcome": {
+      "title": "Welcome to Studera! 🎉",
+      "subtitle": "Your intelligent learning platform",
+      "description": "In just a few steps, you'll set up your personalized study space and discover features that will transform the way you learn."
+    },
+    "subjects": {
+      "title": "Create your subjects 📚",
+      "subtitle": "Everything starts here!",
+      "description": "Subjects are the heart of Studera. They organize your notes, flashcards, quizzes, and all your content. Create at least one subject to get started."
+    },
+    "features": {
+      "title": "Discover the tools 🛠️",
+      "subtitle": "Everything you need",
+      "description": "Studera brings together all the tools you need to succeed in your studies."
+    },
+    "gamification": {
+      "title": "Learn while having fun 🎮",
+      "subtitle": "XP, levels and rewards",
+      "description": "Earn XP with every action, level up, unlock achievements and challenge your friends to duels!"
+    },
+    "ready": {
+      "title": "You're ready! 🚀",
+      "subtitle": "Start your adventure",
+      "description": "Your space is set up. It's time to create your first note or flashcards!"
+    },
+    "feature": {
+      "notes": "Notes",
+      "notesDesc": "Take notes with Markdown and LaTeX support",
+      "flashcards": "Flashcards",
+      "flashcardsDesc": "Memorize with spaced repetition",
+      "quizzes": "Quizzes",
+      "quizzesDesc": "Test your knowledge",
+      "ai": "Spark AI",
+      "aiDesc": "An AI assistant to help you",
+      "calendar": "Calendar",
+      "calendarDesc": "Plan your revisions",
+      "pomodoro": "Pomodoro",
+      "pomodoroDesc": "Timed study sessions"
+    },
+    "subjectPlaceholder": "E.g.: Mathematics, Physics, History...",
+    "chooseColor": "Color",
+    "chooseIcon": "Icon",
+    "createSubject": "Create",
+    "addSubject": "Add a subject",
+    "needSubject": "You must create at least one subject to continue",
+    "xpPerNote": "per note created",
+    "achievementsToUnlock": "achievements to unlock",
+    "tip": "Tip",
+    "streakTip": "Log in every day to maintain your streak and earn bonuses!",
+    "allSet": "All set!",
+    "createdSubjects": "You created",
+    "subjectsCount": "subject(s)",
+    "noSubjectsYet": "You can create subjects later",
+    "suggestion1": "Start by creating a note in one of your subjects",
+    "suggestion2": "Check your daily quests to earn XP",
+    "suggestion3": "Ask Spark if you need help!"
   },
 
   "sessionsPage": {

@@ -44,30 +44,56 @@ import { LanguageToggle } from '@/components/ui/LanguageSelector'
 import { useSparkPageMessages } from '@/hooks/useSparkPageMessages'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import { OfflineBanner, OfflineIndicator } from '@/components/offline/OfflineIndicator'
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 
-// Navigation items avec clés i18n
-const navigationItems = [
-  { key: 'nav.dashboard', href: '/dashboard', icon: Home },
-  { key: 'nav.explore', href: '/explore', icon: Compass },
-  { key: 'nav.quests', href: '/quests', icon: Target },
-  { key: 'nav.notes', href: '/notes', icon: FileText },
-  { key: 'nav.documents', href: '/documents', icon: FolderOpen },
-  { key: 'nav.flashcards', href: '/flashcards', icon: CreditCard },
-  { key: 'nav.quizzes', href: '/quizzes', icon: Brain },
-  { key: 'nav.spark', href: '/ai', icon: Sparkles },
-  { key: 'documents.upload', href: '/ocr', icon: Scan },
-  { key: 'nav.sessions', href: '/sessions', icon: Zap },
-  { key: 'nav.focusRooms', href: '/focus-rooms', icon: Radio },
-  { key: 'nav.examMode', href: '/exam-mode', icon: GraduationCap },
-  { key: 'nav.calendar', href: '/schedule', icon: Calendar },
-  { key: 'nav.subjects', href: '/subjects', icon: Target },
-  { key: 'nav.achievements', href: '/achievements', icon: Award },
-  { key: 'nav.duels', href: '/duels', icon: Swords },
-  { key: 'nav.leaderboard', href: '/leaderboard', icon: Trophy },
-  { key: 'nav.groups', href: '/groups', icon: Users },
-  { key: 'nav.export', href: '/export', icon: Download },
-  { key: 'nav.profile', href: '/profile', icon: User },
-  { key: 'nav.pricing', href: '/pricing', icon: CreditCard },
+// Navigation organisée par catégories
+const navigationCategories = [
+  {
+    categoryKey: 'nav.category.main',
+    items: [
+      { key: 'nav.dashboard', href: '/dashboard', icon: Home },
+      { key: 'nav.quests', href: '/quests', icon: Target },
+      { key: 'nav.explore', href: '/explore', icon: Compass },
+    ]
+  },
+  {
+    categoryKey: 'nav.category.study',
+    items: [
+      { key: 'nav.subjects', href: '/subjects', icon: BookOpen },
+      { key: 'nav.notes', href: '/notes', icon: FileText },
+      { key: 'nav.flashcards', href: '/flashcards', icon: CreditCard },
+      { key: 'nav.quizzes', href: '/quizzes', icon: Brain },
+      { key: 'nav.documents', href: '/documents', icon: FolderOpen },
+    ]
+  },
+  {
+    categoryKey: 'nav.category.tools',
+    items: [
+      { key: 'nav.spark', href: '/ai', icon: Sparkles },
+      { key: 'documents.upload', href: '/ocr', icon: Scan },
+      { key: 'nav.sessions', href: '/sessions', icon: Zap },
+      { key: 'nav.calendar', href: '/schedule', icon: Calendar },
+      { key: 'nav.focusRooms', href: '/focus-rooms', icon: Radio },
+      { key: 'nav.examMode', href: '/exam-mode', icon: GraduationCap },
+    ]
+  },
+  {
+    categoryKey: 'nav.category.social',
+    items: [
+      { key: 'nav.groups', href: '/groups', icon: Users },
+      { key: 'nav.duels', href: '/duels', icon: Swords },
+      { key: 'nav.leaderboard', href: '/leaderboard', icon: Trophy },
+      { key: 'nav.achievements', href: '/achievements', icon: Award },
+    ]
+  },
+  {
+    categoryKey: 'nav.category.more',
+    items: [
+      { key: 'nav.profile', href: '/profile', icon: User },
+      { key: 'nav.export', href: '/export', icon: Download },
+      { key: 'nav.pricing', href: '/pricing', icon: CreditCard },
+    ]
+  },
 ]
 
 function DashboardContent({ children }: { children: ReactNode }) {
@@ -77,6 +103,8 @@ function DashboardContent({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingChecked, setOnboardingChecked] = useState(false)
 
   // Hook pour les messages contextuels de Spark selon la page
   useSparkPageMessages()
@@ -90,6 +118,37 @@ function DashboardContent({ children }: { children: ReactNode }) {
     xp_progress: 0,
     xp_needed: 100,
   })
+
+  // Check if user needs onboarding (new user with no subjects)
+  const checkOnboarding = useCallback(async () => {
+    try {
+      // Check localStorage first
+      const onboardingCompleted = localStorage.getItem('onboarding_completed')
+      if (onboardingCompleted === 'true') {
+        setOnboardingChecked(true)
+        return
+      }
+
+      // Check if user has any subjects
+      const response = await api.get('/subjects/')
+      const subjects = response.data
+
+      // If no subjects, show onboarding
+      if (!subjects || subjects.length === 0) {
+        setShowOnboarding(true)
+      }
+      setOnboardingChecked(true)
+    } catch (error) {
+      console.error('Error checking onboarding:', error)
+      setOnboardingChecked(true)
+    }
+  }, [])
+
+  const handleOnboardingComplete = useCallback(() => {
+    setShowOnboarding(false)
+    // Refresh the page to show new subjects
+    router.refresh()
+  }, [router])
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -116,7 +175,8 @@ function DashboardContent({ children }: { children: ReactNode }) {
       return
     }
     fetchUserData()
-  }, [router, pathname, fetchUserData])
+    checkOnboarding()
+  }, [router, pathname, fetchUserData, checkOnboarding])
 
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode')
@@ -160,6 +220,14 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
+      {/* Onboarding Wizard for new users */}
+      {showOnboarding && onboardingChecked && (
+        <OnboardingWizard
+          onComplete={handleOnboardingComplete}
+          userName={user.name}
+        />
+      )}
+
       {/* Offline Banner */}
       <OfflineBanner />
 
@@ -221,27 +289,38 @@ function DashboardContent({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-sm',
-                    isActive
-                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  )}
-                >
-                  <item.icon className="h-4.5 w-4.5" />
-                  <span>{t(item.key)}</span>
-                </Link>
-              )
-            })}
+          {/* Navigation par catégories */}
+          <nav className="flex-1 px-3 py-3 overflow-y-auto">
+            {navigationCategories.map((category, catIndex) => (
+              <div key={category.categoryKey} className={catIndex > 0 ? 'mt-4' : ''}>
+                {/* Category header */}
+                <p className="px-3 mb-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  {t(category.categoryKey)}
+                </p>
+                {/* Category items */}
+                <div className="space-y-0.5">
+                  {category.items.map((item) => {
+                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                          isActive
+                            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{t(item.key)}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
           {/* Bottom Actions */}
