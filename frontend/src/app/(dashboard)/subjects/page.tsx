@@ -9,6 +9,8 @@ import { useOfflineSubjects } from '@/hooks/useOffline'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { useTranslations } from 'next-intl'
+import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
   id: string
@@ -33,6 +35,7 @@ const PRESET_COLORS = [
 ]
 
 export default function SubjectsPage() {
+  const t = useTranslations()
   // Utiliser le hook offline pour les matières
   const { data: subjectsData, loading, error, isFromCache, refetch } = useOfflineSubjects()
   const { isOnline } = useOfflineContext()
@@ -219,21 +222,27 @@ export default function SubjectsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <span className="flex items-center gap-1">
+                  {t('subjects.description')}
+                  <HelpTooltip content={t('tooltips.subjects.description')} size="sm" />
+                </span>
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Description de la matière..."
+                placeholder={t('subjects.descriptionPlaceholder')}
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Couleur
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <span className="flex items-center gap-1">
+                  {t('subjects.color')}
+                  <HelpTooltip content={t('tooltips.subjects.color')} size="sm" />
+                </span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {PRESET_COLORS.map((color) => (
@@ -271,20 +280,25 @@ export default function SubjectsPage() {
 
       {/* Subjects Grid */}
       {subjects.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Aucune matière pour le moment
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="h-10 w-10 text-primary-600 dark:text-primary-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {t('subjects.noSubjects')}
           </h3>
-          <p className="text-gray-600 mb-6">
-            Créez votre première matière pour organiser vos notes et révisions
+          <p className="text-gray-600 dark:text-gray-400 mb-2">
+            {t('subjects.createFirstSubject')}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6 max-w-md mx-auto">
+            {t('tooltips.emptyStates.subjects')}
           </p>
           <button
             onClick={() => setShowAddForm(true)}
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Créer ma première matière
+            {t('subjects.createFirst')}
           </button>
         </div>
       ) : (
@@ -313,42 +327,42 @@ export default function SubjectsPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-3 py-4 border-t border-b border-gray-200 mb-4">
-                  <div className="text-center">
+                <div className="grid grid-cols-4 gap-3 py-4 border-t border-b border-gray-200 dark:border-gray-700 mb-4">
+                  <div className="text-center group cursor-help" title={t('tooltips.subjects.notes')}>
                     <div className="flex items-center justify-center mb-1">
                       <FileText className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="text-base font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900 dark:text-white">
                       {subject.notes_count}
                     </div>
-                    <div className="text-xs text-gray-600">Notes</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">{t('subjects.notes')}</div>
                   </div>
-                  <div className="text-center border-l border-gray-200">
+                  <div className="text-center border-l border-gray-200 dark:border-gray-700 group cursor-help" title={t('tooltips.subjects.docs')}>
                     <div className="flex items-center justify-center mb-1">
                       <FolderOpen className="h-4 w-4 text-amber-600" />
                     </div>
-                    <div className="text-base font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900 dark:text-white">
                       {subject.total_documents_count || 0}
                     </div>
-                    <div className="text-xs text-gray-600">Docs</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">{t('subjects.docs')}</div>
                   </div>
-                  <div className="text-center border-l border-gray-200">
+                  <div className="text-center border-l border-gray-200 dark:border-gray-700 group cursor-help" title={t('tooltips.subjects.cards')}>
                     <div className="flex items-center justify-center mb-1">
                       <CreditCard className="h-4 w-4 text-purple-600" />
                     </div>
-                    <div className="text-base font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900 dark:text-white">
                       {subject.flashcards_count}
                     </div>
-                    <div className="text-xs text-gray-600">Cards</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">{t('subjects.cards')}</div>
                   </div>
-                  <div className="text-center border-l border-gray-200">
+                  <div className="text-center border-l border-gray-200 dark:border-gray-700 group cursor-help" title={t('tooltips.subjects.quiz')}>
                     <div className="flex items-center justify-center mb-1">
                       <Brain className="h-4 w-4 text-green-600" />
                     </div>
-                    <div className="text-base font-bold text-gray-900">
+                    <div className="text-base font-bold text-gray-900 dark:text-white">
                       {subject.quizzes_count}
                     </div>
-                    <div className="text-xs text-gray-600">Quiz</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">{t('subjects.quiz')}</div>
                   </div>
                 </div>
 

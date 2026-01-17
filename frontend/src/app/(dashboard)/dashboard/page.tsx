@@ -15,8 +15,10 @@ import {
   Calendar,
   ArrowRight,
   Flame,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react'
+import HelpTooltip, { WithTooltip } from '@/components/ui/HelpTooltip'
 import {
   pageVariants,
   containerVariants,
@@ -298,9 +300,12 @@ export default function DashboardPage() {
             <div className="p-2 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-semibold">
-              {stats.xp_progress}/{stats.xp_needed}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                {stats.xp_progress}/{stats.xp_needed}
+              </span>
+              <HelpTooltip content={t('tooltips.dashboard.xp')} size="sm" />
+            </div>
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{stats.total_xp.toLocaleString()}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('dashboard.xpEarned')}</p>
@@ -329,7 +334,10 @@ export default function DashboardPage() {
             <div className="p-2 sm:p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <span className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400 font-semibold">Max: {stats.longest_streak}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400 font-semibold">Max: {stats.longest_streak}</span>
+              <HelpTooltip content={t('tooltips.dashboard.streak')} size="sm" />
+            </div>
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{stats.current_streak} <span className="text-sm font-normal">{t('dashboard.days')}</span></h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('dashboard.studyStreak')}</p>
@@ -349,14 +357,17 @@ export default function DashboardPage() {
             <div className="p-2 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
             </div>
-            {stats.study_time_this_month > 0 && (
-              <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-semibold">
-                +{stats.study_time_this_month >= 60
-                  ? `${Math.floor(stats.study_time_this_month / 60)}h`
-                  : `${stats.study_time_this_month}m`
-                }
-              </span>
-            )}
+            <div className="flex items-center gap-1">
+              {stats.study_time_this_month > 0 && (
+                <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-semibold">
+                  +{stats.study_time_this_month >= 60
+                    ? `${Math.floor(stats.study_time_this_month / 60)}h`
+                    : `${stats.study_time_this_month}m`
+                  }
+                </span>
+              )}
+              <HelpTooltip content={t('tooltips.dashboard.studyTime')} size="sm" />
+            </div>
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
             {stats.total_study_time_minutes >= 60
@@ -381,7 +392,10 @@ export default function DashboardPage() {
             <div className="p-2 sm:p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            <span className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 font-semibold">{stats.flashcards_due_today} à revoir</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 font-semibold">{stats.flashcards_due_today} à revoir</span>
+              <HelpTooltip content={t('tooltips.dashboard.flashcardsDue')} size="sm" />
+            </div>
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{stats.total_flashcards}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('nav.flashcards')}</p>
@@ -444,7 +458,8 @@ export default function DashboardPage() {
             ) : (
               <div className="p-6 sm:p-8 text-center text-gray-500 dark:text-gray-400">
                 <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-                <p className="text-xs sm:text-sm">{t('dashboard.noActivity')}</p>
+                <p className="text-xs sm:text-sm font-medium mb-1">{t('dashboard.noActivity')}</p>
+                <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">{t('tooltips.emptyStates.activity')}</p>
               </div>
             )}
           </motion.div>
@@ -485,7 +500,8 @@ export default function DashboardPage() {
             ) : (
               <div className="py-6 sm:py-8 text-center text-gray-500 dark:text-gray-400">
                 <Calendar className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-                <p className="text-xs sm:text-sm">{t('calendar.noEvents')}</p>
+                <p className="text-xs sm:text-sm font-medium mb-1">{t('calendar.noEvents')}</p>
+                <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">{t('tooltips.emptyStates.events')}</p>
               </div>
             )}
           </div>
@@ -519,7 +535,7 @@ export default function DashboardPage() {
             <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 transition" />
           </div>
           <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm mb-1">{t('flashcards.addDeck')}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('flashcards.addFlashcard')}</p>
+          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('tooltips.dashboard.addDeck')}</p>
           </Link>
         </motion.div>
 
@@ -539,7 +555,7 @@ export default function DashboardPage() {
             <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 transition" />
           </div>
           <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm mb-1">{t('quiz.addQuiz')}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('quiz.startQuiz')}</p>
+          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('tooltips.dashboard.addQuiz')}</p>
           </Link>
         </motion.div>
 
@@ -559,7 +575,7 @@ export default function DashboardPage() {
             <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 transition" />
           </div>
           <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm mb-1">{t('nav.spark')}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">Assistant IA</p>
+          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('tooltips.dashboard.spark')}</p>
           </Link>
         </motion.div>
 
@@ -579,7 +595,7 @@ export default function DashboardPage() {
             <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 transition" />
           </div>
           <h3 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm mb-1">{t('nav.sessions')}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">Pomodoro</p>
+          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{t('tooltips.dashboard.sessions')}</p>
           </Link>
         </motion.div>
       </motion.div>

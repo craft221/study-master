@@ -23,6 +23,8 @@ import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTranslations } from 'next-intl'
+import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
   id: string
@@ -44,6 +46,7 @@ interface Note {
 
 export default function NotesPage() {
   const { t } = useLanguage()
+  const tt = useTranslations()
   // Utiliser le hook offline pour les notes
   const { data: notesData, loading, error, isFromCache, refetch } = useOfflineNotes()
   const { isOnline } = useOfflineContext()
@@ -186,44 +189,57 @@ export default function NotesPage() {
               placeholder={t('notesPage.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <HelpTooltip content={tt('tooltips.notes.search')} size="sm" />
+            </div>
           </div>
 
           {/* Favorites Filter */}
-          <button
-            onClick={() => setShowFavorites(!showFavorites)}
-            className={`px-4 py-2 rounded-lg border transition ${
-              showFavorites
-                ? 'bg-yellow-50 border-yellow-500 text-yellow-700'
-                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Star className={`h-5 w-5 ${showFavorites ? 'fill-yellow-400' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowFavorites(!showFavorites)}
+              className={`px-4 py-2 rounded-lg border transition flex items-center gap-1 ${
+                showFavorites
+                  ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-500 text-yellow-700 dark:text-yellow-400'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              <Star className={`h-5 w-5 ${showFavorites ? 'fill-yellow-400' : ''}`} />
+            </button>
+            <HelpTooltip content={tt('tooltips.notes.favorites')} size="sm" />
+          </div>
         </div>
       </div>
 
       {/* Notes Grid */}
       {filteredNotes.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-12 text-center">
-          <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 dark:text-blue-400" />
+          </div>
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {searchQuery ? t('notesPage.noNotesFound') : t('notesPage.noNotesYet')}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
+          <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm sm:text-base">
             {searchQuery
               ? t('notesPage.tryDifferentSearch')
               : t('notesPage.createFirstNote')}
           </p>
           {!searchQuery && (
-            <Link
-              href="/notes/new"
-              className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
-            >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-              {t('notesPage.createMyFirstNote')}
-            </Link>
+            <>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
+                {tt('tooltips.emptyStates.notes')}
+              </p>
+              <Link
+                href="/notes/new"
+                className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                {t('notesPage.createMyFirstNote')}
+              </Link>
+            </>
           )}
         </div>
       ) : (

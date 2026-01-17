@@ -106,6 +106,61 @@
     "startStudying": "Commencer à étudier"
   },
 
+  "tooltips": {
+    "dashboard": {
+      "xp": "Gagne des points d'expérience en complétant des quiz et des flashcards. Monte de niveau pour débloquer des succès !",
+      "streak": "Étudie chaque jour pour maintenir ta série. Les séries boostent ta motivation et tes récompenses !",
+      "studyTime": "Temps total passé à étudier. Ta régularité compte !",
+      "flashcardsDue": "Cartes à réviser aujourd'hui selon la répétition espacée. Révise-les pour mieux retenir !",
+      "addDeck": "Crée un deck de flashcards pour un apprentissage actif et efficace",
+      "addQuiz": "Crée un quiz pour tester tes connaissances et suivre ta progression",
+      "spark": "Assistant IA pour t'aider à comprendre, résumer et créer du contenu d'étude",
+      "sessions": "Utilise la technique Pomodoro pour des sessions d'étude concentrées"
+    },
+    "subjects": {
+      "color": "Choisis une couleur pour identifier visuellement tes matières",
+      "description": "Décris le contenu de la matière ou tes objectifs. Cela t'aide à organiser tes révisions.",
+      "notes": "Notes d'étude créées dans cette matière",
+      "docs": "Documents et ressources importés",
+      "cards": "Decks de flashcards pour cette matière",
+      "quiz": "Quiz créés pour tester tes connaissances"
+    },
+    "notes": {
+      "search": "Recherche par titre, contenu ou tags. Trouve exactement ce que tu cherches.",
+      "favorites": "Affiche uniquement tes notes favorites pour un accès rapide aux contenus importants",
+      "tags": "Les tags aident à organiser les notes par thème. Utilise-les pour mieux catégoriser.",
+      "view": "Voir la note complète",
+      "edit": "Modifier cette note",
+      "delete": "Supprimer définitivement cette note"
+    },
+    "flashcards": {
+      "cardsDue": "Cartes programmées pour révision aujourd'hui. Étudie-les pour optimiser ta rétention !",
+      "totalCards": "Nombre total de flashcards dans tous tes decks",
+      "mastered": "Pourcentage de cartes maîtrisées grâce à une pratique régulière",
+      "spacedRepetition": "La répétition espacée programme tes révisions pour optimiser la mémorisation. Étudie les cartes quand elles sont dues pour de meilleurs résultats !",
+      "review": "Réviser les cartes dues aujourd'hui",
+      "viewDeck": "Voir toutes les cartes du deck et les gérer",
+      "progress": "Ta progression : pourcentage de cartes maîtrisées. Continue pour augmenter ce score !"
+    },
+    "quizzes": {
+      "attempts": "Nombre total de fois que tu as passé un quiz",
+      "completed": "Nombre de quiz que tu as terminés",
+      "avgScore": "Ta moyenne de score sur tous les quiz complétés",
+      "timeLimit": "Temps maximum autorisé. ∞ = pas de limite de temps",
+      "share": "Partage ce quiz pour créer un classement et défier tes amis !",
+      "leaderboard": "Voir comment les autres ont performé sur ce quiz partagé",
+      "bestScore": "Ton meilleur score sur ce quiz. Essaie de le battre !"
+    },
+    "emptyStates": {
+      "subjects": "Les matières organisent tout ton contenu : notes, flashcards, quiz. Commence par en créer une !",
+      "notes": "Tes notes d'étude apparaîtront ici. Crée ta première note pour commencer !",
+      "flashcards": "Les flashcards sont l'une des méthodes d'étude les plus efficaces. Crée ton premier deck !",
+      "quizzes": "Crée des quiz pour tester tes connaissances et suivre ta progression !",
+      "activity": "Ton activité d'étude apparaîtra ici. Commence par créer des notes, flashcards ou quiz !",
+      "events": "Aucun événement prévu. Visite le calendrier pour planifier tes sessions d'étude ou examens."
+    }
+  },
+
   "onboarding": {
     "step": "Étape",
     "skip": "Passer",
@@ -368,7 +423,15 @@
     "subjectColor": "Couleur",
     "subjectIcon": "Icône",
     "noSubjects": "Aucune matière créée",
-    "createFirst": "Créez votre première matière pour commencer",
+    "createFirst": "Créer ma première matière",
+    "createFirstSubject": "Crée ta première matière pour organiser tes notes et révisions",
+    "description": "Description",
+    "descriptionPlaceholder": "Description de la matière...",
+    "color": "Couleur",
+    "notes": "Notes",
+    "docs": "Docs",
+    "cards": "Cards",
+    "quiz": "Quiz",
     "notesCount": "{count} notes",
     "flashcardsCount": "{count} flashcards",
     "quizzesCount": "{count} quiz"
@@ -434,7 +497,8 @@
     "incorrect": "Incorrect",
     "sessionComplete": "Session terminée !",
     "cardsReviewed": "cartes révisées",
-    "accuracy": "Précision"
+    "accuracy": "Précision",
+    "spacedRepetitionTitle": "Répétition espacée"
   },
 
   "flashcardsPage": {

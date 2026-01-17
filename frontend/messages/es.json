@@ -106,6 +106,61 @@
     "startStudying": "Empezar a estudiar"
   },
 
+  "tooltips": {
+    "dashboard": {
+      "xp": "Gana puntos de experiencia completando cuestionarios y flashcards. ¡Sube de nivel para desbloquear logros!",
+      "streak": "Estudia cada día para mantener tu racha. ¡Las rachas aumentan la motivación y las recompensas!",
+      "studyTime": "Tiempo total dedicado al estudio. ¡Tu constancia cuenta!",
+      "flashcardsDue": "Tarjetas para revisar hoy según la repetición espaciada. ¡Revísalas para retener mejor!",
+      "addDeck": "Crea un mazo de flashcards para un aprendizaje activo y efectivo",
+      "addQuiz": "Crea un cuestionario para probar tus conocimientos y seguir tu progreso",
+      "spark": "Asistente IA para ayudarte a comprender, resumir y crear contenido de estudio",
+      "sessions": "Usa la técnica Pomodoro para sesiones de estudio concentradas"
+    },
+    "subjects": {
+      "color": "Elige un color para identificar visualmente tus materias",
+      "description": "Describe el contenido de la materia o tus objetivos. Esto ayuda a organizar tus estudios.",
+      "notes": "Notas de estudio creadas en esta materia",
+      "docs": "Documentos y recursos importados",
+      "cards": "Mazos de flashcards para esta materia",
+      "quiz": "Cuestionarios creados para probar tus conocimientos"
+    },
+    "notes": {
+      "search": "Busca por título, contenido o etiquetas. Encuentra exactamente lo que buscas.",
+      "favorites": "Muestra solo tus notas favoritas para acceso rápido al contenido importante",
+      "tags": "Las etiquetas ayudan a organizar notas por tema. Úsalas para mejor categorización.",
+      "view": "Ver la nota completa",
+      "edit": "Editar esta nota",
+      "delete": "Eliminar permanentemente esta nota"
+    },
+    "flashcards": {
+      "cardsDue": "Tarjetas programadas para revisión hoy. ¡Estúdialas para optimizar la retención!",
+      "totalCards": "Número total de flashcards en todos tus mazos",
+      "mastered": "Porcentaje de tarjetas dominadas con práctica constante",
+      "spacedRepetition": "La repetición espaciada programa tus revisiones para optimizar la memorización. ¡Estudia las tarjetas cuando toca para mejores resultados!",
+      "review": "Revisar tarjetas pendientes hoy",
+      "viewDeck": "Ver todas las tarjetas del mazo y gestionarlas",
+      "progress": "Tu progreso: porcentaje de tarjetas dominadas. ¡Sigue estudiando para aumentarlo!"
+    },
+    "quizzes": {
+      "attempts": "Número total de veces que has realizado un cuestionario",
+      "completed": "Número de cuestionarios que has completado",
+      "avgScore": "Tu puntuación media en todos los cuestionarios completados",
+      "timeLimit": "Tiempo máximo permitido. ∞ = sin límite de tiempo",
+      "share": "¡Comparte este cuestionario para crear un ranking y desafiar a tus amigos!",
+      "leaderboard": "Ver cómo les fue a otros en este cuestionario compartido",
+      "bestScore": "Tu mejor puntuación en este cuestionario. ¡Intenta superarla!"
+    },
+    "emptyStates": {
+      "subjects": "Las materias organizan todo tu contenido: notas, flashcards, cuestionarios. ¡Empieza creando una!",
+      "notes": "Tus notas de estudio aparecerán aquí. ¡Crea tu primera nota para empezar!",
+      "flashcards": "Las flashcards son uno de los métodos de estudio más efectivos. ¡Crea tu primer mazo!",
+      "quizzes": "¡Crea cuestionarios para probar tus conocimientos y seguir tu progreso!",
+      "activity": "Tu actividad de estudio aparecerá aquí. ¡Empieza creando notas, flashcards o cuestionarios!",
+      "events": "Sin eventos próximos. Visita el calendario para programar sesiones de estudio o exámenes."
+    }
+  },
+
   "onboarding": {
     "step": "Paso",
     "skip": "Omitir",
@@ -368,7 +423,15 @@
     "subjectColor": "Color",
     "subjectIcon": "Icono",
     "noSubjects": "No hay materias creadas",
-    "createFirst": "Crea tu primera materia para empezar",
+    "createFirst": "Crear mi primera materia",
+    "createFirstSubject": "Crea tu primera materia para organizar tus notas y estudios",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Descripción de la materia...",
+    "color": "Color",
+    "notes": "Notas",
+    "docs": "Docs",
+    "cards": "Tarjetas",
+    "quiz": "Quiz",
     "notesCount": "{count} notas",
     "flashcardsCount": "{count} tarjetas",
     "quizzesCount": "{count} cuestionarios"
@@ -434,7 +497,8 @@
     "incorrect": "Incorrecto",
     "sessionComplete": "¡Sesión completada!",
     "cardsReviewed": "tarjetas revisadas",
-    "accuracy": "Precisión"
+    "accuracy": "Precisión",
+    "spacedRepetitionTitle": "Repetición espaciada"
   },
 
   "flashcardsPage": {

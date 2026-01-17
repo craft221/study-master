@@ -106,6 +106,61 @@
     "startStudying": "Start studying"
   },
 
+  "tooltips": {
+    "dashboard": {
+      "xp": "Earn experience points by completing quizzes and flashcards. Level up to unlock achievements!",
+      "streak": "Study daily to maintain your streak. Streaks boost motivation and rewards!",
+      "studyTime": "Total time spent studying. Your consistency matters!",
+      "flashcardsDue": "Cards due for review today based on spaced repetition. Review them for better retention!",
+      "addDeck": "Create a flashcard deck for active and effective learning",
+      "addQuiz": "Create a quiz to test your knowledge and track progress",
+      "spark": "AI assistant to help you understand, summarize and create study content",
+      "sessions": "Use the Pomodoro technique for focused study sessions"
+    },
+    "subjects": {
+      "color": "Choose a color to visually identify your subjects",
+      "description": "Describe the subject content or your goals. This helps organize your studies.",
+      "notes": "Study notes created in this subject",
+      "docs": "Imported documents and resources",
+      "cards": "Flashcard decks for this subject",
+      "quiz": "Quizzes created to test your knowledge"
+    },
+    "notes": {
+      "search": "Search by title, content or tags. Find exactly what you're looking for.",
+      "favorites": "Show only your favorite notes for quick access to important content",
+      "tags": "Tags help organize notes by topic. Use them for better categorization.",
+      "view": "View the full note",
+      "edit": "Edit this note",
+      "delete": "Permanently delete this note"
+    },
+    "flashcards": {
+      "cardsDue": "Cards scheduled for review today. Study them to optimize retention!",
+      "totalCards": "Total number of flashcards across all your decks",
+      "mastered": "Percentage of cards mastered through consistent practice",
+      "spacedRepetition": "Spaced repetition schedules your reviews to optimize memorization. Study cards when due for best results!",
+      "review": "Review cards due today",
+      "viewDeck": "View all cards in the deck and manage them",
+      "progress": "Your progress: percentage of cards mastered. Keep studying to increase this!"
+    },
+    "quizzes": {
+      "attempts": "Total number of times you've taken any quiz",
+      "completed": "Number of quizzes you've completed",
+      "avgScore": "Your average score across all completed quizzes",
+      "timeLimit": "Maximum time allowed. ∞ = no time limit",
+      "share": "Share this quiz to create a leaderboard and challenge friends!",
+      "leaderboard": "See how others performed on this shared quiz",
+      "bestScore": "Your highest score on this quiz. Try to beat it!"
+    },
+    "emptyStates": {
+      "subjects": "Subjects organize all your content: notes, flashcards, quizzes. Start by creating one!",
+      "notes": "Your study notes will appear here. Create your first note to get started!",
+      "flashcards": "Flashcards are one of the most effective study methods. Create your first deck!",
+      "quizzes": "Create quizzes to test your knowledge and track your progress!",
+      "activity": "Your study activity will appear here. Start by creating notes, flashcards or quizzes!",
+      "events": "No upcoming events. Visit the calendar to schedule study sessions or exams."
+    }
+  },
+
   "onboarding": {
     "step": "Step",
     "skip": "Skip",
@@ -368,7 +423,15 @@
     "subjectColor": "Color",
     "subjectIcon": "Icon",
     "noSubjects": "No subjects created",
-    "createFirst": "Create your first subject to get started",
+    "createFirst": "Create my first subject",
+    "createFirstSubject": "Create your first subject to organize your notes and studies",
+    "description": "Description",
+    "descriptionPlaceholder": "Subject description...",
+    "color": "Color",
+    "notes": "Notes",
+    "docs": "Docs",
+    "cards": "Cards",
+    "quiz": "Quiz",
     "notesCount": "{count} notes",
     "flashcardsCount": "{count} flashcards",
     "quizzesCount": "{count} quizzes"
@@ -434,7 +497,8 @@
     "incorrect": "Incorrect",
     "sessionComplete": "Session complete!",
     "cardsReviewed": "cards reviewed",
-    "accuracy": "Accuracy"
+    "accuracy": "Accuracy",
+    "spacedRepetitionTitle": "Spaced Repetition"
   },
 
   "flashcardsPage": {

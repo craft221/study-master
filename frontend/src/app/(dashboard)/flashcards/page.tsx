@@ -24,6 +24,8 @@ import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTranslations } from 'next-intl'
+import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface FlashcardDeck {
   id: string
@@ -47,6 +49,7 @@ export default function FlashcardsPage() {
   const { data: decksData, loading, error, isFromCache, refetch } = useOfflineDecks()
   const { isOnline } = useOfflineContext()
   const { t } = useLanguage()
+  const tt = useTranslations()
   const [decks, setDecks] = useState<FlashcardDeck[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -150,6 +153,7 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600 dark:text-orange-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.flashcards.cardsDue')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalCardsDue}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.cardsToReview')}</p>
@@ -170,6 +174,7 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 dark:text-blue-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.flashcards.totalCards')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalCards}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.totalCards')}</p>
@@ -180,11 +185,29 @@ export default function FlashcardsPage() {
             <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 dark:text-green-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.flashcards.mastered')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalMastered}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('flashcardsPage.masteredCards')}</p>
           <div className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0}% {t('flashcardsPage.progression')}
+          </div>
+        </div>
+      </div>
+
+      {/* Info sur la répétition espacée */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800/30">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+            <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
+              {tt('flashcards.spacedRepetitionTitle') || 'Répétition espacée'}
+            </h4>
+            <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-300">
+              {tt('tooltips.flashcards.spacedRepetition')}
+            </p>
           </div>
         </div>
       </div>
@@ -206,23 +229,30 @@ export default function FlashcardsPage() {
       {/* Decks Grid */}
       {filteredDecks.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-12 text-center">
-          <CreditCard className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <CreditCard className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600 dark:text-purple-400" />
+          </div>
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {searchQuery ? t('flashcardsPage.noDeckFound') : t('flashcardsPage.noDeckYet')}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
+          <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm sm:text-base">
             {searchQuery
               ? t('flashcardsPage.tryDifferentSearch')
               : t('flashcardsPage.createFirstDeck')}
           </p>
           {!searchQuery && (
-            <Link
-              href="/flashcards/new"
-              className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
-            >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-              {t('flashcardsPage.createMyFirstDeck')}
-            </Link>
+            <>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
+                {tt('tooltips.emptyStates.flashcards')}
+              </p>
+              <Link
+                href="/flashcards/new"
+                className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                {t('flashcardsPage.createMyFirstDeck')}
+              </Link>
+            </>
           )}
         </div>
       ) : (

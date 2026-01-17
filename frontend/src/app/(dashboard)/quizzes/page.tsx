@@ -26,6 +26,8 @@ import { toast } from 'react-hot-toast'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
 import { offlineStorage } from '@/lib/offlineStorage'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useTranslations } from 'next-intl'
+import HelpTooltip from '@/components/ui/HelpTooltip'
 
 interface Subject {
   id: string
@@ -68,6 +70,7 @@ interface LeaderboardEntry {
 export default function QuizzesPage() {
   const { isOnline } = useOfflineContext()
   const { t } = useLanguage()
+  const tt = useTranslations()
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -248,6 +251,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Brain className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 dark:text-blue-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.quizzes.attempts')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{totalAttempts}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.totalAttempts')}</p>
@@ -258,6 +262,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600 dark:text-green-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.quizzes.completed')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">{completedQuizzes}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('quizzesPage.completedQuizzes')}</p>
@@ -268,6 +273,7 @@ export default function QuizzesPage() {
             <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Trophy className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600 dark:text-purple-400" />
             </div>
+            <HelpTooltip content={tt('tooltips.quizzes.avgScore')} size="sm" />
           </div>
           <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1">
             {averageScore.toFixed(0)}%
@@ -293,23 +299,30 @@ export default function QuizzesPage() {
       {/* Quizzes Grid */}
       {filteredQuizzes.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-12 text-center">
-          <Brain className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Brain className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 dark:text-green-400" />
+          </div>
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {searchQuery ? t('quizzesPage.noQuizFound') : t('quizzesPage.noQuizAvailable')}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
+          <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm sm:text-base">
             {searchQuery
               ? t('quizzesPage.tryDifferentSearch')
               : t('quizzesPage.createFirstQuiz')}
           </p>
           {!searchQuery && (
-            <Link
-              href="/quizzes/new"
-              className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
-            >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-              {t('quizzesPage.createMyFirstQuiz')}
-            </Link>
+            <>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
+                {tt('tooltips.emptyStates.quizzes')}
+              </p>
+              <Link
+                href="/quizzes/new"
+                className="inline-flex items-center justify-center px-4 py-2 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm sm:text-base"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                {t('quizzesPage.createMyFirstQuiz')}
+              </Link>
+            </>
           )}
         </div>
       ) : (
