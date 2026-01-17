@@ -304,17 +304,17 @@ export default function NewNotePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-1 sm:px-0">
       {/* Offline Banner */}
       {!isOnline && (
-        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <CloudOff className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <div>
-              <p className="font-medium text-orange-900 dark:text-orange-100">
+        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <CloudOff className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-medium text-orange-900 dark:text-orange-100 text-sm sm:text-base">
                 {t('newNotePage.offlineMode')}
               </p>
-              <p className="text-sm text-orange-700 dark:text-orange-300">
+              <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300">
                 {t('newNotePage.offlineSaveMessage')}
               </p>
             </div>
@@ -323,11 +323,11 @@ export default function NewNotePage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('newNotePage.title')}</h1>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">{t('newNotePage.title')}</h1>
           {!isOnline && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+            <span className="hidden sm:inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 shrink-0">
               <CloudOff className="w-3 h-3 mr-1" />
               {t('newNotePage.offline')}
             </span>
@@ -335,19 +335,19 @@ export default function NewNotePage() {
         </div>
         <button
           onClick={() => router.back()}
-          className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition flex items-center space-x-2"
+          className="p-2 sm:px-4 sm:py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition flex items-center gap-1 sm:gap-2 shrink-0"
         >
           <X className="h-5 w-5" />
-          <span>{t('newNotePage.cancel')}</span>
+          <span className="hidden sm:inline">{t('newNotePage.cancel')}</span>
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               {t('newNotePage.titleLabel')} <span className="text-red-500">*</span>
             </label>
             <input
@@ -355,20 +355,20 @@ export default function NewNotePage() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder={t('newNotePage.titlePlaceholder')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base sm:text-lg"
               required
             />
           </div>
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               {t('newNotePage.subjectLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.subject_id}
               onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
               required
             >
               <option value="">{t('newNotePage.selectSubject')}</option>
@@ -382,7 +382,7 @@ export default function NewNotePage() {
 
           {/* Content - Smart Editor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               {t('newNotePage.contentLabel')} <span className="text-red-500">*</span>
             </label>
             <SmartNoteEditor
@@ -394,12 +394,12 @@ export default function NewNotePage() {
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               {t('newNotePage.tagsLabel')}
             </label>
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="flex-1 relative">
-                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1 relative min-w-0">
+                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
                   value={tagInput}
@@ -411,31 +411,31 @@ export default function NewNotePage() {
                     }
                   }}
                   placeholder={t('newNotePage.addTagPlaceholder')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <button
                 type="button"
                 onClick={addTag}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                className="px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm sm:text-base shrink-0"
               >
                 {t('newNotePage.addButton')}
               </button>
             </div>
             {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {formData.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-sm"
+                    className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs sm:text-sm"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
-                      className="ml-2 hover:text-primary-900"
+                      className="ml-1 sm:ml-2 hover:text-primary-900 dark:hover:text-primary-300"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
                   </span>
                 ))}
@@ -445,75 +445,75 @@ export default function NewNotePage() {
 
           {/* Visibility */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
               {t('newNotePage.visibilityLabel')}
             </label>
-            <div className="flex gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, visibility: 'private' })}
-                className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-lg border-2 transition ${
+                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border-2 transition ${
                   formData.visibility === 'private'
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
                 }`}
               >
-                <Lock className="h-5 w-5" />
-                <div className="text-left">
-                  <div className="font-medium">{t('newNotePage.private')}</div>
-                  <div className="text-xs opacity-75">{t('newNotePage.privateDesc')}</div>
+                <Lock className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium text-sm sm:text-base truncate">{t('newNotePage.private')}</div>
+                  <div className="text-[10px] sm:text-xs opacity-75 truncate">{t('newNotePage.privateDesc')}</div>
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, visibility: 'public' })}
-                className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-lg border-2 transition ${
+                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border-2 transition ${
                   formData.visibility === 'public'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
                 }`}
               >
-                <Globe className="h-5 w-5" />
-                <div className="text-left">
-                  <div className="font-medium">{t('newNotePage.public')}</div>
-                  <div className="text-xs opacity-75">{t('newNotePage.publicDesc')}</div>
+                <Globe className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium text-sm sm:text-base truncate">{t('newNotePage.public')}</div>
+                  <div className="text-[10px] sm:text-xs opacity-75 truncate">{t('newNotePage.publicDesc')}</div>
                 </div>
               </button>
             </div>
             {formData.visibility === 'public' && (
-              <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                <Globe className="h-4 w-4" />
-                {t('newNotePage.publicNotice')}
+              <p className="mt-2 text-xs sm:text-sm text-green-600 dark:text-green-400 flex items-start gap-1">
+                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 mt-0.5" />
+                <span>{t('newNotePage.publicNotice')}</span>
               </p>
             )}
           </div>
 
           {/* Language Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Languages className="h-4 w-4" />
                 {t('newNotePage.languageLabel')}
               </div>
             </label>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
               {LANGUAGE_OPTIONS.map((lang) => (
                 <button
                   key={lang.code}
                   type="button"
                   onClick={() => setFormData({ ...formData, language: lang.code })}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
+                  className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg border-2 transition ${
                     formData.language === lang.code
-                      ? 'border-primary-500 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
                   }`}
                 >
-                  <span className="text-lg">{lang.flag}</span>
-                  <span className="font-medium">{lang.label}</span>
+                  <span className="text-base sm:text-lg">{lang.flag}</span>
+                  <span className="font-medium text-xs sm:text-sm">{lang.label}</span>
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
               {t('newNotePage.languageNotice')}
             </p>
           </div>
@@ -675,21 +675,21 @@ export default function NewNotePage() {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end space-x-4">
+        {/* Actions - Sticky on mobile */}
+        <div className="sticky bottom-0 left-0 right-0 sm:static bg-white dark:bg-gray-900 sm:bg-transparent border-t border-gray-200 dark:border-gray-700 sm:border-0 p-3 sm:p-0 -mx-1 sm:mx-0 flex items-center justify-end gap-2 sm:gap-4">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium text-sm sm:text-base"
           >
             {t('newNotePage.cancel')}
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
-            <Save className="h-5 w-5" />
+            <Save className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>{loading ? t('newNotePage.saving') : t('newNotePage.saveNote')}</span>
           </button>
         </div>
