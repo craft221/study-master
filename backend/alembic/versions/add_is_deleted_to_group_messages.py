@@ -1,7 +1,7 @@
 """Add is_deleted column to group_messages for soft delete
 
 Revision ID: add_is_deleted_to_group_messages
-Revises: add_document_ids_to_exam_sessions
+Revises: add_ai_tasks_table
 Create Date: 2025-01-17 00:00:00.000000
 
 """
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_is_deleted_to_group_messages'
-down_revision = 'add_document_ids_to_exam_sessions'
+down_revision = 'add_ai_tasks_table'
 branch_labels = None
 depends_on = None
 
