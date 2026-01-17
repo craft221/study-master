@@ -45,6 +45,22 @@ async def check_group_membership(
     return result.scalar_one_or_none() is not None
 
 
+async def get_user_membership(
+    group_id: int,
+    user_id: int,
+    db: AsyncSession
+) -> StudyGroupMembership | None:
+    """Récupérer le membership de l'utilisateur avec sa date d'adhésion"""
+    query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == user_id
+        )
+    )
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+
+
 @router.get("/{group_id}/messages", response_model=GroupMessageListResponse)
 async def get_group_messages(
     group_id: int,
@@ -62,22 +78,28 @@ async def get_group_messages(
             detail="Study group not found"
         )
 
-    # Vérifier membership
-    is_member = await check_group_membership(group_id, current_user.id, db)
-    if not is_member:
+    # Vérifier membership et récupérer la date d'adhésion
+    membership = await get_user_membership(group_id, current_user.id, db)
+    if not membership:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be a member of this group"
         )
 
-    # Construire la requête
+    # Construire la requête - filtrer les messages envoyés après l'adhésion de l'utilisateur
     query = select(GroupMessage).where(
-        GroupMessage.group_id == group_id
+        and_(
+            GroupMessage.group_id == group_id,
+            GroupMessage.created_at >= membership.joined_at  # Seulement les messages après adhésion
+        )
     ).order_by(desc(GroupMessage.created_at))
 
-    # Compte total
+    # Compte total (seulement les messages visibles par l'utilisateur)
     count_query = select(func.count()).select_from(GroupMessage).where(
-        GroupMessage.group_id == group_id
+        and_(
+            GroupMessage.group_id == group_id,
+            GroupMessage.created_at >= membership.joined_at
+        )
     )
     total = await db.scalar(count_query)
 
