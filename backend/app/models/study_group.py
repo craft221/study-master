@@ -28,10 +28,10 @@ class StudyGroup(Base):
     __tablename__ = "study_groups"
 
     id = Column(Integer, primary_key=True, index=True)
-    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True)
     university = Column(String, nullable=True)
     promotion = Column(String, nullable=True)
     max_members = Column(Integer, default=20)
@@ -55,8 +55,8 @@ class StudyGroupMembership(Base):
     __tablename__ = "study_group_memberships"
 
     id = Column(Integer, primary_key=True, index=True)
-    group_id = Column(Integer, ForeignKey("study_groups.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("study_groups.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = Column(Enum(MembershipRole), default=MembershipRole.MEMBER)
     contribution_score = Column(Integer, default=0)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -71,9 +71,9 @@ class StudyGroupInvitation(Base):
     __tablename__ = "study_group_invitations"
 
     id = Column(Integer, primary_key=True, index=True)
-    group_id = Column(Integer, ForeignKey("study_groups.id"), nullable=False)
-    inviter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    invitee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("study_groups.id", ondelete="CASCADE"), nullable=False)
+    inviter_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    invitee_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     status = Column(String(20), default="pending")  # VARCHAR compatible with migration
     message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

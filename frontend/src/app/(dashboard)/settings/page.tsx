@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { wsService } from '@/services/websocket'
 import { useTranslation } from '@/contexts/LanguageContext'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 
@@ -220,6 +221,7 @@ export default function SettingsPage() {
     try {
       await api.delete('/users/me')
       toast.success('Compte supprimé')
+      wsService.disconnect()
       localStorage.clear()
       router.push('/login')
     } catch (error: any) {

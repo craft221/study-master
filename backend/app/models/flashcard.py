@@ -36,9 +36,9 @@ class FlashcardDeck(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
-    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=True)
+    note_id = Column(Integer, ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
 
     # Metadata
     is_ai_generated = Column(Boolean, default=False)
@@ -63,10 +63,10 @@ class Flashcard(Base):
     back = Column(Text, nullable=False)
     hint = Column(Text, nullable=True)
     explanation = Column(Text, nullable=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    source_note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
-    deck_id = Column(Integer, ForeignKey("flashcard_decks.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    source_note_id = Column(Integer, ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
+    deck_id = Column(Integer, ForeignKey("flashcard_decks.id", ondelete="CASCADE"), nullable=True)
     deck_name = Column(String, nullable=True)  # Legacy field
 
     # Media URLs
@@ -142,8 +142,8 @@ class FlashcardReview(Base):
     __tablename__ = "flashcard_reviews"
 
     id = Column(Integer, primary_key=True, index=True)
-    flashcard_id = Column(Integer, ForeignKey("flashcards.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    flashcard_id = Column(Integer, ForeignKey("flashcards.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     quality = Column(Integer, nullable=False)  # 0-5 rating
     time_taken = Column(Integer, nullable=True)  # seconds
     reviewed_at = Column(DateTime(timezone=True), server_default=func.now())

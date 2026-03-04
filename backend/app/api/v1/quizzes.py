@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, update
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -1329,6 +1329,11 @@ async def delete_quiz(
             detail="Quiz non trouvé"
         )
     
+    # Détacher les duels qui référencent ce quiz (SET NULL pour éviter IntegrityError)
+    await db.execute(
+        update(Duel).where(Duel.quiz_id == quiz_id).values(quiz_id=None)
+    )
+
     # Mettre à jour les stats de la matière
     result = await db.execute(
         select(Subject).where(Subject.id == quiz.subject_id)
@@ -1336,7 +1341,7 @@ async def delete_quiz(
     subject = result.scalar_one_or_none()
     if subject:
         subject.total_quizzes_count = max(0, subject.total_quizzes_count - 1)
-    
+
     await db.delete(quiz)
     await db.commit()
 

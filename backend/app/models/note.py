@@ -15,9 +15,9 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)  # Legacy: texte brut/HTML
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    parent_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=True)
     tags = Column(JSON, default=list)
 
     # Nouveau: Contenu structuré en blocs (Notion-like)

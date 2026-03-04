@@ -18,7 +18,7 @@ class Subject(Base):
     color = Column(String, default="#3B82F6")
     icon = Column(String, nullable=True)
     description = Column(String, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     is_archived = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     is_favorite = Column(Boolean, default=False)

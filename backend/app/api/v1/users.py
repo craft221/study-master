@@ -6,8 +6,13 @@ from typing import Optional
 from datetime import datetime, timedelta, timezone
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.datetime_utils import utc_now
-from app.core.security import get_current_active_user, get_password_hash, verify_password
+from app.core.security import get_current_active_user, get_password_hash, verify_password, revoke_token, get_token_blacklist_redis
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from app.websockets import manager as ws_manager
+
+security_scheme = HTTPBearer()
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.note import Note
@@ -678,16 +683,34 @@ async def get_user_activity(
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_account(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Supprimer le compte utilisateur (soft delete)"""
-    
+
     # Soft delete
     current_user.is_active = False
     current_user.is_deleted = True
     current_user.deleted_at = utc_now()
-    
+
     await db.commit()
-    
+
+    # Révoquer le token JWT
+    token = credentials.credentials
+    remaining_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    await revoke_token(token, remaining_seconds)
+
+    # Déconnecter le WebSocket
+    await ws_manager.disconnect(current_user.id)
+
+    # Nettoyer le cache Redis de l'utilisateur
+    redis_client = await get_token_blacklist_redis()
+    if redis_client:
+        user_cache_keys = await redis_client.keys(f"*user:{current_user.id}*")
+        rate_limit_keys = await redis_client.keys(f"*rate_limit*{current_user.id}*")
+        keys_to_delete = user_cache_keys + rate_limit_keys
+        if keys_to_delete:
+            await redis_client.delete(*keys_to_delete)
+
     return None

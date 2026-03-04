@@ -49,8 +49,8 @@ class UserAchievement(Base):
     __tablename__ = "user_achievements"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    achievement_id = Column(Integer, ForeignKey("achievements.id", ondelete="CASCADE"), nullable=False)
     progress = Column(Integer, default=0)
     is_unlocked = Column(Boolean, default=False)
     unlocked_at = Column(DateTime(timezone=True), nullable=True)
@@ -81,7 +81,7 @@ class Leaderboard(Base):
     __tablename__ = "leaderboards"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     leaderboard_type = Column(Enum(LeaderboardType), nullable=False)
     period = Column(Enum(LeaderboardPeriod), nullable=False)
     score = Column(Integer, default=0)
@@ -108,16 +108,16 @@ class Duel(Base):
     __tablename__ = "duels"
 
     id = Column(Integer, primary_key=True, index=True)
-    challenger_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    opponent_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=True)
+    challenger_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    opponent_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="SET NULL"), nullable=True)
     status = Column(Enum(DuelStatus), default=DuelStatus.PENDING, index=True)
 
     # Scores
     challenger_score = Column(Integer, nullable=True)
     opponent_score = Column(Integer, nullable=True)
-    winner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    winner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     # Enjeux
     stakes_xp = Column(Integer, default=50)  # XP misés

@@ -43,13 +43,13 @@ class ContentReport(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Qui signale
-    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reporter_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Contenu signalé
     content_type = Column(Enum(ContentType), nullable=False)
     content_id = Column(Integer, nullable=False)  # ID de la note, deck ou quiz
     content_title = Column(String(255), nullable=True)  # Copie du titre pour référence
-    content_owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    content_owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     # Détails du signalement
     reason = Column(Enum(ReportReason), nullable=False)
@@ -57,7 +57,7 @@ class ContentReport(Base):
 
     # Statut et modération
     status = Column(Enum(ReportStatus), default=ReportStatus.PENDING)
-    moderator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    moderator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     moderator_notes = Column(Text, nullable=True)
     action_taken = Column(String(100), nullable=True)  # ex: "content_hidden", "user_warned"
 

@@ -36,9 +36,9 @@ class Quiz(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    source_note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    source_note_id = Column(Integer, ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
     quiz_type = Column(String, nullable=True)  # practice, test, exam
     difficulty = Column(String, nullable=True)  # easy, medium, hard
     questions_data = Column(JSON, nullable=True)  # Questions stored as JSON
@@ -80,7 +80,7 @@ class QuizQuestion(Base):
     __tablename__ = "quiz_questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
     question = Column(Text, nullable=False)
     question_type = Column(String, nullable=False)  # multiple_choice, true_false, short_answer
     options = Column(JSON, nullable=True)  # For multiple choice
@@ -98,8 +98,8 @@ class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
 
     id = Column(Integer, primary_key=True, index=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Numéro de tentative (1ère, 2ème, etc.)
     attempt_number = Column(Integer, default=1)
@@ -140,7 +140,7 @@ class GuestQuizAttempt(Base):
     __tablename__ = "guest_quiz_attempts"
 
     id = Column(Integer, primary_key=True, index=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
     guest_name = Column(String(100), nullable=False)  # Pseudo choisi par l'invité
     guest_session_id = Column(String(64), nullable=False, index=True)  # Session unique
     answers = Column(JSON, nullable=False)
@@ -149,8 +149,8 @@ class GuestQuizAttempt(Base):
     total_questions = Column(Integer, default=0)
     time_taken_seconds = Column(Integer, nullable=True)
     is_completed = Column(Boolean, default=False)
-    referrer_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Qui a partagé
-    converted_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Si l'invité s'inscrit
+    referrer_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Qui a partagé
+    converted_to_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Si l'invité s'inscrit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
 

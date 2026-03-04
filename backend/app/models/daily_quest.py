@@ -63,7 +63,7 @@ class DailyQuest(Base):
     __tablename__ = "daily_quests"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Type et difficulté - utiliser les valeurs (minuscules) pour correspondre à PostgreSQL
     quest_type = Column(
@@ -112,7 +112,7 @@ class DailyQuestStreak(Base):
     __tablename__ = "daily_quest_streaks"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
 
     # Série actuelle
     current_streak = Column(Integer, default=0)  # Jours consécutifs avec 3/3
@@ -139,7 +139,7 @@ class MysteryChest(Base):
     __tablename__ = "mystery_chests"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Type de coffre
     rarity = Column(String(50), nullable=False)  # common, rare, epic, legendary

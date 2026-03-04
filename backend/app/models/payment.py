@@ -176,8 +176,8 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Relations
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    plan_id = Column(Integer, ForeignKey("subscription_plans.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    plan_id = Column(Integer, ForeignKey("subscription_plans.id", ondelete="SET NULL"), nullable=True)
 
     # Identifiants externes
     provider = Column(
@@ -278,7 +278,7 @@ class PaymentWebhookLog(Base):
     processing_error = Column(Text, nullable=True)
 
     # Transaction liée
-    transaction_id = Column(Integer, ForeignKey("transactions.id"), nullable=True)
+    transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True)
 
     # Timestamps
     received_at = Column(DateTime(timezone=True), server_default=func.now())
