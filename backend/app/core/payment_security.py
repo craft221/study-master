@@ -131,7 +131,7 @@ def verify_stripe_signature(payload: bytes, signature: str, secret: str) -> bool
 
         # Calculer la signature attendue
         signed_payload = f"{timestamp}.{payload.decode('utf-8')}"
-        expected_signature = hmac.new(
+        expected_signature = hmac.HMAC(
             secret.encode('utf-8'),
             signed_payload.encode('utf-8'),
             hashlib.sha256

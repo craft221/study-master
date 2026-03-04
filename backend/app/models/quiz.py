@@ -128,7 +128,7 @@ class QuizAttempt(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    completed_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relations
     quiz = relationship("Quiz", back_populates="attempts")

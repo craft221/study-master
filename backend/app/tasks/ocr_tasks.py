@@ -483,28 +483,31 @@ def _create_note_from_ocr(
 
         # Convertir l'URL async en sync
         sync_url = settings.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
-        engine = create_engine(sync_url)
+        engine = create_engine(sync_url, pool_pre_ping=True)
 
-        with Session(engine) as db:
-            note = Note(
-                user_id=user_id,
-                subject_id=subject_id,
-                title=title or "Note OCR",
-                content=content,
-                tags=f"ocr,confidence-{int(confidence)}"
-            )
-            db.add(note)
+        try:
+            with Session(engine) as db:
+                note = Note(
+                    user_id=user_id,
+                    subject_id=subject_id,
+                    title=title or "Note OCR",
+                    content=content,
+                    tags=f"ocr,confidence-{int(confidence)}"
+                )
+                db.add(note)
 
-            # XP bonus
-            user = db.query(User).filter(User.id == user_id).first()
-            if user and user.gamification:
-                user.gamification.total_xp += 15
-            if user and user.stats:
-                user.stats.total_notes_created += 1
+                # XP bonus
+                user = db.query(User).filter(User.id == user_id).first()
+                if user and user.gamification:
+                    user.gamification.total_xp += 15
+                if user and user.stats:
+                    user.stats.total_notes_created += 1
 
-            db.commit()
-            db.refresh(note)
-            return note.id
+                db.commit()
+                db.refresh(note)
+                return note.id
+        finally:
+            engine.dispose()
 
     except Exception as e:
         logger.error(f"Failed to create note: {e}")

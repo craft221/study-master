@@ -164,8 +164,10 @@ class StripeService:
 
             if not self.is_test_mode and sig_header:
                 try:
+                    import json as json_module
+                    payload_str = payload if isinstance(payload, str) else json_module.dumps(payload)
                     event = stripe.Webhook.construct_event(
-                        payload if isinstance(payload, str) else str(payload),
+                        payload_str,
                         sig_header,
                         self.webhook_secret
                     )

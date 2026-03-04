@@ -121,9 +121,10 @@ def export_notes_to_pdf(
             
             # Contenu
             content = note.get('content', '')
-            # Nettoyer le Markdown basique
-            content = content.replace('**', '<b>').replace('**', '</b>')
-            content = content.replace('*', '<i>').replace('*', '</i>')
+            # Convertir le Markdown basique en HTML
+            import re
+            content = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', content)
+            content = re.sub(r'\*(.+?)\*', r'<i>\1</i>', content)
             
             paragraphs = content.split('\n\n')
             for para in paragraphs:

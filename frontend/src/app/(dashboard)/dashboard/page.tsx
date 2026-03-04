@@ -18,6 +18,7 @@ import {
   Sparkles,
   Info
 } from 'lucide-react'
+import api from '@/lib/api'
 import HelpTooltip, { WithTooltip } from '@/components/ui/HelpTooltip'
 import {
   pageVariants,
@@ -28,8 +29,6 @@ import {
   fadeInUpVariants,
 } from '@/lib/animations'
 import { useTranslation } from '@/contexts/LanguageContext'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 // Types stricts pour les données
 interface Activity {
@@ -92,16 +91,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('access_token')
-        if (!token) return
-
         // Fetch stats
-        const statsResponse = await fetch(`${API_BASE_URL}/api/v1/users/me/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const statsResponse = await api.get('/users/me/stats')
 
-        if (statsResponse.ok) {
-          const data = await statsResponse.json()
+        if (statsResponse.status === 200) {
+          const data = statsResponse.data
           setStats({
             total_xp: data.total_xp || 0,
             level: data.level || 1,
@@ -115,17 +109,15 @@ export default function DashboardPage() {
             total_study_time_minutes: data.total_study_time_minutes || 0,
             study_time_this_month: data.study_time_this_month || 0,
             flashcards_due_today: data.flashcards_due_today || 0,
-            next_exam_days: 5,
+            next_exam_days: data.next_exam_days || 0,
           })
         }
 
         // Fetch recent activity
-        const activityResponse = await fetch(`${API_BASE_URL}/api/v1/users/me/activity?days=7`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const activityResponse = await api.get('/users/me/activity?days=7')
 
-        if (activityResponse.ok) {
-          const activityData = await activityResponse.json()
+        if (activityResponse.status === 200) {
+          const activityData = activityResponse.data
           interface RawActivity {
             timestamp: string
             title: string
@@ -175,24 +167,19 @@ export default function DashboardPage() {
         }
 
         // Fetch upcoming events
-        const eventsResponse = await fetch(`${API_BASE_URL}/api/v1/schedules/upcoming?limit=5`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const eventsResponse = await api.get('/schedules/upcoming?limit=5')
 
-        if (eventsResponse.ok) {
-          const eventsData = await eventsResponse.json()
+        if (eventsResponse.status === 200) {
+          const eventsData = eventsResponse.data
           const formattedEvents = eventsData.map((event: any) => {
-            let color = 'blue'
-            if (event.event_type === 'exam') color = 'red'
-            else if (event.event_type === 'study_session') color = 'green'
-            else if (event.event_type === 'group_study') color = 'purple'
-
             return {
               id: event.id,
               title: event.title,
               date: event.start_time.split('T')[0],
               type: event.event_type,
-              color
+              color: event.event_type === 'exam' ? 'red' :
+                     event.event_type === 'study_session' ? 'green' :
+                     event.event_type === 'group_study' ? 'purple' : 'blue'
             }
           })
           setUpcomingEvents(formattedEvents)
@@ -483,8 +470,18 @@ export default function DashboardPage() {
             {upcomingEvents.length > 0 ? (
               upcomingEvents.map((event) => (
                 <div key={event.id} className="flex items-start space-x-2 sm:space-x-3">
-                  <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 bg-${event.color}-100 dark:bg-${event.color}-900/30`}>
-                    <Calendar className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-${event.color}-600 dark:text-${event.color}-400`} />
+                  <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
+                    event.color === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
+                    event.color === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                    event.color === 'purple' ? 'bg-purple-100 dark:bg-purple-900/30' :
+                    'bg-blue-100 dark:bg-blue-900/30'
+                  }`}>
+                    <Calendar className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
+                      event.color === 'red' ? 'text-red-600 dark:text-red-400' :
+                      event.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                      event.color === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+                      'text-blue-600 dark:text-blue-400'
+                    }`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">{event.title}</p>

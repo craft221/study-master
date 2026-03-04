@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from threading import Lock
 from typing import Dict, Any
 
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -44,6 +44,12 @@ if settings.SENTRY_DSN:
         before_send=lambda event, hint: event if event.get("level") != "error" or "404" not in str(hint.get("exc_info", "")) else None,
     )
     logging.info(f"🔍 Sentry initialized for environment: {settings.ENVIRONMENT}")
+
+from app.core.security import require_role
+from app.models.user import UserRole
+
+# Dependency pour protéger les endpoints admin
+require_admin = require_role([UserRole.ADMIN])
 
 from app.services.cache_service import cache_service
 from app.services.search_cache_service import search_cache
@@ -176,11 +182,12 @@ async def detailed_health_check() -> Dict[str, Any]:
     }
 
 
-@router.get("/metrics")
+@router.get("/metrics", dependencies=[Depends(require_admin)])
 async def get_metrics() -> Dict[str, Any]:
     """
     Endpoint de métriques pour l'observabilité.
     Compatible Prometheus (format texte) ou JSON.
+    Protégé: admin uniquement.
     """
     global request_count, error_count
 
@@ -217,11 +224,12 @@ async def get_metrics() -> Dict[str, Any]:
     }
 
 
-@router.post("/cache/invalidate/{prefix}")
+@router.post("/cache/invalidate/{prefix}", dependencies=[Depends(require_admin)])
 async def invalidate_cache(prefix: str) -> Dict[str, Any]:
     """
     Invalide le cache par préfixe.
     Préfixes: ai, leaderboard, achievements, mascot, search, explore, all
+    Protégé: admin uniquement.
     """
     if prefix == "ai":
         count = await cache_service.invalidate_ai_cache()
@@ -247,10 +255,11 @@ async def invalidate_cache(prefix: str) -> Dict[str, Any]:
     }
 
 
-@router.get("/cache/search-metrics")
+@router.get("/cache/search-metrics", dependencies=[Depends(require_admin)])
 async def get_search_cache_metrics() -> Dict[str, Any]:
     """
     Retourne les métriques de cache spécifiques aux recherches.
+    Protégé: admin uniquement.
     """
     return {
         "search_metrics": search_cache.get_search_metrics(),
@@ -259,11 +268,12 @@ async def get_search_cache_metrics() -> Dict[str, Any]:
     }
 
 
-@router.post("/cache/warm")
+@router.post("/cache/warm", dependencies=[Depends(require_admin)])
 async def trigger_cache_warming() -> Dict[str, Any]:
     """
     Déclenche manuellement le cache warming.
     Utile après un déploiement ou après avoir vidé le cache.
+    Protégé: admin uniquement.
     """
     try:
         from app.core.database import async_session_maker
