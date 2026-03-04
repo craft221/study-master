@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.datetime_utils import utc_now
 from app.core.security import get_current_user
-from app.models.user import User, UserGamification, UserStats, UserProfile
+from app.models.user import User, UserGamification, UserStats, UserProfile, UserPreferences
 from app.models.gamification import LeaderboardType, LeaderboardPeriod
 from app.schemas.gamification import (
     LeaderboardListResponse,
@@ -80,11 +80,13 @@ async def get_leaderboard_data(
     score_column = get_score_column(lb_type)
 
     # Construire la requête de base avec toutes les jointures nécessaires
+    # Bug 10 fix: Join UserPreferences and filter out users who opted out
     query = (
         select(User)
         .join(UserGamification, User.id == UserGamification.user_id, isouter=True)
         .join(UserStats, User.id == UserStats.user_id, isouter=True)
         .join(UserProfile, User.id == UserProfile.user_id, isouter=True)
+        .join(UserPreferences, User.id == UserPreferences.user_id, isouter=True)
         .options(
             selectinload(User.gamification),
             selectinload(User.stats),
@@ -93,7 +95,12 @@ async def get_leaderboard_data(
         .where(
             and_(
                 User.is_deleted == False,
-                User.is_active == True
+                User.is_active == True,
+                # Respect show_in_leaderboard preference (default True if no prefs)
+                or_(
+                    UserPreferences.show_in_leaderboard == True,
+                    UserPreferences.id == None  # No preferences = show by default
+                )
             )
         )
     )

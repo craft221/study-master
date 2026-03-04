@@ -63,6 +63,7 @@ export const achievementsService = {
   // Auto-check and unlock achievements
   checkProgress: async (): Promise<UserAchievement[]> => {
     const response = await api.post('/achievements/check-progress')
-    return response.data.unlocked || []
+    // Backend returns a direct array, not { unlocked: [...] }
+    return Array.isArray(response.data) ? response.data : (response.data.unlocked || [])
   },
 }

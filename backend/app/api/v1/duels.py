@@ -26,7 +26,9 @@ from app.schemas.gamification import (
 )
 from app.services.cache_service import cache_service, CachePrefix, CacheTTL
 from app.services.daily_quest_service import daily_quest_service
+from app.services.leaderboard_service import leaderboard_service
 from app.models.daily_quest import QuestType
+from app.models.user import UserStats
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -1052,6 +1054,30 @@ async def complete_duel(
             from app.services.xp_service import calculate_level
             loser.gamification.level = calculate_level(loser.gamification.total_xp)
 
+        # Bug 4 fix: Propagate XP loss to weekly_xp for leagues
+        try:
+            loser_league = await leaderboard_service.get_or_create_user_league(db, loser.id)
+            loser_league.weekly_xp = max(0, loser_league.weekly_xp - xp_loss)
+        except Exception as e:
+            logger.warning(f"Failed to update loser weekly_xp: {e}")
+
+        # Bug 5 fix: Update UserStats for both winner and loser
+        for user, is_winner in [(winner, True), (loser, False)]:
+            try:
+                stats_query = select(UserStats).where(UserStats.user_id == user.id)
+                stats_result = await db.execute(stats_query)
+                user_stats = stats_result.scalar_one_or_none()
+                if user_stats:
+                    user_stats.total_duels_played = (user_stats.total_duels_played or 0) + 1
+                    if is_winner:
+                        user_stats.duels_won = (user_stats.duels_won or 0) + 1
+                        user_stats.duel_win_streak = (user_stats.duel_win_streak or 0) + 1
+                    else:
+                        user_stats.duels_lost = (user_stats.duels_lost or 0) + 1
+                        user_stats.duel_win_streak = 0
+            except Exception as e:
+                logger.warning(f"Failed to update UserStats for user {user.id}: {e}")
+
         logger.info(
             f"Duel {duel_id} terminé: {winner.username} gagne +{duel.stakes_xp}XP, "
             f"{loser.username} perd -{xp_loss}XP"
@@ -1080,6 +1106,17 @@ async def complete_duel(
     else:
         # Égalité - notification aux deux
         logger.info(f"Duel {duel_id} terminé: égalité entre {challenger.username} et {opponent.username}")
+
+        # Bug 5 fix: Update UserStats for draws too
+        for user in [challenger, opponent]:
+            try:
+                stats_query = select(UserStats).where(UserStats.user_id == user.id)
+                stats_result = await db.execute(stats_query)
+                user_stats = stats_result.scalar_one_or_none()
+                if user_stats:
+                    user_stats.total_duels_played = (user_stats.total_duels_played or 0) + 1
+            except Exception as e:
+                logger.warning(f"Failed to update UserStats for draw user {user.id}: {e}")
 
         for user in [challenger, opponent]:
             await send_duel_notification(

@@ -68,6 +68,13 @@ celery_app.conf.update(
             "task": "app.tasks.gamification_tasks.cleanup_expired_focus_rooms",
             "schedule": 86400.0,  # Une fois par jour - supprime les rooms sans activité depuis 7 jours
         },
+        # === Mise à jour des Streaks ===
+        # Réinitialise les streaks des utilisateurs inactifs
+        # Exécuté chaque jour à 00:05 UTC
+        "update-streaks": {
+            "task": "app.tasks.gamification_tasks.update_streaks",
+            "schedule": crontab(hour=0, minute=5),
+        },
 
         # === Reset Hebdomadaire des Ligues ===
         # Promeut/rétrograde les utilisateurs et reset les XP
