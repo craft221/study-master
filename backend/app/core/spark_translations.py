@@ -592,6 +592,93 @@ class SparkNotificationMessages:
         },
     }
 
+    # ============================================
+    # RAPPELS D'INACTIVITÉ (réengagement)
+    # ============================================
+    INACTIVITY_REMINDER: Dict[str, Dict[str, Dict[str, str]]] = {
+        "fr": {
+            "3_days": {
+                "title": "🐿️ Spark s'ennuie sans toi !",
+                "message": "Hé, ça fait 3 jours qu'on ne s'est pas vus ! Ta série est en jeu... Reviens vite pour une petite session ! 📚",
+                "email_subject": "🐿️ Spark s'ennuie sans toi !",
+            },
+            "7_days": {
+                "title": "😢 Spark te cherche partout...",
+                "message": "Une semaine sans toi... Tes flashcards s'accumulent et Spark est triste ! Juste 5 minutes aujourd'hui ? 🥺",
+                "email_subject": "Ça fait une semaine... tu reviens ? 📚",
+            },
+            "14_days": {
+                "title": "💔 Spark ne t'oublie pas !",
+                "message": "2 semaines déjà ! Tes amis continuent de progresser. Reviens montrer de quoi tu es capable ! 💪",
+                "email_subject": "Tu nous manques sur Studera !",
+            },
+            "30_days": {
+                "title": "🐿️ Spark t'attend toujours...",
+                "message": "Un mois sans étudier... Mais il n'est jamais trop tard pour reprendre ! Spark est toujours là pour toi 🐿️❤️",
+                "email_subject": "Il n'est jamais trop tard pour reprendre ! 🐿️",
+            },
+        },
+        "en": {
+            "3_days": {
+                "title": "🐿️ Spark misses you!",
+                "message": "Hey, it's been 3 days! Your streak is at risk... Come back for a quick study session! 📚",
+                "email_subject": "🐿️ Spark misses you!",
+            },
+            "7_days": {
+                "title": "😢 Spark is looking for you...",
+                "message": "A whole week without you... Your flashcards are piling up and Spark is sad! Just 5 minutes today? 🥺",
+                "email_subject": "It's been a week... coming back? 📚",
+            },
+            "14_days": {
+                "title": "💔 Spark hasn't forgotten you!",
+                "message": "2 weeks already! Your friends keep progressing. Come back and show what you can do! 💪",
+                "email_subject": "We miss you on Studera!",
+            },
+            "30_days": {
+                "title": "🐿️ Spark is still waiting...",
+                "message": "A month without studying... But it's never too late to start again! Spark is always here for you 🐿️❤️",
+                "email_subject": "It's never too late to come back! 🐿️",
+            },
+        },
+        "es": {
+            "3_days": {
+                "title": "🐿️ ¡Spark te extraña!",
+                "message": "¡Oye, llevas 3 días sin conectarte! Tu racha está en peligro... ¡Vuelve para una sesión rápida! 📚",
+                "email_subject": "🐿️ ¡Spark te extraña!",
+            },
+            "7_days": {
+                "title": "😢 Spark te busca...",
+                "message": "Una semana sin ti... ¡Tus flashcards se acumulan y Spark está triste! ¿Solo 5 minutos hoy? 🥺",
+                "email_subject": "Ha pasado una semana... ¿vuelves? 📚",
+            },
+            "14_days": {
+                "title": "💔 ¡Spark no te olvida!",
+                "message": "¡2 semanas ya! Tus amigos siguen progresando. ¡Vuelve a demostrar lo que vales! 💪",
+                "email_subject": "¡Te echamos de menos en Studera!",
+            },
+            "30_days": {
+                "title": "🐿️ Spark te sigue esperando...",
+                "message": "Un mes sin estudiar... ¡Pero nunca es tarde para retomar! Spark siempre estará aquí para ti 🐿️❤️",
+                "email_subject": "¡Nunca es tarde para volver! 🐿️",
+            },
+        },
+    }
+
+    @classmethod
+    def get_inactivity_reminder(cls, lang: str, days_absent: int) -> Dict[str, str]:
+        """Obtient le message de rappel d'inactivité selon le nombre de jours d'absence"""
+        lang = get_spark_language(lang)
+        messages = cls.INACTIVITY_REMINDER.get(lang, cls.INACTIVITY_REMINDER["fr"])
+
+        if days_absent >= 30:
+            return messages["30_days"]
+        elif days_absent >= 14:
+            return messages["14_days"]
+        elif days_absent >= 7:
+            return messages["7_days"]
+        else:
+            return messages["3_days"]
+
     @classmethod
     def get_achievement_unlocked(cls, lang: str, name: str, xp: int) -> Tuple[str, str]:
         """Obtient message et titre pour achievement débloqué"""

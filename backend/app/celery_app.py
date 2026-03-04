@@ -131,6 +131,13 @@ celery_app.conf.update(
             "schedule": 3600.0,  # Toutes les heures (18h heure locale)
         },
 
+        # === Rappels d'Inactivité (Réengagement) ===
+        # Envoie des emails aux utilisateurs absents (3j, 7j, 14j, 30j)
+        "inactivity-reminders": {
+            "task": "notifications.send_inactivity_reminders",
+            "schedule": 86400.0,  # Une fois par jour
+        },
+
         # === Exam Mode - Rappels Quotidiens ===
         # Envoie des rappels aux heures configurées par chaque utilisateur
         "exam-mode-daily-reminders": {

@@ -51,6 +51,9 @@ class NotificationType(enum.Enum):
     FOCUS_ROOM_INVITE = "focus_room_invite"
     FOCUS_ROOM_INVITE_ACCEPTED = "focus_room_invite_accepted"
 
+    # Réengagement
+    INACTIVITY_REMINDER = "inactivity_reminder"
+
     # Système
     SYSTEM = "system"
     WELCOME = "welcome"

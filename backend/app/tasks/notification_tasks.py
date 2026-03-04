@@ -492,6 +492,146 @@ async def _check_lost_streaks_async() -> Dict[str, Any]:
 
 
 # =============================================================================
+# Rappels d'inactivité (réengagement par email)
+# =============================================================================
+
+@celery_app.task(base=NotificationTask, bind=True, name="notifications.send_inactivity_reminders")
+def send_inactivity_reminders(self) -> Dict[str, Any]:
+    """
+    Envoie des emails de réengagement aux utilisateurs inactifs.
+    Exécuté 1 fois par jour par Celery Beat.
+
+    Stratégie progressive:
+    - 3 jours d'absence → notification in-app + email
+    - 7 jours → email "tu nous manques"
+    - 14 jours → email "tes amis progressent"
+    - 30 jours → email "il n'est jamais trop tard"
+
+    Ne re-envoie pas si un rappel du même palier a déjà été envoyé.
+    """
+    return run_async(_send_inactivity_reminders_async())
+
+
+async def _send_inactivity_reminders_async() -> Dict[str, Any]:
+    """Version async des rappels d'inactivité"""
+    async_session = get_async_session()
+
+    async with async_session() as db:
+        try:
+            from app.core.spark_translations import spark_messages, get_spark_language
+            from app.services.email_service import email_service
+
+            now = utc_now()
+            notifications_sent = 0
+            emails_sent = 0
+
+            # Paliers d'inactivité (en jours)
+            inactivity_thresholds = [3, 7, 14, 30]
+
+            for days in inactivity_thresholds:
+                threshold_date = now - timedelta(days=days)
+                # Fenêtre de 24h pour ce palier (ne pas re-attraper les jours suivants)
+                window_start = threshold_date - timedelta(hours=12)
+                window_end = threshold_date + timedelta(hours=12)
+
+                # Utilisateurs dont la dernière activité tombe dans cette fenêtre
+                query = (
+                    select(User)
+                    .join(UserGamification, User.id == UserGamification.user_id)
+                    .outerjoin(UserPreferences, User.id == UserPreferences.user_id)
+                    .options(
+                        selectinload(User.gamification),
+                        selectinload(User.preferences),
+                        selectinload(User.profile),
+                    )
+                    .where(
+                        and_(
+                            User.is_active == True,
+                            UserGamification.last_activity_date.isnot(None),
+                            UserGamification.last_activity_date >= window_start,
+                            UserGamification.last_activity_date < window_end,
+                            # Ne pas envoyer si notifications désactivées
+                            or_(
+                                UserPreferences.notifications_enabled == True,
+                                UserPreferences.id == None
+                            ),
+                        )
+                    )
+                )
+
+                result = await db.execute(query)
+                users = result.scalars().all()
+
+                for user in users:
+                    try:
+                        # Vérifier qu'on n'a pas déjà envoyé ce palier
+                        check_window = now - timedelta(days=days)  # Ne pas renvoyer le même palier
+                        existing_query = select(func.count()).select_from(Notification).where(
+                            and_(
+                                Notification.user_id == user.id,
+                                Notification.type == NotificationType.INACTIVITY_REMINDER,
+                                Notification.created_at >= check_window,
+                                Notification.data.contains(f'"days": {days}')
+                            )
+                        )
+                        existing = await db.scalar(existing_query)
+                        if existing and existing > 0:
+                            continue
+
+                        # Obtenir les messages traduits
+                        user_lang = get_spark_language(user.language if hasattr(user, 'language') else "fr")
+                        reminder_data = spark_messages.get_inactivity_reminder(user_lang, days)
+
+                        # Créer notification in-app
+                        notification = Notification(
+                            user_id=user.id,
+                            type=NotificationType.INACTIVITY_REMINDER,
+                            title=reminder_data["title"],
+                            message=reminder_data["message"],
+                            priority=NotificationPriority.HIGH,
+                            action_url="/dashboard",
+                            data=f'{{"days": {days}, "old_streak": {user.gamification.longest_streak or 0}}}'
+                        )
+                        db.add(notification)
+                        notifications_sent += 1
+
+                        # Envoyer email (sauf pour 3 jours si pas de préf email)
+                        should_email = True
+                        if user.preferences and not user.preferences.email_notifications:
+                            should_email = False
+
+                        if should_email and email_service.enabled:
+                            email_sent = await email_service.send_inactivity_reminder(
+                                to_email=user.email,
+                                username=user.username,
+                                days_absent=days,
+                                old_streak=user.gamification.longest_streak or 0,
+                                email_subject=reminder_data.get("email_subject", "Tu nous manques sur Studera !")
+                            )
+                            if email_sent:
+                                emails_sent += 1
+
+                    except Exception as user_error:
+                        logger.error(f"Error sending inactivity reminder for user {user.id}: {user_error}")
+                        continue
+
+            await db.commit()
+
+            logger.info(f"Inactivity reminders: {notifications_sent} notifications, {emails_sent} emails")
+
+            return {
+                "success": True,
+                "notifications_sent": notifications_sent,
+                "emails_sent": emails_sent,
+                "executed_at": now.isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Erreur inactivity reminders: {e}")
+            return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # Milestone de Streak
 # =============================================================================
 

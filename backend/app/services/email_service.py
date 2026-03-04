@@ -534,6 +534,61 @@ class EmailService:
 
         return await self.send_async(to_email, f"🏆 Succès débloqué: {achievement_name} !", html, text)
 
+    async def send_inactivity_reminder(
+        self,
+        to_email: str,
+        username: str,
+        days_absent: int,
+        old_streak: int = 0,
+        email_subject: str = "Tu nous manques sur Studera !"
+    ) -> bool:
+        """Email de rappel d'inactivité / réengagement"""
+        streak_text = ""
+        if old_streak > 0:
+            streak_text = f"""
+            <div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                <span style="font-size: 24px;">💔</span>
+                <p style="margin: 5px 0;">Tu avais une série de <strong>{old_streak} jours</strong></p>
+                <p style="color: #666; font-size: 14px;">Reviens pour en commencer une nouvelle !</p>
+            </div>
+            """
+
+        if days_absent >= 30:
+            spark_mood = "🥺"
+            intro = f"Ça fait {days_absent} jours... Spark ne t'a pas oublié !"
+        elif days_absent >= 14:
+            spark_mood = "😢"
+            intro = f"2 semaines sans toi ! Tes amis continuent de progresser."
+        elif days_absent >= 7:
+            spark_mood = "😟"
+            intro = f"Une semaine déjà ! Tes flashcards s'accumulent."
+        else:
+            spark_mood = "🐿️"
+            intro = f"Ça fait {days_absent} jours qu'on ne s'est pas vus !"
+
+        content = f"""
+        <h2>{spark_mood} Spark te cherche partout !</h2>
+        <p>Salut <strong>{username}</strong>,</p>
+        <p>{intro}</p>
+        {streak_text}
+        <p>Juste <strong>5 minutes</strong> suffisent pour garder le rythme :</p>
+        <ul>
+            <li>📚 Révise quelques flashcards</li>
+            <li>📝 Relis tes notes</li>
+            <li>🎯 Fais un quiz rapide</li>
+        </ul>
+        <p style="text-align: center;">
+            <a href="https://studera.app/dashboard" class="button">Revenir étudier</a>
+        </p>
+        <p style="color: #666; font-size: 13px; text-align: center;">
+            Spark t'attend ! 🐿️❤️
+        </p>
+        """
+        html = self._base_template(content, "Tu nous manques !")
+        text = f"Salut {username}, ça fait {days_absent} jours ! Reviens sur Studera."
+
+        return await self.send_async(to_email, email_subject, html, text)
+
     async def send_flashcard_reminder(
         self,
         to_email: str,
