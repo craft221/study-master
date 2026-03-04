@@ -373,10 +373,9 @@ Réponds UNIQUEMENT avec l'indice :"""
 
         # Utiliser le cache sémantique - questions similaires = même réponse (avec langue)
         cache_key = cache_service.generate_semantic_key(
-            question,
+            f"{lang}:{question}",
             prefix=CachePrefix.MASCOT_AI,
             context_level=user_level,
-            lang=lang
         )
 
         # Vérifier le cache

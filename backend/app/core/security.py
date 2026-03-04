@@ -341,9 +341,8 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
 
-    # Mettre à jour last_login_at (last_seen n'existe pas dans le modèle User)
+    # Mettre à jour last_login_at (sera committé par le get_db context manager)
     user.last_login_at = utc_now()
-    await db.commit()
 
     return user
 

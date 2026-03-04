@@ -14,6 +14,7 @@ from jose import jwt, JWTError
 from app.core.database import get_db, async_session_maker
 from app.core.config import settings
 from app.core.datetime_utils import utc_now, utc_timestamp
+from app.core.security import is_token_revoked
 from app.models.user import User
 from app.models.focus_room import (
     FocusRoom, FocusRoomParticipant, ParticipantStatus, FocusActivityType
@@ -129,7 +130,17 @@ focus_room_manager = FocusRoomConnectionManager()
 async def get_user_from_token(token: str) -> Optional[User]:
     """Valide le token JWT et retourne l'utilisateur"""
     try:
+        # Vérifier si le token est révoqué (blacklist)
+        if await is_token_revoked(token):
+            return None
+
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+        # Vérifier le type de token (doit être "access")
+        token_type = payload.get("type")
+        if token_type and token_type != "access":
+            return None
+
         user_id = int(payload.get("sub"))
 
         async with async_session_maker() as db:

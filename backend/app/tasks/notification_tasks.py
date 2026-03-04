@@ -14,12 +14,12 @@ from typing import Dict, Any, List
 from celery import Task
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, selectinload
 
 from app.celery_app import celery_app
 from app.core.config import settings
 from app.core.datetime_utils import utc_now
-from app.models.user import User
+from app.models.user import User, UserGamification, UserPreferences, UserProfile
 from app.models.schedule import Schedule
 from app.models.notification import Notification, NotificationType, NotificationPriority
 from app.models.flashcard import Flashcard
@@ -77,7 +77,6 @@ def send_streak_reminders(self) -> Dict[str, Any]:
 async def _send_streak_reminders_async() -> Dict[str, Any]:
     """Version async du rappel de streak avec support timezone"""
     from zoneinfo import ZoneInfo
-    from sqlalchemy.orm import selectinload
 
     async_session = get_async_session()
 
@@ -89,15 +88,25 @@ async def _send_streak_reminders_async() -> Dict[str, Any]:
             reminder_hours = [14, 19]  # 14h et 19h
 
             # Récupérer tous les utilisateurs éligibles avec leurs préférences
+            # Note: current_streak est dans UserGamification, notifications_enabled dans UserPreferences
             query = (
                 select(User)
+                .join(UserGamification, User.id == UserGamification.user_id)
+                .outerjoin(UserPreferences, User.id == UserPreferences.user_id)
                 .outerjoin(User.notification_preferences)
-                .options(selectinload(User.notification_preferences))
+                .options(
+                    selectinload(User.notification_preferences),
+                    selectinload(User.gamification),
+                    selectinload(User.profile),
+                )
                 .where(
                     and_(
                         User.is_active == True,
-                        User.current_streak >= 3,
-                        User.notifications_enabled == True
+                        UserGamification.current_streak >= 3,
+                        or_(
+                            UserPreferences.notifications_enabled == True,
+                            UserPreferences.id == None  # Pas de préférences = notifications activées par défaut
+                        )
                     )
                 )
             )
@@ -416,13 +425,19 @@ async def _check_lost_streaks_async() -> Dict[str, Any]:
             streaks_lost = 0
 
             # Utilisateurs avec streak > 0 et aucune activité hier
-            query = select(User).where(
-                and_(
-                    User.is_active == True,
-                    User.current_streak > 0,
-                    or_(
-                        User.last_activity_date.is_(None),
-                        User.last_activity_date < yesterday_start
+            # Note: current_streak et last_activity_date sont dans UserGamification
+            query = (
+                select(User)
+                .join(UserGamification, User.id == UserGamification.user_id)
+                .options(selectinload(User.gamification), selectinload(User.preferences))
+                .where(
+                    and_(
+                        User.is_active == True,
+                        UserGamification.current_streak > 0,
+                        or_(
+                            UserGamification.last_activity_date.is_(None),
+                            UserGamification.last_activity_date < yesterday_start
+                        )
                     )
                 )
             )
@@ -431,10 +446,10 @@ async def _check_lost_streaks_async() -> Dict[str, Any]:
             users = result.scalars().all()
 
             for user in users:
-                old_streak = user.current_streak
+                old_streak = user.gamification.current_streak
 
                 # Réinitialiser le streak
-                user.current_streak = 0
+                user.gamification.current_streak = 0
 
                 # Notifier seulement si la série était significative (>= 3 jours)
                 if old_streak >= 3:
@@ -610,11 +625,21 @@ async def _send_email_digest_async() -> Dict[str, Any]:
             from app.models.notification import NotificationPreference
 
             # Utilisateurs avec email_digest activé
-            query = select(User).join(NotificationPreference).where(
-                and_(
-                    User.is_active == True,
-                    User.email_notifications == True,
-                    NotificationPreference.email_digest == True
+            # Note: email_notifications est dans UserPreferences, pas User
+            query = (
+                select(User)
+                .join(NotificationPreference)
+                .outerjoin(UserPreferences, User.id == UserPreferences.user_id)
+                .options(selectinload(User.gamification))
+                .where(
+                    and_(
+                        User.is_active == True,
+                        or_(
+                            UserPreferences.email_notifications == True,
+                            UserPreferences.id == None
+                        ),
+                        NotificationPreference.email_digest == True
+                    )
                 )
             )
 

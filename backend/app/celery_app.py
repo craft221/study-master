@@ -91,7 +91,7 @@ celery_app.conf.update(
         # - Deadline: 3j, 1j, 3h avant
         # Respecte le timezone et les heures de silence
         "smart-calendar-reminders": {
-            "task": "app.tasks.notification_tasks.send_calendar_reminders",
+            "task": "notifications.send_calendar_reminders",
             "schedule": 300.0,  # Toutes les 5 minutes
         },
 
@@ -99,35 +99,35 @@ celery_app.conf.update(
         # Envoie des rappels à 14h et 19h HEURE LOCALE de l'utilisateur
         # Vérifie chaque heure pour couvrir tous les fuseaux horaires
         "smart-streak-reminders": {
-            "task": "app.tasks.notification_tasks.send_streak_reminders",
+            "task": "notifications.send_streak_reminders",
             "schedule": 3600.0,  # Toutes les heures
         },
 
         # === Rappels Flashcards (Spaced Repetition) ===
         # Rappel quotidien pour les cartes à réviser
         "daily-flashcard-reminders": {
-            "task": "app.tasks.notification_tasks.send_flashcard_reminders",
+            "task": "notifications.send_flashcard_reminders",
             "schedule": 21600.0,  # Toutes les 6 heures (couvre les timezones)
         },
 
         # === Vérification Streak Perdu ===
         # Réinitialise les streaks à minuit et notifie
         "check-lost-streaks": {
-            "task": "app.tasks.notification_tasks.check_lost_streaks",
+            "task": "notifications.check_lost_streaks",
             "schedule": 3600.0,  # Toutes les heures (minuit dans différents TZ)
         },
 
         # === Nettoyage Notifications ===
         # Supprime les notifications lues de plus de 30 jours
         "cleanup-old-notifications": {
-            "task": "app.tasks.notification_tasks.cleanup_old_notifications",
+            "task": "notifications.cleanup_old_notifications",
             "schedule": 86400.0,  # Une fois par jour
         },
 
         # === Email Digest ===
         # Envoie un résumé quotidien aux utilisateurs qui l'ont activé
         "daily-email-digest": {
-            "task": "app.tasks.notification_tasks.send_email_digest",
+            "task": "notifications.send_email_digest",
             "schedule": 3600.0,  # Toutes les heures (18h heure locale)
         },
 

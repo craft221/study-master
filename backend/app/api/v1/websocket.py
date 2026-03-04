@@ -13,6 +13,7 @@ import logging
 from app.core.config import settings
 from app.core.datetime_utils import utc_now
 from app.core.database import get_db
+from app.core.security import is_token_revoked
 from app.websockets import manager
 from app.websockets.handlers import (
     handle_group_message,
@@ -34,6 +35,10 @@ async def get_user_from_token(token: str, db: AsyncSession) -> Optional[User]:
     Valider le token JWT et récupérer l'utilisateur
     """
     try:
+        # Vérifier si le token est révoqué (blacklist)
+        if await is_token_revoked(token):
+            return None
+
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
@@ -41,6 +46,11 @@ async def get_user_from_token(token: str, db: AsyncSession) -> Optional[User]:
         )
         user_id: int = payload.get("sub")
         if user_id is None:
+            return None
+
+        # Vérifier le type de token (doit être "access")
+        token_type = payload.get("type")
+        if token_type and token_type != "access":
             return None
 
         result = await db.execute(select(User).where(User.id == int(user_id)))
