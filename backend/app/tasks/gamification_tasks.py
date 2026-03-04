@@ -32,12 +32,12 @@ class GamificationTask(Task):
 
 def run_async(coro):
     """Helper pour exécuter des coroutines dans Celery"""
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        # Si une loop tourne déjà, créer une nouvelle
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 
 @celery_app.task(base=GamificationTask, bind=True, name="app.tasks.gamification_tasks.reset_daily_ai_requests")

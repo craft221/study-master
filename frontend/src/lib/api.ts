@@ -21,7 +21,12 @@ const processQueue = (error: Error | null, token: string | null = null) => {
     if (error) {
       promise.reject(error)
     } else if (token) {
-      promise.resolve(token)
+      // Verify tokens weren't cleared (user logged out) during refresh
+      if (tokenStorage.getAccessToken()) {
+        promise.resolve(token)
+      } else {
+        promise.reject(new Error('Session terminée'))
+      }
     }
   })
   failedQueue = []
@@ -147,6 +152,12 @@ api.interceptors.response.use(
         )
 
         const { access_token } = response.data
+
+        // Verify tokens weren't cleared (user logged out) during refresh
+        if (!tokenStorage.getRefreshToken()) {
+          processQueue(new Error('Session terminée'), null)
+          return Promise.reject(new Error('Session terminée'))
+        }
 
         // Sauvegarder le nouveau token
         tokenStorage.setAccessToken(access_token)

@@ -2,7 +2,7 @@
  * Hook pour les quiz en temps réel
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { wsService } from '@/services/websocket'
 
 interface QuizParticipant {
@@ -42,6 +42,9 @@ export function useLiveQuiz(roomId: string | null, userId: number) {
     lastResults: null
   })
 
+  // Track the countdown interval to prevent leaks
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     if (!roomId) return
 
@@ -61,6 +64,12 @@ export function useLiveQuiz(roomId: string | null, userId: number) {
 
     // Next question
     const unsubQuestion = wsService.on('next_question', (data) => {
+      // Clear any previous countdown interval
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+        countdownRef.current = null
+      }
+
       setState(prev => ({
         ...prev,
         currentQuestion: {
@@ -74,17 +83,18 @@ export function useLiveQuiz(roomId: string | null, userId: number) {
       }))
 
       // Start countdown
-      const interval = setInterval(() => {
+      countdownRef.current = setInterval(() => {
         setState(prev => {
           if (prev.timeRemaining <= 1) {
-            clearInterval(interval)
+            if (countdownRef.current) {
+              clearInterval(countdownRef.current)
+              countdownRef.current = null
+            }
             return { ...prev, timeRemaining: 0 }
           }
           return { ...prev, timeRemaining: prev.timeRemaining - 1 }
         })
       }, 1000)
-
-      return () => clearInterval(interval)
     })
 
     // Someone answered
@@ -138,6 +148,11 @@ export function useLiveQuiz(roomId: string | null, userId: number) {
     })
 
     return () => {
+      // Clear countdown interval on unmount
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+        countdownRef.current = null
+      }
       wsService.leaveRoom(roomId)
       unsubStart()
       unsubQuestion()

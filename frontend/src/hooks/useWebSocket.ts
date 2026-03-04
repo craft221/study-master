@@ -63,11 +63,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     })
 
     // Connecter automatiquement si demandé
+    let didConnect = false
     if (autoConnect) {
       const token = localStorage.getItem('access_token')
       if (token) {
         const wsUrl = getWebSocketUrl()
         setIsConnecting(true)
+        didConnect = true
         wsService.connect({ url: wsUrl, token }).catch(err => {
           setError(err)
           setIsConnecting(false)
@@ -79,6 +81,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       unsubConnect()
       unsubDisconnect()
       unsubError()
+      // Disconnect only if this hook initiated the connection
+      if (didConnect) {
+        wsService.disconnect()
+      }
     }
   }, [autoConnect])
 

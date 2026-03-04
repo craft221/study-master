@@ -32,36 +32,55 @@ logger = logging.getLogger(__name__)
 
 # ==================== RATE LIMITING ====================
 
-# Stockage en mémoire pour le rate limiting (utiliser Redis en production)
-payment_attempts: Dict[str, list] = defaultdict(list)
 PAYMENT_RATE_LIMIT = 5  # Max 5 tentatives
 PAYMENT_RATE_WINDOW = 300  # Par 5 minutes
 
+# Fallback en mémoire si Redis n'est pas dispo
+_payment_attempts_fallback: Dict[str, list] = defaultdict(list)
 
-def check_payment_rate_limit(user_id: int) -> Tuple[bool, str]:
+
+async def check_payment_rate_limit(user_id: int) -> Tuple[bool, str]:
     """
     Vérifie le rate limit pour les tentatives de paiement.
-    Empêche les attaques par force brute et les abus.
+    Utilise Redis (persistant) avec fallback en mémoire.
 
     Returns:
         Tuple (allowed: bool, message: str)
     """
-    now = datetime.now()
-    key = f"payment:{user_id}"
+    try:
+        from app.services.cache_service import cache_service
 
-    # Nettoyer les anciennes tentatives
-    payment_attempts[key] = [
-        t for t in payment_attempts[key]
+        if cache_service._client:
+            # Utiliser Redis
+            key = f"payment_rate:{user_id}"
+            count = await cache_service._client.incr(key)
+
+            # Définir l'expiration seulement au premier incrément
+            if count == 1:
+                await cache_service._client.expire(key, PAYMENT_RATE_WINDOW)
+
+            if count > PAYMENT_RATE_LIMIT:
+                ttl = await cache_service._client.ttl(key)
+                return False, f"Trop de tentatives de paiement. Réessayez dans {ttl} secondes."
+
+            return True, ""
+    except Exception as e:
+        logger.warning(f"Redis indisponible pour payment rate limit, fallback mémoire: {e}")
+
+    # Fallback en mémoire
+    now = datetime.now()
+    mem_key = f"payment:{user_id}"
+
+    _payment_attempts_fallback[mem_key] = [
+        t for t in _payment_attempts_fallback[mem_key]
         if (now - t).total_seconds() < PAYMENT_RATE_WINDOW
     ]
 
-    # Vérifier la limite
-    if len(payment_attempts[key]) >= PAYMENT_RATE_LIMIT:
-        wait_time = PAYMENT_RATE_WINDOW - (now - payment_attempts[key][0]).total_seconds()
+    if len(_payment_attempts_fallback[mem_key]) >= PAYMENT_RATE_LIMIT:
+        wait_time = PAYMENT_RATE_WINDOW - (now - _payment_attempts_fallback[mem_key][0]).total_seconds()
         return False, f"Trop de tentatives de paiement. Réessayez dans {int(wait_time)} secondes."
 
-    # Enregistrer cette tentative
-    payment_attempts[key].append(now)
+    _payment_attempts_fallback[mem_key].append(now)
     return True, ""
 
 
@@ -429,7 +448,7 @@ async def payment_security_check(
         HTTPException si la requête est bloquée
     """
     # Rate limiting
-    allowed, message = check_payment_rate_limit(user_id)
+    allowed, message = await check_payment_rate_limit(user_id)
     if not allowed:
         log_payment_event(
             "RATE_LIMITED",

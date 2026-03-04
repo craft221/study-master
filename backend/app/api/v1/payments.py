@@ -313,11 +313,19 @@ async def stripe_webhook(
             extra={"event_type": "webhook", "has_signature": "stripe-signature" in headers}
         )
 
-        # Vérifier la signature en production
+        # Vérifier la signature Stripe
         stripe_signature = headers.get("stripe-signature", "")
         webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', '')
 
-        if webhook_secret and stripe_signature:
+        # En production, rejeter si le secret n'est pas configuré
+        if not webhook_secret and settings.ENVIRONMENT == "production":
+            logger.error("STRIPE_WEBHOOK_SECRET non configuré en production - webhook rejeté")
+            raise HTTPException(status_code=500, detail="Webhook non configuré")
+
+        if webhook_secret:
+            if not stripe_signature:
+                log_payment_event("WEBHOOK_SIGNATURE_MISSING", user_id=0, provider="stripe")
+                raise HTTPException(status_code=401, detail="Signature manquante")
             if not verify_stripe_signature(raw_body, stripe_signature, webhook_secret):
                 log_payment_event(
                     "WEBHOOK_SIGNATURE_INVALID",
