@@ -113,8 +113,8 @@ async def is_token_revoked(token: str) -> bool:
 
 async def revoke_all_user_tokens(user_id: int) -> bool:
     """
-    Révoque tous les tokens d'un utilisateur en incrémentant sa version de token.
-    Utile pour les cas de changement de mot de passe ou de compromission de compte.
+    Révoque tous les tokens d'un utilisateur en stockant un timestamp de révocation.
+    Tout token émis avant ce timestamp sera considéré comme invalide.
 
     Args:
         user_id: L'ID de l'utilisateur
@@ -127,8 +127,9 @@ async def revoke_all_user_tokens(user_id: int) -> bool:
         return False
 
     try:
-        key = f"user_token_version:{user_id}"
-        await redis_client.incr(key)
+        key = f"user_tokens_revoked_at:{user_id}"
+        # Stocker le timestamp actuel; tout token avec iat < cette valeur est invalide
+        await redis_client.set(key, str(utc_now().timestamp()))
         logger.info(f"All tokens revoked for user {user_id}")
         return True
     except Exception as e:
@@ -137,7 +138,7 @@ async def revoke_all_user_tokens(user_id: int) -> bool:
 
 
 async def get_user_token_version(user_id: int) -> int:
-    """Récupère la version actuelle des tokens d'un utilisateur"""
+    """Récupère la version actuelle des tokens d'un utilisateur (legacy, gardé pour compatibilité)"""
     redis_client = await get_token_blacklist_redis()
     if not redis_client:
         return 0
@@ -293,6 +294,27 @@ class CSRFProtection:
 # USER AUTHENTICATION
 # ============================================
 
+async def _is_token_globally_revoked(user_id: int, payload: dict) -> bool:
+    """Vérifie si un token a été révoqué globalement (ex: après changement de mot de passe)"""
+    redis_client = await get_token_blacklist_redis()
+    if not redis_client:
+        return False
+    try:
+        key = f"user_tokens_revoked_at:{user_id}"
+        revoked_at_str = await redis_client.get(key)
+        if not revoked_at_str:
+            return False
+        revoked_at = float(revoked_at_str)
+        token_iat = payload.get("iat", 0)
+        # Si le token a été émis avant la révocation, il est invalide
+        if isinstance(token_iat, (int, float)):
+            return token_iat < revoked_at
+        return False
+    except Exception as e:
+        logger.error(f"Error checking global token revocation: {e}")
+        return False
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db)
@@ -307,7 +329,7 @@ async def get_current_user(
     try:
         token = credentials.credentials
 
-        # Vérifier si le token est révoqué (blacklist)
+        # Vérifier si le token est révoqué (blacklist individuelle)
         if await is_token_revoked(token):
             logger.warning("Attempt to use revoked token")
             raise credentials_exception
@@ -319,6 +341,11 @@ async def get_current_user(
 
         user_id: str = payload.get("sub")
         if user_id is None:
+            raise credentials_exception
+
+        # Vérifier la révocation globale (ex: changement de mot de passe)
+        if await _is_token_globally_revoked(int(user_id), payload):
+            logger.warning(f"Token globally revoked for user {user_id}")
             raise credentials_exception
 
     except JWTError:
@@ -341,8 +368,8 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
 
-    # Mettre à jour last_login_at (sera committé par le get_db context manager)
-    user.last_login_at = utc_now()
+    # Note: last_login_at est mis à jour uniquement lors du login (auth.py)
+    # et non à chaque requête API pour éviter la pollution de la DB
 
     return user
 

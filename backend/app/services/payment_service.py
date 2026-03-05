@@ -468,7 +468,8 @@ class PaymentService:
         self,
         db: AsyncSession,
         transaction_id: int,
-        provider_data: Dict = None
+        provider_data: Dict = None,
+        user_id: int = None
     ) -> Dict[str, Any]:
         """
         Confirme un paiement et active l'abonnement.
@@ -477,6 +478,7 @@ class PaymentService:
             db: Session de base de données
             transaction_id: ID de la transaction
             provider_data: Données additionnelles du provider
+            user_id: ID de l'utilisateur (pour vérification d'ownership)
 
         Returns:
             Dict avec le statut de l'activation
@@ -489,6 +491,10 @@ class PaymentService:
 
         if not transaction:
             raise ValueError("Transaction non trouvée")
+
+        # Vérifier que la transaction appartient à l'utilisateur
+        if user_id is not None and transaction.user_id != user_id:
+            raise ValueError("Transaction non autorisée")
 
         if transaction.status == TransactionStatus.SUCCESS:
             return {"status": "already_activated", "message": "Abonnement déjà activé"}

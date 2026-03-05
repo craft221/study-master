@@ -49,6 +49,10 @@ const tokenStorage = {
     if (!isClient) return
     localStorage.setItem('access_token', token)
   },
+  setRefreshToken: (token: string): void => {
+    if (!isClient) return
+    localStorage.setItem('refresh_token', token)
+  },
   clearTokens: (): void => {
     if (!isClient) return
     localStorage.removeItem('access_token')
@@ -151,7 +155,7 @@ api.interceptors.response.use(
           { timeout: REFRESH_TOKEN_TIMEOUT }
         )
 
-        const { access_token } = response.data
+        const { access_token, refresh_token: new_refresh_token } = response.data
 
         // Verify tokens weren't cleared (user logged out) during refresh
         if (!tokenStorage.getRefreshToken()) {
@@ -159,8 +163,11 @@ api.interceptors.response.use(
           return Promise.reject(new Error('Session terminée'))
         }
 
-        // Sauvegarder le nouveau token
+        // Sauvegarder les nouveaux tokens (rotation du refresh token)
         tokenStorage.setAccessToken(access_token)
+        if (new_refresh_token) {
+          tokenStorage.setRefreshToken(new_refresh_token)
+        }
 
         // Traiter les requêtes en attente
         processQueue(null, access_token)

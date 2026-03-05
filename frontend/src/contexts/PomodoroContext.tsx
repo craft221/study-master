@@ -75,6 +75,12 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const stateRef = useRef<PomodoroState>(defaultState)
+
+  // Keep stateRef in sync with state
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
 
   // Listen for online/offline events
   useEffect(() => {
@@ -265,8 +271,8 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    // Save to API if work session
-    const currentState = state
+    // Save to API if work session — use stateRef to avoid stale closure
+    const currentState = stateRef.current
     if (currentState.sessionType === 'work' && currentState.sessionId) {
       const sessionData = {
         actual_duration_minutes: 25,
@@ -309,7 +315,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [state.sessionId, state.sessionType, state.subject, isOnline, playSound])
+  }, [isOnline, playSound])
 
   // Start session
   const startSession = useCallback(async (subject?: string, fromSessionsPage?: boolean) => {

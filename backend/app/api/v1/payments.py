@@ -476,11 +476,12 @@ async def payment_callback(
         if not transaction_id:
             raise HTTPException(status_code=404, detail="Transaction non trouvée")
 
-        # Confirmer le paiement
+        # Confirmer le paiement (avec vérification d'ownership)
         result = await payment_service.confirm_payment(
             db=db,
             transaction_id=transaction_id,
-            provider_data={"status": request.status}
+            provider_data={"status": request.status},
+            user_id=current_user.id
         )
 
         # Récupérer les infos mises à jour

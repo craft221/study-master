@@ -22,6 +22,7 @@ from app.core.security import (
     create_refresh_token,
     verify_refresh_token,
     revoke_token,
+    is_token_revoked,
     get_current_active_user
 )
 from app.core.config import settings
@@ -314,7 +315,7 @@ async def register(
     )
 
 
-@router.post("/refresh", response_model=RefreshTokenResponse)
+@router.post("/refresh")
 @limiter.limit("30/minute")  # Permet plusieurs refreshs légitimes
 async def refresh_access_token(
     request: Request,
@@ -323,9 +324,18 @@ async def refresh_access_token(
 ):
     """
     Rafraîchit l'access token avec un refresh token valide.
+    Effectue une rotation du refresh token pour limiter la fenêtre d'exploitation.
 
     Rate limited à 30 requêtes par minute par IP.
     """
+    # Vérifier si le refresh token est dans la blacklist
+    if await is_token_revoked(token_request.refresh_token):
+        logger.warning("Tentative d'utilisation d'un refresh token révoqué")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token révoqué"
+        )
+
     user_id = verify_refresh_token(token_request.refresh_token)
 
     if user_id is None:
@@ -346,16 +356,26 @@ async def refresh_access_token(
             detail="Utilisateur invalide ou désactivé"
         )
 
+    # Révoquer l'ancien refresh token
+    await revoke_token(token_request.refresh_token, settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60)
+
     # Générer un nouveau access token
     access_token = create_access_token(
         data={"sub": str(user.id)},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    logger.debug(f"Token rafraîchi pour utilisateur {user.id}")
+    # Générer un nouveau refresh token (rotation)
+    new_refresh_token = create_refresh_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+    )
+
+    logger.debug(f"Token rafraîchi pour utilisateur {user.id} (avec rotation)")
 
     return {
         "access_token": access_token,
+        "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }
 

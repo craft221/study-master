@@ -446,6 +446,36 @@ async def duplicate_content(
     """
     from app.models.flashcard import FlashcardDeck
     from app.models.quiz import QuizQuestion
+    from app.models.subject import Subject
+
+    async def get_or_create_subject_for_user(original_subject_id: int, user_id: int) -> int:
+        """Trouve ou crée un subject similaire pour l'utilisateur courant"""
+        # Récupérer le subject original pour obtenir son nom
+        orig_subject = await db.get(Subject, original_subject_id)
+        if not orig_subject:
+            raise HTTPException(status_code=404, detail="Matière source non trouvée")
+
+        # Vérifier si l'utilisateur a déjà un subject avec le même nom
+        existing = await db.execute(
+            select(Subject).where(
+                Subject.user_id == user_id,
+                Subject.name == orig_subject.name
+            )
+        )
+        user_subject = existing.scalar_one_or_none()
+        if user_subject:
+            return user_subject.id
+
+        # Créer un nouveau subject pour l'utilisateur
+        new_subject = Subject(
+            name=orig_subject.name,
+            color=orig_subject.color,
+            icon=orig_subject.icon,
+            user_id=user_id
+        )
+        db.add(new_subject)
+        await db.flush()
+        return new_subject.id
 
     if request.content_type == "notes":
         # Récupérer la note publique
@@ -456,11 +486,14 @@ async def duplicate_content(
         if not original:
             raise HTTPException(status_code=404, detail="Note non trouvée ou non publique")
 
+        # Trouver ou créer le subject pour l'utilisateur courant
+        user_subject_id = await get_or_create_subject_for_user(original.subject_id, current_user.id)
+
         # Créer une copie
         new_note = Note(
             title=f"{original.title} (copie)",
             content=original.content,
-            subject_id=original.subject_id,
+            subject_id=user_subject_id,
             user_id=current_user.id,
             tags=original.tags,
             language=original.language or "fr",
@@ -514,6 +547,9 @@ async def duplicate_content(
             result = await db.execute(stmt)
             flashcards = result.scalars().all()
 
+        # Trouver ou créer le subject pour l'utilisateur courant
+        user_subject_id = await get_or_create_subject_for_user(flashcards[0].subject_id, current_user.id)
+
         # Créer les copies
         new_deck_name = f"{flashcards[0].deck_name} (copie)" if flashcards[0].deck_name else "Deck copié"
         new_cards = []
@@ -524,7 +560,7 @@ async def duplicate_content(
                 back=card.back,
                 hint=card.hint,
                 explanation=card.explanation,
-                subject_id=card.subject_id,
+                subject_id=user_subject_id,
                 user_id=current_user.id,
                 deck_name=new_deck_name,
                 language=card.language or "fr",
@@ -557,11 +593,14 @@ async def duplicate_content(
         if not original:
             raise HTTPException(status_code=404, detail="Quiz non trouvé ou non public")
 
+        # Trouver ou créer le subject pour l'utilisateur courant
+        user_subject_id = await get_or_create_subject_for_user(original.subject_id, current_user.id)
+
         # Créer une copie du quiz
         new_quiz = Quiz(
             title=f"{original.title} (copie)",
             description=original.description,
-            subject_id=original.subject_id,
+            subject_id=user_subject_id,
             user_id=current_user.id,
             quiz_type=original.quiz_type,
             difficulty=original.difficulty,

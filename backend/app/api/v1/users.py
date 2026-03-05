@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.datetime_utils import utc_now
-from app.core.security import get_current_active_user, get_password_hash, verify_password, revoke_token, get_token_blacklist_redis
+from app.core.security import get_current_active_user, get_password_hash, verify_password, revoke_token, get_token_blacklist_redis, revoke_all_user_tokens
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.websockets import manager as ws_manager
 
@@ -518,10 +518,13 @@ async def change_password(
     
     # Mettre à jour le mot de passe
     current_user.hashed_password = get_password_hash(password_data.new_password)
-    
+
     await db.commit()
-    
-    return {"message": "Mot de passe modifié avec succès"}
+
+    # Révoquer tous les tokens existants pour forcer la reconnexion sur tous les appareils
+    await revoke_all_user_tokens(current_user.id)
+
+    return {"message": "Mot de passe modifié avec succès. Veuillez vous reconnecter."}
 
 
 @router.patch("/me/language", response_model=UserProfileResponse)
