@@ -98,6 +98,10 @@ class ConnectionManager:
 
             logger.info(f"Utilisateur ID: {user_id} déconnecté")
 
+    def is_user_in_room(self, user_id: int, room_id: str) -> bool:
+        """Vérifier si un utilisateur est dans une room"""
+        return room_id in self._rooms and user_id in self._rooms[room_id]
+
     async def join_room(self, user_id: int, room_id: str) -> bool:
         """
         Rejoindre une room

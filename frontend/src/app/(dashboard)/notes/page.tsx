@@ -18,6 +18,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import api from '@/lib/api'
+import toast from 'react-hot-toast'
 import { useOfflineNotes } from '@/hooks/useOffline'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
@@ -94,7 +95,7 @@ export default function NotesPage() {
     } catch (error) {
       // Rollback en cas d'erreur
       setNotes(notes.map(n => n.id === noteId ? note : n))
-      console.error('Erreur lors de la mise à jour du favori:', error)
+      toast.error(t('notesPage.errorFavorite') || 'Erreur lors de la mise à jour du favori')
     }
   }
 
@@ -125,7 +126,7 @@ export default function NotesPage() {
       if (noteToDelete) {
         setNotes([...notes, noteToDelete])
       }
-      console.error('Erreur lors de la suppression:', error)
+      toast.error(t('notesPage.errorDelete') || 'Erreur lors de la suppression')
     }
   }
 

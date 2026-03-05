@@ -83,6 +83,8 @@ async def login(
     - Sans mfa_code: Retourne mfa_required=true avec un temp_token
     - Avec mfa_code: Valide le code et retourne les tokens complets
     """
+    # Normaliser l'email en minuscules
+    login_data.email = login_data.email.lower().strip()
     logger.info(f"Tentative de connexion pour: {login_data.email}")
 
     result = await db.execute(select(User).where(User.email == login_data.email))
@@ -213,6 +215,8 @@ async def register(
     2. Envoie un code à 6 chiffres par email
     3. L'utilisateur doit vérifier avec POST /verify-email
     """
+    # Normaliser l'email en minuscules pour éviter les doublons
+    register_data.email = register_data.email.lower().strip()
     logger.info(f"Tentative d'inscription: {register_data.email}")
 
     # Vérifier si l'email existe déjà

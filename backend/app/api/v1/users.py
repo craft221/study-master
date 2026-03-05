@@ -13,7 +13,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.websockets import manager as ws_manager
 
 security_scheme = HTTPBearer()
-from app.models.user import User
+from app.models.user import User, UserProfile, UserPreferences
 from app.models.subject import Subject
 from app.models.note import Note
 from app.models.flashcard import Flashcard
@@ -202,14 +202,18 @@ async def update_user_profile(
     # Champs directement sur User
     user_fields = {"full_name", "username", "email"}
 
+    # Créer le profil/préférences s'ils n'existent pas encore
+    if not current_user.profile:
+        current_user.profile = UserProfile(user_id=current_user.id)
+    if not current_user.preferences:
+        current_user.preferences = UserPreferences(user_id=current_user.id)
+
     # Mettre à jour les champs
     for field, value in update_data.items():
         if field in profile_fields:
-            if current_user.profile:
-                setattr(current_user.profile, field, value)
+            setattr(current_user.profile, field, value)
         elif field in preferences_fields:
-            if current_user.preferences:
-                setattr(current_user.preferences, field, value)
+            setattr(current_user.preferences, field, value)
         elif field in user_fields:
             setattr(current_user, field, value)
 

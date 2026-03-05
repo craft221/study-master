@@ -12,6 +12,7 @@ from app.models.study_group import StudyGroup, StudyGroupMembership
 from app.models.group_message import GroupMessage
 from app.models.user import User
 from app.core.datetime_utils import utc_now, utc_timestamp
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,15 @@ async def handle_group_message(
     if not user:
         return {"error": "Utilisateur non trouvé"}
 
+    # Sanitiser le contenu pour prévenir le XSS
+    raw_content = message_data.get("content", "")
+    sanitized_content = html.escape(raw_content) if raw_content else ""
+
     # Créer le message en base
     new_message = GroupMessage(
         group_id=group_id,
         user_id=user_id,
-        content=message_data.get("content", ""),
+        content=sanitized_content,
         message_type=message_data.get("type", "text")
     )
     db.add(new_message)
@@ -116,6 +121,10 @@ async def handle_study_session(
         return {"success": True, "message": "Session terminée"}
 
     elif action == "update_progress":
+        # Vérifier que l'utilisateur est bien dans la room
+        if not manager.is_user_in_room(user_id, room_id):
+            return {"error": "Vous n'êtes pas dans cette room"}
+
         # Mettre à jour la progression
         await manager.update_presence(user_id, room_id, "studying", {
             "progress": session_data.get("progress"),
@@ -145,13 +154,20 @@ async def handle_notification(
     notification_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Gérer l'envoi de notifications en temps réel
+    Gérer l'envoi de notifications en temps réel.
+    Seul l'envoi à soi-même est autorisé (le serveur gère les notifications vers d'autres users).
     """
     target_user_id = notification_data.get("target_user_id")
     notification_type = notification_data.get("type")
 
     if not target_user_id:
         return {"error": "target_user_id requis"}
+
+    # Sécurité: un utilisateur ne peut envoyer des notifications qu'à lui-même
+    # Les notifications vers d'autres utilisateurs passent par les services backend
+    if int(target_user_id) != user_id:
+        logger.warning(f"User {user_id} tried to send notification to user {target_user_id}")
+        return {"error": "Non autorisé: vous ne pouvez pas envoyer de notifications à d'autres utilisateurs"}
 
     notification = {
         "type": "notification",

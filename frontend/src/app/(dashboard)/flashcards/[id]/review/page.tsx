@@ -224,24 +224,24 @@ export default function FlashcardReviewPage() {
     }
   }
 
-  const handleKeyPress = (e: KeyboardEvent) => {
-    if (!isFlipped) {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault()
-        setIsFlipped(true)
-      }
-    } else {
-      if (e.key === '1') handleReview(0)
-      else if (e.key === '2') handleReview(1)
-      else if (e.key === '3') handleReview(2)
-      else if (e.key === '4') handleReview(3)
-    }
-  }
-
   useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!isFlipped) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          setIsFlipped(true)
+        }
+      } else {
+        if (e.key === '1') handleReview(0)
+        else if (e.key === '2') handleReview(1)
+        else if (e.key === '3') handleReview(2)
+        else if (e.key === '4') handleReview(3)
+      }
+    }
+
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isFlipped, currentIndex])
+  }, [isFlipped, currentIndex, cards, stats])
 
   if (loading) {
     return (

@@ -32,6 +32,7 @@ import sparkService, {
 } from '@/services/spark';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getArray } from '@/lib/i18n';
+import api from '@/lib/api';
 
 // =============================================================================
 // TYPES
@@ -626,12 +627,10 @@ export const SparkProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const currentHour = new Date().getHours();
         if (currentHour >= 18 && sparkState.userStreak > 0) {
           // Vérifier si l'utilisateur a été actif aujourd'hui via l'API
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/users/me/activity?days=1`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const response = await api.get('/users/me/activity?days=1');
 
-          if (response.ok) {
-            const data = await response.json();
+          if (response.status === 200) {
+            const data = response.data;
             const todayActivities = data.activities?.filter((a: any) => {
               const activityDate = new Date(a.timestamp).toDateString();
               return activityDate === new Date().toDateString();

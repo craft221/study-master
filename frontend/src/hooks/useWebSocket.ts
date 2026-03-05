@@ -148,9 +148,12 @@ export function useRoom(roomId: string | null) {
   const [members, setMembers] = useState<any[]>([])
   const [messages, setMessages] = useState<any[]>([])
   const [typingUsers, setTypingUsers] = useState<number[]>([])
+  const typingTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map())
 
   useEffect(() => {
     if (!roomId) return
+
+    const timeouts = typingTimeoutsRef.current
 
     // Rejoindre la room
     wsService.joinRoom(roomId)
@@ -180,10 +183,16 @@ export function useRoom(roomId: string | null) {
         setTypingUsers(prev => prev.filter(id => id !== data.user_id))
       }
 
+      // Nettoyer le timeout précédent pour cet utilisateur
+      const existingTimeout = timeouts.get(data.user_id)
+      if (existingTimeout) clearTimeout(existingTimeout)
+
       // Auto-clear après 3 secondes
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setTypingUsers(prev => prev.filter(id => id !== data.user_id))
+        timeouts.delete(data.user_id)
       }, 3000)
+      timeouts.set(data.user_id, timeoutId)
     })
 
     return () => {
@@ -192,6 +201,9 @@ export function useRoom(roomId: string | null) {
       unsubJoined()
       unsubLeft()
       unsubTyping()
+      // Nettoyer tous les timeouts
+      timeouts.forEach(t => clearTimeout(t))
+      timeouts.clear()
     }
   }, [roomId])
 

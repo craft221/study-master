@@ -2,7 +2,7 @@
 Schémas Pydantic pour la Gamification
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -105,8 +105,8 @@ class DuelCreate(BaseModel):
 
 class DuelComplete(BaseModel):
     """Données pour compléter un duel manuellement"""
-    challenger_score: int
-    opponent_score: int
+    challenger_score: int = Field(..., ge=0, le=100)
+    opponent_score: int = Field(..., ge=0, le=100)
 
 
 class UserBrief(BaseModel):

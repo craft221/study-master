@@ -955,7 +955,7 @@ def create_user_with_defaults(
     )
     user.subscription = UserSubscription(
         subscription_type=SubscriptionType.FREE,
-        ai_requests_limit=5,  # Option 3: 5 requêtes/jour pour FREE
+        ai_requests_limit=20,  # 20 requêtes/jour pour FREE (cohérent avec INITIAL_PLANS)
         storage_limit_mb=100,
         auto_renew=True
     )

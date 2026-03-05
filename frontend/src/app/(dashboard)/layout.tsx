@@ -415,6 +415,8 @@ function DynamicGlobalSearch({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   useEffect(() => {
     import('@/components/GlobalSearch').then((mod) => {
       setGlobalSearch(() => mod.default)
+    }).catch((err) => {
+      console.error('Failed to load GlobalSearch:', err)
     })
   }, [])
 

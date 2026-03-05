@@ -63,10 +63,10 @@ class Flashcard(Base):
     back = Column(Text, nullable=False)
     hint = Column(Text, nullable=True)
     explanation = Column(Text, nullable=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     source_note_id = Column(Integer, ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
-    deck_id = Column(Integer, ForeignKey("flashcard_decks.id", ondelete="CASCADE"), nullable=True)
+    deck_id = Column(Integer, ForeignKey("flashcard_decks.id", ondelete="CASCADE"), nullable=True, index=True)
     deck_name = Column(String, nullable=True)  # Legacy field
 
     # Media URLs

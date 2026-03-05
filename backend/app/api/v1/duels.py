@@ -9,7 +9,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.core.datetime_utils import utc_now
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, update
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
@@ -1046,10 +1046,15 @@ async def complete_duel(
             progress=1
         )
 
-        # Perdant perd la MOITIÉ de l'enjeu (50%) - pas de notification pour la perte
+        # Perdant perd la MOITIÉ de l'enjeu (50%) - mise à jour atomique pour éviter les race conditions
         xp_loss = duel.stakes_xp // 2
         if loser.gamification:
-            loser.gamification.total_xp = max(0, (loser.gamification.total_xp or 0) - xp_loss)
+            await db.execute(
+                update(UserGamification)
+                .where(UserGamification.user_id == loser.id)
+                .values(total_xp=func.greatest(0, UserGamification.total_xp - xp_loss))
+            )
+            await db.refresh(loser.gamification)
             # Recalculer le niveau après perte d'XP
             from app.services.xp_service import calculate_level
             loser.gamification.level = calculate_level(loser.gamification.total_xp)

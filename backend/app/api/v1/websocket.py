@@ -10,10 +10,18 @@ from datetime import datetime
 import json
 import logging
 
+import time
+from collections import defaultdict
+
 from app.core.config import settings
 from app.core.datetime_utils import utc_now
 from app.core.database import get_db
 from app.core.security import is_token_revoked
+
+# Rate limiting: max 30 messages par 10 secondes par utilisateur
+WS_RATE_LIMIT_MAX = 30
+WS_RATE_LIMIT_WINDOW = 10.0
+_ws_rate_limits: dict = defaultdict(list)
 from app.websockets import manager
 from app.websockets.handlers import (
     handle_group_message,
@@ -50,7 +58,7 @@ async def get_user_from_token(token: str, db: AsyncSession) -> Optional[User]:
 
         # Vérifier le type de token (doit être "access")
         token_type = payload.get("type")
-        if token_type and token_type != "access":
+        if token_type != "access":
             return None
 
         result = await db.execute(select(User).where(User.id == int(user_id)))
@@ -95,6 +103,19 @@ async def websocket_endpoint(
             # Recevoir les messages
             data = await websocket.receive_text()
 
+            # Rate limiting
+            now = time.monotonic()
+            timestamps = _ws_rate_limits[user.id]
+            # Nettoyer les anciens timestamps
+            _ws_rate_limits[user.id] = [t for t in timestamps if now - t < WS_RATE_LIMIT_WINDOW]
+            if len(_ws_rate_limits[user.id]) >= WS_RATE_LIMIT_MAX:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Trop de messages. Veuillez patienter."
+                })
+                continue
+            _ws_rate_limits[user.id].append(now)
+
             try:
                 message = json.loads(data)
             except json.JSONDecodeError:
@@ -127,6 +148,7 @@ async def websocket_endpoint(
         logger.error(f"Erreur WebSocket: {e}")
     finally:
         await manager.disconnect(user.id)
+        _ws_rate_limits.pop(user.id, None)
 
 
 async def route_message(

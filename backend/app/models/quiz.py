@@ -36,8 +36,8 @@ class Quiz(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     source_note_id = Column(Integer, ForeignKey("notes.id", ondelete="SET NULL"), nullable=True)
     quiz_type = Column(String, nullable=True)  # practice, test, exam
     difficulty = Column(String, nullable=True)  # easy, medium, hard

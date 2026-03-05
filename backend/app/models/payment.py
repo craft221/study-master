@@ -185,8 +185,8 @@ class Transaction(Base):
         nullable=False
     )
     provider_transaction_id = Column(String(255), nullable=True, index=True)
-    provider_payment_intent_id = Column(String(255), nullable=True)  # Stripe PaymentIntent
-    provider_checkout_id = Column(String(255), nullable=True)        # ID de session checkout
+    provider_payment_intent_id = Column(String(255), nullable=True, index=True)  # Stripe PaymentIntent
+    provider_checkout_id = Column(String(255), nullable=True, index=True)        # ID de session checkout
 
     # Méthode de paiement
     payment_method = Column(
