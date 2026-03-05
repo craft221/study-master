@@ -83,7 +83,6 @@ export interface RecommendedOpponent {
   total_xp: number
   xp_difference: number
   match_quality: 'excellent' | 'good' | 'fair'
-  university: string | null
   has_pending_duel: boolean
 }
 

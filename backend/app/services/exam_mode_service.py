@@ -195,7 +195,7 @@ class ExamModeService:
             Score de régularité entre 0.0 et 1.0
         """
         # Récupérer tous les jours d'étude passés
-        today = date.today()
+        today = utc_now().date()
         query = select(StudyDay).where(
             StudyDay.exam_session_id == session.id,
             StudyDay.study_date < today
@@ -429,7 +429,7 @@ class ExamModeService:
             )
 
         # Calculer le nombre de jours disponibles
-        today = date.today()
+        today = utc_now().date()
         exam_date = session.exam_date
         total_available_days = (exam_date - today).days
 
@@ -443,10 +443,13 @@ class ExamModeService:
         if num_study_days == 0:
             raise ValueError("no_study_days:Aucun jour d'étude disponible")
 
-        # Récupérer les notes à réviser
+        # Récupérer les notes à réviser (filtrer par user_id pour la sécurité)
         notes = []
         if session.note_ids:
-            notes_query = select(Note).where(Note.id.in_(session.note_ids))
+            notes_query = select(Note).where(
+                Note.id.in_(session.note_ids),
+                Note.user_id == user.id
+            )
             result = await db.execute(notes_query)
             notes = list(result.scalars().all())
 
@@ -514,9 +517,9 @@ class ExamModeService:
             difficulty_level=session.difficulty_level
         )
 
-        learning_days = distribution["learning_days"]
+        learning_days_count = distribution["learning_days"]
         review_days_count = distribution["review_days"]
-        practice_days = distribution["practice_days"]
+        practice_days_count = distribution["practice_days"]
 
         # Obtenir les jours de révision optimaux selon FSRS
         fsrs_review_day_numbers = self._calculate_fsrs_review_days(
@@ -524,29 +527,37 @@ class ExamModeService:
         )
 
         # Répartir les notes sur les jours d'apprentissage
-        notes_per_day = max(1, len(notes) // learning_days) if learning_days > 0 and notes else 0
+        notes_per_day = max(1, len(notes) // learning_days_count) if learning_days_count > 0 and notes else 0
+
+        # Compteurs pour titres et distribution de notes
+        learning_day_counter = 0
+        review_day_counter = 0
+        practice_day_counter = 0
 
         for day_num, study_date in enumerate(study_dates, 1):
             is_last_day = day_num == num_days
             # ===== NOUVEAU: Utiliser les jours de révision FSRS =====
             is_review_day = day_num in fsrs_review_day_numbers
-            is_practice_day = day_num > num_days - practice_days and not is_last_day
+            is_practice_day = day_num > num_days - practice_days_count and not is_last_day
 
             # Déterminer le titre du jour
             if is_last_day:
                 title = "Révision finale et repos"
                 is_rest = True
             elif is_practice_day:
-                title = f"Examen blanc #{day_num - learning_days - review_days}"
+                practice_day_counter += 1
+                title = f"Examen blanc #{practice_day_counter}"
                 is_rest = False
             elif is_review_day:
-                title = f"Révision - Jour {day_num - learning_days}"
+                review_day_counter += 1
+                title = f"Révision - Jour {review_day_counter}"
                 is_rest = False
             else:
                 # Jour d'apprentissage - assigner des notes
-                start_idx = (day_num - 1) * notes_per_day
+                start_idx = learning_day_counter * notes_per_day
                 end_idx = min(start_idx + notes_per_day, len(notes))
                 day_notes = notes[start_idx:end_idx] if notes else []
+                learning_day_counter += 1
 
                 if day_notes:
                     note_titles = [n.title[:30] for n in day_notes[:2]]
@@ -770,7 +781,7 @@ class ExamModeService:
         user_id: int
     ) -> List[Dict[str, Any]]:
         """Récupère les tâches du jour pour l'utilisateur"""
-        today = date.today()
+        today = utc_now().date()
 
         query = select(StudyTask).join(StudyDay).join(ExamSession).where(
             ExamSession.user_id == user_id,
@@ -805,6 +816,12 @@ class ExamModeService:
         if not task:
             raise ValueError("task_not_found")
 
+        # Vérifier que la tâche n'est pas déjà complétée ou skippée
+        if task.status == StudyTaskStatus.COMPLETED:
+            raise ValueError("task_already_completed")
+        if task.status == StudyTaskStatus.SKIPPED:
+            raise ValueError("task_already_skipped")
+
         task.status = StudyTaskStatus.IN_PROGRESS
         task.started_at = utc_now()
 
@@ -823,6 +840,10 @@ class ExamModeService:
         task = await self._get_task(db, task_id, user_id)
         if not task:
             raise ValueError("task_not_found")
+
+        # Empêcher la double complétion (double XP, compteurs corrompus)
+        if task.status == StudyTaskStatus.COMPLETED:
+            raise ValueError("task_already_completed")
 
         task.status = StudyTaskStatus.COMPLETED
         task.completed_at = utc_now()
@@ -863,9 +884,10 @@ class ExamModeService:
         if study_day.is_completed:
             xp_earned += EXAM_MODE_XP_REWARDS["complete_day"]
 
-            # Bonus jour parfait
+            # Bonus jour parfait (ignorer les tâches sans score comme READ/SUMMARY)
             day_tasks = await self._get_day_tasks(db, study_day.id)
-            avg_score = sum(t.achieved_score or 0 for t in day_tasks) / len(day_tasks) if day_tasks else 0
+            scored_tasks = [t for t in day_tasks if t.achieved_score is not None]
+            avg_score = sum(t.achieved_score for t in scored_tasks) / len(scored_tasks) if scored_tasks else 0
             if avg_score >= 90:
                 xp_earned += EXAM_MODE_XP_REWARDS["perfect_day"]
 
@@ -899,9 +921,13 @@ class ExamModeService:
         if not task:
             raise ValueError("task_not_found")
 
+        # Ne pas permettre de passer une tâche déjà terminée
+        if task.status == StudyTaskStatus.COMPLETED:
+            raise ValueError("task_already_completed")
+
         task.status = StudyTaskStatus.SKIPPED
         if reason:
-            task.metadata = {"skip_reason": reason}
+            task.extra_data = {"skip_reason": reason}
 
         await db.commit()
         return task
@@ -1072,10 +1098,15 @@ class ExamModeService:
             category = "exam_tomorrow"
         elif days_left <= 3 and progress >= 80:
             category = "almost_done"
-        elif progress >= (100 - days_left * 10):
-            category = "on_track"
         else:
-            category = "behind"
+            # Calculer le progrès attendu basé sur le temps écoulé
+            total_days = max(1, session.total_days)
+            elapsed = total_days - max(0, days_left)
+            expected_progress = (elapsed / total_days) * 100 if total_days > 0 else 0
+            if progress >= expected_progress * 0.8:  # 80% du progrès attendu = on track
+                category = "on_track"
+            else:
+                category = "behind"
 
         return random.choice(messages[category])
 

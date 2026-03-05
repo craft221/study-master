@@ -7,6 +7,7 @@ Tâches Celery pour Exam Mode
 """
 
 import asyncio
+import json
 import logging
 from datetime import datetime, timedelta, date
 from typing import Dict, Any, List
@@ -33,11 +34,18 @@ from app.models.exam_mode import (
 logger = logging.getLogger(__name__)
 
 
+# Singleton engine pour éviter les fuites de connexion
+_engine = None
+_async_session_factory = None
+
+
 def get_async_session():
-    """Crée une session async pour les tâches Celery"""
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    return async_session
+    """Crée une session async pour les tâches Celery (engine singleton)"""
+    global _engine, _async_session_factory
+    if _engine is None:
+        _engine = create_async_engine(settings.DATABASE_URL, echo=False, pool_size=5, max_overflow=10)
+        _async_session_factory = sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+    return _async_session_factory
 
 
 def run_async(coro):
@@ -52,7 +60,8 @@ def run_async(coro):
 
 class ExamModeTask(Task):
     """Classe de base pour les tâches Exam Mode"""
-    autoretry_for = (Exception,)
+    # Ne retry que sur les erreurs transitoires (réseau, DB), pas les erreurs logiques
+    autoretry_for = (ConnectionError, TimeoutError, OSError)
     retry_kwargs = {"max_retries": 3}
     retry_backoff = True
 
@@ -157,11 +166,12 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                 # Heure locale de l'utilisateur
                 user_local_time = now_utc.astimezone(user_tz)
                 user_hour = user_local_time.hour
+                user_local_date = user_local_time.date()
 
                 # Heure de rappel configurée (format "HH:MM")
                 try:
                     reminder_hour = int(session.reminder_time.split(":")[0])
-                except:
+                except Exception:
                     reminder_hour = 9
 
                 # Vérifier si c'est l'heure du rappel (avec marge de 30 min)
@@ -169,12 +179,14 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                     continue
 
                 # Vérifier qu'on n'a pas déjà envoyé un rappel aujourd'hui
+                # Utiliser la date locale de l'utilisateur pour éviter les doublons cross-timezone
                 existing_notification = await db.execute(
                     select(ExamModeNotification).where(
                         and_(
                             ExamModeNotification.exam_session_id == session.id,
+                            ExamModeNotification.user_id == user.id,
                             ExamModeNotification.notification_type == "daily_reminder",
-                            func.date(ExamModeNotification.created_at) == today
+                            func.date(ExamModeNotification.created_at) == user_local_date
                         )
                     )
                 )
@@ -185,7 +197,7 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                 today_day = None
                 tasks_remaining = 0
                 for day in session.study_days:
-                    if day.study_date == today:
+                    if day.study_date == user_local_date:
                         today_day = day
                         tasks_remaining = sum(
                             1 for t in day.tasks
@@ -197,7 +209,7 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                     continue
 
                 # Déterminer le type de message
-                days_left = (session.exam_date - today).days
+                days_left = max(0, (session.exam_date - user_local_date).days)
                 if days_left <= 3:
                     message_type = "urgent"
                 elif user_hour < 12:
@@ -218,8 +230,9 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                     predicted_score=int(session.predicted_score or 0)
                 )
 
-                # Créer la notification Exam Mode
+                # Créer la notification Exam Mode (avec user_id)
                 exam_notification = ExamModeNotification(
+                    user_id=user.id,
                     exam_session_id=session.id,
                     notification_type="daily_reminder",
                     title=f"Révisions du jour - {session.exam_name}",
@@ -231,15 +244,15 @@ async def _send_daily_reminders_async() -> Dict[str, Any]:
                 # Créer aussi une notification générale
                 general_notification = Notification(
                     user_id=user.id,
-                    type=NotificationType.STUDY_REMINDER,
+                    type=NotificationType.EXAM_REMINDER,
                     title=f"📚 {session.exam_name}",
                     message=message,
                     priority=NotificationPriority.HIGH if days_left <= 3 else NotificationPriority.NORMAL,
-                    data={
+                    data=json.dumps({
                         "exam_session_id": session.id,
                         "days_left": days_left,
                         "tasks_remaining": tasks_remaining
-                    }
+                    })
                 )
                 db.add(general_notification)
 
@@ -277,12 +290,15 @@ def send_exam_alerts(self) -> Dict[str, Any]:
 
 async def _send_exam_alerts_async() -> Dict[str, Any]:
     """Version async des alertes d'examens"""
+    from zoneinfo import ZoneInfo
+
     async_session = get_async_session()
     alerts_sent = 0
 
     async with async_session() as db:
         try:
-            today = utc_now().date()
+            now_utc = utc_now()
+            today = now_utc.date()
             alert_days = [7, 3, 1, 0]  # Jours avant l'examen
 
             for days_before in alert_days:
@@ -312,17 +328,28 @@ async def _send_exam_alerts_async() -> Dict[str, Any]:
                     if not user or not user.is_active:
                         continue
 
+                    # Vérifier l'heure locale de l'utilisateur (ne pas envoyer la nuit)
+                    try:
+                        user_tz = ZoneInfo(user.timezone or "UTC")
+                    except Exception:
+                        user_tz = ZoneInfo("UTC")
+                    user_local_time = now_utc.astimezone(user_tz)
+                    user_hour = user_local_time.hour
+                    # Ne pas envoyer entre 22h et 7h
+                    if user_hour >= 22 or user_hour < 7:
+                        continue
+
                     # Déterminer le type d'alerte
                     if days_before == 0:
                         notification_type = "exam_day"
                         title = f"🎯 C'est le jour J - {session.exam_name}"
                         message = f"Bonne chance pour ton examen ! Tu es prêt à {int(session.predicted_score or 0)}% selon nos prédictions. Tu vas y arriver !"
-                        priority = NotificationPriority.CRITICAL
+                        priority = NotificationPriority.URGENT
                     elif days_before == 1:
                         notification_type = "exam_tomorrow"
                         title = f"⚡ Demain: {session.exam_name}"
                         message = f"Ton examen est demain ! Fais une dernière révision des points clés et repose-toi bien ce soir."
-                        priority = NotificationPriority.CRITICAL
+                        priority = NotificationPriority.URGENT
                     elif days_before == 3:
                         notification_type = "exam_3_days"
                         title = f"🔥 J-3: {session.exam_name}"
@@ -339,6 +366,7 @@ async def _send_exam_alerts_async() -> Dict[str, Any]:
                         select(ExamModeNotification).where(
                             and_(
                                 ExamModeNotification.exam_session_id == session.id,
+                                ExamModeNotification.user_id == user.id,
                                 ExamModeNotification.notification_type == notification_type
                             )
                         )
@@ -346,8 +374,9 @@ async def _send_exam_alerts_async() -> Dict[str, Any]:
                     if existing.scalar_one_or_none():
                         continue
 
-                    # Créer les notifications
+                    # Créer les notifications (avec user_id)
                     exam_notification = ExamModeNotification(
+                        user_id=user.id,
                         exam_session_id=session.id,
                         notification_type=notification_type,
                         title=title,
@@ -362,10 +391,10 @@ async def _send_exam_alerts_async() -> Dict[str, Any]:
                         title=title,
                         message=message,
                         priority=priority,
-                        data={
+                        data=json.dumps({
                             "exam_session_id": session.id,
                             "days_until_exam": days_before
-                        }
+                        })
                     )
                     db.add(general_notification)
 
@@ -438,23 +467,30 @@ async def _update_predictions_async() -> Dict[str, Any]:
                 # Calculer le taux de complétion
                 completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
 
-                # Jours restants
-                days_left = (session.exam_date - utc_now().date()).days
-                total_days = session.total_days
-                time_factor = min(100, (total_days - days_left) / total_days * 100) if total_days > 0 else 0
+                # Jours restants — clamper pour éviter les négatifs
+                days_left = max(0, (session.exam_date - utc_now().date()).days)
+                total_days = max(1, session.total_days)
+                elapsed = total_days - days_left
+                time_factor = min(100, (elapsed / total_days) * 100)
 
-                # Prédiction pondérée
+                # Prédiction pondérée — formule alignée avec le service
+                progress_factor = completion_rate  # déjà en 0-100
+                # Régularité simple basée sur complétion vs temps écoulé
+                expected_completion = (elapsed / total_days) * 100 if total_days > 0 else 0
+                regularity = min(100, (completion_rate / max(1, expected_completion)) * 100) if expected_completion > 0 else 70
+
                 predicted_score = (
-                    avg_score * 0.4 +  # Score moyen des quiz/flashcards
-                    completion_rate * 0.35 +  # Taux de complétion
-                    time_factor * 0.25  # Utilisation du temps
+                    progress_factor * 0.4 +
+                    avg_score * 0.3 +
+                    regularity * 0.2 +
+                    time_factor * 0.1
                 )
 
                 # Confiance basée sur le nombre de tâches complétées
-                confidence = min(100, completed_tasks * 5)
+                confidence = min(90, completed_tasks * 5 + 20)
 
                 # Mettre à jour
-                session.predicted_score = round(predicted_score, 1)
+                session.predicted_score = round(min(100, max(0, predicted_score)), 1)
                 session.confidence_level = round(confidence, 1)
                 session.progress_percentage = round(completion_rate, 1)
                 session.tasks_completed = completed_tasks
@@ -483,7 +519,9 @@ async def _update_predictions_async() -> Dict[str, Any]:
 @celery_app.task(base=ExamModeTask, bind=True, name="exam_mode.cleanup_expired_sessions")
 def cleanup_expired_sessions(self) -> Dict[str, Any]:
     """
-    Marque les sessions dont l'examen est passé comme terminées.
+    Marque les sessions dont l'examen est passé.
+    - Sessions ACTIVE avec progression → COMPLETED
+    - Sessions PLANNING/PAUSED sans progression → ABANDONED
     Exécuté une fois par jour.
     """
     return run_async(_cleanup_expired_sessions_async())
@@ -517,8 +555,15 @@ async def _cleanup_expired_sessions_async() -> Dict[str, Any]:
             sessions = result.scalars().all()
 
             for session in sessions:
-                session.status = ExamSessionStatus.COMPLETED
-                session.completed_at = utc_now()
+                now = utc_now()
+                # Sessions actives avec progression → COMPLETED
+                if session.status == ExamSessionStatus.ACTIVE and session.tasks_completed > 0:
+                    session.status = ExamSessionStatus.COMPLETED
+                    session.completed_at = now
+                else:
+                    # Sessions sans progression ou en planning/paused → ABANDONED
+                    session.status = ExamSessionStatus.ABANDONED
+                    session.completed_at = now
                 cleaned_count += 1
 
             await db.commit()
@@ -574,6 +619,8 @@ async def _send_progress_notifications_async() -> Dict[str, Any]:
 
                 progress = session.progress_percentage
 
+                # Trouver le plus haut milestone atteint qui n'a pas encore été notifié
+                highest_unnotified = None
                 for milestone in milestones:
                     if progress >= milestone:
                         notification_type = f"progress_{milestone}"
@@ -583,51 +630,84 @@ async def _send_progress_notifications_async() -> Dict[str, Any]:
                             select(ExamModeNotification).where(
                                 and_(
                                     ExamModeNotification.exam_session_id == session.id,
+                                    ExamModeNotification.user_id == user.id,
                                     ExamModeNotification.notification_type == notification_type
                                 )
                             )
                         )
-                        if existing.scalar_one_or_none():
-                            continue
+                        if not existing.scalar_one_or_none():
+                            highest_unnotified = milestone
 
-                        # Messages selon le milestone
-                        if milestone == 25:
-                            title = f"🌱 25% - Bon début !"
-                            message = f"Tu as complété 25% de ta préparation pour {session.exam_name}. Continue !"
-                        elif milestone == 50:
-                            title = f"⭐ 50% - À mi-chemin !"
-                            message = f"Bravo ! Tu es à mi-chemin de ta préparation pour {session.exam_name} !"
-                        elif milestone == 75:
-                            title = f"🔥 75% - Presque fini !"
-                            message = f"Excellent ! Plus que 25% et tu seras prêt pour {session.exam_name} !"
-                        else:
-                            title = f"🏆 100% - Préparation complète !"
-                            message = f"Félicitations ! Tu as terminé toute ta préparation pour {session.exam_name} !"
+                # Envoyer uniquement le plus haut milestone non notifié (éviter le flooding)
+                if highest_unnotified is not None:
+                    milestone = highest_unnotified
+                    notification_type = f"progress_{milestone}"
 
-                        # Créer les notifications
-                        exam_notification = ExamModeNotification(
-                            exam_session_id=session.id,
-                            notification_type=notification_type,
-                            title=title,
-                            message=message,
-                            is_read=False
-                        )
-                        db.add(exam_notification)
+                    # Messages selon le milestone
+                    if milestone == 25:
+                        title = f"🌱 25% - Bon début !"
+                        message = f"Tu as complété 25% de ta préparation pour {session.exam_name}. Continue !"
+                    elif milestone == 50:
+                        title = f"⭐ 50% - À mi-chemin !"
+                        message = f"Bravo ! Tu es à mi-chemin de ta préparation pour {session.exam_name} !"
+                    elif milestone == 75:
+                        title = f"🔥 75% - Presque fini !"
+                        message = f"Excellent ! Plus que 25% et tu seras prêt pour {session.exam_name} !"
+                    else:
+                        title = f"🏆 100% - Préparation complète !"
+                        message = f"Félicitations ! Tu as terminé toute ta préparation pour {session.exam_name} !"
 
-                        general_notification = Notification(
-                            user_id=user.id,
-                            type=NotificationType.ACHIEVEMENT,
-                            title=title,
-                            message=message,
-                            priority=NotificationPriority.NORMAL,
-                            data={
-                                "exam_session_id": session.id,
-                                "milestone": milestone
-                            }
-                        )
-                        db.add(general_notification)
+                    # Créer les notifications (avec user_id)
+                    exam_notification = ExamModeNotification(
+                        user_id=user.id,
+                        exam_session_id=session.id,
+                        notification_type=notification_type,
+                        title=title,
+                        message=message,
+                        is_read=False
+                    )
+                    db.add(exam_notification)
 
-                        notifications_sent += 1
+                    # Marquer aussi les milestones inférieurs comme notifiés pour éviter
+                    # qu'ils soient envoyés plus tard
+                    for lower_milestone in milestones:
+                        if lower_milestone < milestone:
+                            lower_type = f"progress_{lower_milestone}"
+                            lower_existing = await db.execute(
+                                select(ExamModeNotification).where(
+                                    and_(
+                                        ExamModeNotification.exam_session_id == session.id,
+                                        ExamModeNotification.user_id == user.id,
+                                        ExamModeNotification.notification_type == lower_type
+                                    )
+                                )
+                            )
+                            if not lower_existing.scalar_one_or_none():
+                                skip_notification = ExamModeNotification(
+                                    user_id=user.id,
+                                    exam_session_id=session.id,
+                                    notification_type=lower_type,
+                                    title=f"Milestone {lower_milestone}%",
+                                    message=f"Milestone {lower_milestone}% atteint (notification groupée)",
+                                    is_read=True,
+                                    is_sent=True
+                                )
+                                db.add(skip_notification)
+
+                    general_notification = Notification(
+                        user_id=user.id,
+                        type=NotificationType.ACHIEVEMENT_UNLOCKED,
+                        title=title,
+                        message=message,
+                        priority=NotificationPriority.NORMAL,
+                        data=json.dumps({
+                            "exam_session_id": session.id,
+                            "milestone": milestone
+                        })
+                    )
+                    db.add(general_notification)
+
+                    notifications_sent += 1
 
             await db.commit()
 

@@ -52,6 +52,9 @@ export default function DuelsPage() {
   const [stakesXP, setStakesXP] = useState(50)
   const [creating, setCreating] = useState(false)
 
+  // Loading states for accept/decline actions
+  const [actionLoading, setActionLoading] = useState<Set<number>>(new Set())
+
   // Invite link dialog
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
   const [inviteLink, setInviteLink] = useState('')
@@ -61,24 +64,26 @@ export default function DuelsPage() {
     try {
       setLoading(true)
 
-      // Récupérer les données en parallèle
-      const [duelsRes, pendingRes, statsRes, quizzesRes, usersRes, profileRes, recommendedRes] = await Promise.all([
+      // Critical: profile needed first for user ID
+      const profileRes = await api.get('/users/me')
+      setCurrentUserId(profileRes.data.id)
+
+      // Fetch remaining data in parallel with allSettled to prevent total failure
+      const [duelsRes, pendingRes, statsRes, quizzesRes, usersRes, recommendedRes] = await Promise.allSettled([
         duelsService.getAll(),
         duelsService.getPending(),
         duelsService.getMyStats(),
         api.get('/quizzes/'),
         api.get('/users/'),
-        api.get('/users/me'),
         duelsService.getRecommendedOpponents(5)
       ])
 
-      setDuels(duelsRes.duels)
-      setPendingDuels(pendingRes)
-      setStats(statsRes)
-      setQuizzes(quizzesRes.data)
-      setUsers(usersRes.data.filter((u: UserOption) => u.id !== profileRes.data.id))
-      setCurrentUserId(profileRes.data.id)
-      setRecommendedOpponents(recommendedRes.recommendations)
+      if (duelsRes.status === 'fulfilled') setDuels(duelsRes.value.duels)
+      if (pendingRes.status === 'fulfilled') setPendingDuels(pendingRes.value)
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value)
+      if (quizzesRes.status === 'fulfilled') setQuizzes(quizzesRes.value.data)
+      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.filter((u: UserOption) => u.id !== profileRes.data.id))
+      if (recommendedRes.status === 'fulfilled') setRecommendedOpponents(recommendedRes.value.recommendations)
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
@@ -94,6 +99,18 @@ export default function DuelsPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Auto-refresh every 15s when there are active duels (to detect opponent completion)
+  useEffect(() => {
+    const activeDuelCount = duels.filter(d => ['accepted', 'in_progress'].includes(d.status)).length
+    if (activeDuelCount === 0 || loading) return
+
+    const interval = setInterval(() => {
+      fetchData()
+    }, 15000)
+
+    return () => clearInterval(interval)
+  }, [duels, loading, fetchData])
 
   const handleCreateDuel = async () => {
     if (!selectedOpponent || !selectedQuiz) {
@@ -136,6 +153,7 @@ export default function DuelsPage() {
   }
 
   const handleAcceptDuel = async (duelId: number) => {
+    setActionLoading(prev => new Set(prev).add(duelId))
     try {
       await duelsService.accept(duelId)
       toast({
@@ -150,10 +168,14 @@ export default function DuelsPage() {
         description: error.response?.data?.detail || 'Impossible d\'accepter le défi',
         variant: 'destructive'
       })
+    } finally {
+      setActionLoading(prev => { const s = new Set(prev); s.delete(duelId); return s })
     }
   }
 
   const handleDeclineDuel = async (duelId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir refuser ce défi ?')) return
+    setActionLoading(prev => new Set(prev).add(duelId))
     try {
       await duelsService.decline(duelId)
       toast({
@@ -168,6 +190,8 @@ export default function DuelsPage() {
         description: error.response?.data?.detail || 'Impossible de refuser le défi',
         variant: 'destructive'
       })
+    } finally {
+      setActionLoading(prev => { const s = new Set(prev); s.delete(duelId); return s })
     }
   }
 
@@ -220,12 +244,26 @@ export default function DuelsPage() {
   }
 
   // Copier le lien d'invitation
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(inviteLink)
-    toast({
-      title: 'Copié ! 📋',
-      description: 'Le lien a été copié dans le presse-papiers',
-    })
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      toast({
+        title: 'Copié !',
+        description: 'Le lien a été copié dans le presse-papiers',
+      })
+    } catch {
+      // Fallback for non-HTTPS contexts
+      const textArea = document.createElement('textarea')
+      textArea.value = inviteLink
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      toast({
+        title: 'Copié !',
+        description: 'Le lien a été copié dans le presse-papiers',
+      })
+    }
   }
 
   // Badge de qualité du match
@@ -427,9 +465,18 @@ export default function DuelsPage() {
               <Button
                 variant="outline"
                 className="flex-1 gap-2"
-                onClick={() => {
-                  const text = `Je te défie en duel ! 🎯\n\nClique ici pour accepter: ${inviteLink}`
-                  navigator.clipboard.writeText(text)
+                onClick={async () => {
+                  const text = `Je te défie en duel !\n\nClique ici pour accepter: ${inviteLink}`
+                  try {
+                    await navigator.clipboard.writeText(text)
+                  } catch {
+                    const textArea = document.createElement('textarea')
+                    textArea.value = text
+                    document.body.appendChild(textArea)
+                    textArea.select()
+                    document.execCommand('copy')
+                    document.body.removeChild(textArea)
+                  }
                   toast({ title: 'Message copié !', description: 'Prêt à partager' })
                 }}
               >
@@ -612,13 +659,22 @@ export default function DuelsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeclineDuel(duel.id)}
+                        disabled={actionLoading.has(duel.id)}
                         className="text-xs sm:text-sm"
                       >
-                        <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                        {actionLoading.has(duel.id) ? (
+                          <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin sm:mr-2" />
+                        ) : (
+                          <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                        )}
                         <span className="hidden sm:inline">Refuser</span>
                       </Button>
-                      <Button size="sm" onClick={() => handleAcceptDuel(duel.id)} className="text-xs sm:text-sm">
-                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                      <Button size="sm" onClick={() => handleAcceptDuel(duel.id)} disabled={actionLoading.has(duel.id)} className="text-xs sm:text-sm">
+                        {actionLoading.has(duel.id) ? (
+                          <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin sm:mr-2" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                        )}
                         <span className="hidden sm:inline">Accepter</span>
                         <span className="sm:hidden">OK</span>
                       </Button>
@@ -673,6 +729,7 @@ export default function DuelsPage() {
                       size="sm"
                       className="text-xs sm:text-sm"
                       onClick={async () => {
+                        if (!confirm('Êtes-vous sûr de vouloir annuler ce défi ?')) return
                         try {
                           await duelsService.cancel(duel.id)
                           toast({

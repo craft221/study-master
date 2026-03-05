@@ -128,13 +128,14 @@ export default function NoteDetailPage() {
     try {
       toast.loading('Génération de flashcards...', { id: 'gen-flash' })
       const response = await api.post('/ai/generate-flashcards', {
-        content: note?.content,
+        note_id: parseInt(noteId as string),
         count: 10,
+        difficulty: 'medium'
       })
       toast.success(`${response.data.flashcards.length} flashcards créées!`, { id: 'gen-flash' })
       router.push('/flashcards')
-    } catch (error) {
-      toast.error('Erreur lors de la génération', { id: 'gen-flash' })
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la génération', { id: 'gen-flash' })
     }
   }
 
@@ -142,13 +143,14 @@ export default function NoteDetailPage() {
     try {
       toast.loading('Génération du quiz...', { id: 'gen-quiz' })
       const response = await api.post('/ai/generate-quiz', {
-        content: note?.content,
+        note_id: parseInt(noteId as string),
         question_count: 5,
+        difficulty: 'medium'
       })
       toast.success('Quiz créé!', { id: 'gen-quiz' })
-      router.push('/quizzes')
-    } catch (error) {
-      toast.error('Erreur lors de la génération', { id: 'gen-quiz' })
+      router.push(`/quizzes/${response.data.quiz?.id || ''}`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la génération', { id: 'gen-quiz' })
     }
   }
 

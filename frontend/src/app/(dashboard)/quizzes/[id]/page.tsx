@@ -35,7 +35,8 @@ export default function TakeQuizPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const quizId = params.id as string
-  const duelId = searchParams.get('duel_id')
+  const rawDuelId = searchParams.get('duel_id')
+  const duelId = rawDuelId && !isNaN(parseInt(rawDuelId)) ? rawDuelId : null
 
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [loading, setLoading] = useState(true)
@@ -100,8 +101,11 @@ export default function TakeQuizPage() {
         setTimeLeft(response.data.time_limit_minutes * 60)
       }
 
-      // Create attempt
-      const attemptResponse = await api.post(`/quizzes/${quizId}/attempt`)
+      // Create attempt (pass duel_id if in duel mode)
+      const attemptUrl = duelId
+        ? `/quizzes/${quizId}/attempt?duel_id=${duelId}`
+        : `/quizzes/${quizId}/attempt`
+      const attemptResponse = await api.post(attemptUrl)
       setAttemptId(attemptResponse.data.id)
 
       // Démarrer la session anti-triche
@@ -203,6 +207,15 @@ export default function TakeQuizPage() {
         toast(`${t('quiz.quizFinished')} ${acResult.violations_count} warning(s)`, { icon: '⚠️' })
       } else {
         toast.success(`${t('quiz.quizFinished')} Score: ${Math.round(finalScore)}%`)
+      }
+
+      // Fallback: trigger duel completion if backend auto-complete didn't fire
+      if (duelId) {
+        try {
+          await api.post(`/duels/${duelId}/complete`)
+        } catch {
+          // Expected to fail if auto-complete already handled it or opponent hasn't played yet
+        }
       }
     } catch (error) {
       toast.error(t('quiz.submissionError'))

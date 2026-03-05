@@ -4,13 +4,14 @@ from sqlalchemy import select, func, and_, or_, update
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from datetime import datetime, timezone
+import json
 import random
 import logging
 
 from app.core.database import get_db
 from app.core.datetime_utils import utc_now
 from app.core.security import get_current_active_user
-from app.models.user import User
+from app.models.user import User, UserGamification
 from app.models.subject import Subject
 from app.models.quiz import Quiz, QuizAttempt, QuizDifficulty, QuizType
 from app.services.xp_service import award_xp, broadcast_stat_update
@@ -55,7 +56,7 @@ async def send_duel_notification(
             message=message,
             priority=NotificationPriority.NORMAL,
             action_url=f"/duels/{duel_id}",
-            data=str(data) if data else None
+            data=json.dumps(data) if data else None
         )
 
         db.add(notification)
@@ -966,6 +967,7 @@ async def submit_quiz_attempt(
     # === AUTO-COMPLETION DU DUEL ===
     # Vérifier si ce quiz fait partie d'un duel actif et auto-compléter si les deux joueurs ont fini
     try:
+        # Use with_for_update to prevent race condition (two simultaneous quiz submissions)
         duel_query = select(Duel).where(
             and_(
                 Duel.quiz_id == quiz.id,
@@ -975,11 +977,11 @@ async def submit_quiz_attempt(
                     Duel.opponent_id == current_user.id
                 )
             )
-        ).order_by(Duel.created_at.desc()).limit(1)
+        ).order_by(Duel.created_at.desc()).limit(1).with_for_update()
         duel_result = await db.execute(duel_query)
         duel = duel_result.scalar()
 
-        if duel:
+        if duel and duel.status != DuelStatus.COMPLETED:
             # IMPORTANT: Seules les tentatives APRÈS le début du duel comptent
             # Cela empêche d'utiliser des scores d'anciennes tentatives
             duel_start_time = duel.started_at
@@ -1058,18 +1060,37 @@ async def submit_quiz_attempt(
                     # Égalité
                     duel.winner_id = None
 
-                # Transfert XP
+                # Transfert XP via service centralisé (évite duplication)
                 if winner and loser:
-                    # Gagnant gagne l'enjeu complet
-                    if winner.gamification:
-                        winner.gamification.total_xp += duel.stakes_xp
-                        winner.gamification.level = (winner.gamification.total_xp // 100) + 1
+                    # Gagnant gagne l'enjeu via award_xp (gère level up, achievements, leagues)
+                    from app.services.xp_service import award_xp as xp_award, calculate_level
+                    await xp_award(
+                        user=winner,
+                        amount=duel.stakes_xp,
+                        reason=f"Victoire en duel contre {loser.username}",
+                        event_type="duel_won",
+                        db=db
+                    )
 
                     # Perdant perd la moitié de l'enjeu
                     xp_loss = duel.stakes_xp // 2
                     if loser.gamification:
-                        loser.gamification.total_xp = max(0, loser.gamification.total_xp - xp_loss)
-                        loser.gamification.level = (loser.gamification.total_xp // 100) + 1
+                        await db.execute(
+                            update(UserGamification)
+                            .where(UserGamification.user_id == loser.id)
+                            .values(total_xp=func.greatest(0, UserGamification.total_xp - xp_loss))
+                        )
+                        await db.refresh(loser.gamification)
+                        loser.gamification.level = calculate_level(loser.gamification.total_xp)
+
+                    # Update daily quest for winner
+                    try:
+                        await daily_quest_service.update_quest_progress(
+                            db=db, user_id=winner.id,
+                            quest_type=QuestType.WIN_DUEL, progress=1
+                        )
+                    except Exception:
+                        pass
 
                     logger.info(f"Duel {duel.id} auto-completed: {winner.username} wins +{duel.stakes_xp}XP, {loser.username} loses -{xp_loss}XP")
 

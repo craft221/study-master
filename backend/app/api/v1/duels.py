@@ -3,6 +3,7 @@ API Duels - Système de défis entre étudiants
 Corrigé avec: status cohérent, cache Redis, notifications, XP penalty 50%
 """
 
+import json
 import logging
 from typing import List, Optional
 
@@ -29,6 +30,7 @@ from app.services.daily_quest_service import daily_quest_service
 from app.services.leaderboard_service import leaderboard_service
 from app.models.daily_quest import QuestType
 from app.models.user import UserStats
+from app.services.xp_service import award_xp, calculate_level
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -165,7 +167,7 @@ async def send_duel_notification(
             message=message,
             priority=NotificationPriority.HIGH if notification_type == "challenge" else NotificationPriority.NORMAL,
             action_url=f"/duels/{duel_id}",
-            data=str(data) if data else None
+            data=json.dumps(data) if data else None
         )
 
         db.add(notification)
@@ -215,6 +217,20 @@ async def create_duel(
             detail="Les enjeux doivent être entre 10 et 500 XP"
         )
 
+    # Validation: duration_minutes dans les limites
+    if duel_data.duration_minutes < 5 or duel_data.duration_minutes > 120:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La durée doit être entre 5 et 120 minutes"
+        )
+
+    # Validation: au moins quiz_id ou subject_id requis
+    if not duel_data.quiz_id and not duel_data.subject_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un quiz ou une matière est requis pour créer un duel"
+        )
+
     # Validation: subject si fourni
     if duel_data.subject_id:
         subject = await db.get(Subject, duel_data.subject_id)
@@ -231,6 +247,12 @@ async def create_duel(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Quiz introuvable"
+            )
+        # Vérifier que le quiz est disponible (publié ou appartient au challenger)
+        if not quiz.is_published and quiz.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ce quiz n'est pas disponible pour un duel"
             )
         # Auto-assigner le subject_id depuis le quiz
         if not duel_data.subject_id and quiz.subject_id:
@@ -324,6 +346,33 @@ async def get_duels(
         return DuelListResponse(**cached)
 
     logger.debug(f"Cache MISS: duels user {current_user.id}")
+
+    # Auto-expire stale duels (accepted/in_progress beyond duration)
+    try:
+        from datetime import timedelta
+        now = utc_now()
+        stale_duels_query = select(Duel).where(
+            and_(
+                or_(Duel.challenger_id == current_user.id, Duel.opponent_id == current_user.id),
+                Duel.status.in_([DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]),
+                Duel.started_at.isnot(None)
+            )
+        )
+        stale_result = await db.execute(stale_duels_query)
+        stale_duels = stale_result.scalars().all()
+        expired_ids = []
+        for d in stale_duels:
+            expiry_time = d.started_at + timedelta(minutes=d.duration_minutes * 2)  # 2x duration as grace
+            if now > expiry_time:
+                d.status = DuelStatus.CANCELLED
+                d.ended_at = now
+                d.updated_at = now
+                expired_ids.append(d.id)
+        if expired_ids:
+            await db.commit()
+            logger.info(f"Auto-expired {len(expired_ids)} stale duels: {expired_ids}")
+    except Exception as e:
+        logger.warning(f"Error auto-expiring duels: {e}")
 
     # Query de base: duels où l'utilisateur est impliqué
     query = select(Duel).options(
@@ -518,7 +567,6 @@ async def get_recommended_opponents(
         user_total_xp = user.gamification.total_xp if user.gamification else 0
         user_level = user.gamification.level if user.gamification else 1
         user_avatar = user.profile.avatar_url if user.profile else None
-        user_university = user.profile.university if user.profile else None
 
         xp_diff = abs(user_total_xp - user_xp)
         match_quality = "excellent" if xp_diff <= 20 else "good" if xp_diff <= 50 else "fair"
@@ -530,7 +578,6 @@ async def get_recommended_opponents(
             "total_xp": user_total_xp,
             "xp_difference": xp_diff,
             "match_quality": match_quality,
-            "university": user_university,
             "has_pending_duel": user.id in users_with_pending
         })
 
@@ -621,9 +668,13 @@ async def accept_duel_invite(
     db: AsyncSession = Depends(get_db)
 ):
     """Accepter une invitation de duel via un lien"""
+    # Atomic: delete invite first to prevent race condition (double-accept)
     invite_data = await cache_service.get(f"duel_invite:{invite_code}")
     if not invite_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation expirée ou invalide")
+
+    # Delete immediately to prevent another user from accepting simultaneously
+    await cache_service.delete(f"duel_invite:{invite_code}")
 
     challenger_id = invite_data["challenger_id"]
     if challenger_id == current_user.id:
@@ -641,21 +692,34 @@ async def accept_duel_invite(
     if (await db.execute(existing_query)).scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Un défi est déjà en attente entre vous deux")
 
+    # Validate quiz still exists if specified
+    invite_quiz_id = invite_data.get("quiz_id")
+    if invite_quiz_id:
+        quiz = await db.get(Quiz, invite_quiz_id)
+        if not quiz:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le quiz de ce duel n'existe plus")
+
+    # Validate challenger still exists and is active
+    challenger = await db.get(User, challenger_id)
+    if not challenger or not challenger.is_active or challenger.is_deleted:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le challenger n'est plus disponible")
+
+    now = utc_now()
     new_duel = Duel(
         challenger_id=challenger_id,
         opponent_id=current_user.id,
         subject_id=invite_data.get("subject_id"),
-        quiz_id=invite_data.get("quiz_id"),
+        quiz_id=invite_quiz_id,
         stakes_xp=invite_data["stakes_xp"],
         duration_minutes=invite_data["duration_minutes"],
         status=DuelStatus.ACCEPTED,
-        started_at=utc_now()
+        started_at=now,
+        created_at=now,
+        updated_at=now
     )
     db.add(new_duel)
     await db.commit()
     await db.refresh(new_duel, ["challenger", "opponent", "quiz"])
-
-    await cache_service.delete(f"duel_invite:{invite_code}")
     await send_duel_notification(db, challenger_id, "accepted", "Défi accepté via lien ! 🎯",
                                   f"{current_user.username} a accepté votre invitation au duel !", new_duel.id)
     await db.commit()
@@ -688,7 +752,7 @@ async def get_my_duel_stats(
     )
     xp_won = await db.scalar(xp_won_query) or 0
 
-    xp_lost_query = select(func.coalesce(func.sum(Duel.stakes_xp // 2), 0)).where(
+    xp_lost_query = select(func.coalesce(func.sum(Duel.stakes_xp / 2), 0)).where(
         and_(
             or_(Duel.challenger_id == current_user.id, Duel.opponent_id == current_user.id),
             Duel.winner_id != current_user.id,
@@ -696,7 +760,7 @@ async def get_my_duel_stats(
             Duel.status == DuelStatus.COMPLETED
         )
     )
-    xp_lost = await db.scalar(xp_lost_query) or 0
+    xp_lost = int(await db.scalar(xp_lost_query) or 0)
 
     return {
         "total_duels": total,
@@ -738,7 +802,7 @@ async def get_duel(
             detail="Accès refusé"
         )
 
-    return serialize_duel(duel)
+    return await serialize_duel_with_progress(duel, db)
 
 
 @router.post("/{duel_id}/accept", response_model=DuelResponse)
@@ -783,6 +847,7 @@ async def accept_duel(
     # Mettre à jour le status -> ACCEPTED (pas ACTIVE!)
     duel.status = DuelStatus.ACCEPTED
     duel.started_at = utc_now()
+    duel.updated_at = utc_now()
 
     await db.commit()
     await db.refresh(duel)
@@ -846,6 +911,7 @@ async def decline_duel(
 
     duel.status = DuelStatus.DECLINED
     duel.ended_at = utc_now()
+    duel.updated_at = utc_now()
 
     await db.commit()
     await db.refresh(duel)
@@ -952,6 +1018,13 @@ async def complete_duel(
             detail="Duel introuvable"
         )
 
+    # Vérifier que l'utilisateur est impliqué dans le duel
+    if duel.challenger_id != current_user.id and duel.opponent_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé"
+        )
+
     # Vérifier que le duel est en cours ou accepté
     if duel.status not in [DuelStatus.ACCEPTED, DuelStatus.IN_PROGRESS]:
         raise HTTPException(
@@ -992,6 +1065,10 @@ async def complete_duel(
         challenger_attempt = challenger_result.scalar_one_or_none()
         opponent_attempt = opponent_result.scalar_one_or_none()
 
+        if not challenger_attempt:
+            logger.warning(f"Duel {duel_id}: no quiz attempt found for challenger {duel.challenger_id}")
+        if not opponent_attempt:
+            logger.warning(f"Duel {duel_id}: no quiz attempt found for opponent {duel.opponent_id}")
         duel.challenger_score = int(challenger_attempt.score) if challenger_attempt else 0
         duel.opponent_score = int(opponent_attempt.score) if opponent_attempt else 0
     else:

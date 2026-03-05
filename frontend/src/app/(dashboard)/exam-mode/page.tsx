@@ -70,6 +70,14 @@ interface Document {
   subject_id: number
 }
 
+// Parse date string as local time (not UTC) to avoid off-by-one day in negative UTC offsets
+const parseLocalDate = (dateStr: string) => {
+  if (!dateStr) return new Date()
+  // If it's a date-only string like "2026-03-10", append T00:00:00 to force local parsing
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(dateStr + 'T00:00:00')
+  return new Date(dateStr)
+}
+
 // Wizard Steps
 const WIZARD_STEPS = ['info', 'content', 'schedule', 'preview'] as const
 type WizardStep = typeof WIZARD_STEPS[number]
@@ -125,8 +133,8 @@ export default function ExamModePage() {
     reminder_time: '09:00'
   })
 
-  // Task action states
-  const [actionLoading, setActionLoading] = useState<number | null>(null)
+  // Task action states — Set allows concurrent task operations
+  const [actionLoading, setActionLoading] = useState<Set<number>>(new Set())
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'sessions' | 'stats' | 'ai'>('dashboard')
@@ -138,10 +146,10 @@ export default function ExamModePage() {
   const [weakPoints, setWeakPoints] = useState<WeakPointsAnalysis | null>(null)
   const [advice, setAdvice] = useState<PersonalizedAdvice | null>(null)
 
-  // Load initial data
+  // Load initial data — re-fetch when online status changes
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [isOnline])
 
   const fetchData = async () => {
     setLoading(true)
@@ -217,10 +225,16 @@ export default function ExamModePage() {
         if (active) {
           // Essayer de récupérer les détails complets
           const cachedDetails = await offlineStorage.getExamSession(active.id)
-          if (cachedDetails) {
+          if (cachedDetails && cachedDetails.today_tasks && cachedDetails.study_days) {
             setActiveSession(cachedDetails)
           } else {
-            setActiveSession(active)
+            // Construire un ExamSessionDetail minimal pour éviter les crashs
+            setActiveSession({
+              ...active,
+              today_tasks: cachedDetails?.today_tasks || [],
+              study_days: cachedDetails?.study_days || [],
+              upcoming_tasks: cachedDetails?.upcoming_tasks || []
+            } as ExamSessionDetail)
           }
         }
       }
@@ -234,7 +248,13 @@ export default function ExamModePage() {
           setSessions(cachedSessions)
           const active = cachedSessions.find((s: any) => s.status === 'active')
           if (active) {
-            setActiveSession(active)
+            // Construire un ExamSessionDetail minimal pour éviter les crashs
+            setActiveSession({
+              ...active,
+              today_tasks: active.today_tasks || [],
+              study_days: active.study_days || [],
+              upcoming_tasks: active.upcoming_tasks || []
+            } as ExamSessionDetail)
           }
         }
       } catch {}
@@ -258,7 +278,8 @@ export default function ExamModePage() {
     try {
       const newSession = await examModeService.createSession(formData)
       setSessions(prev => [newSession, ...prev])
-      setActiveSession(newSession)
+      // Ne PAS faire setActiveSession ici — newSession est un ExamSession, pas ExamSessionDetail
+      // (il manque today_tasks, study_days, upcoming_tasks → crash TypeError)
       setWizardOpen(false)
       resetWizard()
 
@@ -267,9 +288,9 @@ export default function ExamModePage() {
         description: t('exam_mode.plan_generated') || 'Votre plan de révision a été généré.'
       })
 
-      // Start the session automatically
-      await examModeService.startSession(newSession.id)
-      fetchData()
+      // La session est déjà démarrée automatiquement par le backend (status = ACTIVE après generate_study_plan)
+      // Recharger les données complètes (avec today_tasks, study_days, etc.)
+      await fetchData()
     } catch (error: any) {
       toast({
         title: t('common.error') || 'Erreur',
@@ -301,7 +322,7 @@ export default function ExamModePage() {
   }
 
   const handleStartTask = async (taskId: number) => {
-    setActionLoading(taskId)
+    setActionLoading(prev => new Set(prev).add(taskId))
     try {
       if (isOnline) {
         await examModeService.startTask(taskId)
@@ -331,16 +352,20 @@ export default function ExamModePage() {
         }
         toast({ title: t('exam_mode.task_started') || 'Tâche démarrée (sera synchronisée)' })
       }
-      if (isOnline) fetchData()
+      if (isOnline) await fetchData()
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => { const next = new Set(prev); next.delete(taskId); return next })
     }
   }
 
   const handleCompleteTask = async (taskId: number, score?: number) => {
-    setActionLoading(taskId)
+    // Prevent double completion
+    const existingTask = activeSession?.today_tasks.find(t => t.id === taskId)
+    if (existingTask?.status === 'completed') return
+
+    setActionLoading(prev => new Set(prev).add(taskId))
     try {
       if (isOnline) {
         await examModeService.completeTask(taskId, score)
@@ -374,16 +399,16 @@ export default function ExamModePage() {
         }
         toast({ title: t('exam_mode.task_completed') || 'Tâche terminée (sera synchronisée)' })
       }
-      if (isOnline) fetchData()
+      if (isOnline) await fetchData()
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => { const next = new Set(prev); next.delete(taskId); return next })
     }
   }
 
   const handleSkipTask = async (taskId: number) => {
-    setActionLoading(taskId)
+    setActionLoading(prev => new Set(prev).add(taskId))
     try {
       if (isOnline) {
         await examModeService.skipTask(taskId)
@@ -413,15 +438,29 @@ export default function ExamModePage() {
         }
         toast({ title: t('exam_mode.task_skipped') || 'Tâche passée (sera synchronisée)' })
       }
-      if (isOnline) fetchData()
+      if (isOnline) await fetchData()
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => { const next = new Set(prev); next.delete(taskId); return next })
     }
   }
 
   const handleDeleteSession = async (sessionId: number) => {
+    // Confirmation avant suppression
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette session ? Cette action est irréversible.')) {
+      return
+    }
+
+    if (!isOnline) {
+      toast({
+        title: 'Hors-ligne',
+        description: 'La suppression nécessite une connexion internet.',
+        variant: 'destructive'
+      })
+      return
+    }
+
     try {
       await examModeService.deleteSession(sessionId)
       setSessions(prev => prev.filter(s => s.id !== sessionId))
@@ -506,14 +545,14 @@ export default function ExamModePage() {
 
   const handleGenerateTaskContent = async (taskId: number) => {
     // BETA: Vérification premium désactivée
-    setActionLoading(taskId)
+    setActionLoading(prev => new Set(prev).add(taskId))
     try {
       const result = await examModeService.generateTaskContent(taskId)
       toast({
         title: result.generated ? t('exam_mode.content_generated') || 'Contenu généré !' : t('exam_mode.content_linked') || 'Contenu lié',
         description: result.message
       })
-      fetchData()
+      await fetchData()
     } catch (error: any) {
       toast({
         title: t('common.error'),
@@ -521,7 +560,7 @@ export default function ExamModePage() {
         variant: 'destructive'
       })
     } finally {
-      setActionLoading(null)
+      setActionLoading(prev => { const next = new Set(prev); next.delete(taskId); return next })
     }
   }
 
@@ -722,7 +761,7 @@ export default function ExamModePage() {
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-xs px-1.5 sm:px-2">
-                        {new Date(activeSession.exam_date).toLocaleDateString('fr-FR', {
+                        {parseLocalDate(activeSession.exam_date).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short'
                         })}
@@ -828,10 +867,10 @@ export default function ExamModePage() {
                                 <Button
                                   size="sm"
                                   onClick={() => handleStartTask(task.id)}
-                                  disabled={actionLoading === task.id}
+                                  disabled={actionLoading.has(task.id)}
                                   className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0"
                                 >
-                                  {actionLoading === task.id ? (
+                                  {actionLoading.has(task.id) ? (
                                     <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                                   ) : (
                                     <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -841,7 +880,7 @@ export default function ExamModePage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleSkipTask(task.id)}
-                                  disabled={actionLoading === task.id}
+                                  disabled={actionLoading.has(task.id)}
                                   className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0"
                                 >
                                   <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -853,10 +892,10 @@ export default function ExamModePage() {
                                 size="sm"
                                 variant="default"
                                 onClick={() => handleCompleteTask(task.id)}
-                                disabled={actionLoading === task.id}
+                                disabled={actionLoading.has(task.id)}
                                 className="h-8 px-2 sm:h-9 sm:px-3 text-xs sm:text-sm"
                               >
-                                {actionLoading === task.id ? (
+                                {actionLoading.has(task.id) ? (
                                   <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                                 ) : (
                                   <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-1" />
@@ -892,7 +931,7 @@ export default function ExamModePage() {
                   {/* Mobile: scrollable horizontal view */}
                   <div className="sm:hidden overflow-x-auto pb-2 -mx-1">
                     <div className="flex gap-1.5 px-1" style={{ width: 'max-content' }}>
-                      {activeSession.study_days.slice(0, 14).map((day) => (
+                      {activeSession.study_days.map((day) => (
                         <div
                           key={day.id}
                           className={cn(
@@ -904,10 +943,10 @@ export default function ExamModePage() {
                           )}
                         >
                           <div className="text-[10px] text-muted-foreground">
-                            {new Date(day.study_date).toLocaleDateString('fr-FR', { weekday: 'narrow' })}
+                            {parseLocalDate(day.study_date).toLocaleDateString('fr-FR', { weekday: 'narrow' })}
                           </div>
                           <div className="font-bold text-sm">
-                            {new Date(day.study_date).getDate()}
+                            {parseLocalDate(day.study_date).getDate()}
                           </div>
                           {!day.is_rest_day && (
                             <div className="text-[10px] mt-0.5">
@@ -924,7 +963,7 @@ export default function ExamModePage() {
                   </div>
                   {/* Desktop: grid view */}
                   <div className="hidden sm:grid grid-cols-7 gap-2">
-                    {activeSession.study_days.slice(0, 14).map((day) => (
+                    {activeSession.study_days.map((day) => (
                       <div
                         key={day.id}
                         className={cn(
@@ -936,10 +975,10 @@ export default function ExamModePage() {
                         )}
                       >
                         <div className="text-xs text-muted-foreground">
-                          {new Date(day.study_date).toLocaleDateString('fr-FR', { weekday: 'short' })}
+                          {parseLocalDate(day.study_date).toLocaleDateString('fr-FR', { weekday: 'short' })}
                         </div>
                         <div className="font-bold">
-                          {new Date(day.study_date).getDate()}
+                          {parseLocalDate(day.study_date).getDate()}
                         </div>
                         {!day.is_rest_day && (
                           <div className="text-xs mt-1">
@@ -1000,7 +1039,7 @@ export default function ExamModePage() {
                         )}
                       </CardTitle>
                       <CardDescription className="text-xs sm:text-sm mt-1">
-                        {new Date(session.exam_date).toLocaleDateString('fr-FR', {
+                        {parseLocalDate(session.exam_date).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
@@ -1034,7 +1073,7 @@ export default function ExamModePage() {
                       <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                       {examModeService.formatDuration(session.total_study_minutes)}
                     </span>
-                    {session.predicted_score && (
+                    {session.predicted_score != null && (
                       <span className="flex items-center gap-1">
                         <Target className="w-3 h-3 sm:w-4 sm:h-4" />
                         {Math.round(session.predicted_score)}%
@@ -1080,7 +1119,7 @@ export default function ExamModePage() {
                   <p className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground">{t('exam_mode.xp_earned') || 'XP'}</p>
                 </CardContent>
               </Card>
-              {stats.best_score_achieved && (
+              {stats.best_score_achieved != null && (
                 <Card>
                   <CardContent className="p-3 sm:p-4 lg:p-6 text-center">
                     <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-500">{stats.best_score_achieved}%</div>
@@ -1127,7 +1166,7 @@ export default function ExamModePage() {
                   variant="outline"
                   className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2"
                   onClick={loadAISummary}
-                  disabled={aiLoading === 'summary'}
+                  disabled={aiLoading !== null}
                 >
                   {aiLoading === 'summary' ? (
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -1141,7 +1180,7 @@ export default function ExamModePage() {
                   variant="outline"
                   className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2"
                   onClick={loadKeyPoints}
-                  disabled={aiLoading === 'keypoints'}
+                  disabled={aiLoading !== null}
                 >
                   {aiLoading === 'keypoints' ? (
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -1155,7 +1194,7 @@ export default function ExamModePage() {
                   variant="outline"
                   className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2"
                   onClick={loadWeakPoints}
-                  disabled={aiLoading === 'weakpoints'}
+                  disabled={aiLoading !== null}
                 >
                   {aiLoading === 'weakpoints' ? (
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -1169,7 +1208,7 @@ export default function ExamModePage() {
                   variant="outline"
                   className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2"
                   onClick={loadAdvice}
-                  disabled={aiLoading === 'advice'}
+                  disabled={aiLoading !== null}
                 >
                   {aiLoading === 'advice' ? (
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -1185,7 +1224,7 @@ export default function ExamModePage() {
                 <Button
                   variant="secondary"
                   onClick={handleGeneratePracticeExam}
-                  disabled={aiLoading === 'practice'}
+                  disabled={aiLoading !== null}
                   size="sm"
                   className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
                 >
@@ -1201,7 +1240,7 @@ export default function ExamModePage() {
                 <Button
                   variant="secondary"
                   onClick={handleAdaptPlan}
-                  disabled={aiLoading === 'adapt'}
+                  disabled={aiLoading !== null}
                   size="sm"
                   className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
                 >
@@ -1499,7 +1538,7 @@ export default function ExamModePage() {
       </Tabs>
 
       {/* Creation Wizard Dialog */}
-      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+      <Dialog open={wizardOpen} onOpenChange={(open) => { setWizardOpen(open); if (!open) resetWizard() }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -1853,7 +1892,7 @@ export default function ExamModePage() {
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.exam_date') || 'Date'}</p>
                     <p className="font-medium">
-                      {formData.exam_date && new Date(formData.exam_date).toLocaleDateString('fr-FR', {
+                      {formData.exam_date && parseLocalDate(formData.exam_date).toLocaleDateString('fr-FR', {
                         day: 'numeric',
                         month: 'short'
                       })}

@@ -251,7 +251,7 @@ export default function NewNotePage() {
         difficulty: difficulty,
       })
 
-      const quizId = response.data.quiz_id
+      const quizId = response.data.quiz?.id
       toast.success(t('newNotePage.quizCreated') || 'Quiz créé avec succès !')
 
       // Rediriger vers le quiz

@@ -145,6 +145,9 @@ class DuelResponse(BaseModel):
     ended_at: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    # Progression: qui a joué
+    challenger_has_played: Optional[bool] = None
+    opponent_has_played: Optional[bool] = None
     # Relations optionnelles
     challenger: Optional[UserBrief] = None
     opponent: Optional[UserBrief] = None

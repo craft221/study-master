@@ -8,12 +8,13 @@ Feature PREMIUM: Préparation intelligente aux examens avec plan personnalisé.
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
-from datetime import date
+from datetime import date, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
+from app.core.datetime_utils import utc_now
 from app.core.security import get_current_user
 from app.models.user import User, SubscriptionType
 from app.models.exam_mode import ExamSession, ExamSessionStatus, StudyDay, StudyTask
@@ -219,7 +220,15 @@ async def list_exam_sessions(
     db: AsyncSession = Depends(get_db)
 ):
     """Liste les sessions d'examen de l'utilisateur"""
-    status_enum = ExamSessionStatus(status_filter) if status_filter else None
+    status_enum = None
+    if status_filter:
+        try:
+            status_enum = ExamSessionStatus(status_filter)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Statut invalide: {status_filter}. Valeurs possibles: {[s.value for s in ExamSessionStatus]}"
+            )
 
     sessions = await exam_mode_service.get_user_sessions(
         db, current_user.id, status=status_enum, limit=limit
@@ -272,7 +281,7 @@ async def get_today_progress(
     session = await exam_mode_service.get_session(db, session.id, current_user.id, include_days=True)
 
     # Trouver le jour d'aujourd'hui
-    today = date.today()
+    today = utc_now().date()
     today_day = next((d for d in session.study_days if d.study_date == today), None)
 
     if not today_day:
@@ -296,7 +305,9 @@ async def get_today_progress(
         tasks_remaining=tasks_remaining,
         estimated_time_remaining=estimated_time,
         streak_days=0,  # TODO: Calculer le streak
-        is_on_track=session.progress_percentage >= (100 - session.days_until_exam * 10),
+        is_on_track=session.progress_percentage >= (
+            ((max(1, session.total_days) - max(0, session.days_until_exam)) / max(1, session.total_days)) * 100 * 0.8
+        ),
         motivation_message=exam_mode_service.get_motivation_message(session),
     )
 
@@ -319,7 +330,7 @@ async def get_exam_session(
         )
 
     # Tâches d'aujourd'hui
-    today = date.today()
+    today = utc_now().date()
     today_day = next((d for d in session.study_days if d.study_date == today), None)
     today_tasks = [task_to_response(t) for t in today_day.tasks] if today_day else []
 
@@ -355,10 +366,16 @@ async def update_exam_session(
             detail="Session non trouvée"
         )
 
-    # Mettre à jour les champs
+    # Liste blanche de champs modifiables (pas status, pas progress, pas scores)
+    ALLOWED_UPDATE_FIELDS = {
+        "exam_name", "exam_description", "exam_date", "exam_time",
+        "study_hours_per_day", "preferred_study_times", "include_weekends",
+        "difficulty_level", "notifications_enabled", "reminder_time",
+    }
+
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        if hasattr(session, key):
+        if key in ALLOWED_UPDATE_FIELDS and hasattr(session, key):
             setattr(session, key, value)
 
     await db.commit()
@@ -560,7 +577,7 @@ async def wizard_step2(
 
     estimated_pages = total_words // 300
 
-    days_available = (exam_date - date.today()).days
+    days_available = (exam_date - utc_now().date()).days
     suggested_days = max(3, min(days_available - 1, estimated_pages // 2 + 3))
 
     return WizardStep2Response(
@@ -590,10 +607,6 @@ async def wizard_step2(
         estimated_pages=estimated_pages,
         suggested_days=suggested_days,
     )
-
-
-# Import manquant
-from datetime import timedelta
 
 
 # ==================== FONCTIONNALITÉS IA ====================
@@ -630,21 +643,23 @@ async def generate_task_content(
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tâche non trouvée")
 
-    # Vérifier et incrémenter le quota IA AVANT la génération
-    can_use, remaining = await check_and_increment_ai_quota(
-        user_id=current_user.id,
-        subscription_type=current_user.subscription_type,
-        db=db
-    )
-    if not can_use:
-        max_requests = get_max_requests(current_user.subscription_type)
-        raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
 
-    # Lier/générer le contenu
+    # D'abord essayer de lier les ressources existantes (sans consommer de quota)
     linked = await exam_mode_ai_service.link_existing_resources(db, task, current_user, lang=user_lang)
+
+    # Ne consommer le quota IA QUE si une génération IA a été effectuée
+    remaining = None
+    if linked.get("generated", False):
+        can_use, remaining = await check_and_increment_ai_quota(
+            user_id=current_user.id,
+            subscription_type=current_user.subscription_type,
+            db=db
+        )
+        if not can_use:
+            max_requests = get_max_requests(current_user.subscription_type)
+            raise_quota_exceeded_error(current_user.subscription_type, max_requests)
 
     return {
         "success": True,
@@ -676,6 +691,11 @@ async def get_key_points_analysis(
     """
     # BETA: Vérification premium désactivée - tous les utilisateurs ont accès
 
+    # Valider la session AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
@@ -685,10 +705,6 @@ async def get_key_points_analysis(
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
         raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
@@ -727,6 +743,11 @@ async def get_weak_points_detection(
     """
     # BETA: Vérification premium désactivée
 
+    # Valider la session AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
@@ -736,10 +757,6 @@ async def get_weak_points_detection(
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
         raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
@@ -773,6 +790,11 @@ async def get_personalized_advice(
     """
     # BETA: Vérification premium désactivée
 
+    # Valider la session AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
@@ -782,10 +804,6 @@ async def get_personalized_advice(
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
         raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
@@ -820,6 +838,11 @@ async def adapt_study_plan(
     """
     # BETA: Vérification premium désactivée
 
+    # Valider la session AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id, include_days=True)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier et incrémenter le quota IA
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
@@ -829,10 +852,6 @@ async def adapt_study_plan(
     if not can_use:
         max_requests = get_max_requests(current_user.subscription_type)
         raise_quota_exceeded_error(current_user.subscription_type, max_requests)
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id, include_days=True)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
@@ -864,6 +883,11 @@ async def generate_practice_exam(
     """
     # BETA: Vérification premium désactivée
 
+    # Valider la session AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier et incrémenter le quota IA (2 requêtes pour génération d'examen)
     can_use, remaining = await check_and_increment_ai_quota(
         user_id=current_user.id,
@@ -881,10 +905,6 @@ async def generate_practice_exam(
         db=db
     )
     # On continue même si le 2ème échoue, c'est juste un bonus de comptage
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
@@ -929,6 +949,11 @@ async def get_ai_summary(
     """
     # BETA: Vérification premium désactivée
 
+    # Vérifier que la session existe AVANT de consommer le quota
+    session = await exam_mode_service.get_session(db, session_id, current_user.id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+
     # Vérifier le quota pour 3 requêtes (key_points + weak_points + advice)
     max_requests = get_max_requests(current_user.subscription_type)
 
@@ -955,12 +980,12 @@ async def get_ai_summary(
         )
 
     # Incrémenter pour les 2 autres requêtes
-    await check_and_increment_ai_quota(current_user.id, current_user.subscription_type, db)
+    can_use2, _ = await check_and_increment_ai_quota(current_user.id, current_user.subscription_type, db)
+    if not can_use2:
+        raise_quota_exceeded_error(current_user.subscription_type, max_requests)
     _, remaining = await check_and_increment_ai_quota(current_user.id, current_user.subscription_type, db)
-
-    session = await exam_mode_service.get_session(db, session_id, current_user.id)
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session non trouvée")
+    if not _:
+        raise_quota_exceeded_error(current_user.subscription_type, max_requests)
 
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"

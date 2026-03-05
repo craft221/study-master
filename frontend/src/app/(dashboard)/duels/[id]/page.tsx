@@ -26,6 +26,15 @@ export default function DuelDetailPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (isNaN(duelId)) {
+        toast({
+          title: 'Erreur',
+          description: 'ID de duel invalide',
+          variant: 'destructive'
+        })
+        router.push('/duels')
+        return
+      }
       try {
         setLoading(true)
         const [duelRes, profileRes] = await Promise.all([
@@ -41,6 +50,7 @@ export default function DuelDetailPage() {
           description: 'Impossible de charger le duel',
           variant: 'destructive'
         })
+        router.push('/duels')
       } finally {
         setLoading(false)
       }
@@ -49,7 +59,23 @@ export default function DuelDetailPage() {
     if (duelId) {
       fetchData()
     }
-  }, [duelId, toast])
+  }, [duelId, toast, router])
+
+  // Auto-refresh every 10s for active duels (waiting for opponent)
+  useEffect(() => {
+    if (!duel || !['accepted', 'in_progress'].includes(duel.status)) return
+
+    const interval = setInterval(async () => {
+      try {
+        const updated = await duelsService.getById(duelId)
+        setDuel(updated)
+      } catch {
+        // Silently fail on polling errors
+      }
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [duel?.status, duelId])
 
   const handleAccept = async () => {
     try {
@@ -72,18 +98,19 @@ export default function DuelDetailPage() {
   }
 
   const handleDecline = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir refuser ce défi ?')) return
     try {
       setActionLoading(true)
       await duelsService.decline(duelId)
       toast({
-        title: 'Defi refuse',
-        description: 'Le defi a ete decline',
+        title: 'Défi refusé',
+        description: 'Le défi a été décliné',
       })
       router.push('/duels')
     } catch (error: any) {
       toast({
         title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de refuser le defi',
+        description: error.response?.data?.detail || 'Impossible de refuser le défi',
         variant: 'destructive'
       })
     } finally {
@@ -149,15 +176,15 @@ export default function DuelDetailPage() {
   const isOpponent = duel.opponent_id === currentUserId
   const canAcceptOrDecline = isOpponent && duel.status === 'pending'
 
-  // Vérifier si l'utilisateur actuel a déjà joué
+  // Vérifier si l'utilisateur actuel a déjà joué (use has_played fields if available, fallback to score)
   const hasCurrentUserPlayed = isChallenger
-    ? duel.challenger_score !== null
-    : duel.opponent_score !== null
+    ? (duel.challenger_has_played ?? duel.challenger_score !== null)
+    : (duel.opponent_has_played ?? duel.opponent_score !== null)
 
   // Vérifier si l'adversaire a joué
   const hasOpponentPlayed = isChallenger
-    ? duel.opponent_score !== null
-    : duel.challenger_score !== null
+    ? (duel.opponent_has_played ?? duel.opponent_score !== null)
+    : (duel.challenger_has_played ?? duel.challenger_score !== null)
 
   // L'utilisateur peut commencer seulement s'il n'a pas encore joué
   const canStart = (duel.status === 'accepted' || duel.status === 'in_progress') && duel.quiz && !hasCurrentUserPlayed
