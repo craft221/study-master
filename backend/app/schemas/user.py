@@ -6,9 +6,10 @@ from enum import Enum
 
 # Enums
 class UserRoleEnum(str, Enum):
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
+    STUDENT = "STUDENT"
+    TEACHER = "TEACHER"
+    MODERATOR = "MODERATOR"
+    ADMIN = "ADMIN"
 
 
 class SubscriptionTypeEnum(str, Enum):
