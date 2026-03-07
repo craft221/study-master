@@ -113,6 +113,22 @@ export const authService = {
    */
   getRefreshToken: (): string | null => {
     return localStorage.getItem('refresh_token')
+  },
+
+  /**
+   * Demande de réinitialisation de mot de passe
+   */
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/forgot-password', { email })
+    return response.data
+  },
+
+  /**
+   * Réinitialisation du mot de passe avec token
+   */
+  resetPassword: async (token: string, new_password: string, confirm_password: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/reset-password', { token, new_password, confirm_password })
+    return response.data
   }
 }
 

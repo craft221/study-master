@@ -4,6 +4,7 @@ Routes d'authentification avec rate limiting
 
 import logging
 import secrets
+import uuid
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -23,7 +24,8 @@ from app.core.security import (
     verify_refresh_token,
     revoke_token,
     is_token_revoked,
-    get_current_active_user
+    get_current_active_user,
+    revoke_all_user_tokens
 )
 from app.core.config import settings
 from app.models.user import User, create_user_with_defaults
@@ -38,6 +40,7 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     RegisterResponse
 )
+from app.schemas.user import PasswordReset, PasswordResetConfirm
 from app.services.mfa_service import mfa_service
 from app.services.email_service import email_service
 
@@ -530,3 +533,107 @@ async def resend_verification_code(
     logger.info(f"Nouveau code envoyé à {resend_data.email}")
 
     return {"message": "Un nouveau code de vérification a été envoyé"}
+
+
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    reset_data: PasswordReset,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Demande de réinitialisation de mot de passe.
+
+    Génère un token UUID, le stocke dans Redis (1h TTL),
+    et envoie un email avec le lien de réinitialisation.
+
+    Retourne toujours le même message pour ne pas révéler
+    si l'email existe ou non (sécurité).
+    """
+    email = reset_data.email.lower().strip()
+    logger.info(f"Demande de réinitialisation de mot de passe pour: {email}")
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        # Générer un token unique
+        token = str(uuid.uuid4())
+
+        # Stocker dans Redis avec TTL de 1 heure
+        redis_client = await get_redis()
+        await redis_client.setex(
+            f"password_reset:{token}",
+            3600,  # 1 heure
+            str(user.id)
+        )
+
+        # Envoyer l'email avec le lien de réinitialisation
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+        await email_service.send_password_reset(
+            to_email=email,
+            username=user.username,
+            reset_url=reset_url
+        )
+
+        logger.info(f"Email de réinitialisation envoyé à {email}")
+    else:
+        logger.info(f"Demande de réinitialisation pour email inexistant/inactif: {email}")
+
+    # Toujours retourner le même message (sécurité)
+    return {
+        "message": "Si cet email est associé à un compte, un lien de réinitialisation a été envoyé"
+    }
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    reset_data: PasswordResetConfirm,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Réinitialise le mot de passe avec un token valide.
+
+    Vérifie le token Redis, met à jour le mot de passe,
+    supprime le token et révoque tous les tokens de l'utilisateur.
+    """
+    logger.info("Tentative de réinitialisation de mot de passe avec token")
+
+    # Vérifier le token dans Redis
+    redis_client = await get_redis()
+    user_id = await redis_client.get(f"password_reset:{reset_data.token}")
+
+    if not user_id:
+        logger.warning("Token de réinitialisation invalide ou expiré")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token invalide ou expiré. Veuillez refaire une demande de réinitialisation."
+        )
+
+    # Trouver l'utilisateur
+    result = await db.execute(select(User).where(User.id == int(user_id)))
+    user = result.scalar_one_or_none()
+
+    if not user or not user.is_active:
+        logger.warning(f"Utilisateur introuvable/inactif pour reset: {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Utilisateur introuvable ou compte désactivé"
+        )
+
+    # Mettre à jour le mot de passe
+    user.hashed_password = get_password_hash(reset_data.new_password)
+    await db.commit()
+
+    # Supprimer le token Redis (usage unique)
+    await redis_client.delete(f"password_reset:{reset_data.token}")
+
+    # Révoquer tous les tokens existants de l'utilisateur
+    await revoke_all_user_tokens(user.id)
+
+    logger.info(f"Mot de passe réinitialisé pour utilisateur {user.id}")
+
+    return {"message": "Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter."}

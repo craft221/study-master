@@ -51,7 +51,22 @@
     "invalidCredentials": "Invalid email or password",
     "emailRequired": "Email is required",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters"
+    "passwordMinLength": "Password must be at least 8 characters",
+    "forgotPasswordTitle": "Forgot password",
+    "forgotPasswordSubtitle": "Enter your email to receive a reset link",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If this email is associated with an account, a reset link has been sent.",
+    "checkEmail": "Check your inbox",
+    "backToLogin": "Back to login",
+    "resetPasswordTitle": "New password",
+    "resetPasswordSubtitle": "Choose a new password for your account",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "resetPasswordButton": "Reset password",
+    "passwordResetSuccess": "Password reset successfully!",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "invalidResetToken": "Invalid or expired reset link",
+    "noResetToken": "No reset token provided"
   },
 
   "nav": {

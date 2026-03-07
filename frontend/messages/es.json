@@ -51,7 +51,22 @@
     "invalidCredentials": "Correo electrónico o contraseña incorrectos",
     "emailRequired": "El correo electrónico es obligatorio",
     "passwordRequired": "La contraseña es obligatoria",
-    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres"
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+    "forgotPasswordTitle": "Contraseña olvidada",
+    "forgotPasswordSubtitle": "Ingresa tu correo electrónico para recibir un enlace de restablecimiento",
+    "sendResetLink": "Enviar enlace",
+    "resetLinkSent": "Si este correo electrónico está asociado a una cuenta, se ha enviado un enlace de restablecimiento.",
+    "checkEmail": "Revisa tu bandeja de entrada",
+    "backToLogin": "Volver al inicio de sesión",
+    "resetPasswordTitle": "Nueva contraseña",
+    "resetPasswordSubtitle": "Elige una nueva contraseña para tu cuenta",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "resetPasswordButton": "Restablecer contraseña",
+    "passwordResetSuccess": "¡Contraseña restablecida con éxito!",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "invalidResetToken": "Enlace de restablecimiento inválido o expirado",
+    "noResetToken": "No se proporcionó un token de restablecimiento"
   },
 
   "nav": {
