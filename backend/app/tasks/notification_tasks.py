@@ -21,7 +21,7 @@ from app.core.config import settings
 from app.core.datetime_utils import utc_now
 from app.models.user import User, UserGamification, UserPreferences, UserProfile
 from app.models.schedule import Schedule
-from app.models.notification import Notification, NotificationType, NotificationPriority
+from app.models.notification import Notification, NotificationType, NotificationPriority, NotificationPreference
 from app.models.flashcard import Flashcard
 
 logger = logging.getLogger(__name__)
@@ -381,6 +381,23 @@ async def _send_flashcard_reminders_async() -> Dict[str, Any]:
 
                 db.add(notification)
                 notifications_sent += 1
+
+                # Envoyer un email si les préférences le permettent
+                try:
+                    from app.services.email_service import email_service
+                    pref_query = select(NotificationPreference).where(NotificationPreference.user_id == user_id)
+                    pref_result = await db.execute(pref_query)
+                    pref = pref_result.scalar_one_or_none()
+
+                    if user_obj and user_obj.email_notifications and (not pref or (pref.email_enabled and pref.study_reminders)):
+                        await email_service.send_flashcard_reminder(
+                            to_email=user_obj.email,
+                            username=user_obj.username,
+                            cards_due=count,
+                            user_id=user_id
+                        )
+                except Exception as email_err:
+                    logger.warning(f"Erreur envoi email flashcard reminder: {email_err}")
 
             await db.commit()
 
@@ -850,4 +867,106 @@ async def _send_email_digest_async() -> Dict[str, Any]:
 
         except Exception as e:
             logger.error(f"Erreur email digest: {e}")
+            return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# Onboarding Drip Emails (J+1, J+3, J+7)
+# =============================================================================
+
+@celery_app.task(base=NotificationTask, bind=True, name="notifications.send_onboarding_emails")
+def send_onboarding_emails(self) -> Dict[str, Any]:
+    """
+    Envoie des emails d'onboarding progressifs aux nouveaux utilisateurs.
+    J+1: Astuces pour démarrer
+    J+3: Flashcards et quiz
+    J+7: Streaks et gamification
+    Vérifie l'heure locale (10h) pour envoyer au bon moment.
+    """
+    return run_async(_send_onboarding_emails_async())
+
+
+async def _send_onboarding_emails_async() -> Dict[str, Any]:
+    """Version async des emails d'onboarding"""
+    from app.services.email_service import email_service
+    import redis.asyncio as aioredis
+
+    async_session = get_async_session()
+
+    async with async_session() as db:
+        try:
+            now = utc_now()
+            emails_sent = 0
+
+            # Jours d'onboarding à vérifier
+            onboarding_days = [1, 3, 7]
+
+            for day in onboarding_days:
+                # Trouver les utilisateurs créés il y a exactement N jours
+                target_date = now - timedelta(days=day)
+                day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+
+                query = select(User).options(
+                    selectinload(User.preferences)
+                ).where(
+                    and_(
+                        User.created_at >= day_start,
+                        User.created_at < day_end,
+                        User.is_active == True,
+                        User.is_verified == True
+                    )
+                )
+
+                result = await db.execute(query)
+                users = result.scalars().all()
+
+                for user in users:
+                    # Vérifier que l'utilisateur accepte les emails
+                    if not user.email_notifications:
+                        continue
+
+                    # Vérifier les préférences de notification
+                    pref_query = select(NotificationPreference).where(NotificationPreference.user_id == user.id)
+                    pref_result = await db.execute(pref_query)
+                    pref = pref_result.scalar_one_or_none()
+
+                    if pref and not pref.email_enabled:
+                        continue
+
+                    # Vérifier qu'on n'a pas déjà envoyé cet email (via Redis)
+                    try:
+                        redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+                        redis_key = f"onboarding_sent:{user.id}:day_{day}"
+                        already_sent = await redis_client.get(redis_key)
+                        if already_sent:
+                            await redis_client.aclose()
+                            continue
+
+                        # Marquer comme envoyé (expire après 30 jours)
+                        await redis_client.setex(redis_key, 86400 * 30, "1")
+                        await redis_client.aclose()
+                    except Exception:
+                        pass  # Si Redis échoue, envoyer quand même
+
+                    # Envoyer l'email d'onboarding
+                    success = await email_service.send_onboarding(
+                        to_email=user.email,
+                        username=user.username,
+                        day=day,
+                        user_id=user.id
+                    )
+
+                    if success:
+                        emails_sent += 1
+                        logger.info(f"Onboarding J+{day} envoyé: user={user.id}")
+
+            return {
+                "success": True,
+                "emails_sent": emails_sent,
+                "executed_at": utc_now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Erreur onboarding emails: {e}")
             return {"success": False, "error": str(e)}

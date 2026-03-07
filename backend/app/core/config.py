@@ -173,6 +173,9 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@studera.app")
     EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "Studera")
 
+    # Resend Webhook
+    RESEND_WEBHOOK_SECRET: str = os.getenv("RESEND_WEBHOOK_SECRET", "")
+
     # Monitoring - Sentry
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
     SENTRY_TRACES_SAMPLE_RATE: float = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1"))  # 10% des requêtes

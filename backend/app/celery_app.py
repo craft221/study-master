@@ -138,6 +138,13 @@ celery_app.conf.update(
             "schedule": 86400.0,  # Une fois par jour
         },
 
+        # === Onboarding Drip Emails ===
+        # Envoie des emails d'onboarding aux nouveaux utilisateurs (J+1, J+3, J+7)
+        "onboarding-drip-emails": {
+            "task": "notifications.send_onboarding_emails",
+            "schedule": 3600.0,  # Toutes les heures (10h heure locale)
+        },
+
         # === Exam Mode - Rappels Quotidiens ===
         # Envoie des rappels aux heures configurées par chaque utilisateur
         "exam-mode-daily-reminders": {

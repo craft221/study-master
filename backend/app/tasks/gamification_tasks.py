@@ -528,6 +528,32 @@ def check_achievements(self, user_id: int) -> Dict[str, Any]:
                             xp_reward=achievement["xp_reward"]
                         )
 
+                    # Envoyer un email pour les achievements (si préférences OK)
+                    try:
+                        from app.services.email_service import email_service
+                        from app.models.notification import NotificationPreference
+                        user_query = select(User).where(User.id == user_id)
+                        user_result = await db.execute(user_query)
+                        user_obj = user_result.scalar_one_or_none()
+
+                        if user_obj and user_obj.email_notifications:
+                            pref_query = select(NotificationPreference).where(NotificationPreference.user_id == user_id)
+                            pref_result = await db.execute(pref_query)
+                            pref = pref_result.scalar_one_or_none()
+
+                            if not pref or (pref.email_enabled and pref.achievement_notifications):
+                                for achievement in new_achievements:
+                                    await email_service.send_achievement_unlocked(
+                                        to_email=user_obj.email,
+                                        username=user_obj.username,
+                                        achievement_name=achievement["name"],
+                                        achievement_description=achievement["description"],
+                                        xp_reward=achievement["xp_reward"],
+                                        user_id=user_id
+                                    )
+                    except Exception as email_err:
+                        logger.warning(f"Erreur envoi email achievement: {email_err}")
+
                     # Envoyer notification de level up si le niveau a changé
                     if new_level > old_level:
                         await notification_service.notify_level_up(

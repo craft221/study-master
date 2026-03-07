@@ -112,6 +112,8 @@ from app.api.v1.social_share import router as social_share_router
 from app.api.v1.explore import router as explore_router
 from app.api.v1.mfa import router as mfa_router
 from app.api.v1.exam_mode import router as exam_mode_router
+from app.api.v1.email_tracking import router as email_tracking_router
+from app.api.v1.admin_emails import router as admin_emails_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -326,6 +328,8 @@ app.include_router(social_share_router, prefix="/api/v1/share", tags=["Social Sh
 app.include_router(explore_router, prefix="/api/v1/explore", tags=["Explore - Découverte de Contenu 🔍"])
 app.include_router(mfa_router, prefix="/api/v1/mfa", tags=["MFA - Authentification à Deux Facteurs 🔐"])
 app.include_router(exam_mode_router, prefix="/api/v1/exam-mode", tags=["Exam Mode - Préparation aux Examens 📚"])
+app.include_router(email_tracking_router, prefix="/api/v1/email", tags=["Email - Tracking & Désinscription 📧"])
+app.include_router(admin_emails_router, prefix="/api/v1/admin/emails", tags=["Admin - Dashboard Email 📊"])
 
 
 @app.middleware("http")

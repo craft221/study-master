@@ -144,11 +144,13 @@ async def send_duel_notification(
     title: str,
     message: str,
     duel_id: int,
-    data: dict = None
+    data: dict = None,
+    challenger_name: str = None,
+    stakes_xp: int = 0
 ):
-    """Envoie une notification de duel (in-app + potentiellement email)"""
+    """Envoie une notification de duel (in-app + email pour les challenges)"""
     try:
-        from app.models.notification import Notification, NotificationType, NotificationPriority
+        from app.models.notification import Notification, NotificationType, NotificationPriority, NotificationPreference
 
         # Mapping des types
         type_map = {
@@ -172,6 +174,36 @@ async def send_duel_notification(
 
         db.add(notification)
         logger.info(f"Notification duel envoyée: user={user_id}, type={notification_type}")
+
+        # Envoyer un email pour les challenges
+        if notification_type == "challenge" and challenger_name:
+            try:
+                from app.services.email_service import email_service
+                from app.core.config import settings
+
+                # Vérifier les préférences email
+                pref_result = await db.execute(
+                    select(NotificationPreference).where(NotificationPreference.user_id == user_id)
+                )
+                pref = pref_result.scalar_one_or_none()
+
+                if not pref or (pref.email_enabled and pref.duel_notifications):
+                    user_result = await db.execute(select(User).where(User.id == user_id))
+                    user = user_result.scalar_one_or_none()
+
+                    if user and user.email_notifications:
+                        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
+                        duel_url = f"{frontend_url}/duels/{duel_id}"
+                        await email_service.send_duel_challenge(
+                            to_email=user.email,
+                            username=user.username,
+                            challenger_name=challenger_name,
+                            stakes_xp=stakes_xp,
+                            duel_url=duel_url,
+                            user_id=user_id
+                        )
+            except Exception as email_err:
+                logger.warning(f"Erreur envoi email duel: {email_err}")
 
     except Exception as e:
         logger.warning(f"Erreur création notification duel: {e}")
@@ -296,7 +328,7 @@ async def create_duel(
     # Charger les relations
     await db.refresh(new_duel, ["challenger", "opponent", "quiz"])
 
-    # Envoyer notification à l'adversaire
+    # Envoyer notification à l'adversaire (in-app + email)
     await send_duel_notification(
         db=db,
         user_id=opponent.id,
@@ -304,7 +336,9 @@ async def create_duel(
         title="Nouveau défi ! ⚔️",
         message=f"{current_user.username} vous défie sur un quiz ! Enjeux: {duel_data.stakes_xp} XP",
         duel_id=new_duel.id,
-        data={"challenger_id": current_user.id, "stakes_xp": duel_data.stakes_xp}
+        data={"challenger_id": current_user.id, "stakes_xp": duel_data.stakes_xp},
+        challenger_name=current_user.username,
+        stakes_xp=duel_data.stakes_xp
     )
     await db.commit()
 

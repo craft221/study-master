@@ -1,11 +1,14 @@
 """
 Service Email - Envoi de notifications par email
 Supporte Resend (recommandé) et SMTP (fallback)
+Inclut: unsubscribe, tracking ouverture/clics, logging EmailEvent
 """
 
 import logging
 import smtplib
 import httpx
+import hmac
+import hashlib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional, List, Dict, Any
@@ -19,6 +22,35 @@ logger = logging.getLogger(__name__)
 
 # Thread pool pour les envois async SMTP
 _executor = ThreadPoolExecutor(max_workers=3)
+
+
+def generate_unsubscribe_token(user_id: int) -> str:
+    """
+    Génère un token HMAC signé pour le lien de désinscription.
+    Pas de JWT/expiration — l'unsubscribe doit toujours fonctionner (RGPD).
+    """
+    message = f"unsubscribe:{user_id}"
+    signature = hmac.new(
+        settings.SECRET_KEY.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).hexdigest()[:32]
+    return f"{user_id}:{signature}"
+
+
+def verify_unsubscribe_token(token: str) -> Optional[int]:
+    """Vérifie un token de désinscription et retourne le user_id."""
+    try:
+        parts = token.split(":", 1)
+        if len(parts) != 2:
+            return None
+        user_id = int(parts[0])
+        expected = generate_unsubscribe_token(user_id)
+        if hmac.compare_digest(token, expected):
+            return user_id
+        return None
+    except (ValueError, TypeError):
+        return None
 
 
 class EmailService:
@@ -65,8 +97,8 @@ class EmailService:
         subject: str,
         html_content: str,
         text_content: Optional[str] = None
-    ) -> bool:
-        """Envoi via Resend API"""
+    ) -> Optional[str]:
+        """Envoi via Resend API. Retourne le provider_id ou None."""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -87,15 +119,16 @@ class EmailService:
 
                 if response.status_code in [200, 201]:
                     data = response.json()
-                    logger.info(f"Email envoyé via Resend: {to_email} - {subject} (id: {data.get('id', 'N/A')})")
-                    return True
+                    provider_id = data.get('id', None)
+                    logger.info(f"Email envoyé via Resend: {to_email} - {subject} (id: {provider_id})")
+                    return provider_id
                 else:
                     logger.error(f"Erreur Resend {response.status_code}: {response.text}")
-                    return False
+                    return None
 
         except Exception as e:
             logger.error(f"Erreur envoi Resend à {to_email}: {e}")
-            return False
+            return None
 
     # =========================================================================
     # SMTP Fallback
@@ -170,27 +203,94 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        text_content: Optional[str] = None
+        text_content: Optional[str] = None,
+        email_type: str = "general",
+        user_id: Optional[int] = None
     ) -> bool:
         """
-        Envoi asynchrone d'email.
+        Envoi asynchrone d'email avec logging dans EmailEvent.
         Utilise Resend si configuré, sinon SMTP.
         """
         if not self.enabled:
             logger.debug(f"Email skip (disabled): {to_email}")
             return False
 
+        provider_id = None
+        success = False
+
         if self.provider == "resend":
-            return await self._send_resend(to_email, subject, html_content, text_content)
+            provider_id = await self._send_resend(to_email, subject, html_content, text_content)
+            success = provider_id is not None
         else:
-            return await self._send_smtp(to_email, subject, html_content, text_content)
+            success = await self._send_smtp(to_email, subject, html_content, text_content)
+
+        # Log dans EmailEvent (fire-and-forget, ne bloque pas l'envoi)
+        try:
+            await self._log_email_event(
+                to_email=to_email,
+                subject=subject,
+                email_type=email_type,
+                user_id=user_id,
+                provider_id=provider_id,
+                success=success
+            )
+        except Exception as e:
+            logger.warning(f"Erreur logging email event: {e}")
+
+        return success
+
+    async def _log_email_event(
+        self,
+        to_email: str,
+        subject: str,
+        email_type: str,
+        user_id: Optional[int],
+        provider_id: Optional[str],
+        success: bool
+    ):
+        """Log l'envoi d'email dans la table email_events"""
+        try:
+            from app.core.database import async_session_maker
+            from app.models.email_event import EmailEvent
+
+            async with async_session_maker() as db:
+                event = EmailEvent(
+                    user_id=user_id,
+                    provider_id=provider_id,
+                    to_email=to_email,
+                    subject=subject,
+                    email_type=email_type,
+                    status="sent" if success else "failed"
+                )
+                db.add(event)
+                await db.commit()
+        except Exception as e:
+            logger.warning(f"Impossible de logger l'email event: {e}")
 
     # =========================================================================
     # Templates d'emails
     # =========================================================================
 
-    def _base_template(self, content: str, title: str = "Studera") -> str:
-        """Template HTML de base - Design moderne"""
+    def _base_template(self, content: str, title: str = "Studera", user_id: Optional[int] = None, email_event_id: Optional[int] = None) -> str:
+        """Template HTML de base - Design moderne avec lien désinscription et tracking"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
+        api_url = frontend_url.replace(':3000', ':8000').replace(':3001', ':8000')
+        if 'localhost' not in api_url and 'studera.app' in api_url:
+            api_url = api_url.replace('https://studera.app', 'https://studera.app/api/v1').rstrip('/api/v1')
+            api_url = frontend_url  # Use same domain, API is behind /api/v1
+
+        # Lien de désinscription (RGPD obligatoire)
+        unsubscribe_html = ""
+        if user_id:
+            unsub_token = generate_unsubscribe_token(user_id)
+            unsubscribe_url = f"{frontend_url}/unsubscribe?token={unsub_token}"
+            unsubscribe_html = f'<p><a href="{unsubscribe_url}" style="color: #999; font-size: 11px;">Se désinscrire des emails</a></p>'
+
+        # Tracking pixel (1x1 transparent)
+        tracking_pixel = ""
+        if email_event_id:
+            tracking_pixel = f'<img src="{frontend_url}/api/v1/email/track/open/{email_event_id}" width="1" height="1" style="display:none;" alt="" />'
+
         return f"""
 <!DOCTYPE html>
 <html lang="fr">
@@ -298,8 +398,10 @@ class EmailService:
         <div class="footer">
             <p>Cet email a été envoyé par Studera.</p>
             <p>&copy; 2025 Studera. Tous droits réservés.</p>
+            {unsubscribe_html}
         </div>
     </div>
+    {tracking_pixel}
 </body>
 </html>
 """
@@ -312,7 +414,8 @@ class EmailService:
         self,
         to_email: str,
         username: str,
-        code: str
+        code: str,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de vérification avec code à 6 chiffres"""
         content = f"""
@@ -325,16 +428,17 @@ class EmailService:
             Si tu n'as pas créé de compte sur Studera, ignore cet email.
         </p>
         """
-        html = self._base_template(content, "Vérifie ton email - Studera")
+        html = self._base_template(content, "Vérifie ton email - Studera", user_id=user_id)
         text = f"Salut {username}, ton code de vérification Studera est: {code}. Ce code expire dans 15 minutes."
 
-        return await self.send_async(to_email, f"Code de vérification: {code}", html, text)
+        return await self.send_async(to_email, f"Code de vérification: {code}", html, text, email_type="verification", user_id=user_id)
 
     async def send_password_reset(
         self,
         to_email: str,
         username: str,
-        reset_url: str
+        reset_url: str,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de réinitialisation de mot de passe"""
         content = f"""
@@ -350,17 +454,19 @@ class EmailService:
             Si tu n'as pas demandé cette réinitialisation, ignore cet email.
         </p>
         """
-        html = self._base_template(content, "Réinitialisation mot de passe - Studera")
+        html = self._base_template(content, "Réinitialisation mot de passe - Studera", user_id=user_id)
         text = f"Salut {username}, clique sur ce lien pour réinitialiser ton mot de passe: {reset_url}"
 
-        return await self.send_async(to_email, "Réinitialise ton mot de passe", html, text)
+        return await self.send_async(to_email, "Réinitialise ton mot de passe", html, text, email_type="password_reset", user_id=user_id)
 
     async def send_welcome(
         self,
         to_email: str,
-        username: str
+        username: str,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de bienvenue"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         content = f"""
         <h2>Bienvenue sur Studera ! 🎉</h2>
         <p>Salut <strong>{username}</strong>,</p>
@@ -375,13 +481,13 @@ class EmailService:
         </ul>
         <p>Spark, notre mascotte, sera là pour t'accompagner ! 🐿️</p>
         <p style="text-align: center;">
-            <a href="https://studera.app/dashboard" class="button">Commencer à étudier</a>
+            <a href="{frontend_url}/dashboard" class="button">Commencer à étudier</a>
         </p>
         """
-        html = self._base_template(content, "Bienvenue sur Studera")
+        html = self._base_template(content, "Bienvenue sur Studera", user_id=user_id)
         text = f"Bienvenue {username} ! Ton compte Studera a été créé avec succès."
 
-        return await self.send_async(to_email, "Bienvenue sur Studera ! 🎉", html, text)
+        return await self.send_async(to_email, "Bienvenue sur Studera ! 🎉", html, text, email_type="welcome", user_id=user_id)
 
     async def send_duel_challenge(
         self,
@@ -389,7 +495,8 @@ class EmailService:
         username: str,
         challenger_name: str,
         stakes_xp: int,
-        duel_url: str
+        duel_url: str,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de défi reçu"""
         content = f"""
@@ -402,31 +509,33 @@ class EmailService:
             <a href="{duel_url}" class="button">Voir le défi</a>
         </p>
         """
-        html = self._base_template(content, "Nouveau défi sur Studera")
+        html = self._base_template(content, "Nouveau défi sur Studera", user_id=user_id)
         text = f"Salut {username}, {challenger_name} te défie sur Studera ! Enjeux: {stakes_xp} XP"
 
-        return await self.send_async(to_email, f"⚔️ {challenger_name} te défie !", html, text)
+        return await self.send_async(to_email, f"⚔️ {challenger_name} te défie !", html, text, email_type="duel_challenge", user_id=user_id)
 
     async def send_streak_reminder(
         self,
         to_email: str,
         username: str,
-        current_streak: int
+        current_streak: int,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de rappel de série"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         content = f"""
         <h2>Ta série est en danger ! 🔥</h2>
         <p>Salut <strong>{username}</strong>,</p>
         <p>Tu as une série de <span class="highlight">{current_streak} jours</span> en cours.</p>
         <p>N'oublie pas d'étudier aujourd'hui pour la maintenir !</p>
         <p style="text-align: center;">
-            <a href="https://studera.app/dashboard" class="button">Étudier maintenant</a>
+            <a href="{frontend_url}/dashboard" class="button">Étudier maintenant</a>
         </p>
         """
-        html = self._base_template(content, "Garde ta série !")
+        html = self._base_template(content, "Garde ta série !", user_id=user_id)
         text = f"Salut {username}, ta série de {current_streak} jours est en danger ! Étudie aujourd'hui."
 
-        return await self.send_async(to_email, f"🔥 Ta série de {current_streak} jours est en danger !", html, text)
+        return await self.send_async(to_email, f"🔥 Ta série de {current_streak} jours est en danger !", html, text, email_type="streak_reminder", user_id=user_id)
 
     async def send_event_reminder(
         self,
@@ -434,7 +543,8 @@ class EmailService:
         username: str,
         event_title: str,
         event_time: datetime,
-        event_url: str
+        event_url: str,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de rappel d'événement"""
         time_str = event_time.strftime("%H:%M")
@@ -452,19 +562,21 @@ class EmailService:
             <a href="{event_url}" class="button">Voir les détails</a>
         </p>
         """
-        html = self._base_template(content, f"Rappel: {event_title}")
+        html = self._base_template(content, f"Rappel: {event_title}", user_id=user_id)
         text = f"Rappel: {event_title} le {date_str} à {time_str}"
 
-        return await self.send_async(to_email, f"📅 Rappel: {event_title}", html, text)
+        return await self.send_async(to_email, f"📅 Rappel: {event_title}", html, text, email_type="event_reminder", user_id=user_id)
 
     async def send_daily_digest(
         self,
         to_email: str,
         username: str,
         stats: Dict[str, Any],
-        notifications: List[Dict[str, Any]]
+        notifications: List[Dict[str, Any]],
+        user_id: Optional[int] = None
     ) -> bool:
         """Email résumé quotidien"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         stats_html = ""
         if stats:
             stats_html = f"""
@@ -498,13 +610,13 @@ class EmailService:
         {stats_html}
         {notifs_html}
         <p style="text-align: center;">
-            <a href="https://studera.app/dashboard" class="button">Continuer à apprendre</a>
+            <a href="{frontend_url}/dashboard" class="button">Continuer à apprendre</a>
         </p>
         """
-        html = self._base_template(content, "Ton résumé Studera")
+        html = self._base_template(content, "Ton résumé Studera", user_id=user_id)
         text = f"Salut {username}, voici ton résumé Studera quotidien."
 
-        return await self.send_async(to_email, "📊 Ton résumé Studera du jour", html, text)
+        return await self.send_async(to_email, "📊 Ton résumé Studera du jour", html, text, email_type="daily_digest", user_id=user_id)
 
     async def send_achievement_unlocked(
         self,
@@ -512,9 +624,11 @@ class EmailService:
         username: str,
         achievement_name: str,
         achievement_description: str,
-        xp_reward: int
+        xp_reward: int,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de succès débloqué"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         content = f"""
         <h2>Félicitations ! 🏆</h2>
         <p>Salut <strong>{username}</strong>,</p>
@@ -526,13 +640,13 @@ class EmailService:
             <p><strong>+{xp_reward} XP</strong></p>
         </div>
         <p style="text-align: center;">
-            <a href="https://studera.app/achievements" class="button">Voir tous tes succès</a>
+            <a href="{frontend_url}/achievements" class="button">Voir tous tes succès</a>
         </p>
         """
-        html = self._base_template(content, f"Succès débloqué: {achievement_name}")
+        html = self._base_template(content, f"Succès débloqué: {achievement_name}", user_id=user_id)
         text = f"Félicitations {username} ! Tu as débloqué '{achievement_name}' et gagné {xp_reward} XP !"
 
-        return await self.send_async(to_email, f"🏆 Succès débloqué: {achievement_name} !", html, text)
+        return await self.send_async(to_email, f"🏆 Succès débloqué: {achievement_name} !", html, text, email_type="achievement_unlocked", user_id=user_id)
 
     async def send_inactivity_reminder(
         self,
@@ -540,9 +654,11 @@ class EmailService:
         username: str,
         days_absent: int,
         old_streak: int = 0,
-        email_subject: str = "Tu nous manques sur Studera !"
+        email_subject: str = "Tu nous manques sur Studera !",
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de rappel d'inactivité / réengagement"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         streak_text = ""
         if old_streak > 0:
             streak_text = f"""
@@ -578,25 +694,27 @@ class EmailService:
             <li>🎯 Fais un quiz rapide</li>
         </ul>
         <p style="text-align: center;">
-            <a href="https://studera.app/dashboard" class="button">Revenir étudier</a>
+            <a href="{frontend_url}/dashboard" class="button">Revenir étudier</a>
         </p>
         <p style="color: #666; font-size: 13px; text-align: center;">
             Spark t'attend ! 🐿️❤️
         </p>
         """
-        html = self._base_template(content, "Tu nous manques !")
+        html = self._base_template(content, "Tu nous manques !", user_id=user_id)
         text = f"Salut {username}, ça fait {days_absent} jours ! Reviens sur Studera."
 
-        return await self.send_async(to_email, email_subject, html, text)
+        return await self.send_async(to_email, email_subject, html, text, email_type="inactivity_reminder", user_id=user_id)
 
     async def send_flashcard_reminder(
         self,
         to_email: str,
         username: str,
         cards_due: int,
-        subject_name: Optional[str] = None
+        subject_name: Optional[str] = None,
+        user_id: Optional[int] = None
     ) -> bool:
         """Email de rappel de flashcards à réviser"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
         subject_text = f" en {subject_name}" if subject_name else ""
 
         content = f"""
@@ -605,13 +723,85 @@ class EmailService:
         <p>Tu as <span class="highlight">{cards_due} flashcards</span> à réviser{subject_text}.</p>
         <p>Une petite session de révision pour garder tes connaissances fraîches ?</p>
         <p style="text-align: center;">
-            <a href="https://studera.app/flashcards" class="button">Réviser maintenant</a>
+            <a href="{frontend_url}/flashcards" class="button">Réviser maintenant</a>
         </p>
         """
-        html = self._base_template(content, "Flashcards à réviser")
+        html = self._base_template(content, "Flashcards à réviser", user_id=user_id)
         text = f"Salut {username}, tu as {cards_due} flashcards à réviser{subject_text}."
 
-        return await self.send_async(to_email, f"📚 {cards_due} flashcards t'attendent !", html, text)
+        return await self.send_async(to_email, f"📚 {cards_due} flashcards t'attendent !", html, text, email_type="flashcard_reminder", user_id=user_id)
+
+    async def send_onboarding(
+        self,
+        to_email: str,
+        username: str,
+        day: int,
+        user_id: Optional[int] = None
+    ) -> bool:
+        """Emails d'onboarding progressifs (J+1, J+3, J+7)"""
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://studera.app')
+
+        if day == 1:
+            subject = "🐿️ 3 astuces pour bien démarrer sur Studera"
+            content = f"""
+            <h2>Tes premiers pas sur Studera 🚀</h2>
+            <p>Salut <strong>{username}</strong>,</p>
+            <p>Bienvenue dans l'aventure ! Voici 3 astuces pour bien démarrer :</p>
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <p><strong>1. 📝 Crée ta première note</strong><br>Organise tes cours par matière et retrouve tout facilement.</p>
+            </div>
+            <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <p><strong>2. 🤖 Génère des flashcards avec l'IA</strong><br>Sélectionne une note et laisse l'IA créer des cartes de révision pour toi.</p>
+            </div>
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <p><strong>3. 🎯 Fais ton premier quiz</strong><br>Teste tes connaissances et gagne tes premiers XP !</p>
+            </div>
+            <p style="text-align: center;">
+                <a href="{frontend_url}/dashboard" class="button">Commencer maintenant</a>
+            </p>
+            """
+        elif day == 3:
+            subject = "📚 Découvre les flashcards et les quiz de Studera"
+            content = f"""
+            <h2>Apprendre plus efficacement 🧠</h2>
+            <p>Salut <strong>{username}</strong>,</p>
+            <p>Savais-tu que la <strong>répétition espacée</strong> est la méthode d'apprentissage la plus efficace ?</p>
+            <p>Studera l'utilise automatiquement avec les flashcards :</p>
+            <ul>
+                <li>📚 Tes cartes reviennent au bon moment pour optimiser ta mémorisation</li>
+                <li>🤖 L'IA génère des flashcards depuis tes notes</li>
+                <li>📊 Suis ta progression et ton taux de maîtrise</li>
+            </ul>
+            <p>Et avec les <strong>quiz</strong>, tu peux tester tes connaissances et gagner des XP pour monter de niveau !</p>
+            <p style="text-align: center;">
+                <a href="{frontend_url}/flashcards" class="button">Essayer les flashcards</a>
+            </p>
+            """
+        elif day == 7:
+            subject = "🔥 Lance ta première série d'étude !"
+            content = f"""
+            <h2>Le secret des meilleurs étudiants 🏆</h2>
+            <p>Salut <strong>{username}</strong>,</p>
+            <p>Les étudiants qui réussissent le mieux sur Studera ont un point commun : <strong>la régularité</strong>.</p>
+            <p>Avec le système de <strong>séries (streaks)</strong> :</p>
+            <ul>
+                <li>🔥 Étudie chaque jour pour maintenir ta série</li>
+                <li>⚔️ Défie tes amis en duel pour rendre l'étude fun</li>
+                <li>🏆 Débloque des succès et monte dans le classement</li>
+                <li>💪 Bonus XP quotidien qui augmente avec ta série !</li>
+            </ul>
+            <p>Même <strong>5 minutes par jour</strong> suffisent pour garder ta série !</p>
+            <p style="text-align: center;">
+                <a href="{frontend_url}/dashboard" class="button">Lancer ma série</a>
+            </p>
+            """
+        else:
+            return False
+
+        html = self._base_template(content, "Studera - Onboarding", user_id=user_id)
+        text = f"Salut {username}, découvre les fonctionnalités de Studera !"
+
+        return await self.send_async(to_email, subject, html, text, email_type=f"onboarding_day_{day}", user_id=user_id)
 
 
 # Instance singleton

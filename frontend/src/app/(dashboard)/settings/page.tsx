@@ -97,9 +97,25 @@ export default function SettingsPage() {
     confirm_password: '',
   })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [notifPrefs, setNotifPrefs] = useState({
+    email_enabled: true,
+    push_enabled: true,
+    in_app_enabled: true,
+    duel_notifications: true,
+    calendar_notifications: true,
+    streak_notifications: true,
+    study_reminders: true,
+    achievement_notifications: true,
+    social_notifications: true,
+    quiet_hours_start: 22,
+    quiet_hours_end: 8,
+    email_digest: false,
+    email_digest_hour: 18,
+  })
 
   useEffect(() => {
     fetchProfile()
+    fetchNotifPrefs()
   }, [])
 
   const fetchProfile = async () => {
@@ -135,6 +151,44 @@ export default function SettingsPage() {
       toast.error('Impossible de charger le profil')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchNotifPrefs = async () => {
+    try {
+      const response = await api.get('/notifications/preferences')
+      const data = response.data
+      setNotifPrefs({
+        email_enabled: data.email_enabled ?? true,
+        push_enabled: data.push_enabled ?? true,
+        in_app_enabled: data.in_app_enabled ?? true,
+        duel_notifications: data.duel_notifications ?? true,
+        calendar_notifications: data.calendar_notifications ?? true,
+        streak_notifications: data.streak_notifications ?? true,
+        study_reminders: data.study_reminders ?? true,
+        achievement_notifications: data.achievement_notifications ?? true,
+        social_notifications: data.social_notifications ?? true,
+        quiet_hours_start: data.quiet_hours_start ?? 22,
+        quiet_hours_end: data.quiet_hours_end ?? 8,
+        email_digest: data.email_digest ?? false,
+        email_digest_hour: data.email_digest_hour ?? 18,
+      })
+    } catch (error) {
+      // Si pas encore de préférences, garder les valeurs par défaut
+      console.log('Notification preferences not yet created')
+    }
+  }
+
+  const handleSaveNotifPrefs = async () => {
+    setSaving(true)
+    try {
+      await api.patch('/notifications/preferences', notifPrefs)
+      toast.success(t('settings.saveChanges'))
+      fetchNotifPrefs()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || t('errors.generic'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -236,6 +290,7 @@ export default function SettingsPage() {
     { id: 'profile', name: t('profile.title'), icon: User },
     { id: 'account', name: t('settings.account'), icon: Mail },
     { id: 'preferences', name: t('settings.appearance'), icon: Palette },
+    { id: 'notifications', name: t('settings.notifications'), icon: Bell },
     { id: 'security', name: t('auth.password'), icon: Lock },
   ]
 
@@ -541,6 +596,153 @@ export default function SettingsPage() {
             <div className="pt-4">
               <button
                 onClick={handleSavePreferences}
+                disabled={saving}
+                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 disabled:opacity-50"
+              >
+                <Save className="w-5 h-5" />
+                <span>{saving ? t('common.loading') : t('settings.saveChanges')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('settings.notifications')}</h2>
+
+            {/* Canaux */}
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Canaux</h3>
+              <div className="space-y-3 mt-3">
+                {([
+                  { key: 'email_enabled', label: 'Emails', desc: 'Recevoir les notifications par email' },
+                  { key: 'push_enabled', label: 'Push', desc: 'Notifications push dans le navigateur' },
+                  { key: 'in_app_enabled', label: 'In-app', desc: 'Notifications dans l\'application' },
+                ] as const).map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notifPrefs[key]}
+                        onChange={(e) => setNotifPrefs({ ...notifPrefs, [key]: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Catégories */}
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Catégories</h3>
+              <div className="space-y-3 mt-3">
+                {([
+                  { key: 'duel_notifications', label: 'Duels', desc: 'Défis, résultats de duels' },
+                  { key: 'calendar_notifications', label: 'Calendrier', desc: 'Rappels d\'événements et examens' },
+                  { key: 'streak_notifications', label: 'Séries', desc: 'Rappels de streak quotidien' },
+                  { key: 'study_reminders', label: 'Révisions', desc: 'Rappels de flashcards et quiz' },
+                  { key: 'achievement_notifications', label: 'Succès', desc: 'Succès débloqués et niveaux' },
+                  { key: 'social_notifications', label: 'Social', desc: 'Groupes d\'étude, invitations' },
+                ] as const).map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notifPrefs[key]}
+                        onChange={(e) => setNotifPrefs({ ...notifPrefs, [key]: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Email Digest */}
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Résumé quotidien</h3>
+              <div className="mt-3">
+                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">Email digest</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Recevoir un résumé quotidien au lieu d'emails individuels</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notifPrefs.email_digest}
+                      onChange={(e) => setNotifPrefs({ ...notifPrefs, email_digest: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+                {notifPrefs.email_digest && (
+                  <div className="py-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Heure d'envoi du résumé
+                    </label>
+                    <select
+                      value={notifPrefs.email_digest_hour}
+                      onChange={(e) => setNotifPrefs({ ...notifPrefs, email_digest_hour: parseInt(e.target.value) })}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Heures de silence */}
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Heures de silence</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Pas de notifications pendant ces heures</p>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Début</label>
+                  <select
+                    value={notifPrefs.quiet_hours_start}
+                    onChange={(e) => setNotifPrefs({ ...notifPrefs, quiet_hours_start: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fin</label>
+                  <select
+                    value={notifPrefs.quiet_hours_end}
+                    onChange={(e) => setNotifPrefs({ ...notifPrefs, quiet_hours_end: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button
+                onClick={handleSaveNotifPrefs}
                 disabled={saving}
                 className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 disabled:opacity-50"
               >
