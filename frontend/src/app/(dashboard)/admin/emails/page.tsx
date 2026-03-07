@@ -38,6 +38,7 @@ interface EmailEvent {
   opened_at: string | null
   clicked_at: string | null
   bounced_at: string | null
+  complained_at: string | null
   bounce_type: string | null
   bounce_reason: string | null
 }
