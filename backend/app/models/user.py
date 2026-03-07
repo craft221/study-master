@@ -14,10 +14,10 @@ from app.core.datetime_utils import utc_now
 
 class UserRole(str, enum.Enum):
     """Rôles utilisateur"""
-    STUDENT = "student"
-    TEACHER = "teacher"
-    MODERATOR = "moderator"
-    ADMIN = "admin"
+    STUDENT = "STUDENT"
+    TEACHER = "TEACHER"
+    MODERATOR = "MODERATOR"
+    ADMIN = "ADMIN"
 
 
 class SubscriptionType(str, enum.Enum):
