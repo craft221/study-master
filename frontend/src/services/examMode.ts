@@ -378,7 +378,14 @@ export const examModeService = {
    * Créer une nouvelle session d'examen
    */
   async createSession(data: ExamSessionCreate): Promise<ExamSessionDetail> {
-    const response = await api.post('/exam-mode/', data)
+    // Nettoyer les valeurs vides pour éviter les erreurs de validation backend
+    const cleanData = {
+      ...data,
+      exam_time: data.exam_time || null,
+      exam_description: data.exam_description || null,
+      subject_id: data.subject_id || null,
+    }
+    const response = await api.post('/exam-mode/', cleanData)
     return response.data
   },
 
