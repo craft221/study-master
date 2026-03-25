@@ -72,7 +72,7 @@ interface LeaderboardEntry {
 }
 
 // API Base URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app') + '/api/v1'
 
 export default function PlayQuizPage() {
   const params = useParams()

@@ -24,7 +24,7 @@ import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import { useState } from 'react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app'
 
 interface RichTextEditorProps {
   value: string

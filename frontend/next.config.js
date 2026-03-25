@@ -11,7 +11,7 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development'
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.studera.app' : 'http://localhost:8000'),
     NEXT_PUBLIC_APP_NAME: 'Studera',
   },
   webpack: (config) => {

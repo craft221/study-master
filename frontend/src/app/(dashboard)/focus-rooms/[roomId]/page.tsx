@@ -189,7 +189,7 @@ export default function FocusRoomPage() {
         // Utiliser fetch avec keepalive pour envoyer les données de manière fiable
         const token = localStorage.getItem('access_token')
         if (token) {
-          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/focus-rooms/${roomId}/leave`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app'}/api/v1/focus-rooms/${roomId}/leave`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

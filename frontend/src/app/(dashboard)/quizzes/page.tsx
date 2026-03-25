@@ -175,7 +175,7 @@ export default function QuizzesPage() {
     })
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app'
       const response = await fetch(
         `${apiBase}/api/v1/public/quiz/${quiz.share_code}/leaderboard`
       )

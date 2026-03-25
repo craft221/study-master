@@ -23,7 +23,7 @@ import { toast } from 'react-hot-toast'
 import 'katex/dist/katex.min.css'
 import katex from 'katex'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app'
 
 interface SmartNoteEditorProps {
   value: string
