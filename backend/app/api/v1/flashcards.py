@@ -389,15 +389,26 @@ async def delete_deck(
     # Chercher le FlashcardDeck (table) correspondant
     deck_obj = None
     if deck_name != "Sans deck":
-        deck_result = await db.execute(
-            select(FlashcardDeck).where(
-                and_(
-                    FlashcardDeck.user_id == current_user.id,
-                    FlashcardDeck.name == deck_name
-                )
-            )
+        # Lister tous les FlashcardDeck de l'utilisateur pour debug
+        all_fd_result = await db.execute(
+            select(FlashcardDeck).where(FlashcardDeck.user_id == current_user.id)
         )
-        deck_obj = deck_result.scalar_one_or_none()
+        all_fd = all_fd_result.scalars().all()
+        logger.info(f"[DELETE DECK] All FlashcardDecks for user: {[(d.id, repr(d.name)) for d in all_fd]}")
+
+        # Chercher par nom exact
+        for d in all_fd:
+            if d.name == deck_name:
+                deck_obj = d
+                break
+
+        # Si pas trouvé, chercher par nom strippé (espaces/encodage)
+        if not deck_obj:
+            for d in all_fd:
+                if d.name and d.name.strip() == deck_name.strip():
+                    deck_obj = d
+                    break
+
         logger.info(f"[DELETE DECK] FlashcardDeck found: {deck_obj is not None} (id={deck_obj.id if deck_obj else 'N/A'})")
 
     # Récupérer toutes les flashcards du deck
@@ -440,12 +451,30 @@ async def delete_deck(
 
         # Supprimer le FlashcardDeck vide (sans cartes) s'il existe
         if deck_obj:
+            logger.info(f"[DELETE DECK] Deleting empty FlashcardDeck id={deck_obj.id}")
             await db.delete(deck_obj)
             await db.commit()
             return None
 
+        # Aussi chercher par LIKE au cas où le nom diffère légèrement (encodage unicode, etc.)
+        if deck_name != "Sans deck":
+            like_result = await db.execute(
+                select(FlashcardDeck).where(
+                    and_(
+                        FlashcardDeck.user_id == current_user.id,
+                        FlashcardDeck.name.ilike(f"%{deck_name[:20]}%")
+                    )
+                )
+            )
+            similar_decks = like_result.scalars().all()
+            if similar_decks:
+                logger.info(f"[DELETE DECK] Found similar FlashcardDecks by LIKE: {[(d.id, repr(d.name)) for d in similar_decks]}")
+                for d in similar_decks:
+                    await db.delete(d)
+                await db.commit()
+                return None
+
         # Deck n'existe nulle part -> retourner 204 (idempotent delete)
-        # Le deck peut venir du cache navigateur, pas besoin de bloquer la suppression
         logger.info(f"[DELETE DECK] Deck not found anywhere, returning 204 (idempotent)")
         return None
 
