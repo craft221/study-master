@@ -444,10 +444,10 @@ async def delete_deck(
             await db.commit()
             return None
 
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Deck non trouvé: '{deck_name}'"
-        )
+        # Deck n'existe nulle part -> retourner 204 (idempotent delete)
+        # Le deck peut venir du cache navigateur, pas besoin de bloquer la suppression
+        logger.info(f"[DELETE DECK] Deck not found anywhere, returning 204 (idempotent)")
+        return None
 
     # Récupérer le subject pour mettre à jour les stats
     subject_id = cards[0].subject_id

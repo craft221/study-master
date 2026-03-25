@@ -87,6 +87,9 @@ export default function FlashcardsPage() {
           { id: deckId }
         )
       }
+      // Mettre à jour le cache offline avec la liste sans le deck supprimé
+      const updatedDecks = decks.filter(d => d.id !== deckId)
+      try { await offlineStorage.saveDecks(updatedDecks) } catch {}
       toast.success(isOnline ? t('flashcardsPage.deckDeleted') : t('flashcardsPage.deckDeletedSync'))
     } catch (error) {
       // Rollback en cas d'erreur
