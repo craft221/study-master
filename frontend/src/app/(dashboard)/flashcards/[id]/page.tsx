@@ -68,7 +68,7 @@ export default function FlashcardDeckPage() {
 
   const fetchDeck = async () => {
     try {
-      const response = await api.get(`/flashcards/decks/${deckId}`)
+      const response = await api.get(`/flashcards/decks/${encodeURIComponent(deckId)}`)
       setDeck(response.data)
     } catch (error) {
       toast.error('Erreur lors du chargement du deck')
@@ -85,7 +85,7 @@ export default function FlashcardDeckPage() {
     }
 
     try {
-      await api.post(`/flashcards/decks/${deckId}/cards`, newCard)
+      await api.post(`/flashcards/decks/${encodeURIComponent(deckId)}/cards`, newCard)
       toast.success('Carte ajoutée!')
       setNewCard({ front: '', back: '' })
       setShowAddCard(false)
@@ -111,7 +111,7 @@ export default function FlashcardDeckPage() {
     if (!confirm('Supprimer ce deck et toutes ses cartes?')) return
 
     try {
-      await api.delete(`/flashcards/decks/${deckId}`)
+      await api.delete(`/flashcards/decks/${encodeURIComponent(deckId)}`)
       toast.success('Deck supprimé')
       router.push('/flashcards')
     } catch (error) {

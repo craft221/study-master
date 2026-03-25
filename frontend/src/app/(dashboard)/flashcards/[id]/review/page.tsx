@@ -64,7 +64,7 @@ export default function FlashcardReviewPage() {
     try {
       if (isOnline) {
         // Mode online: récupérer depuis l'API
-        const response = await api.get(`/flashcards/decks/${deckId}/due`)
+        const response = await api.get(`/flashcards/decks/${encodeURIComponent(deckId)}/due`)
 
         if (response.data.length === 0) {
           toast('Aucune carte à réviser pour le moment!', { icon: '✅' })

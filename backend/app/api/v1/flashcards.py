@@ -11,7 +11,7 @@ from app.core.datetime_utils import utc_now
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.subject import Subject
-from app.models.flashcard import Flashcard, FlashcardReview, FlashcardStatus
+from app.models.flashcard import Flashcard, FlashcardDeck, FlashcardReview, FlashcardStatus
 from app.schemas.flashcard import (
     FlashcardCreate,
     FlashcardUpdate,
@@ -49,19 +49,20 @@ async def list_flashcard_decks(
 ):
     """Récupérer la liste des decks de flashcards avec statistiques"""
 
-    # Récupérer toutes les flashcards de l'utilisateur avec leurs subjects préchargés
+    # Récupérer toutes les flashcards de l'utilisateur avec leurs subjects et decks préchargés
     result = await db.execute(
         select(Flashcard)
         .where(Flashcard.user_id == current_user.id)
-        .options(selectinload(Flashcard.subject))
+        .options(selectinload(Flashcard.subject), selectinload(Flashcard.deck))
         .order_by(Flashcard.created_at.desc())
     )
     all_flashcards = result.scalars().all()
 
-    # Grouper par deck_name
+    # Grouper par deck_name (résoudre via deck relation si deck_name est null)
     decks_dict = {}
     for card in all_flashcards:
-        deck_name = card.deck_name or "Sans deck"
+        # Résoudre le nom du deck: deck_name legacy > FlashcardDeck.name > "Sans deck"
+        deck_name = card.deck_name or (card.deck.name if card.deck else None) or "Sans deck"
 
         if deck_name not in decks_dict:
             decks_dict[deck_name] = {
@@ -118,7 +119,7 @@ async def list_flashcard_decks(
     return decks_response
 
 
-@router.get("/decks/{deck_name}")
+@router.get("/decks/{deck_name:path}")
 async def get_flashcard_deck(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
@@ -128,25 +129,44 @@ async def get_flashcard_deck(
 
     # Gérer le cas spécial "Sans deck" pour les flashcards sans deck_name
     if deck_name == "Sans deck":
-        # Chercher les flashcards avec deck_name NULL
+        # Chercher les flashcards avec deck_name NULL et sans deck_id
         result = await db.execute(
             select(Flashcard)
             .where(
                 and_(
                     Flashcard.user_id == current_user.id,
-                    Flashcard.deck_name.is_(None)
+                    Flashcard.deck_name.is_(None),
+                    Flashcard.deck_id.is_(None)
                 )
             )
             .order_by(Flashcard.created_at.desc())
         )
     else:
-        # Récupérer toutes les flashcards du deck
+        # Chercher par deck_name OU par FlashcardDeck.name via deck_id
+        deck_obj = await db.execute(
+            select(FlashcardDeck).where(
+                and_(
+                    FlashcardDeck.user_id == current_user.id,
+                    FlashcardDeck.name == deck_name
+                )
+            )
+        )
+        deck_obj = deck_obj.scalar_one_or_none()
+
+        if deck_obj:
+            deck_condition = or_(
+                Flashcard.deck_id == deck_obj.id,
+                Flashcard.deck_name == deck_name
+            )
+        else:
+            deck_condition = Flashcard.deck_name == deck_name
+
         result = await db.execute(
             select(Flashcard)
             .where(
                 and_(
                     Flashcard.user_id == current_user.id,
-                    Flashcard.deck_name == deck_name
+                    deck_condition
                 )
             )
             .order_by(Flashcard.created_at.desc())
@@ -223,7 +243,7 @@ async def get_flashcard_deck(
     }
 
 
-@router.post("/decks/{deck_name}/cards", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/decks/{deck_name:path}/cards", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
 async def add_card_to_deck(
     deck_name: str,
     card_data: dict,
@@ -232,20 +252,39 @@ async def add_card_to_deck(
 ):
     """Ajouter une carte à un deck existant"""
 
+    # Chercher par deck_name OU par FlashcardDeck.name via deck_id
+    deck_obj_result = await db.execute(
+        select(FlashcardDeck).where(
+            and_(
+                FlashcardDeck.user_id == current_user.id,
+                FlashcardDeck.name == deck_name
+            )
+        )
+    )
+    deck_obj = deck_obj_result.scalar_one_or_none()
+
+    if deck_obj:
+        deck_condition = or_(
+            Flashcard.deck_id == deck_obj.id,
+            Flashcard.deck_name == deck_name
+        )
+    else:
+        deck_condition = Flashcard.deck_name == deck_name
+
     # Récupérer une carte du deck pour obtenir le subject_id
     result = await db.execute(
         select(Flashcard)
         .where(
             and_(
                 Flashcard.user_id == current_user.id,
-                Flashcard.deck_name == deck_name
+                deck_condition
             )
         )
         .limit(1)
     )
     existing_card = result.scalar_one_or_none()
 
-    subject_id = existing_card.subject_id if existing_card else None
+    subject_id = existing_card.subject_id if existing_card else (deck_obj.subject_id if deck_obj else None)
 
     if not subject_id:
         raise HTTPException(
@@ -296,7 +335,7 @@ async def add_card_to_deck(
     return new_flashcard
 
 
-@router.delete("/decks/{deck_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/decks/{deck_name:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_deck(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
@@ -304,12 +343,31 @@ async def delete_deck(
 ):
     """Supprimer un deck et toutes ses cartes"""
 
+    # Chercher le FlashcardDeck (table) correspondant
+    deck_obj = None
+    if deck_name != "Sans deck":
+        deck_result = await db.execute(
+            select(FlashcardDeck).where(
+                and_(
+                    FlashcardDeck.user_id == current_user.id,
+                    FlashcardDeck.name == deck_name
+                )
+            )
+        )
+        deck_obj = deck_result.scalar_one_or_none()
+
     # Récupérer toutes les flashcards du deck
     # Cas spécial: "Sans deck" correspond aux cartes avec deck_name NULL
     if deck_name == "Sans deck":
         deck_condition = or_(
             Flashcard.deck_name == None,
             Flashcard.deck_name == "Sans deck"
+        )
+    elif deck_obj:
+        # Deck trouvé dans la table flashcard_decks -> chercher par deck_id OU deck_name
+        deck_condition = or_(
+            Flashcard.deck_id == deck_obj.id,
+            Flashcard.deck_name == deck_name
         )
     else:
         deck_condition = Flashcard.deck_name == deck_name
@@ -326,6 +384,12 @@ async def delete_deck(
     cards = result.scalars().all()
 
     if not cards:
+        # Supprimer le FlashcardDeck vide (sans cartes) s'il existe
+        if deck_obj:
+            await db.delete(deck_obj)
+            await db.commit()
+            return None
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Deck non trouvé"
@@ -343,6 +407,10 @@ async def delete_deck(
     for card in cards:
         await db.delete(card)
 
+    # Supprimer aussi le FlashcardDeck s'il existe
+    if deck_obj:
+        await db.delete(deck_obj)
+
     # Mettre à jour les stats de la matière
     if subject:
         subject.total_flashcards_count = max(0, subject.total_flashcards_count - cards_count)
@@ -352,7 +420,7 @@ async def delete_deck(
     return None
 
 
-@router.get("/decks/{deck_name}/due")
+@router.get("/decks/{deck_name:path}/due")
 async def get_deck_due_cards(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
@@ -366,7 +434,23 @@ async def get_deck_due_cards(
     if deck_name == "Sans deck":
         deck_condition = Flashcard.deck_name.is_(None)
     else:
-        deck_condition = Flashcard.deck_name == deck_name
+        # Chercher par deck_name OU par FlashcardDeck.name via deck_id
+        deck_obj_result = await db.execute(
+            select(FlashcardDeck).where(
+                and_(
+                    FlashcardDeck.user_id == current_user.id,
+                    FlashcardDeck.name == deck_name
+                )
+            )
+        )
+        deck_obj = deck_obj_result.scalar_one_or_none()
+        if deck_obj:
+            deck_condition = or_(
+                Flashcard.deck_id == deck_obj.id,
+                Flashcard.deck_name == deck_name
+            )
+        else:
+            deck_condition = Flashcard.deck_name == deck_name
 
     # Récupérer les flashcards à réviser du deck
     result = await db.execute(

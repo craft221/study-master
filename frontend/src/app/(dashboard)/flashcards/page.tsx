@@ -76,13 +76,13 @@ export default function FlashcardsPage() {
 
     try {
       if (isOnline) {
-        await api.delete(`/flashcards/decks/${deckId}`)
+        await api.delete(`/flashcards/decks/${encodeURIComponent(deckId)}`)
       } else {
         // Queue pour sync offline
         await syncService.queueAction(
           STORES.FLASHCARD_DECKS,
           'delete',
-          `/api/v1/flashcards/decks/${deckId}`,
+          `/api/v1/flashcards/decks/${encodeURIComponent(deckId)}`,
           'DELETE',
           { id: deckId }
         )
