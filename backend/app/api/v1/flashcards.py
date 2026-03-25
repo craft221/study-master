@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
@@ -5,6 +6,8 @@ from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from pydantic import BaseModel, Field
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.datetime_utils import utc_now
@@ -119,7 +122,7 @@ async def list_flashcard_decks(
     return decks_response
 
 
-@router.get("/decks/{deck_name:path}")
+@router.get("/decks/{deck_name}")
 async def get_flashcard_deck(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
@@ -243,7 +246,7 @@ async def get_flashcard_deck(
     }
 
 
-@router.post("/decks/{deck_name:path}/cards", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/decks/{deck_name}/cards", response_model=FlashcardResponse, status_code=status.HTTP_201_CREATED)
 async def add_card_to_deck(
     deck_name: str,
     card_data: dict,
@@ -335,13 +338,15 @@ async def add_card_to_deck(
     return new_flashcard
 
 
-@router.delete("/decks/{deck_name:path}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/decks/{deck_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_deck(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Supprimer un deck et toutes ses cartes"""
+
+    logger.info(f"[DELETE DECK] user={current_user.id}, deck_name='{deck_name}' (repr: {repr(deck_name)})")
 
     # Chercher le FlashcardDeck (table) correspondant
     deck_obj = None
@@ -355,6 +360,7 @@ async def delete_deck(
             )
         )
         deck_obj = deck_result.scalar_one_or_none()
+        logger.info(f"[DELETE DECK] FlashcardDeck found: {deck_obj is not None} (id={deck_obj.id if deck_obj else 'N/A'})")
 
     # Récupérer toutes les flashcards du deck
     # Cas spécial: "Sans deck" correspond aux cartes avec deck_name NULL
@@ -382,8 +388,18 @@ async def delete_deck(
         )
     )
     cards = result.scalars().all()
+    logger.info(f"[DELETE DECK] Cards found: {len(cards)}")
 
     if not cards:
+        # Lister tous les deck_name et deck_id de l'utilisateur pour debug
+        all_cards = await db.execute(
+            select(Flashcard.deck_name, Flashcard.deck_id)
+            .where(Flashcard.user_id == current_user.id)
+            .distinct()
+        )
+        all_decks = all_cards.all()
+        logger.warning(f"[DELETE DECK] 404! Existing deck_names for user: {[(d.deck_name, d.deck_id) for d in all_decks]}")
+
         # Supprimer le FlashcardDeck vide (sans cartes) s'il existe
         if deck_obj:
             await db.delete(deck_obj)
@@ -392,7 +408,7 @@ async def delete_deck(
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Deck non trouvé"
+            detail=f"Deck non trouvé: '{deck_name}'"
         )
 
     # Récupérer le subject pour mettre à jour les stats
@@ -420,7 +436,7 @@ async def delete_deck(
     return None
 
 
-@router.get("/decks/{deck_name:path}/due")
+@router.get("/decks/{deck_name}/due")
 async def get_deck_due_cards(
     deck_name: str,
     current_user: User = Depends(get_current_active_user),
