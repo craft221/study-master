@@ -155,7 +155,7 @@ async def list_flashcard_decks(
             "last_reviewed_at": deck_data["last_reviewed_at"]
         })
 
-    logger.info(f"[LIST DECKS] user={current_user.id}, decks from cards: {list(decks_dict.keys())}, FlashcardDeck objects: {[(d.id, d.name) for d in all_deck_objects]}")
+    logger.warning(f"[LIST DECKS] user={current_user.id}, decks from cards: {list(decks_dict.keys())}, FlashcardDeck objects: {[(d.id, d.name) for d in all_deck_objects]}")
 
     return decks_response
 
@@ -384,7 +384,7 @@ async def delete_deck(
 ):
     """Supprimer un deck et toutes ses cartes"""
 
-    logger.info(f"[DELETE DECK] user={current_user.id}, deck_name='{deck_name}' (repr: {repr(deck_name)})")
+    logger.warning(f"[DELETE DECK] user={current_user.id}, deck_name='{deck_name}' (repr: {repr(deck_name)})")
 
     # Chercher le FlashcardDeck (table) correspondant
     deck_obj = None
@@ -394,7 +394,7 @@ async def delete_deck(
             select(FlashcardDeck).where(FlashcardDeck.user_id == current_user.id)
         )
         all_fd = all_fd_result.scalars().all()
-        logger.info(f"[DELETE DECK] All FlashcardDecks for user: {[(d.id, repr(d.name)) for d in all_fd]}")
+        logger.warning(f"[DELETE DECK] All FlashcardDecks for user: {[(d.id, repr(d.name)) for d in all_fd]}")
 
         # Chercher par nom exact
         for d in all_fd:
@@ -409,7 +409,7 @@ async def delete_deck(
                     deck_obj = d
                     break
 
-        logger.info(f"[DELETE DECK] FlashcardDeck found: {deck_obj is not None} (id={deck_obj.id if deck_obj else 'N/A'})")
+        logger.warning(f"[DELETE DECK] FlashcardDeck found: {deck_obj is not None} (id={deck_obj.id if deck_obj else 'N/A'})")
 
     # Récupérer toutes les flashcards du deck
     # Cas spécial: "Sans deck" correspond aux cartes avec deck_name NULL
@@ -437,7 +437,7 @@ async def delete_deck(
         )
     )
     cards = result.scalars().all()
-    logger.info(f"[DELETE DECK] Cards found: {len(cards)}")
+    logger.warning(f"[DELETE DECK] Cards found: {len(cards)}")
 
     if not cards:
         # Lister tous les deck_name et deck_id de l'utilisateur pour debug
@@ -451,7 +451,7 @@ async def delete_deck(
 
         # Supprimer le FlashcardDeck vide (sans cartes) s'il existe
         if deck_obj:
-            logger.info(f"[DELETE DECK] Deleting empty FlashcardDeck id={deck_obj.id}")
+            logger.warning(f"[DELETE DECK] Deleting empty FlashcardDeck id={deck_obj.id}")
             await db.delete(deck_obj)
             await db.commit()
             return None
@@ -468,14 +468,14 @@ async def delete_deck(
             )
             similar_decks = like_result.scalars().all()
             if similar_decks:
-                logger.info(f"[DELETE DECK] Found similar FlashcardDecks by LIKE: {[(d.id, repr(d.name)) for d in similar_decks]}")
+                logger.warning(f"[DELETE DECK] Found similar FlashcardDecks by LIKE: {[(d.id, repr(d.name)) for d in similar_decks]}")
                 for d in similar_decks:
                     await db.delete(d)
                 await db.commit()
                 return None
 
         # Deck n'existe nulle part -> retourner 204 (idempotent delete)
-        logger.info(f"[DELETE DECK] Deck not found anywhere, returning 204 (idempotent)")
+        logger.warning(f"[DELETE DECK] Deck not found anywhere, returning 204 (idempotent)")
         return None
 
     # Récupérer le subject pour mettre à jour les stats
