@@ -177,7 +177,7 @@ export function useOfflineDecks() {
   return useOfflineData(
     async () => {
       const { default: api } = await import('@/lib/api')
-      const response = await api.get('/flashcards/decks/')
+      const response = await api.get('/flashcards/decks')
       return response.data.decks || response.data
     },
     async () => offlineStorage.getDecks(),

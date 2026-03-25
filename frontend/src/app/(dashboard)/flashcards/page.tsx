@@ -90,6 +90,21 @@ export default function FlashcardsPage() {
       // Mettre à jour le cache offline avec la liste sans le deck supprimé
       const updatedDecks = decks.filter(d => d.id !== deckId)
       try { await offlineStorage.saveDecks(updatedDecks) } catch {}
+      // Invalider le cache du Service Worker pour les decks
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys()
+          for (const name of cacheNames) {
+            const cache = await caches.open(name)
+            const keys = await cache.keys()
+            for (const key of keys) {
+              if (key.url.includes('/flashcards/decks')) {
+                await cache.delete(key)
+              }
+            }
+          }
+        } catch {}
+      }
       toast.success(isOnline ? t('flashcardsPage.deckDeleted') : t('flashcardsPage.deckDeletedSync'))
     } catch (error) {
       // Rollback en cas d'erreur
