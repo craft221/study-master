@@ -61,42 +61,78 @@ async def list_flashcard_decks(
     )
     all_flashcards = result.scalars().all()
 
-    # Grouper par deck_name (résoudre via deck relation si deck_name est null)
+    # Aussi récupérer les FlashcardDeck (table) de l'utilisateur
+    deck_table_result = await db.execute(
+        select(FlashcardDeck)
+        .where(FlashcardDeck.user_id == current_user.id)
+        .options(selectinload(FlashcardDeck.flashcards))
+    )
+    all_deck_objects = deck_table_result.scalars().all()
+    # Index des FlashcardDeck par id pour lookup rapide
+    deck_objects_by_id = {d.id: d for d in all_deck_objects}
+    deck_objects_by_name = {d.name: d for d in all_deck_objects}
+
+    # Grouper les cartes par deck (résoudre via deck relation si deck_name est null)
     decks_dict = {}
+    seen_deck_obj_ids = set()  # Track des FlashcardDeck déjà vus via les cartes
+
     for card in all_flashcards:
         # Résoudre le nom du deck: deck_name legacy > FlashcardDeck.name > "Sans deck"
         deck_name = card.deck_name or (card.deck.name if card.deck else None) or "Sans deck"
+
+        # Tracker le FlashcardDeck associé
+        if card.deck_id:
+            seen_deck_obj_ids.add(card.deck_id)
 
         if deck_name not in decks_dict:
             decks_dict[deck_name] = {
                 "cards": [],
                 "subject_id": card.subject_id,
-                "subject": card.subject,  # Déjà chargé via selectinload
+                "subject": card.subject,
                 "created_at": card.created_at,
                 "last_reviewed_at": card.last_reviewed_at
             }
 
         decks_dict[deck_name]["cards"].append(card)
 
-        # Mettre à jour la date de dernière révision
         if card.last_reviewed_at:
             if not decks_dict[deck_name]["last_reviewed_at"] or card.last_reviewed_at > decks_dict[deck_name]["last_reviewed_at"]:
                 decks_dict[deck_name]["last_reviewed_at"] = card.last_reviewed_at
 
-    # Construire la réponse (plus de N+1 queries!)
+    # Ajouter les FlashcardDeck qui n'ont PAS de cartes (ou dont les cartes n'ont pas été trouvées)
+    for deck_obj in all_deck_objects:
+        if deck_obj.id not in seen_deck_obj_ids and deck_obj.name not in decks_dict:
+            # Deck de la table flashcard_decks sans cartes associées
+            # Vérifier s'il a des cartes via la relation
+            deck_cards = [c for c in deck_obj.flashcards if c.user_id == current_user.id]
+            if deck_cards:
+                # Il a des cartes via deck_id, les ajouter
+                decks_dict[deck_obj.name] = {
+                    "cards": deck_cards,
+                    "subject_id": deck_obj.subject_id,
+                    "subject": deck_cards[0].subject if deck_cards else None,
+                    "created_at": deck_obj.created_at,
+                    "last_reviewed_at": max((c.last_reviewed_at for c in deck_cards if c.last_reviewed_at), default=None)
+                }
+            else:
+                # Deck vide - l'inclure quand même pour que l'utilisateur puisse le supprimer
+                decks_dict[deck_obj.name] = {
+                    "cards": [],
+                    "subject_id": deck_obj.subject_id,
+                    "subject": None,
+                    "created_at": deck_obj.created_at,
+                    "last_reviewed_at": None
+                }
+
+    # Construire la réponse
+    now = utc_now()
     decks_response = []
     for deck_name, deck_data in decks_dict.items():
         cards = deck_data["cards"]
         total_cards = len(cards)
-
-        # Calculer les cartes à réviser (cards_due)
-        now = utc_now()
         cards_due = sum(1 for card in cards if not card.next_review_at or card.next_review_at <= now)
-
-        # Calculer les cartes maîtrisées (mastery >= 80%)
         mastered_cards = sum(1 for card in cards if card.mastery_percentage >= 80)
 
-        # Subject déjà chargé
         subject = None
         subject_obj = deck_data["subject"]
         if subject_obj:
@@ -118,6 +154,8 @@ async def list_flashcard_decks(
             "created_at": deck_data["created_at"],
             "last_reviewed_at": deck_data["last_reviewed_at"]
         })
+
+    logger.info(f"[LIST DECKS] user={current_user.id}, decks from cards: {list(decks_dict.keys())}, FlashcardDeck objects: {[(d.id, d.name) for d in all_deck_objects]}")
 
     return decks_response
 
