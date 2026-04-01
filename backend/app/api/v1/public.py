@@ -352,6 +352,9 @@ async def submit_guest_quiz(
     attempt.is_completed = True
     attempt.completed_at = utc_now()
 
+    # Flush pour que les requêtes de comptage voient le joueur actuel
+    await db.flush()
+
     # Calculer le rang (guests + registered users)
     guest_better = await db.execute(
         select(func.count()).select_from(GuestQuizAttempt).where(
@@ -396,6 +399,10 @@ async def submit_guest_quiz(
     total_players = (guest_total.scalar() or 0) + (registered_total.scalar() or 0)
     if total_players < 1:
         total_players = 1
+
+    # Garantir la cohérence: rank ne peut pas dépasser total_players
+    if rank > total_players:
+        rank = total_players
 
     # Incrémenter total_plays à la complétion (pas au start)
     quiz.total_plays = (quiz.total_plays or 0) + 1
@@ -720,6 +727,10 @@ async def get_share_card_data(
     total_players = (guest_total.scalar() or 0) + (registered_total.scalar() or 0)
     if total_players < 1:
         total_players = 1
+
+    # Garantir la cohérence: rank ne peut pas dépasser total_players
+    if rank > total_players:
+        rank = total_players
 
     # Déterminer la performance
     score = attempt.score if attempt.score is not None else 0
