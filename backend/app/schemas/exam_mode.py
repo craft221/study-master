@@ -252,14 +252,14 @@ class StartTaskRequest(BaseModel):
 
 class CompleteTaskRequest(BaseModel):
     """Terminer une tâche"""
-    task_id: int
+    task_id: Optional[int] = None  # Optionnel car déjà dans l'URL path
     score: Optional[float] = Field(None, ge=0, le=100, description="Score obtenu (%)")
     actual_minutes: Optional[int] = Field(None, ge=0, description="Durée réelle (minutes)")
 
 
 class SkipTaskRequest(BaseModel):
     """Passer une tâche"""
-    task_id: int
+    task_id: Optional[int] = None  # Optionnel car déjà dans l'URL path
     reason: Optional[str] = None
 
 

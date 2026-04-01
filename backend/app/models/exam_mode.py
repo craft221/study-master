@@ -143,7 +143,7 @@ class ExamSession(Base):
     def days_until_exam(self) -> int:
         """Nombre de jours avant l'examen"""
         if isinstance(self.exam_date, date):
-            return (self.exam_date - date.today()).days
+            return (self.exam_date - utc_now().date()).days
         return 0
 
     @property
@@ -229,17 +229,17 @@ class StudyDay(Base):
     @property
     def is_today(self) -> bool:
         """Est-ce aujourd'hui?"""
-        return self.study_date == date.today()
+        return self.study_date == utc_now().date()
 
     @property
     def is_past(self) -> bool:
         """Ce jour est-il passé?"""
-        return self.study_date < date.today()
+        return self.study_date < utc_now().date()
 
     @property
     def is_future(self) -> bool:
         """Ce jour est-il dans le futur?"""
-        return self.study_date > date.today()
+        return self.study_date > utc_now().date()
 
     def calculate_progress(self) -> float:
         """Pourcentage de progression du jour"""

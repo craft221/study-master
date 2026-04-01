@@ -535,6 +535,7 @@ class ExamModeService:
         practice_day_counter = 0
 
         for day_num, study_date in enumerate(study_dates, 1):
+            day_notes = []  # Initialiser pour éviter NameError
             is_last_day = day_num == num_days
             # ===== NOUVEAU: Utiliser les jours de révision FSRS =====
             is_review_day = day_num in fsrs_review_day_numbers
@@ -572,6 +573,7 @@ class ExamModeService:
                 day_number=day_num,
                 study_date=study_date,
                 title=title,
+                note_ids=[n.id for n in day_notes] if day_notes else [],
                 is_review_day=is_review_day,
                 is_practice_exam_day=is_practice_day,
                 is_rest_day=is_rest,
@@ -860,8 +862,13 @@ class ExamModeService:
         if actual_minutes:
             study_day.actual_minutes += actual_minutes
 
-        # Vérifier si le jour est terminé
-        if study_day.tasks_completed >= study_day.tasks_total:
+        # Vérifier si le jour est terminé (toutes tâches completed ou skipped)
+        day_tasks = await self._get_day_tasks(db, study_day.id)
+        all_done = all(
+            t.status in (StudyTaskStatus.COMPLETED, StudyTaskStatus.SKIPPED)
+            for t in day_tasks
+        )
+        if all_done and not study_day.is_completed:
             study_day.is_completed = True
             study_day.completed_at = utc_now()
 
@@ -928,6 +935,17 @@ class ExamModeService:
         task.status = StudyTaskStatus.SKIPPED
         if reason:
             task.extra_data = {"skip_reason": reason}
+
+        # Vérifier si le jour est terminé (toutes tâches completed ou skipped)
+        study_day = task.study_day
+        day_tasks = await self._get_day_tasks(db, study_day.id)
+        all_done = all(
+            t.status in (StudyTaskStatus.COMPLETED, StudyTaskStatus.SKIPPED)
+            for t in day_tasks
+        )
+        if all_done and not study_day.is_completed:
+            study_day.is_completed = True
+            study_day.completed_at = utc_now()
 
         await db.commit()
         return task

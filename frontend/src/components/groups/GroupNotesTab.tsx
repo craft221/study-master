@@ -52,19 +52,25 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [notesData, myNotesData] = await Promise.all([
+      const [notesResult, myNotesResult] = await Promise.allSettled([
         getSharedNotes(groupId),
-        api.get('/notes', { params: { page: 1, page_size: 100 } })
+        api.get('/notes/', { params: { page: 1, page_size: 100 } })
       ])
-      setSharedNotes(notesData)
-      setMyNotes(myNotesData.data.notes || [])
+
+      if (notesResult.status === 'fulfilled') {
+        setSharedNotes(notesResult.value)
+      } else {
+        console.error('Error fetching shared notes:', notesResult.reason)
+      }
+
+      if (myNotesResult.status === 'fulfilled') {
+        const data = myNotesResult.value.data
+        setMyNotes(data?.notes || [])
+      } else {
+        console.error('Error fetching my notes:', myNotesResult.reason)
+      }
     } catch (error: any) {
       console.error('Error fetching notes:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les notes',
-        variant: 'destructive'
-      })
     } finally {
       setLoading(false)
     }
@@ -188,11 +194,17 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
                   <SelectValue placeholder="Choisir une note" />
                 </SelectTrigger>
                 <SelectContent>
-                  {myNotes.map((note) => (
-                    <SelectItem key={note.id} value={note.id.toString()}>
-                      {note.title}
-                    </SelectItem>
-                  ))}
+                  {myNotes.length === 0 ? (
+                    <div className="py-3 px-2 text-sm text-muted-foreground text-center">
+                      Aucune note trouvée. Créez d&apos;abord une note.
+                    </div>
+                  ) : (
+                    myNotes.map((note) => (
+                      <SelectItem key={note.id} value={note.id.toString()}>
+                        {note.title}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <Button

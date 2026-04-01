@@ -15,6 +15,7 @@ Modèle: Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 import json
 import logging
 from datetime import date, timedelta
+from app.core.datetime_utils import utc_now
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -109,28 +110,39 @@ class ExamModeAIService:
                 title=f"Quiz - {note_title}",
                 description=f"Quiz généré pour la préparation: {exam_session.exam_name}",
                 subject_id=exam_session.subject_id,
-                note_id=task.note_id,
+                source_note_id=task.note_id,
                 is_ai_generated=True,
-                ai_difficulty=difficulty,
-                time_limit=question_count * 2,  # 2 min par question
+                difficulty=difficulty,
+                time_limit_minutes=question_count * 2,  # 2 min par question
+                questions_data=[],  # Will be populated via QuizQuestion relation
             )
             db.add(quiz)
             await db.flush()
 
-            # Ajouter les questions
+            # Ajouter les questions et construire questions_data
+            questions_data_list = []
             for idx, q_data in enumerate(quiz_data.get("questions", [])):
                 question = QuizQuestion(
                     quiz_id=quiz.id,
                     question=q_data.get("question", ""),
-                    question_type=QuestionType(q_data.get("type", "multiple_choice")),
+                    question_type=q_data.get("type", "multiple_choice"),
                     options=q_data.get("options", []),
                     correct_answer=str(q_data.get("correct_answer", "")),
-                    expected_answer=q_data.get("expected_answer"),
                     explanation=q_data.get("explanation", ""),
                     points=q_data.get("points", 10),
                     order=idx + 1,
                 )
                 db.add(question)
+                # Aussi stocker dans questions_data pour l'API publique
+                questions_data_list.append({
+                    "question": q_data.get("question", ""),
+                    "type": q_data.get("type", "multiple_choice"),
+                    "options": q_data.get("options", []),
+                    "correct_answer": str(q_data.get("correct_answer", "")),
+                    "explanation": q_data.get("explanation", ""),
+                    "points": q_data.get("points", 10),
+                })
+            quiz.questions_data = questions_data_list
 
             # Lier le quiz à la tâche
             task.quiz_id = quiz.id
@@ -189,11 +201,12 @@ class ExamModeAIService:
             # Créer le deck
             deck = FlashcardDeck(
                 user_id=user.id,
-                title=f"Flashcards - {note_title}",
+                name=f"Flashcards - {note_title}",
                 description=f"Flashcards pour: {exam_session.exam_name}",
                 subject_id=exam_session.subject_id,
                 note_id=task.note_id,
                 is_ai_generated=True,
+                card_count=len(flashcards_data),
             )
             db.add(deck)
             await db.flush()
@@ -202,13 +215,15 @@ class ExamModeAIService:
             for idx, card_data in enumerate(flashcards_data):
                 card = Flashcard(
                     deck_id=deck.id,
+                    deck_name=f"Flashcards - {note_title}",
                     user_id=user.id,
+                    subject_id=exam_session.subject_id,
+                    source_note_id=task.note_id,
                     front=card_data.get("front", ""),
                     back=card_data.get("back", ""),
                     hint=card_data.get("hint"),
                     explanation=card_data.get("explanation"),
-                    difficulty=difficulty,
-                    order=idx + 1,
+                    is_ai_generated=True,
                 )
                 db.add(card)
 
@@ -1003,7 +1018,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON valide, adapté au profil UNIQUE de 
         new_tasks = []
 
         # Récupérer les jours futurs
-        today = date.today()
+        today = utc_now().date()
         query = select(StudyDay).where(
             StudyDay.exam_session_id == session.id,
             StudyDay.study_date > today,
@@ -1353,20 +1368,22 @@ IMPORTANT:
                 description=f"Examen blanc complet - {duration_minutes} minutes",
                 subject_id=session.subject_id,
                 is_ai_generated=True,
-                ai_difficulty=session.difficulty_level.value,
-                time_limit=duration_minutes,
-                is_practice_exam=True,
+                difficulty=session.difficulty_level.value,
+                time_limit_minutes=duration_minutes,
+                quiz_type="exam",
+                questions_data=[],
             )
             db.add(quiz)
             await db.flush()
 
             # Ajouter les questions
+            questions_data_list = []
             for idx, q_data in enumerate(exam_data.get("questions", [])):
                 q_type = q_data.get("type", "multiple_choice")
                 question = QuizQuestion(
                     quiz_id=quiz.id,
                     question=q_data.get("question", ""),
-                    question_type=QuestionType(q_type) if q_type in ["multiple_choice", "true_false", "short_answer"] else QuestionType.MULTIPLE_CHOICE,
+                    question_type=q_type if q_type in ["multiple_choice", "true_false", "short_answer"] else "multiple_choice",
                     options=q_data.get("options", []),
                     correct_answer=str(q_data.get("correct_answer", "")),
                     explanation=q_data.get("explanation", ""),
@@ -1374,6 +1391,15 @@ IMPORTANT:
                     order=idx + 1,
                 )
                 db.add(question)
+                questions_data_list.append({
+                    "question": q_data.get("question", ""),
+                    "type": q_type if q_type in ["multiple_choice", "true_false", "short_answer"] else "multiple_choice",
+                    "options": q_data.get("options", []),
+                    "correct_answer": str(q_data.get("correct_answer", "")),
+                    "explanation": q_data.get("explanation", ""),
+                    "points": q_data.get("points", 5),
+                })
+            quiz.questions_data = questions_data_list
 
             await db.commit()
             logger.info(f"Generated practice exam {quiz.id} for session {session.id}")
@@ -1409,7 +1435,7 @@ IMPORTANT:
             # Chercher un quiz existant
             quiz_query = select(Quiz).where(
                 Quiz.user_id == user.id,
-                Quiz.note_id == task.note_id
+                Quiz.source_note_id == task.note_id
             ).order_by(Quiz.created_at.desc())
             quiz_result = await db.execute(quiz_query)
             existing_quiz = quiz_result.scalar_one_or_none()
@@ -1434,7 +1460,7 @@ IMPORTANT:
                 task.flashcard_deck_id = existing_deck.id
                 linked["flashcard_deck"] = {
                     "id": existing_deck.id,
-                    "title": existing_deck.title,
+                    "title": existing_deck.name,
                     "source": "existing"
                 }
 
@@ -1455,7 +1481,7 @@ IMPORTANT:
             if deck:
                 linked["flashcard_deck"] = {
                     "id": deck.id,
-                    "title": deck.title,
+                    "title": deck.name,
                     "source": "ai_generated"
                 }
                 linked["generated"] = True

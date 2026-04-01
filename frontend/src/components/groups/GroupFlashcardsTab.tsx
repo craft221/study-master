@@ -58,19 +58,25 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [decksData, myDecksData] = await Promise.all([
+      const [decksResult, myDecksResult] = await Promise.allSettled([
         getSharedFlashcards(groupId),
-        api.get('/flashcards/decks')
+        api.get('/flashcards/decks/')
       ])
-      setSharedDecks(decksData)
-      setMyDecks(myDecksData.data)
+
+      if (decksResult.status === 'fulfilled') {
+        setSharedDecks(decksResult.value)
+      } else {
+        console.error('Error fetching shared flashcards:', decksResult.reason)
+      }
+
+      if (myDecksResult.status === 'fulfilled') {
+        const data = myDecksResult.value.data
+        setMyDecks(Array.isArray(data) ? data : data?.decks || [])
+      } else {
+        console.error('Error fetching my decks:', myDecksResult.reason)
+      }
     } catch (error: any) {
       console.error('Error fetching flashcards:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les flashcards',
-        variant: 'destructive'
-      })
     } finally {
       setLoading(false)
     }

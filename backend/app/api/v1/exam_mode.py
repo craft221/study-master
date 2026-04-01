@@ -17,7 +17,7 @@ from app.core.database import get_db
 from app.core.datetime_utils import utc_now
 from app.core.security import get_current_user
 from app.models.user import User, SubscriptionType
-from app.models.exam_mode import ExamSession, ExamSessionStatus, StudyDay, StudyTask
+from app.models.exam_mode import ExamSession, ExamSessionStatus, StudyDay, StudyTask, StudyTaskType
 from app.schemas.exam_mode import (
     ExamSessionCreate, ExamSessionUpdate,
     ExamSessionResponse, ExamSessionDetailResponse, ExamSessionListResponse,
@@ -646,12 +646,13 @@ async def generate_task_content(
     # Récupérer la langue de l'utilisateur
     user_lang = current_user.language if hasattr(current_user, 'language') else "fr"
 
-    # D'abord essayer de lier les ressources existantes (sans consommer de quota)
-    linked = await exam_mode_ai_service.link_existing_resources(db, task, current_user, lang=user_lang)
-
-    # Ne consommer le quota IA QUE si une génération IA a été effectuée
+    # Vérifier le quota AVANT la génération pour éviter de consommer l'IA gratuitement
     remaining = None
-    if linked.get("generated", False):
+    needs_generation = (
+        (task.task_type == StudyTaskType.QUIZ and not task.quiz_id) or
+        (task.task_type == StudyTaskType.FLASHCARDS and not task.flashcard_deck_id)
+    )
+    if needs_generation:
         can_use, remaining = await check_and_increment_ai_quota(
             user_id=current_user.id,
             subscription_type=current_user.subscription_type,
@@ -660,6 +661,9 @@ async def generate_task_content(
         if not can_use:
             max_requests = get_max_requests(current_user.subscription_type)
             raise_quota_exceeded_error(current_user.subscription_type, max_requests)
+
+    # Lier les ressources existantes ou générer avec IA
+    linked = await exam_mode_ai_service.link_existing_resources(db, task, current_user, lang=user_lang)
 
     return {
         "success": True,

@@ -324,24 +324,68 @@ export default function ExamModePage() {
   const handleStartTask = async (taskId: number) => {
     setActionLoading(prev => new Set(prev).add(taskId))
     try {
+      const task = activeSession?.today_tasks.find(t => t.id === taskId)
+
       if (isOnline) {
-        await examModeService.startTask(taskId)
+        // 1. Marquer la tâche comme en cours
+        const startedTask = await examModeService.startTask(taskId)
+
+        // 2. Naviguer vers l'activité appropriée
+        const taskType = task?.task_type || startedTask.task_type
+        let quizId = task?.quiz_id ?? startedTask.quiz_id
+        let deckId = task?.flashcard_deck_id ?? startedTask.flashcard_deck_id
+        const noteId = task?.note_id ?? startedTask.note_id
+
+        // Pour quiz/flashcards: générer le contenu si pas encore créé
+        if ((taskType === 'quiz' || taskType === 'practice_exam') && !quizId) {
+          try {
+            toast({ title: 'Génération du quiz en cours...' })
+            const generated = await examModeService.generateTaskContent(taskId)
+            if (generated.quiz) {
+              quizId = generated.quiz.id
+            }
+          } catch {
+            toast({ title: 'Impossible de générer le quiz', variant: 'destructive' })
+          }
+        } else if (taskType === 'flashcards' && !deckId) {
+          try {
+            toast({ title: 'Génération des flashcards en cours...' })
+            const generated = await examModeService.generateTaskContent(taskId)
+            if (generated.flashcard_deck) {
+              deckId = generated.flashcard_deck.id
+            }
+          } catch {
+            toast({ title: 'Impossible de générer les flashcards', variant: 'destructive' })
+          }
+        }
+
+        // 3. Naviguer vers la page appropriée
+        if ((taskType === 'quiz' || taskType === 'practice_exam') && quizId) {
+          router.push(`/quizzes/${quizId}`)
+          return
+        } else if (taskType === 'flashcards' && deckId) {
+          router.push(`/flashcards/${deckId}/review`)
+          return
+        } else if (noteId && (taskType === 'read' || taskType === 'review' || taskType === 'summary' || taskType === 'weak_points')) {
+          router.push(`/notes/${noteId}`)
+          return
+        }
+
+        // Fallback: rester sur la page si pas de destination
         toast({ title: t('exam_mode.task_started') || 'Tâche démarrée !' })
+        await fetchData()
       } else {
         // Mode offline: mise à jour optimiste locale
         if (activeSession) {
-          const updatedTasks = activeSession.today_tasks.map(task =>
-            task.id === taskId ? { ...task, status: 'in_progress' as StudyTaskStatus } : task
+          const updatedTasks = activeSession.today_tasks.map(t =>
+            t.id === taskId ? { ...t, status: 'in_progress' as StudyTaskStatus } : t
           )
           setActiveSession({ ...activeSession, today_tasks: updatedTasks })
 
-          // Sauvegarder dans IndexedDB
-          const task = activeSession.today_tasks.find(t => t.id === taskId)
           if (task) {
             await offlineStorage.saveExamTask({ ...task, status: 'in_progress' })
           }
 
-          // Queue pour sync
           await syncService.queueAction(
             STORES.EXAM_TASKS,
             'update',
@@ -352,7 +396,6 @@ export default function ExamModePage() {
         }
         toast({ title: t('exam_mode.task_started') || 'Tâche démarrée (sera synchronisée)' })
       }
-      if (isOnline) await fetchData()
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
     } finally {
@@ -374,7 +417,7 @@ export default function ExamModePage() {
         // Mode offline: mise à jour optimiste locale
         if (activeSession) {
           const updatedTasks = activeSession.today_tasks.map(task =>
-            task.id === taskId ? { ...task, status: 'completed' as StudyTaskStatus, score } : task
+            task.id === taskId ? { ...task, status: 'completed' as StudyTaskStatus, achieved_score: score ?? null } : task
           )
           setActiveSession({
             ...activeSession,
@@ -385,7 +428,7 @@ export default function ExamModePage() {
           // Sauvegarder dans IndexedDB
           const task = activeSession.today_tasks.find(t => t.id === taskId)
           if (task) {
-            await offlineStorage.saveExamTask({ ...task, status: 'completed', score })
+            await offlineStorage.saveExamTask({ ...task, status: 'completed', achieved_score: score ?? null })
           }
 
           // Queue pour sync
@@ -573,6 +616,10 @@ export default function ExamModePage() {
         title: t('exam_mode.practice_exam_generated') || 'Examen blanc généré !',
         description: `${result.question_count} questions - ${result.duration_minutes} minutes`
       })
+      // Naviguer vers le quiz généré
+      if (result.quiz_id) {
+        router.push(`/quizzes/${result.quiz_id}`)
+      }
     } catch (error: any) {
       toast({
         title: t('common.error'),
@@ -755,9 +802,14 @@ export default function ExamModePage() {
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                      {activeSession.days_until_exam <= 3 && (
+                      {activeSession.days_until_exam <= 3 && activeSession.days_until_exam >= 0 && (
                         <Badge variant="destructive" className="animate-pulse text-xs px-1.5 sm:px-2">
                           J-{activeSession.days_until_exam}
+                        </Badge>
+                      )}
+                      {activeSession.days_until_exam < 0 && (
+                        <Badge variant="destructive" className="text-xs px-1.5 sm:px-2">
+                          Passé
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-xs px-1.5 sm:px-2">
@@ -782,7 +834,7 @@ export default function ExamModePage() {
                   {/* Stats grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                     <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
-                      <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{activeSession.days_until_exam}</div>
+                      <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{Math.max(0, activeSession.days_until_exam)}</div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.days_left') || 'Jours'}</div>
                     </div>
                     <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
@@ -1274,7 +1326,7 @@ export default function ExamModePage() {
                         <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.progress') || 'Progrès'}</div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{aiSummary.days_until_exam}</div>
+                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{Math.max(0, aiSummary.days_until_exam)}</div>
                         <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.days_left') || 'Jours'}</div>
                       </div>
                     </div>

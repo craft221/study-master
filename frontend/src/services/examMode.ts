@@ -383,7 +383,7 @@ export const examModeService = {
       ...data,
       exam_time: data.exam_time || null,
       exam_description: data.exam_description || null,
-      subject_id: data.subject_id || null,
+      subject_id: data.subject_id ?? null,
     }
     const response = await api.post('/exam-mode/', cleanData)
     return response.data

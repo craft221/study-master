@@ -52,19 +52,32 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [quizzesData, myQuizzesData] = await Promise.all([
+
+      // Charger les quiz partagés et mes quiz séparément pour éviter qu'un échec bloque l'autre
+      const [quizzesResult, myQuizzesResult] = await Promise.allSettled([
         getSharedQuizzes(groupId),
-        api.get('/quizzes', { params: { page: 1, page_size: 100 } })
+        api.get('/quizzes/', { params: { page: 1, page_size: 100 } })
       ])
-      setSharedQuizzes(quizzesData)
-      setMyQuizzes(Array.isArray(myQuizzesData.data) ? myQuizzesData.data : myQuizzesData.data.quizzes || [])
+
+      if (quizzesResult.status === 'fulfilled') {
+        setSharedQuizzes(quizzesResult.value)
+      } else {
+        console.error('Error fetching shared quizzes:', quizzesResult.reason)
+      }
+
+      if (myQuizzesResult.status === 'fulfilled') {
+        const data = myQuizzesResult.value.data
+        setMyQuizzes(Array.isArray(data) ? data : data?.quizzes || [])
+      } else {
+        console.error('Error fetching my quizzes:', myQuizzesResult.reason)
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger vos quiz',
+          variant: 'destructive'
+        })
+      }
     } catch (error: any) {
       console.error('Error fetching quizzes:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les quiz',
-        variant: 'destructive'
-      })
     } finally {
       setLoading(false)
     }
@@ -188,14 +201,20 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
                   <SelectValue placeholder="Choisir un quiz" />
                 </SelectTrigger>
                 <SelectContent>
-                  {myQuizzes.map((quiz) => (
-                    <SelectItem key={quiz.id} value={quiz.id.toString()}>
-                      {quiz.title}
-                      <span className="text-xs text-gray-500 ml-2">
-                        ({quiz.total_questions} questions)
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {myQuizzes.length === 0 ? (
+                    <div className="py-3 px-2 text-sm text-muted-foreground text-center">
+                      Aucun quiz trouvé. Créez d&apos;abord un quiz.
+                    </div>
+                  ) : (
+                    myQuizzes.map((quiz) => (
+                      <SelectItem key={quiz.id} value={quiz.id.toString()}>
+                        {quiz.title}
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({quiz.total_questions} questions)
+                        </span>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <Button
