@@ -325,7 +325,10 @@ async def submit_guest_quiz(
 
         question = quiz.questions_data[question_id]
         correct_answer = question.get("correct_answer", "")
-        is_correct = user_answer.user_answer.strip().lower() == correct_answer.strip().lower()
+        # Convertir en string pour comparaison (correct_answer peut être bool, int, etc.)
+        correct_str = str(correct_answer).strip().lower()
+        user_str = str(user_answer.user_answer).strip().lower()
+        is_correct = user_str == correct_str
 
         if is_correct:
             correct_count += 1
