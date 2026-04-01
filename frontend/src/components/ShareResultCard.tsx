@@ -179,9 +179,9 @@ const ShareResultCard: React.FC<ShareResultCardProps> = ({
 
               {/* Score principal */}
               <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center mb-4">
-                <p className="text-5xl font-black">{cardData.score}%</p>
+                <p className="text-5xl font-black">{Math.round(cardData.score ?? 0)}%</p>
                 <p className="text-sm opacity-80 mt-1">
-                  {cardData.correct_count}/{cardData.total_questions} bonnes reponses
+                  {cardData.correct_count ?? 0}/{cardData.total_questions ?? 0} bonnes reponses
                 </p>
               </div>
 
@@ -189,11 +189,11 @@ const ShareResultCard: React.FC<ShareResultCardProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <div>
                   <p className="opacity-70">Joueur</p>
-                  <p className="font-bold">{cardData.player_name}</p>
+                  <p className="font-bold">{cardData.player_name || 'Anonyme'}</p>
                 </div>
                 <div className="text-right">
                   <p className="opacity-70">Classement</p>
-                  <p className="font-bold">#{cardData.rank} / {cardData.total_players}</p>
+                  <p className="font-bold">#{cardData.rank ?? 1} / {cardData.total_players ?? 1}</p>
                 </div>
               </div>
 

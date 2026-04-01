@@ -719,7 +719,7 @@ async def get_share_card_data(
         total_players = 1
 
     # Déterminer la performance
-    score = attempt.score
+    score = attempt.score if attempt.score is not None else 0
     if score >= 90:
         performance = "legendary"
         emoji = "🏆"
@@ -746,9 +746,9 @@ async def get_share_card_data(
             "player_name": attempt.guest_name,
             "quiz_title": quiz.title,
             "creator_name": creator.username if creator else "Anonyme",
-            "score": round(attempt.score, 1),
-            "correct_count": attempt.correct_count,
-            "total_questions": attempt.total_questions,
+            "score": round(score, 1),
+            "correct_count": attempt.correct_count or 0,
+            "total_questions": attempt.total_questions or 0,
             "rank": rank,
             "total_players": total_players,
             "time_taken_seconds": attempt.time_taken_seconds,
