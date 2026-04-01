@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileText, Share2, Trash2, Loader2, Plus } from 'lucide-react'
+import { FileText, Share2, Trash2, Loader2, Plus, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { getSharedNotes, shareNoteWithGroup, unshareNote, type SharedNote } from '@/services/groupContent'
+import { getSharedNotes, shareNoteWithGroup, unshareNote, copySharedNote, type SharedNote } from '@/services/groupContent'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,7 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
   const [selectedNoteId, setSelectedNoteId] = useState<string>('')
   const [sharing, setSharing] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [copying, setCopying] = useState<number | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -56,7 +57,7 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
         api.get('/notes', { params: { page: 1, page_size: 100 } })
       ])
       setSharedNotes(notesData)
-      setMyNotes(myNotesData.data.notes)
+      setMyNotes(myNotesData.data.notes || [])
     } catch (error: any) {
       console.error('Error fetching notes:', error)
       toast({
@@ -115,6 +116,27 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
         description: error.response?.data?.detail || 'Impossible de retirer la note',
         variant: 'destructive'
       })
+    }
+  }
+
+  const handleCopyNote = async (sharedNoteId: number, noteTitle: string) => {
+    try {
+      setCopying(sharedNoteId)
+      await copySharedNote(groupId, sharedNoteId)
+
+      toast({
+        title: 'Note copiée',
+        description: `"${noteTitle}" a été ajoutée à votre collection`,
+      })
+    } catch (error: any) {
+      console.error('Error copying note:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de copier la note',
+        variant: 'destructive'
+      })
+    } finally {
+      setCopying(null)
     }
   }
 
@@ -239,6 +261,26 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
                     >
                       Voir
                     </Button>
+                    {note.shared_by_user_id !== currentUserId && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCopyNote(note.id, note.note_title)}
+                        disabled={copying === note.id}
+                        className="flex-1 sm:flex-none"
+                      >
+                        {copying === note.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Copie...
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copier
+                          </>
+                        )}
+                      </Button>
+                    )}
                     {note.shared_by_user_id === currentUserId && (
                       <Button
                         size="sm"

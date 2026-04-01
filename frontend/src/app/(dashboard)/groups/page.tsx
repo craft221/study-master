@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import studyGroupsService, { StudyGroupInvitation } from '@/services/studyGroups'
@@ -316,13 +317,13 @@ export default function GroupsPage() {
                 <Label htmlFor="subject" className="text-sm">Matière (optionnel)</Label>
                 <Select
                   value={newGroup.subject_id?.toString() || ''}
-                  onValueChange={(value) => setNewGroup({ ...newGroup, subject_id: value ? parseInt(value) : null })}
+                  onValueChange={(value) => setNewGroup({ ...newGroup, subject_id: value && value !== 'none' ? parseInt(value) : null })}
                 >
                   <SelectTrigger id="subject" className="text-sm sm:text-base">
                     <SelectValue placeholder="Sélectionner une matière" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune matière</SelectItem>
+                    <SelectItem value="none">Aucune matière</SelectItem>
                     {subjects.map(subject => (
                       <SelectItem key={subject.id} value={subject.id.toString()}>
                         {subject.name}
@@ -605,6 +606,8 @@ export default function GroupsPage() {
                       <Link href={`/groups/${group.id}`}>
                         <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">Ouvrir</Button>
                       </Link>
+                    ) : group.is_private ? (
+                      <Badge variant="outline" className="text-xs">Privé</Badge>
                     ) : (
                       <Button
                         size="sm"

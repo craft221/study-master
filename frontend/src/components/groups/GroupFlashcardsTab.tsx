@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CreditCard, Share2, Copy, Loader2 } from 'lucide-react'
+import { CreditCard, Share2, Copy, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,7 @@ import {
   getSharedFlashcards,
   shareFlashcardsWithGroup,
   copySharedFlashcards,
+  unshareFlashcards,
   type SharedFlashcardDeck
 } from '@/services/groupContent'
 import {
@@ -126,6 +127,28 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
     }
   }
 
+  const handleUnshareDeck = async (sharedDeckId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir retirer ce deck ?')) return
+
+    try {
+      await unshareFlashcards(groupId, sharedDeckId)
+
+      toast({
+        title: 'Deck retiré',
+        description: 'Le deck a été retiré du groupe',
+      })
+
+      await fetchData()
+    } catch (error: any) {
+      console.error('Error unsharing deck:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de retirer le deck',
+        variant: 'destructive'
+      })
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: 'numeric',
@@ -236,24 +259,37 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
                     </div>
                   </div>
 
-                  <Button
-                    size="sm"
-                    onClick={() => handleCopyDeck(deck.id, deck.deck_name)}
-                    disabled={copying === deck.id}
-                    className="w-full sm:w-auto mt-2 sm:mt-0"
-                  >
-                    {copying === deck.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Copie...
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copier
-                      </>
+                  <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    {deck.shared_by_user_id !== currentUserId && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCopyDeck(deck.id, deck.deck_name)}
+                        disabled={copying === deck.id}
+                        className="flex-1 sm:flex-none"
+                      >
+                        {copying === deck.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Copie...
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copier
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                    {deck.shared_by_user_id === currentUserId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUnshareDeck(deck.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

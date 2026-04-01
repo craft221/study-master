@@ -473,7 +473,7 @@ async def get_public_leaderboard(
     for attempt in guest_attempts:
         all_scores.append({
             "name": attempt.guest_name,
-            "score": attempt.score,
+            "score": attempt.score if attempt.score is not None else 0,
             "correct_count": attempt.correct_count or 0,
             "is_registered": False,
             "completed_at": attempt.completed_at,
@@ -487,7 +487,8 @@ async def get_public_leaderboard(
         .where(
             and_(
                 QuizAttempt.quiz_id == quiz.id,
-                QuizAttempt.completed_at.isnot(None)
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score.isnot(None)
             )
         )
     )
@@ -496,11 +497,12 @@ async def get_public_leaderboard(
     for attempt, user in registered_attempts:
         # Calculer correct_count à partir du score si pas disponible
         total_q = len(quiz.questions_data or [])
-        correct_count = int((attempt.score / 100) * total_q) if total_q > 0 else 0
+        attempt_score = attempt.score if attempt.score is not None else 0
+        correct_count = int((attempt_score / 100) * total_q) if total_q > 0 else 0
 
         all_scores.append({
             "name": user.username,
-            "score": attempt.score,
+            "score": attempt_score,
             "correct_count": correct_count,
             "is_registered": True,
             "completed_at": attempt.completed_at,

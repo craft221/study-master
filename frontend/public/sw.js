@@ -193,6 +193,20 @@ async function handleApiRequest(request) {
     url.pathname.includes(route.replace('/api/v1', ''))
   );
 
+  // Forcer HTTPS si la page est en HTTPS (évite Mixed Content)
+  if (self.location.protocol === 'https:' && url.protocol === 'http:') {
+    url.protocol = 'https:';
+    request = new Request(url.toString(), {
+      method: request.method,
+      headers: request.headers,
+      body: request.method !== 'GET' ? request.body : undefined,
+      mode: request.mode,
+      credentials: request.credentials,
+      redirect: request.redirect,
+      referrer: request.referrer,
+    });
+  }
+
   try {
     const networkResponse = await fetch(request);
 

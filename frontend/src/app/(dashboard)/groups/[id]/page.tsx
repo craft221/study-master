@@ -121,7 +121,7 @@ export default function GroupDetailPage() {
     setInviteMessage('')
     try {
       const response = await api.get('/users/')
-      setAllUsers(response.data.users || [])
+      setAllUsers(Array.isArray(response.data) ? response.data : response.data.users || [])
     } catch (error) {
       console.error('Error fetching users:', error)
     }

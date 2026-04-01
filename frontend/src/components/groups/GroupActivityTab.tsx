@@ -16,15 +16,15 @@ export default function GroupActivityTab({ groupId }: GroupActivityTabProps) {
   const [activities, setActivities] = useState<GroupActivity[]>([])
 
   useEffect(() => {
-    fetchActivities()
+    fetchActivities(true)
     // Refresh every 30 seconds
-    const interval = setInterval(fetchActivities, 30000)
+    const interval = setInterval(() => fetchActivities(false), 30000)
     return () => clearInterval(interval)
   }, [groupId])
 
-  const fetchActivities = async () => {
+  const fetchActivities = async (showLoader = false) => {
     try {
-      setLoading(true)
+      if (showLoader) setLoading(true)
       const data = await getGroupActivities(groupId, 50)
       setActivities(data)
     } catch (error: any) {

@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Brain, Share2, Loader2, Play } from 'lucide-react'
+import { Brain, Share2, Loader2, Play, Copy, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { getSharedQuizzes, shareQuizWithGroup, type GroupQuiz } from '@/services/groupContent'
+import { getSharedQuizzes, shareQuizWithGroup, copySharedQuiz, unshareQuiz, type GroupQuiz } from '@/services/groupContent'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,7 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
   const [selectedQuizId, setSelectedQuizId] = useState<string>('')
   const [sharing, setSharing] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [copying, setCopying] = useState<number | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -56,7 +57,7 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
         api.get('/quizzes', { params: { page: 1, page_size: 100 } })
       ])
       setSharedQuizzes(quizzesData)
-      setMyQuizzes(myQuizzesData.data.quizzes || [])
+      setMyQuizzes(Array.isArray(myQuizzesData.data) ? myQuizzesData.data : myQuizzesData.data.quizzes || [])
     } catch (error: any) {
       console.error('Error fetching quizzes:', error)
       toast({
@@ -93,6 +94,49 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
       })
     } finally {
       setSharing(false)
+    }
+  }
+
+  const handleCopyQuiz = async (sharedQuizId: number, quizTitle: string) => {
+    try {
+      setCopying(sharedQuizId)
+      await copySharedQuiz(groupId, sharedQuizId)
+
+      toast({
+        title: 'Quiz copié',
+        description: `"${quizTitle}" a été ajouté à votre collection`,
+      })
+    } catch (error: any) {
+      console.error('Error copying quiz:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de copier le quiz',
+        variant: 'destructive'
+      })
+    } finally {
+      setCopying(null)
+    }
+  }
+
+  const handleUnshareQuiz = async (sharedQuizId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir retirer ce quiz ?')) return
+
+    try {
+      await unshareQuiz(groupId, sharedQuizId)
+
+      toast({
+        title: 'Quiz retiré',
+        description: 'Le quiz a été retiré du groupe',
+      })
+
+      await fetchData()
+    } catch (error: any) {
+      console.error('Error unsharing quiz:', error)
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.detail || 'Impossible de retirer le quiz',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -209,14 +253,46 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
                     </div>
                   </div>
 
-                  <Button
-                    size="sm"
-                    onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
-                    className="w-full sm:w-auto mt-2 sm:mt-0"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Démarrer
-                  </Button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Démarrer
+                    </Button>
+                    {quiz.shared_by_user_id !== currentUserId && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCopyQuiz(quiz.id, quiz.quiz_title)}
+                        disabled={copying === quiz.id}
+                        className="flex-1 sm:flex-none"
+                      >
+                        {copying === quiz.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Copie...
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copier
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {quiz.shared_by_user_id === currentUserId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUnshareQuiz(quiz.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

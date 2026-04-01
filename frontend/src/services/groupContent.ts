@@ -83,6 +83,14 @@ export async function unshareNote(groupId: number, sharedNoteId: number) {
   await api.delete(`/study-groups/${groupId}/shared-notes/${sharedNoteId}`)
 }
 
+/**
+ * Copy a shared note to own collection
+ */
+export async function copySharedNote(groupId: number, sharedNoteId: number) {
+  const response = await api.post(`/study-groups/${groupId}/copy-note/${sharedNoteId}`)
+  return response.data
+}
+
 // ============================================
 // SHARED FLASHCARDS
 // ============================================
@@ -105,6 +113,13 @@ export async function shareFlashcardsWithGroup(groupId: number, deckId: string |
 export async function getSharedFlashcards(groupId: number): Promise<SharedFlashcardDeck[]> {
   const response = await api.get(`/study-groups/${groupId}/shared-flashcards`)
   return response.data
+}
+
+/**
+ * Remove a shared flashcard deck from the group
+ */
+export async function unshareFlashcards(groupId: number, sharedDeckId: number) {
+  await api.delete(`/study-groups/${groupId}/shared-flashcards/${sharedDeckId}`)
 }
 
 /**
@@ -182,6 +197,21 @@ export async function shareQuizWithGroup(groupId: number, quizId: number) {
  */
 export async function getSharedQuizzes(groupId: number): Promise<GroupQuiz[]> {
   const response = await api.get(`/study-groups/${groupId}/shared-quizzes`)
+  return response.data
+}
+
+/**
+ * Remove a shared quiz from the group
+ */
+export async function unshareQuiz(groupId: number, sharedQuizId: number) {
+  await api.delete(`/study-groups/${groupId}/shared-quizzes/${sharedQuizId}`)
+}
+
+/**
+ * Copy a shared quiz to own collection
+ */
+export async function copySharedQuiz(groupId: number, sharedQuizId: number) {
+  const response = await api.post(`/study-groups/${groupId}/copy-quiz/${sharedQuizId}`)
   return response.data
 }
 

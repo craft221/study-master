@@ -141,7 +141,7 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
         params: { page: 1, page_size: 100 }
       })
       // Reverse to show oldest first
-      setMessages(response.data.messages.reverse())
+      setMessages((response.data.messages || []).reverse())
     } catch (error) {
       console.error('Error fetching messages:', error)
     }

@@ -2,6 +2,7 @@
 Endpoints pour les messages de groupe
 """
 
+import html
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, desc
@@ -238,11 +239,12 @@ async def create_group_message(
                         MentionedUser(id=mentioned_user.id, username=mentioned_user.username)
                     )
 
-    # Créer le message
+    # Créer le message (sanitize HTML pour éviter XSS)
+    sanitized_content = html.escape(message_data.content)
     new_message = GroupMessage(
         group_id=group_id,
         user_id=current_user.id,
-        content=message_data.content,
+        content=sanitized_content,
         is_edited=False,
         reply_to_message_id=message_data.reply_to_message_id,
         mentions=message_data.mentions
@@ -304,7 +306,7 @@ async def update_group_message(
             detail="You can only edit your own messages"
         )
 
-    message.content = message_data.content
+    message.content = html.escape(message_data.content)
     message.is_edited = True
 
     await db.commit()

@@ -1,8 +1,11 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from typing import List, Optional
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -309,7 +312,14 @@ async def join_study_group(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Group is not active"
         )
-    
+
+    # Vérifier si le groupe est privé
+    if group.is_private:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This is a private group. You need an invitation to join."
+        )
+
     # Vérifier limite de membres
     if group.current_members >= group.max_members:
         raise HTTPException(
@@ -418,7 +428,7 @@ async def leave_study_group(
         )
     
     await db.delete(member)
-    group.current_members -= 1
+    group.current_members = max(0, group.current_members - 1)
     
     await db.commit()
     
@@ -498,6 +508,22 @@ async def share_note_with_group(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found"
+        )
+
+    # Vérifier que la note n'est pas déjà partagée
+    existing_share = await db.execute(
+        select(SharedGroupContent).where(
+            and_(
+                SharedGroupContent.group_id == group_id,
+                SharedGroupContent.content_type == "note",
+                SharedGroupContent.content_id == note.id
+            )
+        )
+    )
+    if existing_share.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This note is already shared with the group"
         )
 
     # Récupérer le groupe pour mettre à jour les stats
@@ -584,15 +610,16 @@ async def get_shared_notes(
     notes_data = []
     for shared in shared_notes:
         user = await db.get(User, shared.user_id)
+        data = shared.content_data or {}
         notes_data.append({
             "id": shared.id,
             "note_id": shared.content_id,
-            "note_title": shared.content_data.get("title", ""),
-            "note_content": shared.content_data.get("content", ""),
+            "note_title": data.get("title", ""),
+            "note_content": data.get("content", ""),
             "shared_by_user_id": shared.user_id,
             "shared_by_username": user.username if user else "Unknown",
-            "shared_at": shared.shared_at.isoformat(),
-            "subject_name": shared.content_data.get("subject_name")
+            "shared_at": shared.shared_at.isoformat() if shared.shared_at else "",
+            "subject_name": data.get("subject_name")
         })
 
     return notes_data
@@ -610,7 +637,7 @@ async def unshare_note(
 
     shared = await db.get(SharedGroupContent, shared_note_id)
 
-    if not shared or shared.group_id != group_id:
+    if not shared or shared.group_id != group_id or shared.content_type != "note":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Shared note not found"
@@ -622,10 +649,117 @@ async def unshare_note(
             detail="You can only remove your own shared notes"
         )
 
+    # Décrémenter le compteur
+    group = await db.get(StudyGroup, group_id)
+    if group:
+        group.total_shared_notes = max(0, (group.total_shared_notes or 0) - 1)
+
     await db.delete(shared)
     await db.commit()
 
     return None
+
+
+@router.post("/{group_id}/copy-note/{shared_note_id}")
+async def copy_shared_note(
+    group_id: int,
+    shared_note_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Copier une note partagée dans sa collection personnelle"""
+    from app.models.note import Note
+    from app.models.collaboration import SharedGroupContent
+    from app.models.subject import Subject
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer le partage
+    shared = await db.get(SharedGroupContent, shared_note_id)
+    if not shared or shared.group_id != group_id or shared.content_type != "note":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared note not found"
+        )
+
+    # Récupérer la note originale
+    original_note = await db.get(Note, shared.content_id)
+    if not original_note:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original note no longer exists"
+        )
+
+    # Trouver ou créer le subject pour l'utilisateur courant
+    orig_subject = await db.get(Subject, original_note.subject_id)
+    if orig_subject:
+        existing_subject = await db.execute(
+            select(Subject).where(
+                Subject.user_id == current_user.id,
+                Subject.name == orig_subject.name
+            )
+        )
+        user_subject = existing_subject.scalar_one_or_none()
+        if user_subject:
+            target_subject_id = user_subject.id
+        else:
+            new_subject = Subject(
+                name=orig_subject.name,
+                color=orig_subject.color,
+                icon=orig_subject.icon,
+                user_id=current_user.id
+            )
+            db.add(new_subject)
+            await db.flush()
+            target_subject_id = new_subject.id
+    else:
+        # Fallback: premier subject de l'utilisateur
+        fallback = await db.execute(
+            select(Subject).where(Subject.user_id == current_user.id).limit(1)
+        )
+        fallback_subject = fallback.scalar_one_or_none()
+        if not fallback_subject:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please create a subject first"
+            )
+        target_subject_id = fallback_subject.id
+
+    # Créer la copie
+    new_note = Note(
+        title=f"{original_note.title} (copie)",
+        content=original_note.content,
+        blocks=original_note.blocks,
+        subject_id=target_subject_id,
+        user_id=current_user.id,
+        tags=original_note.tags,
+        gallery_images=original_note.gallery_images,
+        language=original_note.language or "fr",
+        is_public=False
+    )
+    db.add(new_note)
+    await db.commit()
+    await db.refresh(new_note)
+
+    return {
+        "message": "Note copied successfully",
+        "new_note_id": new_note.id,
+        "title": new_note.title
+    }
 
 
 # ============================================
@@ -679,6 +813,23 @@ async def share_flashcards_with_group(
         )
 
     card_count = len(cards)
+
+    # Vérifier que le deck n'est pas déjà partagé par cet utilisateur
+    existing_shares = await db.execute(
+        select(SharedGroupContent).where(
+            and_(
+                SharedGroupContent.group_id == group_id,
+                SharedGroupContent.content_type == "flashcard_deck",
+                SharedGroupContent.user_id == current_user.id
+            )
+        )
+    )
+    for existing in existing_shares.scalars().all():
+        if (existing.content_data or {}).get("name") == deck_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This deck is already shared with the group"
+            )
 
     # Récupérer le groupe pour mettre à jour les stats
     group = await db.get(StudyGroup, group_id)
@@ -764,17 +915,53 @@ async def get_shared_flashcards(
     decks_data = []
     for shared in shared_decks:
         user = await db.get(User, shared.user_id)
+        data = shared.content_data or {}
         decks_data.append({
             "id": shared.id,
             "deck_id": shared.content_id,
-            "deck_name": shared.content_data.get("name", ""),
-            "card_count": shared.content_data.get("card_count", 0),
+            "deck_name": data.get("name", ""),
+            "card_count": data.get("card_count", 0),
             "shared_by_user_id": shared.user_id,
             "shared_by_username": user.username if user else "Unknown",
-            "shared_at": shared.shared_at.isoformat()
+            "shared_at": shared.shared_at.isoformat() if shared.shared_at else ""
         })
 
     return decks_data
+
+
+@router.delete("/{group_id}/shared-flashcards/{shared_deck_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def unshare_flashcards(
+    group_id: int,
+    shared_deck_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retirer un deck de flashcards partagé"""
+    from app.models.collaboration import SharedGroupContent
+
+    shared = await db.get(SharedGroupContent, shared_deck_id)
+
+    if not shared or shared.group_id != group_id or shared.content_type != "flashcard_deck":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared flashcard deck not found"
+        )
+
+    if shared.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only remove your own shared flashcards"
+        )
+
+    # Décrémenter le compteur
+    group = await db.get(StudyGroup, group_id)
+    if group:
+        group.total_shared_notes = max(0, (group.total_shared_notes or 0) - 1)
+
+    await db.delete(shared)
+    await db.commit()
+
+    return None
 
 
 @router.post("/{group_id}/copy-flashcards/{shared_deck_id}")
@@ -813,7 +1000,7 @@ async def copy_shared_flashcards(
         )
 
     # Récupérer le deck_name depuis content_data
-    original_deck_name = shared.content_data.get("name")
+    original_deck_name = (shared.content_data or {}).get("name")
     if not original_deck_name:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -839,8 +1026,45 @@ async def copy_shared_flashcards(
     # Créer un nouveau deck_name pour l'utilisateur courant
     new_deck_name = f"{original_deck_name} (copie)"
 
+    # S'assurer que le subject existe pour l'utilisateur courant
+    from app.models.subject import Subject
+    subject_ids_needed = set(card.subject_id for card in original_cards if card.subject_id)
+
+    # Map des subject_id originaux vers les subject_id du user courant
+    subject_map = {}
+    for orig_subject_id in subject_ids_needed:
+        orig_subject = await db.get(Subject, orig_subject_id)
+        if orig_subject:
+            # Chercher un subject avec le même nom chez l'utilisateur courant
+            user_subject_query = select(Subject).where(
+                and_(
+                    Subject.user_id == current_user.id,
+                    Subject.name == orig_subject.name
+                )
+            )
+            user_subject_result = await db.execute(user_subject_query)
+            user_subject = user_subject_result.scalar_one_or_none()
+
+            if user_subject:
+                subject_map[orig_subject_id] = user_subject.id
+            else:
+                # Créer le subject pour l'utilisateur courant
+                new_subject = Subject(
+                    name=orig_subject.name,
+                    color=orig_subject.color,
+                    user_id=current_user.id
+                )
+                db.add(new_subject)
+                await db.flush()
+                subject_map[orig_subject_id] = new_subject.id
+
     # Copier les flashcards
+    copied_count = 0
     for card in original_cards:
+        target_subject_id = subject_map.get(card.subject_id)
+        if not target_subject_id:
+            continue  # Skip si aucun subject disponible
+
         new_card = Flashcard(
             user_id=current_user.id,
             deck_name=new_deck_name,
@@ -848,15 +1072,27 @@ async def copy_shared_flashcards(
             back=card.back,
             hint=card.hint,
             explanation=card.explanation,
-            subject_id=card.subject_id,
+            subject_id=target_subject_id,
             tags=card.tags,
-            is_ai_generated=card.is_ai_generated
+            is_ai_generated=card.is_ai_generated,
+            front_image_url=card.front_image_url,
+            back_image_url=card.back_image_url,
+            front_audio_url=card.front_audio_url,
+            back_audio_url=card.back_audio_url,
+            language=card.language,
         )
         db.add(new_card)
+        copied_count += 1
+
+    if copied_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not copy cards - no valid subject found. Please create a subject first."
+        )
 
     await db.commit()
 
-    return {"message": "Deck copied successfully", "deck_name": new_deck_name}
+    return {"message": f"Deck copied successfully ({copied_count} cards)", "deck_name": new_deck_name}
 
 
 # ============================================
@@ -1165,13 +1401,29 @@ async def share_quiz_with_group(
             detail="Quiz not found"
         )
 
+    # Vérifier que le quiz n'est pas déjà partagé
+    existing_share = await db.execute(
+        select(SharedGroupContent).where(
+            and_(
+                SharedGroupContent.group_id == group_id,
+                SharedGroupContent.content_type == "quiz",
+                SharedGroupContent.content_id == quiz.id
+            )
+        )
+    )
+    if existing_share.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This quiz is already shared with the group"
+        )
+
     # Créer le partage
     shared_content = SharedGroupContent(
         group_id=group_id,
         user_id=current_user.id,
         content_type="quiz",
         content_id=quiz.id,
-        content_data={"title": quiz.title, "question_count": quiz.question_count}
+        content_data={"title": quiz.title, "question_count": len(quiz.questions_data) if quiz.questions_data else 0}
     )
 
     db.add(shared_content)
@@ -1240,18 +1492,190 @@ async def get_shared_quizzes(
         attempts_result = await db.execute(attempts_query)
         completed_count = attempts_result.scalar() or 0
 
+        data = shared.content_data or {}
         quizzes_data.append({
             "id": shared.id,
             "quiz_id": shared.content_id,
-            "quiz_title": shared.content_data.get("title", ""),
-            "question_count": shared.content_data.get("question_count", 0),
+            "quiz_title": data.get("title", ""),
+            "question_count": data.get("question_count", 0),
             "shared_by_user_id": shared.user_id,
             "shared_by_username": user.username if user else "Unknown",
-            "shared_at": shared.shared_at.isoformat(),
+            "shared_at": shared.shared_at.isoformat() if shared.shared_at else "",
             "completed_by_count": completed_count
         })
 
     return quizzes_data
+
+
+@router.delete("/{group_id}/shared-quizzes/{shared_quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def unshare_quiz(
+    group_id: int,
+    shared_quiz_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retirer un quiz partagé"""
+    from app.models.collaboration import SharedGroupContent
+
+    shared = await db.get(SharedGroupContent, shared_quiz_id)
+
+    if not shared or shared.group_id != group_id or shared.content_type != "quiz":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared quiz not found"
+        )
+
+    if shared.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only remove your own shared quizzes"
+        )
+
+    # Décrémenter le compteur
+    group = await db.get(StudyGroup, group_id)
+    if group:
+        group.total_shared_notes = max(0, (group.total_shared_notes or 0) - 1)
+
+    await db.delete(shared)
+    await db.commit()
+
+    return None
+
+
+@router.post("/{group_id}/copy-quiz/{shared_quiz_id}")
+async def copy_shared_quiz(
+    group_id: int,
+    shared_quiz_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Copier un quiz partagé dans sa collection personnelle"""
+    from app.models.quiz import Quiz, QuizQuestion
+    from app.models.collaboration import SharedGroupContent
+    from app.models.subject import Subject
+    from sqlalchemy.orm import selectinload
+
+    # Vérifier membership
+    member_query = select(StudyGroupMembership).where(
+        and_(
+            StudyGroupMembership.group_id == group_id,
+            StudyGroupMembership.user_id == current_user.id
+        )
+    )
+    member_result = await db.execute(member_query)
+    member = member_result.scalar_one_or_none()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group"
+        )
+
+    # Récupérer le partage
+    shared = await db.get(SharedGroupContent, shared_quiz_id)
+    if not shared or shared.group_id != group_id or shared.content_type != "quiz":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shared quiz not found"
+        )
+
+    # Récupérer le quiz original avec ses questions
+    quiz_result = await db.execute(
+        select(Quiz)
+        .options(selectinload(Quiz.questions))
+        .where(Quiz.id == shared.content_id)
+    )
+    original_quiz = quiz_result.scalar_one_or_none()
+
+    if not original_quiz:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original quiz no longer exists"
+        )
+
+    # Trouver ou créer le subject pour l'utilisateur courant
+    orig_subject = await db.get(Subject, original_quiz.subject_id)
+    if orig_subject:
+        existing_subject = await db.execute(
+            select(Subject).where(
+                Subject.user_id == current_user.id,
+                Subject.name == orig_subject.name
+            )
+        )
+        user_subject = existing_subject.scalar_one_or_none()
+        if user_subject:
+            target_subject_id = user_subject.id
+        else:
+            new_subject = Subject(
+                name=orig_subject.name,
+                color=orig_subject.color,
+                icon=orig_subject.icon,
+                user_id=current_user.id
+            )
+            db.add(new_subject)
+            await db.flush()
+            target_subject_id = new_subject.id
+    else:
+        fallback = await db.execute(
+            select(Subject).where(Subject.user_id == current_user.id).limit(1)
+        )
+        fallback_subject = fallback.scalar_one_or_none()
+        if not fallback_subject:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please create a subject first"
+            )
+        target_subject_id = fallback_subject.id
+
+    # Créer la copie du quiz
+    new_quiz = Quiz(
+        title=f"{original_quiz.title} (copie)",
+        description=original_quiz.description,
+        subject_id=target_subject_id,
+        user_id=current_user.id,
+        quiz_type=original_quiz.quiz_type,
+        difficulty=original_quiz.difficulty,
+        questions_data=original_quiz.questions_data,
+        total_points=original_quiz.total_points,
+        passing_score=original_quiz.passing_score,
+        time_limit_minutes=original_quiz.time_limit_minutes,
+        is_timed=original_quiz.is_timed,
+        allow_multiple_attempts=original_quiz.allow_multiple_attempts,
+        show_correct_answers=original_quiz.show_correct_answers,
+        randomize_questions=original_quiz.randomize_questions,
+        randomize_options=original_quiz.randomize_options,
+        is_ai_generated=original_quiz.is_ai_generated,
+        language=original_quiz.language or "fr",
+        is_public=False,
+        is_published=False
+    )
+    db.add(new_quiz)
+    await db.flush()
+
+    # Copier les questions (table séparée)
+    question_count = 0
+    for q in original_quiz.questions:
+        new_question = QuizQuestion(
+            quiz_id=new_quiz.id,
+            question=q.question,
+            question_type=q.question_type,
+            options=q.options,
+            correct_answer=q.correct_answer,
+            explanation=q.explanation,
+            points=q.points,
+            order=q.order
+        )
+        db.add(new_question)
+        question_count += 1
+
+    await db.commit()
+    await db.refresh(new_quiz)
+
+    return {
+        "message": f"Quiz copied successfully ({question_count} questions)",
+        "new_quiz_id": new_quiz.id,
+        "title": new_quiz.title
+    }
 
 
 # ============================================
@@ -1405,20 +1829,25 @@ async def invite_user_to_group(
     await db.flush()
 
     # Envoyer une notification à l'invité
-    notification_service = NotificationService(db)
-    await notification_service.create_notification(
-        user_id=invitation_data.invitee_id,
-        notification_type="group_invitation",
-        title=f"Invitation au groupe {group.name}",
-        message=f"{current_user.username} vous invite à rejoindre le groupe d'étude {group.name}",
-        data={
-            "invitation_id": invitation.id,
-            "group_id": group_id,
-            "group_name": group.name,
-            "inviter_username": current_user.username
-        },
-        priority="high"
-    )
+    try:
+        from app.models.notification import NotificationType, NotificationPriority
+        notification_service = NotificationService()
+        await notification_service.create_notification(
+            db=db,
+            user_id=invitation_data.invitee_id,
+            notification_type=NotificationType.GROUP_INVITE,
+            title=f"Invitation au groupe {group.name}",
+            message=f"{current_user.username} vous invite à rejoindre le groupe d'étude {group.name}",
+            data={
+                "invitation_id": invitation.id,
+                "group_id": group_id,
+                "group_name": group.name,
+                "inviter_username": current_user.username
+            },
+            priority=NotificationPriority.HIGH
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send invitation notification: {e}")
 
     await db.commit()
     await db.refresh(invitation)
@@ -1589,18 +2018,23 @@ async def accept_group_invitation(
     )
 
     # Notifier l'inviteur
-    notification_service = NotificationService(db)
-    await notification_service.create_notification(
-        user_id=invitation.inviter_id,
-        notification_type="invitation_accepted",
-        title="Invitation acceptée",
-        message=f"{current_user.username} a accepté votre invitation et a rejoint {group.name}",
-        data={
-            "group_id": invitation.group_id,
-            "group_name": group.name,
-            "new_member_username": current_user.username
-        }
-    )
+    try:
+        from app.models.notification import NotificationType, NotificationPriority
+        notification_service = NotificationService()
+        await notification_service.create_notification(
+            db=db,
+            user_id=invitation.inviter_id,
+            notification_type=NotificationType.GROUP_INVITE,
+            title="Invitation acceptée",
+            message=f"{current_user.username} a accepté votre invitation et a rejoint {group.name}",
+            data={
+                "group_id": invitation.group_id,
+                "group_name": group.name,
+                "new_member_username": current_user.username
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send acceptance notification: {e}")
 
     await db.commit()
     await db.refresh(new_member)

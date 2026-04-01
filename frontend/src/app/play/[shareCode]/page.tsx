@@ -173,7 +173,7 @@ export default function PlayQuizPage() {
               })
 
               // Toast pour notifier
-              toast(`🎮 ${newEntry.name} vient de terminer avec ${newEntry.score.toFixed(0)}%!`, {
+              toast(`🎮 ${newEntry.name} vient de terminer avec ${(newEntry.score ?? 0).toFixed(0)}%!`, {
                 icon: '🏆'
               })
             }
@@ -451,7 +451,7 @@ export default function PlayQuizPage() {
             )}
             <div className="bg-white/10 rounded-xl p-4 text-center">
               <Trophy className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
-              <p className="text-2xl font-bold">{quiz.average_score.toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{(quiz.average_score ?? 0).toFixed(0)}%</p>
               <p className="text-sm text-gray-300">Score moyen</p>
             </div>
           </div>
@@ -662,7 +662,7 @@ export default function PlayQuizPage() {
             <h1 className="text-3xl font-bold mb-2">{result.message}</h1>
 
             <div className="text-6xl font-bold my-6 bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-              {result.score.toFixed(0)}%
+              {(result.score ?? 0).toFixed(0)}%
             </div>
 
             <p className="text-xl text-gray-300 mb-6">
@@ -754,7 +754,7 @@ export default function PlayQuizPage() {
                         <span className="text-xs bg-green-500/30 text-green-300 px-2 py-0.5 rounded-full">PRO</span>
                       )}
                     </div>
-                    <span className="font-bold text-amber-400">{entry.score.toFixed(0)}%</span>
+                    <span className="font-bold text-amber-400">{(entry.score ?? 0).toFixed(0)}%</span>
                   </div>
                 ))}
               </div>

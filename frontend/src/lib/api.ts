@@ -1,7 +1,24 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https://api.studera.app' : 'http://localhost:8000')
-const API_BASE = '/api/v1'
+// Déterminer l'URL de l'API en s'assurant que HTTPS est utilisé en production
+const getRawApiUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL
+  if (envUrl) {
+    // Forcer HTTPS si la page est servie en HTTPS (évite Mixed Content)
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && envUrl.startsWith('http://')) {
+      return envUrl.replace('http://', 'https://')
+    }
+    return envUrl
+  }
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return 'https://api.studera.app'
+  }
+  return 'http://localhost:8000'
+}
+
+const API_URL = getRawApiUrl()
+// Éviter le double /api/v1 si l'URL en contient déjà
+const API_BASE = API_URL.includes('/api/v1') ? '' : '/api/v1'
 
 // Configuration des timeouts
 const REQUEST_TIMEOUT = 30000 // 30 secondes
