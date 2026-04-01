@@ -60,7 +60,7 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
       setLoading(true)
       const [decksResult, myDecksResult] = await Promise.allSettled([
         getSharedFlashcards(groupId),
-        api.get('/flashcards/decks/')
+        api.get('/flashcards/decks')
       ])
 
       if (decksResult.status === 'fulfilled') {
@@ -203,14 +203,20 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
                   <SelectValue placeholder="Choisir un deck" />
                 </SelectTrigger>
                 <SelectContent>
-                  {myDecks.map((deck) => (
-                    <SelectItem key={deck.id.toString()} value={deck.id.toString()}>
-                      {deck.title}
-                      <span className="text-xs text-gray-500 ml-2">
-                        ({deck.total_cards} cartes)
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {myDecks.length === 0 ? (
+                    <div className="py-3 px-2 text-sm text-muted-foreground text-center">
+                      Aucun deck trouvé. Créez d&apos;abord des flashcards.
+                    </div>
+                  ) : (
+                    myDecks.map((deck) => (
+                      <SelectItem key={deck.id.toString()} value={deck.id.toString()}>
+                        {deck.title}
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({deck.total_cards} cartes)
+                        </span>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <Button
