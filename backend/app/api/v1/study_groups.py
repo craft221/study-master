@@ -834,13 +834,31 @@ async def share_flashcards_with_group(
     # Récupérer le groupe pour mettre à jour les stats
     group = await db.get(StudyGroup, group_id)
 
+    # Snapshot des cartes pour permettre la copie même si l'original est supprimé
+    cards_snapshot = []
+    for card in cards:
+        cards_snapshot.append({
+            "front": card.front,
+            "back": card.back,
+            "hint": card.hint,
+            "explanation": card.explanation,
+            "subject_id": card.subject_id,
+            "tags": card.tags,
+            "is_ai_generated": card.is_ai_generated,
+            "front_image_url": card.front_image_url,
+            "back_image_url": card.back_image_url,
+            "front_audio_url": card.front_audio_url,
+            "back_audio_url": card.back_audio_url,
+            "language": card.language,
+        })
+
     # Créer le partage
     shared_content = SharedGroupContent(
         group_id=group_id,
         user_id=current_user.id,
         content_type="flashcard_deck",
         content_id=0,  # Pas d'ID car ce n'est pas une entité avec ID
-        content_data={"name": deck_name, "card_count": card_count}
+        content_data={"name": deck_name, "card_count": card_count, "cards": cards_snapshot}
     )
     db.add(shared_content)
 
@@ -1000,94 +1018,133 @@ async def copy_shared_flashcards(
         )
 
     # Récupérer le deck_name depuis content_data
-    original_deck_name = (shared.content_data or {}).get("name")
+    data = shared.content_data or {}
+    original_deck_name = data.get("name")
     if not original_deck_name:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Original deck not found"
         )
 
-    # Récupérer les cartes originales de l'utilisateur qui a partagé
-    original_cards_query = select(Flashcard).where(
-        and_(
-            Flashcard.user_id == shared.user_id,
-            Flashcard.deck_name == original_deck_name
-        )
-    )
-    original_cards_result = await db.execute(original_cards_query)
-    original_cards = original_cards_result.scalars().all()
-
-    if not original_cards:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Original deck cards not found"
-        )
+    # Utiliser le snapshot si disponible, sinon fallback sur les cartes originales
+    cards_snapshot = data.get("cards")
+    from app.models.subject import Subject
 
     # Créer un nouveau deck_name pour l'utilisateur courant
     new_deck_name = f"{original_deck_name} (copie)"
 
-    # S'assurer que le subject existe pour l'utilisateur courant
-    from app.models.subject import Subject
-    subject_ids_needed = set(card.subject_id for card in original_cards if card.subject_id)
-
-    # Map des subject_id originaux vers les subject_id du user courant
-    subject_map = {}
-    for orig_subject_id in subject_ids_needed:
-        orig_subject = await db.get(Subject, orig_subject_id)
-        if orig_subject:
-            # Chercher un subject avec le même nom chez l'utilisateur courant
-            user_subject_query = select(Subject).where(
-                and_(
-                    Subject.user_id == current_user.id,
-                    Subject.name == orig_subject.name
-                )
-            )
-            user_subject_result = await db.execute(user_subject_query)
-            user_subject = user_subject_result.scalar_one_or_none()
-
-            if user_subject:
-                subject_map[orig_subject_id] = user_subject.id
-            else:
-                # Créer le subject pour l'utilisateur courant
-                new_subject = Subject(
-                    name=orig_subject.name,
-                    color=orig_subject.color,
-                    user_id=current_user.id
-                )
-                db.add(new_subject)
-                await db.flush()
-                subject_map[orig_subject_id] = new_subject.id
-
-    # Copier les flashcards
     copied_count = 0
-    for card in original_cards:
-        target_subject_id = subject_map.get(card.subject_id)
-        if not target_subject_id:
-            continue  # Skip si aucun subject disponible
 
-        new_card = Flashcard(
-            user_id=current_user.id,
-            deck_name=new_deck_name,
-            front=card.front,
-            back=card.back,
-            hint=card.hint,
-            explanation=card.explanation,
-            subject_id=target_subject_id,
-            tags=card.tags,
-            is_ai_generated=card.is_ai_generated,
-            front_image_url=card.front_image_url,
-            back_image_url=card.back_image_url,
-            front_audio_url=card.front_audio_url,
-            back_audio_url=card.back_audio_url,
-            language=card.language,
+    if cards_snapshot:
+        # --- Copie depuis le snapshot (fiable même si l'original est supprimé) ---
+        subject_ids_needed = set(c.get("subject_id") for c in cards_snapshot if c.get("subject_id"))
+        subject_map = {}
+        for orig_subject_id in subject_ids_needed:
+            orig_subject = await db.get(Subject, orig_subject_id)
+            if orig_subject:
+                user_subject_query = select(Subject).where(
+                    and_(Subject.user_id == current_user.id, Subject.name == orig_subject.name)
+                )
+                user_subject = (await db.execute(user_subject_query)).scalar_one_or_none()
+                if user_subject:
+                    subject_map[orig_subject_id] = user_subject.id
+                else:
+                    new_subject = Subject(name=orig_subject.name, color=orig_subject.color, user_id=current_user.id)
+                    db.add(new_subject)
+                    await db.flush()
+                    subject_map[orig_subject_id] = new_subject.id
+
+        for card_data in cards_snapshot:
+            target_subject_id = subject_map.get(card_data.get("subject_id"))
+            if not target_subject_id:
+                # Fallback: utiliser le premier subject du user
+                first_subject = (await db.execute(
+                    select(Subject).where(Subject.user_id == current_user.id).limit(1)
+                )).scalar_one_or_none()
+                if first_subject:
+                    target_subject_id = first_subject.id
+                else:
+                    continue
+
+            new_card = Flashcard(
+                user_id=current_user.id,
+                deck_name=new_deck_name,
+                front=card_data.get("front", ""),
+                back=card_data.get("back", ""),
+                hint=card_data.get("hint"),
+                explanation=card_data.get("explanation"),
+                subject_id=target_subject_id,
+                tags=card_data.get("tags"),
+                is_ai_generated=card_data.get("is_ai_generated", False),
+                front_image_url=card_data.get("front_image_url"),
+                back_image_url=card_data.get("back_image_url"),
+                front_audio_url=card_data.get("front_audio_url"),
+                back_audio_url=card_data.get("back_audio_url"),
+                language=card_data.get("language"),
+            )
+            db.add(new_card)
+            copied_count += 1
+    else:
+        # --- Fallback: copie depuis les cartes originales (ancien partage sans snapshot) ---
+        original_cards_query = select(Flashcard).where(
+            and_(
+                Flashcard.user_id == shared.user_id,
+                Flashcard.deck_name == original_deck_name
+            )
         )
-        db.add(new_card)
-        copied_count += 1
+        original_cards = (await db.execute(original_cards_query)).scalars().all()
+
+        if not original_cards:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Le deck original a été supprimé par son propriétaire. Impossible de copier."
+            )
+
+        subject_ids_needed = set(card.subject_id for card in original_cards if card.subject_id)
+        subject_map = {}
+        for orig_subject_id in subject_ids_needed:
+            orig_subject = await db.get(Subject, orig_subject_id)
+            if orig_subject:
+                user_subject_query = select(Subject).where(
+                    and_(Subject.user_id == current_user.id, Subject.name == orig_subject.name)
+                )
+                user_subject = (await db.execute(user_subject_query)).scalar_one_or_none()
+                if user_subject:
+                    subject_map[orig_subject_id] = user_subject.id
+                else:
+                    new_subject = Subject(name=orig_subject.name, color=orig_subject.color, user_id=current_user.id)
+                    db.add(new_subject)
+                    await db.flush()
+                    subject_map[orig_subject_id] = new_subject.id
+
+        for card in original_cards:
+            target_subject_id = subject_map.get(card.subject_id)
+            if not target_subject_id:
+                continue
+
+            new_card = Flashcard(
+                user_id=current_user.id,
+                deck_name=new_deck_name,
+                front=card.front,
+                back=card.back,
+                hint=card.hint,
+                explanation=card.explanation,
+                subject_id=target_subject_id,
+                tags=card.tags,
+                is_ai_generated=card.is_ai_generated,
+                front_image_url=card.front_image_url,
+                back_image_url=card.back_image_url,
+                front_audio_url=card.front_audio_url,
+                back_audio_url=card.back_audio_url,
+                language=card.language,
+            )
+            db.add(new_card)
+            copied_count += 1
 
     if copied_count == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not copy cards - no valid subject found. Please create a subject first."
+            detail="Impossible de copier les cartes. Vérifiez que vous avez au moins une matière."
         )
 
     await db.commit()
