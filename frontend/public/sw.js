@@ -105,6 +105,10 @@ self.addEventListener('fetch', (event) => {
 
   // Ignorer les requêtes non-GET pour le cache
   if (request.method !== 'GET') {
+    // NE PAS intercepter les endpoints publics (quiz partagés) - ils doivent échouer normalement
+    if (url.pathname.includes('/public/quiz/') || url.pathname.includes('/play/')) {
+      return;
+    }
     // Stocker les requêtes POST/PUT/DELETE échouées pour synchronisation
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
       event.respondWith(handleMutationRequest(request));

@@ -263,10 +263,6 @@ async def start_guest_quiz(
     )
 
     db.add(guest_attempt)
-
-    # Incrémenter le compteur de plays
-    quiz.total_plays = (quiz.total_plays or 0) + 1
-
     await db.commit()
 
     return {
@@ -353,8 +349,8 @@ async def submit_guest_quiz(
     attempt.is_completed = True
     attempt.completed_at = utc_now()
 
-    # Calculer le rang
-    rank_result = await db.execute(
+    # Calculer le rang (guests + registered users)
+    guest_better = await db.execute(
         select(func.count()).select_from(GuestQuizAttempt).where(
             and_(
                 GuestQuizAttempt.quiz_id == quiz.id,
@@ -363,11 +359,21 @@ async def submit_guest_quiz(
             )
         )
     )
-    better_scores = rank_result.scalar() or 0
+    registered_better = await db.execute(
+        select(func.count()).select_from(QuizAttempt).where(
+            and_(
+                QuizAttempt.quiz_id == quiz.id,
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score.isnot(None),
+                QuizAttempt.score > score
+            )
+        )
+    )
+    better_scores = (guest_better.scalar() or 0) + (registered_better.scalar() or 0)
     rank = better_scores + 1
 
-    # Total de joueurs
-    total_result = await db.execute(
+    # Total de joueurs (guests + registered users)
+    guest_total = await db.execute(
         select(func.count()).select_from(GuestQuizAttempt).where(
             and_(
                 GuestQuizAttempt.quiz_id == quiz.id,
@@ -375,7 +381,35 @@ async def submit_guest_quiz(
             )
         )
     )
-    total_players = total_result.scalar() or 1
+    registered_total = await db.execute(
+        select(func.count()).select_from(QuizAttempt).where(
+            and_(
+                QuizAttempt.quiz_id == quiz.id,
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score.isnot(None)
+            )
+        )
+    )
+    total_players = (guest_total.scalar() or 0) + (registered_total.scalar() or 0)
+    if total_players < 1:
+        total_players = 1
+
+    # Incrémenter total_plays à la complétion (pas au start)
+    quiz.total_plays = (quiz.total_plays or 0) + 1
+
+    # Mettre à jour average_score du quiz
+    avg_result = await db.execute(
+        select(func.avg(GuestQuizAttempt.score)).where(
+            and_(
+                GuestQuizAttempt.quiz_id == quiz.id,
+                GuestQuizAttempt.is_completed == True,
+                GuestQuizAttempt.score.isnot(None)
+            )
+        )
+    )
+    avg_score = avg_result.scalar()
+    if avg_score is not None:
+        quiz.average_score = round(avg_score, 1)
 
     await db.commit()
 
@@ -639,8 +673,8 @@ async def get_share_card_data(
     )
     creator = creator_result.scalar_one_or_none()
 
-    # Calculer le rang
-    rank_result = await db.execute(
+    # Calculer le rang (guests + registered users)
+    guest_better = await db.execute(
         select(func.count()).select_from(GuestQuizAttempt).where(
             and_(
                 GuestQuizAttempt.quiz_id == quiz.id,
@@ -649,11 +683,21 @@ async def get_share_card_data(
             )
         )
     )
-    better_scores = rank_result.scalar() or 0
+    registered_better = await db.execute(
+        select(func.count()).select_from(QuizAttempt).where(
+            and_(
+                QuizAttempt.quiz_id == quiz.id,
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score.isnot(None),
+                QuizAttempt.score > attempt.score
+            )
+        )
+    )
+    better_scores = (guest_better.scalar() or 0) + (registered_better.scalar() or 0)
     rank = better_scores + 1
 
-    # Total de joueurs
-    total_result = await db.execute(
+    # Total de joueurs (guests + registered users)
+    guest_total = await db.execute(
         select(func.count()).select_from(GuestQuizAttempt).where(
             and_(
                 GuestQuizAttempt.quiz_id == quiz.id,
@@ -661,7 +705,18 @@ async def get_share_card_data(
             )
         )
     )
-    total_players = total_result.scalar() or 1
+    registered_total = await db.execute(
+        select(func.count()).select_from(QuizAttempt).where(
+            and_(
+                QuizAttempt.quiz_id == quiz.id,
+                QuizAttempt.completed_at.isnot(None),
+                QuizAttempt.score.isnot(None)
+            )
+        )
+    )
+    total_players = (guest_total.scalar() or 0) + (registered_total.scalar() or 0)
+    if total_players < 1:
+        total_players = 1
 
     # Déterminer la performance
     score = attempt.score

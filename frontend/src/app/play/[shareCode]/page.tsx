@@ -209,7 +209,6 @@ export default function PlayQuizPage() {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev && prev <= 1) {
-            handleSubmitQuiz()
             return 0
           }
           return prev ? prev - 1 : 0
@@ -218,6 +217,13 @@ export default function PlayQuizPage() {
       return () => clearInterval(timer)
     }
   }, [phase, timeLeft, quiz?.is_timed])
+
+  // Soumettre quand le timer atteint 0
+  useEffect(() => {
+    if (timeLeft === 0 && phase === 'playing' && !isSubmitting) {
+      handleSubmitQuiz()
+    }
+  }, [timeLeft, phase, isSubmitting])
 
   // Démarrer le quiz
   const handleStartQuiz = async () => {
@@ -343,8 +349,8 @@ export default function PlayQuizPage() {
           },
           share_urls: {
             play_url: `/play/${shareCode}`,
-            twitter_text: result?.share_text || `J'ai obtenu ${result?.score}% sur ce quiz !`,
-            whatsapp_text: result?.share_text || `J'ai obtenu ${result?.score}% sur ce quiz !`
+            twitter_text: result?.share_text || `J'ai obtenu ${(result?.score ?? 0).toFixed(0)}% sur ce quiz !`,
+            whatsapp_text: result?.share_text || `J'ai obtenu ${(result?.score ?? 0).toFixed(0)}% sur ce quiz !`
           }
         })
         setShowShareCard(true)
