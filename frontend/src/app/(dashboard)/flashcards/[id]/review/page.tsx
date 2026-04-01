@@ -37,7 +37,7 @@ interface Flashcard {
 export default function FlashcardReviewPage() {
   const params = useParams()
   const router = useRouter()
-  const deckId = params.id as string
+  const deckId = decodeURIComponent(params.id as string)
   const { isOnline } = useOfflineContext()
 
   const [cards, setCards] = useState<Flashcard[]>([])

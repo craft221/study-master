@@ -55,7 +55,7 @@ interface Deck {
 export default function FlashcardDeckPage() {
   const params = useParams()
   const router = useRouter()
-  const deckId = params.id as string
+  const deckId = decodeURIComponent(params.id as string)
 
   const [deck, setDeck] = useState<Deck | null>(null)
   const [loading, setLoading] = useState(true)
