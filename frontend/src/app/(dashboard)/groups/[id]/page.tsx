@@ -322,7 +322,7 @@ export default function GroupDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content with Tabs */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="flex w-full overflow-x-auto">
               <TabsTrigger value="messages" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
