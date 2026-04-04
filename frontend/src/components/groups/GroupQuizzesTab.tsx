@@ -253,64 +253,67 @@ export default function GroupQuizzesTab({ groupId, currentUserId }: GroupQuizzes
       ) : (
         <div className="grid gap-3 sm:gap-4">
           {sharedQuizzes.map((quiz) => (
-            <Card key={quiz.id} className="hover:shadow-md transition-shadow">
+            <Card key={quiz.id} className="hover:shadow-md transition-shadow overflow-hidden">
               <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2">
                       <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{quiz.quiz_title}</h4>
-                      <Badge variant="secondary" className="text-xs">{quiz.question_count} questions</Badge>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate flex-1 min-w-0">{quiz.quiz_title}</h4>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">{quiz.question_count} questions</Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      <span className="truncate">Partagé par {quiz.shared_by_username}</span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <span className="truncate max-w-[150px] sm:max-w-none">Partagé par {quiz.shared_by_username}</span>
                       <span className="hidden sm:inline">•</span>
                       <span>{formatDate(quiz.shared_at)}</span>
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
                       <span className="font-medium">{quiz.completed_by_count}</span> membre(s) ont complété ce quiz
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0 mt-2 sm:mt-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
-                      className="flex-1 sm:flex-none"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Démarrer
-                    </Button>
-                    {quiz.shared_by_user_id !== currentUserId && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:shrink-0">
+                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleCopyQuiz(quiz.id, quiz.quiz_title)}
-                        disabled={copying === quiz.id}
+                        variant="outline"
+                        onClick={() => window.open(`/quizzes/${quiz.quiz_id}`, '_blank')}
                         className="flex-1 sm:flex-none"
                       >
-                        {copying === quiz.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Copie...
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copier
-                          </>
-                        )}
+                        <Play className="h-4 w-4 mr-1" />
+                        Démarrer
                       </Button>
-                    )}
-                    {quiz.shared_by_user_id === currentUserId && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleUnshareQuiz(quiz.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    )}
+                      {quiz.shared_by_user_id !== currentUserId && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleCopyQuiz(quiz.id, quiz.quiz_title)}
+                          disabled={copying === quiz.id}
+                          className="flex-1 sm:flex-none"
+                        >
+                          {copying === quiz.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Copie...
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4 mr-1" />
+                              Copier
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      {quiz.shared_by_user_id === currentUserId && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleUnshareQuiz(quiz.id)}
+                          className="flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

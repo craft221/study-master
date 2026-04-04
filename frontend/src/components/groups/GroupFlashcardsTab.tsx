@@ -255,23 +255,31 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
       ) : (
         <div className="grid gap-3 sm:gap-4">
           {sharedDecks.map((deck) => (
-            <Card key={deck.id} className="hover:shadow-md transition-shadow">
+            <Card key={deck.id} className="hover:shadow-md transition-shadow overflow-hidden">
               <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{deck.deck_name}</h4>
-                      <Badge variant="secondary" className="text-xs">{deck.card_count} cartes</Badge>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate flex-1 min-w-0">{deck.deck_name}</h4>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">{deck.card_count} cartes</Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="truncate">Partagé par {deck.shared_by_username}</span>
+                      <span className="truncate max-w-[150px] sm:max-w-none">Partagé par {deck.shared_by_username}</span>
                       <span className="hidden sm:inline">•</span>
-                      <span className="text-xs">{formatDate(deck.shared_at)}</span>
+                      <span>{formatDate(deck.shared_at)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0 mt-2 sm:mt-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`/flashcards/${deck.deck_name}`, '_blank')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      Voir
+                    </Button>
                     {deck.shared_by_user_id !== currentUserId && (
                       <Button
                         size="sm"
@@ -297,6 +305,7 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
                         size="sm"
                         variant="ghost"
                         onClick={() => handleUnshareDeck(deck.id)}
+                        className="flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>

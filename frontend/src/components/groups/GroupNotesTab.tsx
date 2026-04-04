@@ -243,28 +243,28 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
       ) : (
         <div className="grid gap-3 sm:gap-4">
           {sharedNotes.map((note) => (
-            <Card key={note.id} className="hover:shadow-md transition-shadow">
+            <Card key={note.id} className="hover:shadow-md transition-shadow overflow-hidden">
               <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2">
                       <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{note.note_title}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate flex-1 min-w-0">{note.note_title}</h4>
                       {note.subject_name && (
-                        <Badge variant="outline" className="text-xs">{note.subject_name}</Badge>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">{note.subject_name}</Badge>
                       )}
                     </div>
                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 line-clamp-2">
                       {note.note_content}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="truncate">Partagé par {note.shared_by_username}</span>
+                      <span className="truncate max-w-[150px] sm:max-w-none">Partagé par {note.shared_by_username}</span>
                       <span className="hidden sm:inline">•</span>
                       <span>{formatDate(note.shared_at)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0 mt-2 sm:mt-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -298,6 +298,7 @@ export default function GroupNotesTab({ groupId, currentUserId }: GroupNotesTabP
                         size="sm"
                         variant="ghost"
                         onClick={() => handleUnshareNote(note.id)}
+                        className="flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
