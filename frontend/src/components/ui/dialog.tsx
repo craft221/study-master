@@ -75,7 +75,7 @@ const DialogContent = React.forwardRef<
       <div className="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
         <div
           ref={ref}
-          className={`grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg ${className || ''}`}
+          className={`grid w-[calc(100%-2rem)] max-w-lg gap-4 border bg-background p-4 sm:p-6 shadow-lg rounded-lg ${className || ''}`}
           {...props}
         >
           {children}

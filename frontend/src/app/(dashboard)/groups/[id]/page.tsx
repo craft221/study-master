@@ -180,7 +180,7 @@ export default function GroupDetailPage() {
   if (!group) return null
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto p-3 sm:p-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
         <Button
@@ -192,11 +192,11 @@ export default function GroupDetailPage() {
           Retour aux groupes
         </Button>
 
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{group.name}</h1>
-            <p className="text-gray-600">{group.description || 'Pas de description'}</p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2">{group.name}</h1>
+            <p className="text-gray-600 text-sm sm:text-base">{group.description || 'Pas de description'}</p>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-sm text-gray-500">
               <span className="flex items-center">
                 <Users className="h-4 w-4 mr-1" />
                 {group.current_members}/{group.max_members} membres
@@ -208,18 +208,23 @@ export default function GroupDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={openInviteDialog}
+              className="flex-1 sm:flex-none"
+              size="sm"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Inviter un ami
+              <span className="hidden sm:inline">Inviter un ami</span>
+              <span className="sm:hidden">Inviter</span>
             </Button>
             <Button
               variant="destructive"
               onClick={handleLeaveGroup}
               disabled={group.creator_id === currentUserId}
+              className="flex-1 sm:flex-none"
+              size="sm"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Quitter
@@ -230,7 +235,7 @@ export default function GroupDetailPage() {
 
       {/* Invite User Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
@@ -315,32 +320,32 @@ export default function GroupDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content with Tabs */}
         <div className="lg:col-span-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="messages" className="flex items-center gap-1">
+            <TabsList className="flex w-full overflow-x-auto">
+              <TabsTrigger value="messages" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <MessageCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Messages</span>
               </TabsTrigger>
-              <TabsTrigger value="notes" className="flex items-center gap-1">
+              <TabsTrigger value="notes" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Notes</span>
               </TabsTrigger>
-              <TabsTrigger value="flashcards" className="flex items-center gap-1">
+              <TabsTrigger value="flashcards" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <CreditCard className="h-4 w-4" />
                 <span className="hidden sm:inline">Flashcards</span>
               </TabsTrigger>
-              <TabsTrigger value="sessions" className="flex items-center gap-1">
+              <TabsTrigger value="sessions" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Zap className="h-4 w-4" />
                 <span className="hidden sm:inline">Sessions</span>
               </TabsTrigger>
-              <TabsTrigger value="quizzes" className="flex items-center gap-1">
+              <TabsTrigger value="quizzes" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Brain className="h-4 w-4" />
                 <span className="hidden sm:inline">Quiz</span>
               </TabsTrigger>
-              <TabsTrigger value="activity" className="flex items-center gap-1">
+              <TabsTrigger value="activity" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">Activité</span>
               </TabsTrigger>
@@ -384,7 +389,7 @@ export default function GroupDetailPage() {
 
         {/* Members Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="h-[600px] flex flex-col">
+          <Card className="h-[350px] sm:h-[500px] lg:h-[600px] flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="h-5 w-5 mr-2" />

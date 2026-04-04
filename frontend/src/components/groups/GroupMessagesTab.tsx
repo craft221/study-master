@@ -440,9 +440,9 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
   const typingMessage = getTypingNames()
 
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm h-[500px] flex flex-col overflow-hidden">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm h-[350px] sm:h-[500px] flex flex-col overflow-hidden">
       {/* Real-time status header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b bg-gray-50 rounded-t-lg">
+      <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-1 px-2 sm:px-4 py-2 border-b bg-gray-50 dark:bg-gray-800 rounded-t-lg">
         <div className="flex items-center gap-2">
           {isConnected ? (
             <div className="flex items-center gap-1 text-green-600 text-xs">
@@ -604,9 +604,9 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
                       <div className="flex items-center gap-1 sm:gap-2 mt-1">
                         <button
                           onClick={() => handleReply(message)}
-                          className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 p-1"
+                          className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 p-1.5 sm:p-1"
                         >
-                          <Reply className="h-3 w-3" />
+                          <Reply className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                           <span className="hidden sm:inline">{t('groups.messages.reply')}</span>
                         </button>
 
@@ -615,14 +615,14 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
                             onClick={() =>
                               setShowEmojiPicker(showEmojiPicker === message.id ? null : message.id)
                             }
-                            className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 p-1"
+                            className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 p-1.5 sm:p-1"
                           >
-                            <Smile className="h-3 w-3" />
+                            <Smile className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                             <span className="hidden sm:inline">{t('groups.messages.react')}</span>
                           </button>
 
                           {showEmojiPicker === message.id && (
-                            <div className={`absolute ${isOwnMessage ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
+                            <div className={`absolute ${isOwnMessage ? 'right-0' : 'left-0'} bottom-full mb-2 z-50 max-w-[calc(100vw-2rem)]`}>
                               <EmojiPicker
                                 onEmojiSelect={(emoji) => {
                                   handleAddReaction(message.id, emoji)
@@ -681,14 +681,14 @@ export default function GroupMessagesTab({ groupId, currentUserId, members }: Gr
         </div>
 
       {/* Message Input - zone fixe en bas */}
-      <div className="flex-shrink-0 border-t p-4 bg-white rounded-b-lg">
+      <div className="flex-shrink-0 border-t p-2 sm:p-4 bg-white dark:bg-gray-900 rounded-b-lg">
           {/* Replying To Indicator */}
           {replyingTo && (
             <div className="mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200 flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <Reply className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-700">
+                  <span className="text-xs font-medium text-gray-700 truncate max-w-[150px] sm:max-w-none">
                     Répondre à {replyingTo.username}
                   </span>
                 </div>

@@ -190,7 +190,7 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
               <span className="sm:hidden">Partager</span>
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Partager un deck</DialogTitle>
               <DialogDescription>
@@ -271,7 +271,7 @@ export default function GroupFlashcardsTab({ groupId, currentUserId }: GroupFlas
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0 mt-2 sm:mt-0">
                     {deck.shared_by_user_id !== currentUserId && (
                       <Button
                         size="sm"

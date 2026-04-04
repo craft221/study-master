@@ -226,20 +226,21 @@ export default function GroupSessionsTab({ groupId, currentUserId }: GroupSessio
   return (
     <div className="space-y-4">
       {/* Header with Create Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Sessions d'étude</h3>
-          <p className="text-sm text-gray-500">{sessions.length} session(s)</p>
+          <h3 className="text-base sm:text-lg font-semibold">Sessions d'étude</h3>
+          <p className="text-xs sm:text-sm text-gray-500">{sessions.length} session(s)</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Créer une session
+              <span className="hidden sm:inline">Créer une session</span>
+              <span className="sm:hidden">Créer</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Créer une session d'étude</DialogTitle>
               <DialogDescription>
@@ -330,8 +331,8 @@ export default function GroupSessionsTab({ groupId, currentUserId }: GroupSessio
       {/* Sessions List */}
       {sessions.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <CardContent className="py-8 sm:py-12 text-center">
+            <Zap className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
             <p className="text-gray-500">Aucune session programmée</p>
             <p className="text-sm text-gray-400 mt-1">
               Créez la première session d'étude!
@@ -346,12 +347,12 @@ export default function GroupSessionsTab({ groupId, currentUserId }: GroupSessio
 
             return (
               <Card key={session.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+                <CardContent className="p-3 sm:p-4">
                   <div className="space-y-3">
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Zap className="h-5 w-5 text-yellow-600" />
                           <h4 className="font-semibold text-gray-900">{session.title}</h4>
                           {getTypeBadge(session.session_type)}
@@ -364,7 +365,7 @@ export default function GroupSessionsTab({ groupId, currentUserId }: GroupSessio
                     </div>
 
                     {/* Info */}
-                    <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>{formatDate(session.start_time)}</span>
@@ -400,7 +401,7 @@ export default function GroupSessionsTab({ groupId, currentUserId }: GroupSessio
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
                       {session.status === 'scheduled' && (
                         <>
                           {!participating ? (

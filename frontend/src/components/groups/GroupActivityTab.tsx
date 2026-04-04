@@ -92,16 +92,17 @@ export default function GroupActivityTab({ groupId }: GroupActivityTabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold">Fil d'activité</h3>
-        <p className="text-sm text-gray-500">
-          Activités récentes du groupe • Met à jour toutes les 30s
+        <h3 className="text-base sm:text-lg font-semibold">Fil d'activité</h3>
+        <p className="text-xs sm:text-sm text-gray-500">
+          <span className="hidden sm:inline">Activités récentes du groupe • Met à jour toutes les 30s</span>
+          <span className="sm:hidden">Activités récentes • MAJ 30s</span>
         </p>
       </div>
 
       {activities.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <Activity className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <CardContent className="py-8 sm:py-12 text-center">
+            <Activity className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
             <p className="text-gray-500">Aucune activité</p>
             <p className="text-sm text-gray-400 mt-1">
               Les activités du groupe apparaîtront ici
@@ -115,7 +116,7 @@ export default function GroupActivityTab({ groupId }: GroupActivityTabProps) {
               key={activity.id}
               className={`border-l-4 ${getActivityColor(activity.activity_type)}`}
             >
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
                   {/* Icon */}
                   <div className="flex-shrink-0 mt-0.5">
@@ -126,7 +127,7 @@ export default function GroupActivityTab({ groupId }: GroupActivityTabProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="text-sm text-gray-900">
+                        <p className="text-sm text-gray-900 line-clamp-2 sm:line-clamp-none">
                           <span className="font-semibold">{activity.username}</span>{' '}
                           {activity.description}
                         </p>
