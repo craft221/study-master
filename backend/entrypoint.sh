@@ -17,4 +17,10 @@ python seed_achievements.py --no-prompt || echo "⚠️ Achievement seeding skip
 
 # Démarrer l'application
 echo "✅ Starting FastAPI application..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+if [ $# -eq 0 ]; then
+    echo "✅ Starting FastAPI application (default)..."
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+  else
+    echo "✅ Starting custom command: $@"
+    exec "$@"
+  fi
