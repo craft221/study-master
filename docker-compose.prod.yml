@@ -2,6 +2,9 @@
 # STUDERA.APP - Docker Compose Production
 # ===========================================
 # Usage: docker compose -f docker-compose.prod.yml up -d
+#
+# Variables d'environnement requises dans .env (racine) :
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, REDIS_PASSWORD
 # ===========================================
 
 services:
@@ -22,6 +25,11 @@ services:
     restart: always
     networks:
       - studera_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
 
   frontend:
     build:
@@ -52,6 +60,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   backend:
     build: ./backend
@@ -77,41 +90,64 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1G
 
   postgres:
     image: postgres:15-alpine
     container_name: postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-studymaster}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studymaster123}
-      POSTGRES_DB: ${POSTGRES_DB:-studymaster_db}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER required in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB required in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
     networks:
       - studera_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studymaster} -d ${POSTGRES_DB:-studymaster_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
 
   redis:
     image: redis:7-alpine
     container_name: redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword123} --appendonly yes
+    # maxmemory + eviction policy : limite l'usage Redis a 400M et evicte
+    # les cles les moins recemment utilisees (LRU) quand la limite est atteinte.
+    # Evite qu'un cache/celery runaway tue la VPS.
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD required in .env}
+      --appendonly yes
+      --maxmemory 400mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     restart: always
     networks:
       - studera_network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword123}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
 
   celery_worker:
     build: ./backend
@@ -129,6 +165,11 @@ services:
     restart: always
     networks:
       - studera_network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1G
 
   celery_beat:
     build: ./backend
@@ -146,6 +187,11 @@ services:
     restart: always
     networks:
       - studera_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
   flower:
     build: ./backend
@@ -159,6 +205,11 @@ services:
     restart: always
     networks:
       - studera_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
 networks:
   studera_network:

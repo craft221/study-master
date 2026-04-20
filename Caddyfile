@@ -45,11 +45,13 @@ api.studera.app {
 }
 
 # Flower (Monitoring Celery) - Protege par auth basique
-# Login: admin / Password: StuderaFlower2024!
-# Pour changer le mot de passe: docker run caddy caddy hash-password --plaintext 'NOUVEAU_MDP'
+# Login: admin
+# Le mot de passe est stocke en hash bcrypt (cout 14).
+# Pour le changer : docker run --rm caddy:2-alpine caddy hash-password --plaintext 'NOUVEAU_MDP'
+# puis remplacer le hash ci-dessous, et `docker compose restart caddy`.
 flower.studera.app {
     basicauth {
-        admin $2a$14$rMCwpPGJxGv9O7rjCNxnYOVPHIFBi.Rk8RWiVvPNQsJxNmhQXKV5S
+        admin $2a$14$ZY2v.ctp8nV2Wv0L46D8CeZP1kicF7BA1JqIdaTzT0ZzKA16PjLi.
     }
     reverse_proxy flower:5555
 }
