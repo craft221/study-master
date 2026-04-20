@@ -378,10 +378,40 @@ async def paypal_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Webhook PayPal pour les notifications de paiement."""
+    """
+    Webhook PayPal pour les notifications de paiement.
+
+    Sécurité:
+    - Vérification de signature via API PayPal verify-webhook-signature
+    - Rejet si PAYPAL_WEBHOOK_ID absent en production
+    - Logging de tous les événements
+    """
     try:
         payload = await request.json()
         headers = dict(request.headers)
+
+        log_payment_event(
+            "WEBHOOK_RECEIVED",
+            user_id=0,
+            provider="paypal",
+            extra={
+                "event_type": payload.get("event_type", "unknown"),
+                "has_signature": "paypal-transmission-sig" in {
+                    k.lower() for k in headers
+                },
+            },
+        )
+
+        # Pré-check config en prod : PAYPAL_WEBHOOK_ID requis pour vérif signature
+        paypal_webhook_id = getattr(settings, 'PAYPAL_WEBHOOK_ID', '')
+        if (
+            settings.ENVIRONMENT == "production"
+            and (not paypal_webhook_id or "placeholder" in paypal_webhook_id)
+        ):
+            logger.error(
+                "PAYPAL_WEBHOOK_ID non configuré en production - webhook rejeté"
+            )
+            raise HTTPException(status_code=500, detail="Webhook non configuré")
 
         result = await payment_service.handle_webhook(
             db=db,
@@ -397,12 +427,20 @@ async def paypal_webhook(
                 transaction_id=int(result["transaction_id"]),
                 from_webhook=True
             )
+            log_payment_event(
+                "SUBSCRIPTION_ACTIVATED",
+                user_id=0,
+                transaction_id=int(result["transaction_id"]),
+                provider="paypal",
+            )
 
         return WebhookResponse(
             status=result.get("status", "received"),
             transaction_id=result.get("transaction_id")
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erreur webhook PayPal: {e}")
         return WebhookResponse(status="error", message=str(e))

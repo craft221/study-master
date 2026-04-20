@@ -159,23 +159,51 @@ class StripeService:
         - payment_intent.payment_failed: Paiement échoué
         """
         try:
-            # Vérifier la signature (en production)
+            # ============================================================
+            # Vérification de la signature Stripe (OBLIGATOIRE en prod)
+            # ============================================================
+            # Règle senior : on ne bypass la signature que si le webhook_secret
+            # est clairement absent (dev local sans Stripe configuré).
+            # Dès qu'un secret est présent, on EXIGE une signature valide,
+            # sinon n'importe qui peut POSTer un event forgé et activer
+            # un abonnement gratuitement.
             sig_header = headers.get("stripe-signature", "")
+            has_real_secret = (
+                self.webhook_secret
+                and "placeholder" not in self.webhook_secret
+            )
 
-            if not self.is_test_mode and sig_header:
+            if has_real_secret:
+                # Mode prod : signature obligatoire
+                if not sig_header:
+                    logger.warning(
+                        "Webhook Stripe rejeté : header stripe-signature manquant"
+                    )
+                    raise Exception("Signature manquante")
+
                 try:
+                    # Stripe SDK exige la payload brute (bytes/str), pas un dict
+                    # re-sérialisé (la sérialisation change les clés, casse la sig)
                     import json as json_module
-                    payload_str = payload if isinstance(payload, str) else json_module.dumps(payload)
+                    payload_str = (
+                        payload if isinstance(payload, (str, bytes))
+                        else json_module.dumps(payload)
+                    )
                     event = stripe.Webhook.construct_event(
                         payload_str,
                         sig_header,
                         self.webhook_secret
                     )
-                except stripe.error.SignatureVerificationError:
-                    logger.error("Signature webhook invalide")
+                except stripe.error.SignatureVerificationError as e:
+                    logger.error(f"Signature webhook Stripe invalide: {e}")
                     raise Exception("Signature invalide")
             else:
-                # Mode test ou pas de signature
+                # Dev local sans webhook_secret : accepter tel quel
+                # (impossible en prod car on exige STRIPE_WEBHOOK_SECRET dans .env)
+                logger.warning(
+                    "Stripe webhook_secret non configuré — signature non vérifiée "
+                    "(OK en dev local uniquement)"
+                )
                 event = payload if isinstance(payload, dict) else {"type": "unknown"}
 
             event_type = event.get("type", "")

@@ -241,13 +241,21 @@ class PayPalService:
         - PAYMENT.CAPTURE.DENIED: Paiement refusé
         """
         try:
-            # Vérifier la signature (en production)
+            # ============================================================
+            # Vérification de la signature PayPal (OBLIGATOIRE en prod)
+            # ============================================================
+            # Règle senior : en prod (sandbox=False), toute signature invalide
+            # ou manquante rejette le webhook. En sandbox on log mais on laisse
+            # passer pour permettre les tests depuis le dashboard PayPal.
             if not self.is_test_mode:
                 verified = await self._verify_webhook_signature(payload, headers)
                 if not verified:
-                    logger.warning("Signature webhook PayPal invalide")
-                    # En mode sandbox, on peut continuer quand même
-                    if not self.sandbox:
+                    if self.sandbox:
+                        logger.warning(
+                            "Webhook PayPal sandbox : signature invalide (laissée passer)"
+                        )
+                    else:
+                        logger.error("Webhook PayPal rejeté : signature invalide")
                         raise Exception("Signature invalide")
 
             event_type = payload.get("event_type", "")
@@ -439,14 +447,99 @@ class PayPalService:
         payload: Dict,
         headers: Dict
     ) -> bool:
-        """Vérifie la signature d'un webhook PayPal"""
-        # En mode test, toujours valide
-        if self.is_test_mode or self.sandbox:
+        """
+        Vérifie la signature d'un webhook PayPal via l'API officielle.
+
+        Utilise l'endpoint /v1/notifications/verify-webhook-signature de PayPal
+        qui retourne "SUCCESS" si la signature est valide, "FAILURE" sinon.
+
+        Doc: https://developer.paypal.com/docs/api/webhooks/v1/#verify-webhook-signature
+
+        Args:
+            payload: Corps du webhook (dict parsé depuis le JSON reçu)
+            headers: Headers HTTP reçus (case-insensitive dict)
+
+        Returns:
+            True si signature valide, False sinon
+        """
+        # Mode test = pas de vraies clés PayPal → skip
+        if self.is_test_mode:
             return True
 
-        # TODO: Implémenter la vérification complète
-        # https://developer.paypal.com/docs/api-basics/notifications/webhooks/notification-messages/
-        return True
+        # Normaliser les headers en lowercase (FastAPI les passe tels quels)
+        # PayPal envoie les headers en PascalCase ("PAYPAL-TRANSMISSION-ID")
+        # mais les libs HTTP les normalisent parfois en lowercase
+        h = {k.lower(): v for k, v in headers.items()}
+
+        required = [
+            "paypal-auth-algo",
+            "paypal-cert-url",
+            "paypal-transmission-id",
+            "paypal-transmission-sig",
+            "paypal-transmission-time",
+        ]
+        missing = [k for k in required if not h.get(k)]
+        if missing:
+            logger.warning(
+                f"Webhook PayPal : headers manquants pour vérification : {missing}"
+            )
+            return False
+
+        # Sécurité : vérifier que webhook_id est bien configuré
+        # (sinon PayPal retourne SUCCESS par défaut — ce qui serait un bypass)
+        if not self.webhook_id or "placeholder" in self.webhook_id:
+            logger.error(
+                "PAYPAL_WEBHOOK_ID non configuré — impossible de vérifier les signatures"
+            )
+            return False
+
+        verification_payload = {
+            "auth_algo": h["paypal-auth-algo"],
+            "cert_url": h["paypal-cert-url"],
+            "transmission_id": h["paypal-transmission-id"],
+            "transmission_sig": h["paypal-transmission-sig"],
+            "transmission_time": h["paypal-transmission-time"],
+            "webhook_id": self.webhook_id,
+            "webhook_event": payload,
+        }
+
+        try:
+            token = await self._get_access_token()
+        except Exception as e:
+            logger.error(f"Impossible d'obtenir le token PayPal pour vérif : {e}")
+            return False
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/v1/notifications/verify-webhook-signature",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    json=verification_payload,
+                )
+
+            if response.status_code != 200:
+                logger.error(
+                    f"Verify-webhook-signature PayPal a retourné "
+                    f"{response.status_code}: {response.text[:500]}"
+                )
+                return False
+
+            verification_status = response.json().get("verification_status")
+            is_valid = verification_status == "SUCCESS"
+
+            if not is_valid:
+                logger.warning(
+                    f"PayPal a rejeté la signature webhook : {verification_status}"
+                )
+
+            return is_valid
+
+        except httpx.HTTPError as e:
+            logger.error(f"Erreur HTTP lors de la vérif signature PayPal : {e}")
+            return False
 
     # ==================== SIMULATION MODE TEST ====================
 
