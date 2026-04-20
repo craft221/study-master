@@ -346,10 +346,13 @@ async def stripe_webhook(
         )
 
         # Si le paiement est réussi, activer l'abonnement
+        # from_webhook=True : signature Stripe déjà vérifiée dans handle_webhook,
+        # pas besoin d'ownership user (webhook = trusted source)
         if result.get("requires_activation") and result.get("transaction_id"):
             await payment_service.confirm_payment(
                 db=db,
-                transaction_id=int(result["transaction_id"])
+                transaction_id=int(result["transaction_id"]),
+                from_webhook=True
             )
             log_payment_event(
                 "SUBSCRIPTION_ACTIVATED",
@@ -387,10 +390,12 @@ async def paypal_webhook(
             headers=headers
         )
 
+        # from_webhook=True : signature PayPal vérifiée dans handle_webhook
         if result.get("requires_activation") and result.get("transaction_id"):
             await payment_service.confirm_payment(
                 db=db,
-                transaction_id=int(result["transaction_id"])
+                transaction_id=int(result["transaction_id"]),
+                from_webhook=True
             )
 
         return WebhookResponse(
@@ -420,10 +425,12 @@ async def flutterwave_webhook(
             headers=headers
         )
 
+        # from_webhook=True : signature Flutterwave vérifiée dans handle_webhook
         if result.get("requires_activation") and result.get("transaction_id"):
             await payment_service.confirm_payment(
                 db=db,
-                transaction_id=int(result["transaction_id"])
+                transaction_id=int(result["transaction_id"]),
+                from_webhook=True
             )
 
         return WebhookResponse(
@@ -761,11 +768,13 @@ async def simulate_payment(
         raise HTTPException(status_code=404, detail="Transaction non trouvée")
 
     if request.action == "approve":
-        # Confirmer le paiement
+        # Confirmer le paiement (route de simulation dev uniquement)
+        # from_webhook=True : route dev déjà gatée par is_dev_mode, skip ownership
         await payment_service.confirm_payment(
             db=db,
             transaction_id=transaction.id,
-            provider_data={"simulated": True}
+            provider_data={"simulated": True},
+            from_webhook=True
         )
 
         return SimulatePaymentResponse(

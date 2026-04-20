@@ -469,7 +469,8 @@ class PaymentService:
         db: AsyncSession,
         transaction_id: int,
         provider_data: Dict = None,
-        user_id: int = None
+        user_id: int = None,
+        from_webhook: bool = False
     ) -> Dict[str, Any]:
         """
         Confirme un paiement et active l'abonnement.
@@ -478,11 +479,24 @@ class PaymentService:
             db: Session de base de données
             transaction_id: ID de la transaction
             provider_data: Données additionnelles du provider
-            user_id: ID de l'utilisateur (pour vérification d'ownership)
+            user_id: ID de l'utilisateur (obligatoire sauf si from_webhook=True,
+                     car les webhooks n'ont pas de session utilisateur)
+            from_webhook: True si appelé depuis un webhook provider (signature déjà
+                          vérifiée en amont). Skip la vérification d'ownership.
 
         Returns:
             Dict avec le statut de l'activation
+
+        Raises:
+            ValueError: Si user_id absent hors webhook, ou transaction non autorisée
         """
+        # Sécurité : hors webhook, l'identité utilisateur est obligatoire
+        # (empêche toute confirmation anonyme depuis une route authentifiée)
+        if not from_webhook and user_id is None:
+            raise ValueError(
+                "user_id requis pour confirm_payment hors webhook"
+            )
+
         # Récupérer la transaction
         result = await db.execute(
             select(Transaction).where(Transaction.id == transaction_id)
@@ -492,8 +506,8 @@ class PaymentService:
         if not transaction:
             raise ValueError("Transaction non trouvée")
 
-        # Vérifier que la transaction appartient à l'utilisateur
-        if user_id is not None and transaction.user_id != user_id:
+        # Vérifier l'ownership (sauf webhook, où la signature du provider fait foi)
+        if not from_webhook and transaction.user_id != user_id:
             raise ValueError("Transaction non autorisée")
 
         if transaction.status == TransactionStatus.SUCCESS:

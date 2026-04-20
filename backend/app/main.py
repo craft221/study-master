@@ -116,12 +116,16 @@ from app.api.v1.email_tracking import router as email_tracking_router
 from app.api.v1.admin_emails import router as admin_emails_router
 
 # Create FastAPI app
+# Gate Swagger/ReDoc/OpenAPI en production pour éviter l'énumération d'endpoints
+_is_prod = settings.ENVIRONMENT == "production"
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="API pour Studera - L'application ultime d'apprentissage avec IA",
     version=settings.APP_VERSION,
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Configuration du rate limiter
