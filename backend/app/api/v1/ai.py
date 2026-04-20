@@ -27,7 +27,7 @@ from app.models.document import Document
 from app.models.ai_task import AITask, AITaskType, AITaskStatus
 from app.services.ai_service import ai_service
 from app.services.xp_service import award_xp
-from app.services.ocr_service import OCRService
+from app.services.ocr_service import OCRService, OCRSizeLimitError
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
@@ -914,47 +914,57 @@ async def extract_text_from_document(document: Document, language: str = "fra") 
         file_bytes = f.read()
 
     # Extraire le texte selon le type de fichier
-    if document.file_type == "pdf":
-        result = await ocr_service.extract_text_from_pdf(
-            pdf_file=file_bytes,
-            language=language
-        )
-        # Le service OCR retourne 'full_text' pour les PDFs
-        extracted_text = result.get("full_text", "") or result.get("text", "")
-    elif document.file_type == "image":
-        result = await ocr_service.extract_text_from_image(
-            image_file=file_bytes,
-            language=language
-        )
-        # Le service OCR retourne 'full_text' pour les images aussi
-        extracted_text = result.get("full_text", "") or result.get("text", "")
-    elif document.file_type in ["word", "excel", "powerpoint"]:
-        # Pour Office, convertir en PDF puis extraire le texte
-        logger.info(f"Document Office ({document.file_type}), conversion en PDF pour extraction...")
-        try:
-            pdf_path = convert_office_to_pdf(file_path)
-            temp_dir = os.path.dirname(pdf_path)
-            try:
-                with open(pdf_path, "rb") as pdf_f:
-                    pdf_bytes = pdf_f.read()
-                result = await ocr_service.extract_text_from_pdf(
-                    pdf_file=pdf_bytes,
-                    language=language
-                )
-                extracted_text = result.get("full_text", "") or result.get("text", "")
-            finally:
-                # Nettoyer le PDF temporaire
-                shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception as e:
-            logger.error(f"Erreur conversion Office: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Erreur lors de la conversion du document Office: {str(e)}"
+    # OCRSizeLimitError -> HTTP 413 (depassement des garde-fous anti-DoS)
+    try:
+        if document.file_type == "pdf":
+            result = await ocr_service.extract_text_from_pdf(
+                pdf_file=file_bytes,
+                language=language
             )
-    else:
+            # Le service OCR retourne 'full_text' pour les PDFs
+            extracted_text = result.get("full_text", "") or result.get("text", "")
+        elif document.file_type == "image":
+            result = await ocr_service.extract_text_from_image(
+                image_file=file_bytes,
+                language=language
+            )
+            # Le service OCR retourne 'full_text' pour les images aussi
+            extracted_text = result.get("full_text", "") or result.get("text", "")
+        elif document.file_type in ["word", "excel", "powerpoint"]:
+            # Pour Office, convertir en PDF puis extraire le texte
+            logger.info(f"Document Office ({document.file_type}), conversion en PDF pour extraction...")
+            try:
+                pdf_path = convert_office_to_pdf(file_path)
+                temp_dir = os.path.dirname(pdf_path)
+                try:
+                    with open(pdf_path, "rb") as pdf_f:
+                        pdf_bytes = pdf_f.read()
+                    result = await ocr_service.extract_text_from_pdf(
+                        pdf_file=pdf_bytes,
+                        language=language
+                    )
+                    extracted_text = result.get("full_text", "") or result.get("text", "")
+                finally:
+                    # Nettoyer le PDF temporaire
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+            except OCRSizeLimitError:
+                # Propager : l'except externe convertit en HTTP 413
+                raise
+            except Exception as e:
+                logger.error(f"Erreur conversion Office: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Erreur lors de la conversion du document Office: {str(e)}"
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Type de document non supporté pour l'extraction: {document.file_type}. Types supportés: PDF, images, Word, Excel, PowerPoint."
+            )
+    except OCRSizeLimitError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Type de document non supporté pour l'extraction: {document.file_type}. Types supportés: PDF, images, Word, Excel, PowerPoint."
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e)
         )
 
     return extracted_text

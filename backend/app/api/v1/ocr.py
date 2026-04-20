@@ -10,7 +10,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.note import Note
 from app.models.subject import Subject
-from app.services.ocr_service import ocr_service
+from app.services.ocr_service import ocr_service, OCRSizeLimitError
 from app.tasks.ocr_tasks import process_ocr_async
 from app.celery_app import celery_app
 
@@ -44,24 +44,30 @@ async def upload_pdf_and_extract_text(
             detail="Only PDF files are supported"
         )
 
-    # Limiter la taille (50 MB max)
-    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+    # Limiter la taille (20 MB max - aligne sur ocr_service.MAX_PDF_SIZE_BYTES)
+    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
     file_content = await file.read()
 
     if len(file_content) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds 50 MB limit"
+            detail="File size exceeds 20 MB limit"
         )
 
     # Extraire le texte via OCR avec les nouvelles options
-    result = await ocr_service.extract_text_from_pdf(
-        pdf_file=file_content,
-        language=language,
-        detect_layout=detect_layout,
-        ai_post_process=ai_post_process
-    )
-    
+    try:
+        result = await ocr_service.extract_text_from_pdf(
+            pdf_file=file_content,
+            language=language,
+            detect_layout=detect_layout,
+            ai_post_process=ai_post_process
+        )
+    except OCRSizeLimitError as e:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e)
+        )
+
     if not result['success']:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -160,12 +166,18 @@ async def upload_image_and_extract_text(
         )
 
     # Extraire le texte avec les nouvelles options
-    result = await ocr_service.extract_text_from_image(
-        image_file=file_content,
-        language=language,
-        detect_layout=detect_layout,
-        ai_post_process=ai_post_process
-    )
+    try:
+        result = await ocr_service.extract_text_from_image(
+            image_file=file_content,
+            language=language,
+            detect_layout=detect_layout,
+            ai_post_process=ai_post_process
+        )
+    except OCRSizeLimitError as e:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e)
+        )
 
     if not result['success']:
         raise HTTPException(
@@ -274,14 +286,14 @@ async def upload_pdf_async(
             detail="Only PDF files are supported"
         )
 
-    # Limiter la taille (50 MB max)
-    MAX_FILE_SIZE = 50 * 1024 * 1024
+    # Limiter la taille (20 MB max - aligne sur ocr_service.MAX_PDF_SIZE_BYTES)
+    MAX_FILE_SIZE = 20 * 1024 * 1024
     file_content = await file.read()
 
     if len(file_content) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds 50 MB limit"
+            detail="File size exceeds 20 MB limit"
         )
 
     # Vérifier le sujet si fourni

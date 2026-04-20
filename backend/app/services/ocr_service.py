@@ -2,15 +2,28 @@
 Service OCR pour extraction de texte depuis PDF
 Utilise pytesseract + pdf2image + PyMuPDF pour l'extraction OCR
 Avec détection avancée de layout, extraction d'images intégrées et post-traitement IA
+
+IMPORTANT (senior note):
+pytesseract, PIL, fitz et convert_from_path sont des operations SYNCHRONES
+CPU-bound. Les appeler directement dans des fonctions `async` bloque l'event
+loop FastAPI entier pendant le traitement — un seul gros PDF peut freezer
+tout le backend.
+
+Les methodes publiques (extract_text_from_pdf, extract_text_from_image) sont
+donc wrappees pour :
+  1. Valider taille et nombre de pages en amont (garde-fou DoS)
+  2. Deleguer le travail CPU-bound a un thread pool via asyncio.to_thread
+     (libere l'event loop pour d'autres requetes HTTP)
 """
 import os
 import re
+import asyncio
 import tempfile
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 import pytesseract
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path, pdfinfo_from_path
 from PIL import Image, ImageEnhance, ImageFilter
 import io
 
@@ -23,6 +36,22 @@ except ImportError:
     fitz = None
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# Garde-fous anti-DoS pour les uploads OCR
+# ============================================================
+# Ces limites sont conservatrices pour un VPS 4GB/2CPU. A ajuster selon
+# la capacite (cf resource.limits dans docker-compose.prod.yml).
+MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024   # 20 MB (un PDF >20MB = 99% junk)
+MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024 # 10 MB pour une image
+MAX_PDF_PAGES = 50                       # Cap : OCR sur les 50 premieres pages
+MAX_IMAGE_DIMENSION = 8000               # 8000px max par cote (evite les bombs)
+
+
+class OCRSizeLimitError(ValueError):
+    """Leve quand un fichier depasse les limites autorisees."""
+    pass
 
 
 class OCRService:
@@ -354,7 +383,19 @@ class OCRService:
 
         Returns:
             Dict avec extracted_text, page_count, confidence
+
+        Raises:
+            OCRSizeLimitError: si le PDF depasse MAX_PDF_SIZE_BYTES ou MAX_PDF_PAGES
         """
+        # ------------------------------------------------------------
+        # Garde-fous DoS : valider AVANT toute operation couteuse
+        # ------------------------------------------------------------
+        if len(pdf_file) > MAX_PDF_SIZE_BYTES:
+            raise OCRSizeLimitError(
+                f"PDF trop volumineux: {len(pdf_file)} bytes "
+                f"(max {MAX_PDF_SIZE_BYTES} bytes = {MAX_PDF_SIZE_BYTES // (1024*1024)} MB)"
+            )
+
         extracted_text = []
         page_count = 0
         total_confidence = 0.0
@@ -367,8 +408,20 @@ class OCRService:
                 temp_pdf_path = temp_pdf.name
 
             try:
+                # Pre-check : nombre de pages AVANT la rasterisation (pdfinfo = cheap)
+                pdf_info = await asyncio.to_thread(pdfinfo_from_path, temp_pdf_path)
+                total_pages_in_pdf = pdf_info.get("Pages", 0)
+                if total_pages_in_pdf > MAX_PDF_PAGES:
+                    raise OCRSizeLimitError(
+                        f"PDF trop long: {total_pages_in_pdf} pages "
+                        f"(max {MAX_PDF_PAGES}). Segmentez le document."
+                    )
+
                 # Convertir PDF en images (300 DPI pour qualité optimale)
-                images = convert_from_path(temp_pdf_path, dpi=300)
+                # CPU-bound : delegue a un thread pour ne pas bloquer l'event loop
+                images = await asyncio.to_thread(
+                    convert_from_path, temp_pdf_path, dpi=300
+                )
                 page_count = len(images)
 
                 # OCR sur chaque page
@@ -387,6 +440,8 @@ class OCRService:
                     psm_config = self._get_psm_for_layout(layout_type)
 
                     # Extraction selon le type de layout
+                    # pytesseract.image_to_string est CPU-bound (bloquant) :
+                    # on delegue a un thread pour ne pas bloquer l'event loop.
                     if layout_type == 'table':
                         # Essayer d'extraire la structure de table
                         table_text = await self._extract_table_structure(
@@ -395,7 +450,8 @@ class OCRService:
                         if table_text:
                             text = table_text
                         else:
-                            text = pytesseract.image_to_string(
+                            text = await asyncio.to_thread(
+                                pytesseract.image_to_string,
                                 processed_image,
                                 lang=tesseract_lang,
                                 config=psm_config
@@ -407,14 +463,16 @@ class OCRService:
                         )
                     else:
                         # Extraction standard
-                        text = pytesseract.image_to_string(
+                        text = await asyncio.to_thread(
+                            pytesseract.image_to_string,
                             processed_image,
                             lang=tesseract_lang,
                             config=psm_config
                         )
 
-                    # Obtenir les détails avec confidence
-                    details = pytesseract.image_to_data(
+                    # Obtenir les détails avec confidence (egalement CPU-bound)
+                    details = await asyncio.to_thread(
+                        pytesseract.image_to_data,
                         processed_image,
                         lang=tesseract_lang,
                         output_type=pytesseract.Output.DICT
@@ -501,6 +559,9 @@ class OCRService:
                 if os.path.exists(temp_pdf_path):
                     os.unlink(temp_pdf_path)
 
+        except OCRSizeLimitError:
+            # Propager : la route API doit retourner HTTP 413 (Payload Too Large)
+            raise
         except Exception as e:
             logger.error(f"OCR extraction failed: {e}")
             return {
@@ -592,10 +653,30 @@ class OCRService:
 
         Returns:
             Dict avec extracted_text, confidence
+
+        Raises:
+            OCRSizeLimitError: si l'image depasse MAX_IMAGE_SIZE_BYTES ou MAX_IMAGE_DIMENSION
         """
+        # ------------------------------------------------------------
+        # Garde-fous DoS : valider AVANT toute operation couteuse
+        # ------------------------------------------------------------
+        if len(image_file) > MAX_IMAGE_SIZE_BYTES:
+            raise OCRSizeLimitError(
+                f"Image trop volumineuse: {len(image_file)} bytes "
+                f"(max {MAX_IMAGE_SIZE_BYTES} bytes = {MAX_IMAGE_SIZE_BYTES // (1024*1024)} MB)"
+            )
+
         try:
             # Charger l'image
             image = Image.open(io.BytesIO(image_file))
+
+            # Anti-decompression-bomb : rejete les images > MAX_IMAGE_DIMENSION px
+            if max(image.size) > MAX_IMAGE_DIMENSION:
+                raise OCRSizeLimitError(
+                    f"Image trop grande: {image.size[0]}x{image.size[1]}px "
+                    f"(max {MAX_IMAGE_DIMENSION}px par cote)"
+                )
+
             tesseract_lang = self._get_tesseract_lang(language)
 
             # Prétraitement avancé
@@ -610,22 +691,26 @@ class OCRService:
             psm_config = self._get_psm_for_layout(layout_type)
 
             # Extraction selon le type
+            # pytesseract est CPU-bound : delegue a un thread pour liberer l'event loop.
             if layout_type == 'table':
                 table_text = await self._extract_table_structure(processed_image, tesseract_lang)
-                text = table_text if table_text else pytesseract.image_to_string(
+                text = table_text if table_text else await asyncio.to_thread(
+                    pytesseract.image_to_string,
                     processed_image, lang=tesseract_lang, config=psm_config
                 )
             elif layout_type == 'multi_column':
                 text = await self._extract_columns(processed_image, tesseract_lang)
             else:
-                text = pytesseract.image_to_string(
+                text = await asyncio.to_thread(
+                    pytesseract.image_to_string,
                     processed_image,
                     lang=tesseract_lang,
                     config=psm_config
                 )
 
-            # Obtenir confidence
-            details = pytesseract.image_to_data(
+            # Obtenir confidence (CPU-bound egalement)
+            details = await asyncio.to_thread(
+                pytesseract.image_to_data,
                 processed_image,
                 lang=tesseract_lang,
                 output_type=pytesseract.Output.DICT
@@ -649,6 +734,9 @@ class OCRService:
                 'layout_type': layout_type
             }
 
+        except OCRSizeLimitError:
+            # Propager : la route API doit retourner HTTP 413 (Payload Too Large)
+            raise
         except Exception as e:
             logger.error(f"Image OCR failed: {e}")
             return {
