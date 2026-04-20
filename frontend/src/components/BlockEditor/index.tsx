@@ -1597,10 +1597,52 @@ function TableBlockContent({
   )
 }
 
+// ============== Helpers: HTML sanitization ==============
+
+/**
+ * Echappe les caracteres HTML dangereux pour prevenir XSS.
+ * A appliquer sur TOUT contenu utilisateur avant injection dans du HTML.
+ */
+function escapeHtml(input: string): string {
+  if (input == null) return ''
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Valide une URL d'image : autorise uniquement http(s) et data:image/*.
+ * Bloque javascript:, vbscript:, file:, data:text/html, etc.
+ * Retourne une string vide si la protocole n'est pas safe (l'image ne s'affichera pas).
+ */
+function sanitizeImageUrl(url: string): string {
+  if (!url) return ''
+  const trimmed = String(url).trim()
+  // Data URI : uniquement les images (bloque data:text/html,<script>...)
+  if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(trimmed)) {
+    return trimmed
+  }
+  // URLs absolues : uniquement http(s)
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+  // URLs relatives autorisees (commencent par / ou .)
+  if (/^[./]/.test(trimmed)) {
+    return trimmed
+  }
+  return ''
+}
+
 // ============== Helper: Block to HTML ==============
 
 function blockToHtml(block: Block): string {
-  const content = 'content' in block ? block.content : ''
+  // Echapper systematiquement le contenu utilisateur avant interpolation HTML.
+  // KaTeX et le code sont geres au cas par cas ci-dessous.
+  const rawContent = 'content' in block ? block.content : ''
+  const content = escapeHtml(rawContent)
 
   switch (block.type) {
     case 'paragraph':
@@ -1617,31 +1659,52 @@ function blockToHtml(block: Block): string {
       return `<ol class="list-decimal ml-4"><li>${content}</li></ol>`
     case 'toggle':
       return `<details><summary class="cursor-pointer font-medium">${content}</summary></details>`
-    case 'callout':
-      const colors = CALLOUT_COLORS[(block as CalloutBlock).color] || CALLOUT_COLORS.yellow
-      return `<div class="p-3 rounded-lg border ${colors.bg} ${colors.border}"><span class="mr-2">${(block as CalloutBlock).icon}</span>${content}</div>`
+    case 'callout': {
+      const callout = block as CalloutBlock
+      const colors = CALLOUT_COLORS[callout.color] || CALLOUT_COLORS.yellow
+      // L'icone est aussi user-controlled (emoji ou string libre) → escape
+      const icon = escapeHtml(callout.icon || '')
+      return `<div class="p-3 rounded-lg border ${colors.bg} ${colors.border}"><span class="mr-2">${icon}</span>${content}</div>`
+    }
     case 'quote':
       return `<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600">${content}</blockquote>`
     case 'code':
+      // Le code reste dans <pre><code> donc escape suffit (pas d'execution)
       return `<pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto"><code>${content}</code></pre>`
     case 'math':
       try {
-        return `<div class="text-center my-4">${katex.renderToString(content, { displayMode: true, throwOnError: false })}</div>`
+        // KaTeX fait son propre echappement interne ; on passe le contenu BRUT
+        // (pas escape, sinon les backslashes LaTeX sont cassés).
+        // throwOnError: false → KaTeX genere un span d'erreur, pas un throw.
+        return `<div class="text-center my-4">${katex.renderToString(rawContent, { displayMode: true, throwOnError: false })}</div>`
       } catch {
         return `<div class="text-red-500">Erreur LaTeX</div>`
       }
     case 'divider':
       return '<hr class="my-4 border-gray-200" />'
-    case 'image':
+    case 'image': {
       const img = block as Block & { type: 'image'; url: string; caption?: string }
-      return `<figure class="text-center"><img src="${img.url}" alt="${img.caption || ''}" class="max-w-full rounded-lg shadow-md mx-auto" />${img.caption ? `<figcaption class="text-sm text-gray-500 mt-2">${img.caption}</figcaption>` : ''}</figure>`
-    case 'table':
+      const safeUrl = sanitizeImageUrl(img.url)
+      const safeAlt = escapeHtml(img.caption || '')
+      const safeCaption = escapeHtml(img.caption || '')
+      // safeUrl est deja filtree pour etre un URL whitelistee, mais on escape
+      // quand meme pour eviter les cassures de guillemets dans l'attribut
+      const urlAttr = escapeHtml(safeUrl)
+      return `<figure class="text-center"><img src="${urlAttr}" alt="${safeAlt}" class="max-w-full rounded-lg shadow-md mx-auto" />${img.caption ? `<figcaption class="text-sm text-gray-500 mt-2">${safeCaption}</figcaption>` : ''}</figure>`
+    }
+    case 'table': {
       const table = block as Block & { type: 'table'; rows: string[][] }
       const rows = table.rows.map((row, i) => {
-        const cells = row.map(cell => i === 0 ? `<th class="border px-3 py-2 bg-gray-100">${cell}</th>` : `<td class="border px-3 py-2">${cell}</td>`).join('')
+        const cells = row.map(cell => {
+          const safeCell = escapeHtml(cell)
+          return i === 0
+            ? `<th class="border px-3 py-2 bg-gray-100">${safeCell}</th>`
+            : `<td class="border px-3 py-2">${safeCell}</td>`
+        }).join('')
         return `<tr>${cells}</tr>`
       }).join('')
       return `<table class="w-full border-collapse border">${rows}</table>`
+    }
     default:
       return ''
   }
