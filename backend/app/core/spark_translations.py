@@ -3,7 +3,7 @@ Traductions des messages Spark pour les notifications
 =====================================================
 
 Messages émotionnels style Duolingo avec Spark l'écureuil
-Supporte: français (fr), anglais (en), espagnol (es)
+Supporte: français (fr), anglais (en), espagnol (es), arabe (ar)
 
 Intégré avec le système i18n existant (app/core/i18n.py)
 """
@@ -14,7 +14,7 @@ import random
 from app.core.i18n import normalize_language_code, SUPPORTED_LANGUAGES
 
 # Langues supportées pour les notifications Spark (aligné avec le frontend i18n)
-SPARK_SUPPORTED_LANGUAGES = ["fr", "en", "es"]
+SPARK_SUPPORTED_LANGUAGES = ["fr", "en", "es", "ar"]
 
 
 def get_spark_language(lang: str) -> str:
@@ -26,7 +26,7 @@ def get_spark_language(lang: str) -> str:
         lang: Code de langue brut (peut être "fr-FR", "en-US", etc.)
 
     Returns:
-        Code de langue supporté par Spark (fr, en, es) ou "fr" par défaut
+        Code de langue supporté par Spark (fr, en, es, ar) ou "fr" par défaut
     """
     # Normaliser avec le système i18n existant
     normalized = normalize_language_code(lang)
@@ -64,6 +64,12 @@ class SparkNotificationMessages:
             "¡Hey! 🌟 ¡{streak} días seguidos, lo estás haciendo genial! ¡Te espero para estudiar!",
             "¡Hola! ¡Tu llama de {streak} días brilla con fuerza! 🔥 ¡Mantenla viva hoy!",
         ],
+        "ar": [
+            "مرحبًا، أنا سبارك! 🐿️ سلسلتك التي مدتها {streak} أيام تثير إعجابي! هل نواصل معًا؟",
+            "أهلاً بطلي! سلسلتك التي مدتها {streak} أيام رائعة. جلسة دراسية صغيرة بعد الظهر؟ 📚",
+            "مرحبًا! 🌟 {streak} أيام متتالية، أنت رائع! أنتظرك لنذاكر معًا!",
+            "أهلاً! شعلتك التي مدتها {streak} أيام تتوهج! 🔥 حافظ عليها اليوم!",
+        ],
     }
 
     # ============================================
@@ -87,6 +93,12 @@ class SparkNotificationMessages:
             "¡ALERTA! 🚨 ¡Spark aquí! ¡Tu racha de {streak} días está en PELIGRO! ¡Ven rápido!",
             "Estoy empezando a preocuparme... 😰 ¡{streak} días de trabajo desaparecerán si no vuelves!",
             "¿Me olvidaste? 🥺 Tu racha de {streak} días llora en una esquina...",
+        ],
+        "ar": [
+            "حسنًا... 😟 لم تذاكر بعد اليوم! سلسلتك التي مدتها {streak} أيام ستختفي!",
+            "تنبيه! 🚨 سبارك هنا! سلسلتك التي مدتها {streak} أيام في خطر! تعال بسرعة!",
+            "بدأت أقلق... 😰 {streak} أيام من العمل ستضيع إذا لم تعد!",
+            "هل نسيتني؟ 🥺 سلسلتك التي مدتها {streak} أيام تبكي في الزاوية...",
         ],
     }
 
@@ -112,6 +124,12 @@ class SparkNotificationMessages:
             "¡ÚLTIMA OPORTUNIDAD! 😭 ¡No quiero ver tu racha de {streak} días derrumbarse!",
             "¿¡ES EL FIN!? 💔 ¡No no no! ¡Salva tus {streak} días antes de que sea tarde!",
         ],
+        "ar": [
+            "طوارئ كاملة! 😱 لم يتبق سوى ساعات قليلة! أيامك الـ {streak} ستختفي!",
+            "أنا في حالة هلع! 🆘 سلسلتك التي مدتها {streak} أيام تموت! عُد الآن!",
+            "الفرصة الأخيرة! 😭 لا أريد أن أرى سلسلتك التي مدتها {streak} أيام تنهار!",
+            "هل هذه النهاية؟! 💔 لا لا لا! أنقذ أيامك الـ {streak} قبل فوات الأوان!",
+        ],
     }
 
     # ============================================
@@ -132,6 +150,11 @@ class SparkNotificationMessages:
             "normal": "¡Hola de Spark! 🐿️",
             "worried": "¡Spark está preocupado por ti! 😟",
             "urgent": "¡Spark está DESESPERADO! 😱🔥",
+        },
+        "ar": {
+            "normal": "تحية من سبارك! 🐿️",
+            "worried": "سبارك قلق عليك! 😟",
+            "urgent": "سبارك يائس! 😱🔥",
         },
     }
 
@@ -154,6 +177,11 @@ class SparkNotificationMessages:
             "*solloza* 😭 {streak} días juntos, se fueron en humo... Estoy devastado...",
             "No... no {streak} días... Spark necesita un momento... 😢💔",
         ],
+        "ar": [
+            "💔 {streak} يومًا... كل هذا العمل... لا أصدق...",
+            "*ينتحب* 😭 {streak} يومًا معًا، ذهبت أدراج الرياح... أنا محطم...",
+            "لا... ليس {streak} يومًا... سبارك يحتاج لحظة... 😢💔",
+        ],
     }
 
     STREAK_LOST_MEDIUM: Dict[str, List[str]] = {  # >= 7 jours
@@ -171,6 +199,11 @@ class SparkNotificationMessages:
             "😢 Oh no... Tu racha de {streak} días desapareció... Estoy muy triste...",
             "*olfatea* {streak} días seguidos... Fue hermoso mientras duró... 😿",
             "Tu llama de {streak} días se apagó... 🕯️ Spark está haciendo pucheros en la esquina...",
+        ],
+        "ar": [
+            "😢 لا... سلسلتك التي مدتها {streak} أيام اختفت... أنا حزين جدًا...",
+            "*يشهق* {streak} أيام متتالية... كانت جميلة ما دامت... 😿",
+            "شعلتك التي مدتها {streak} أيام انطفأت... 🕯️ سبارك يعبس في زاويته...",
         ],
     }
 
@@ -190,6 +223,11 @@ class SparkNotificationMessages:
             "Bueno... ¡{streak} días estuvo bien! ¿Listo para un nuevo comienzo? 💪",
             "Tu racha de {streak} días voló... ¡Pero Spark cree en ti! 🐿️",
         ],
+        "ar": [
+            "أوه... سلسلتك التي مدتها {streak} أيام انتهت. هل نبدأ من جديد؟ 🌱",
+            "حسنًا... {streak} أيام كانت جيدة! مستعد لبداية جديدة؟ 💪",
+            "سلسلتك التي مدتها {streak} أيام طارت... لكن سبارك يؤمن بك! 🐿️",
+        ],
     }
 
     STREAK_LOST_TITLES: Dict[str, Dict[str, str]] = {
@@ -207,6 +245,11 @@ class SparkNotificationMessages:
             "long": "Spark está DEVASTADO 💔😭",
             "medium": "Spark está triste 😢",
             "short": "Racha perdida... 😔",
+        },
+        "ar": {
+            "long": "سبارك محطم 💔😭",
+            "medium": "سبارك حزين 😢",
+            "short": "ضاعت السلسلة... 😔",
         },
     }
 
@@ -238,6 +281,14 @@ class SparkNotificationMessages:
             100: "🌟🏅 ¡CIEN DÍAS! Spark no encuentra palabras... ¡Eres una LEYENDA VIVIENTE!",
             365: "👑🎆🌟 ¡¡¡UN AÑO!!! ¡¡¡NO PUEDO CREERLO!!! ¡¡¡ERES EL/LA MEJOR DE TODOS LOS TIEMPOS!!!",
         },
+        "ar": {
+            7: "🐿️✨ أسبوع! سبارك يرقص رقصة النصر! أنت رائع!",
+            14: "⚡🔥 أسبوعان! أنا فخور جدًا بك! *يقفز فرحًا*",
+            30: "🏆🎊 شهر كامل! سبارك يبكي من الفرح! أنت بطلي!",
+            60: "💎👑 شهران! *ينفجر سعادة* أنت آلة!",
+            100: "🌟🏅 مئة يوم! سبارك بلا كلام... أنت أسطورة حية!",
+            365: "👑🎆🌟 سنة!!! لا أصدق!!! أنت الأفضل على الإطلاق!!!",
+        },
     }
 
     STREAK_MILESTONE_TITLES: Dict[str, Dict[int, str]] = {
@@ -265,6 +316,14 @@ class SparkNotificationMessages:
             100: "¡Spark LLORA de alegría! 👑",
             365: "¡SPARK ESTÁ EN EL PARAÍSO! 🌟",
         },
+        "ar": {
+            7: "سبارك يحتفل! 🎉🐿️",
+            14: "سبارك في السحاب! ✨",
+            30: "سبارك يفيض فخرًا! 🏆",
+            60: "سبارك في نشوة! 💎",
+            100: "سبارك يبكي من الفرح! 👑",
+            365: "سبارك في الجنة! 🌟",
+        },
     }
 
     # ============================================
@@ -286,6 +345,11 @@ class SparkNotificationMessages:
             "¡Wow! ¡{count} flashcards! ¡Es mucho pero Spark cree en ti! 💪",
             "🌋 ¡{count} tarjetas en erupción! ¡Ven a domarlas conmigo!",
         ],
+        "ar": [
+            "😱 {count} بطاقة في انتظارك! سبارك يخشى أن تهرب!",
+            "رائع! {count} بطاقة! إنها كثيرة لكن سبارك يؤمن بك! 💪",
+            "🌋 {count} بطاقة تنفجر! تعال وروضها معي!",
+        ],
     }
 
     FLASHCARD_REMINDER_MEDIUM: Dict[str, List[str]] = {  # >= 20 cartes
@@ -303,6 +367,11 @@ class SparkNotificationMessages:
             "¡Hey! ¡{count} flashcards quieren hablar contigo! 🎴",
             "¡Tus {count} tarjetas te extrañan! ¡Ven a jugar! 🐿️",
             "¡Spark preparó {count} tarjetas solo para ti! 💝",
+        ],
+        "ar": [
+            "مرحبًا! {count} بطاقة تريد التحدث معك! 🎴",
+            "بطاقاتك الـ {count} تشتاق إليك! تعال والعب! 🐿️",
+            "سبارك حضّر {count} بطاقة من أجلك! 💝",
         ],
     }
 
@@ -322,6 +391,11 @@ class SparkNotificationMessages:
             "¿Una mini sesión de {count} tarjetas, qué dices? 🐿️",
             "¡Spark tiene {count} flashcards para mostrarte! ¡Ven a ver! ✨",
         ],
+        "ar": [
+            "أهلاً! {count} بطاقات صغيرة تنتظرك! 🌸",
+            "جلسة قصيرة من {count} بطاقة، ما رأيك؟ 🐿️",
+            "لدى سبارك {count} بطاقة ليريك إياها! تعال شاهد! ✨",
+        ],
     }
 
     FLASHCARD_REMINDER_TITLES: Dict[str, Dict[str, str]] = {
@@ -339,6 +413,11 @@ class SparkNotificationMessages:
             "high": "¡Spark te necesita! 📚🐿️",
             "medium": "¡Repasos del día! 📚",
             "low": "¡Pequeño recordatorio de Spark! 🐿️",
+        },
+        "ar": {
+            "high": "سبارك يحتاجك! 📚🐿️",
+            "medium": "مراجعات اليوم! 📚",
+            "low": "تذكير صغير من سبارك! 🐿️",
         },
     }
 
@@ -446,6 +525,10 @@ class SparkNotificationMessages:
             "title": "¡Logro desbloqueado! 🏆",
             "message": "¡Desbloqueaste '{name}'! +{xp} XP",
         },
+        "ar": {
+            "title": "تم فتح إنجاز! 🏆",
+            "message": "لقد فتحت '{name}'! +{xp} نقطة خبرة",
+        },
     }
 
     # ============================================
@@ -463,6 +546,10 @@ class SparkNotificationMessages:
         "es": {
             "title": "¡Nivel {level} alcanzado! 🎉",
             "message": "¡Felicidades! ¡Ahora eres nivel {level}!",
+        },
+        "ar": {
+            "title": "وصلت إلى المستوى {level}! 🎉",
+            "message": "تهانينا! أنت الآن في المستوى {level}!",
         },
     }
 
@@ -482,6 +569,10 @@ class SparkNotificationMessages:
             "title": "¡Nuevo desafío! ⚔️",
             "message": "¡{challenger} te desafía! Apuesta: {xp} XP",
         },
+        "ar": {
+            "title": "تحدٍ جديد! ⚔️",
+            "message": "{challenger} يتحداك! الرهان: {xp} نقطة خبرة",
+        },
     }
 
     # ============================================
@@ -500,6 +591,10 @@ class SparkNotificationMessages:
             "title": "Invitación Focus Room 📚",
             "message": "{inviter} te invita a unirte a la sala '{room}'",
         },
+        "ar": {
+            "title": "دعوة لغرفة التركيز 📚",
+            "message": "{inviter} يدعوك للانضمام إلى غرفة '{room}'",
+        },
     }
 
     FOCUS_ROOM_INVITE_ACCEPTED: Dict[str, Dict[str, str]] = {
@@ -514,6 +609,10 @@ class SparkNotificationMessages:
         "es": {
             "title": "¡Invitación aceptada! 🎉",
             "message": "{invitee} se unió a tu sala '{room}'",
+        },
+        "ar": {
+            "title": "تم قبول الدعوة! 🎉",
+            "message": "{invitee} انضم إلى غرفتك '{room}'",
         },
     }
 
@@ -545,12 +644,28 @@ class SparkNotificationMessages:
             "message_deadline": "'{event}' expira el {date} a las {hour}",
             "message_default": "'{event}' comienza a las {hour}",
         },
+        "ar": {
+            "title_exam": "امتحان {time}!",
+            "title_deadline": "موعد نهائي {time}!",
+            "title_default": "{type} {time}",
+            "message_exam": "'{event}' يبدأ في {date} الساعة {hour}",
+            "message_deadline": "'{event}' ينتهي في {date} الساعة {hour}",
+            "message_default": "'{event}' يبدأ الساعة {hour}",
+        },
     }
 
     EVENT_TYPE_LABELS: Dict[str, Dict[str, str]] = {
         "fr": {"exam": "Examen", "class": "Cours", "deadline": "Date limite", "study": "Session d'étude", "meeting": "Réunion", "other": "Événement"},
         "en": {"exam": "Exam", "class": "Class", "deadline": "Deadline", "study": "Study session", "meeting": "Meeting", "other": "Event"},
         "es": {"exam": "Examen", "class": "Clase", "deadline": "Fecha límite", "study": "Sesión de estudio", "meeting": "Reunión", "other": "Evento"},
+        "ar": {
+            "exam": "امتحان",
+            "class": "حصة",
+            "deadline": "موعد نهائي",
+            "study": "جلسة دراسية",
+            "meeting": "اجتماع",
+            "other": "حدث",
+        },
     }
 
     # ============================================
@@ -560,6 +675,13 @@ class SparkNotificationMessages:
         "fr": {"bronze": "Bronze", "silver": "Argent", "gold": "Or", "diamond": "Diamant", "master": "Maître"},
         "en": {"bronze": "Bronze", "silver": "Silver", "gold": "Gold", "diamond": "Diamond", "master": "Master"},
         "es": {"bronze": "Bronce", "silver": "Plata", "gold": "Oro", "diamond": "Diamante", "master": "Maestro"},
+        "ar": {
+            "bronze": "البرونزي",
+            "silver": "الفضي",
+            "gold": "الذهبي",
+            "diamond": "الماسي",
+            "master": "الخبير",
+        },
     }
 
     LEAGUE_PROMOTION: Dict[str, Dict[str, str]] = {
@@ -575,6 +697,10 @@ class SparkNotificationMessages:
             "title": "🎉 ¡PROMOCIÓN! ¡Liga {to_tier}!",
             "message": "¡Felicidades! ¡Pasas de la liga {from_tier} a la liga {to_tier}! ¡Spark está muy orgulloso de ti! 🐿️⭐",
         },
+        "ar": {
+            "title": "🎉 ترقية! دوري {to_tier}!",
+            "message": "تهانينا! تنتقل من دوري {from_tier} إلى دوري {to_tier}! سبارك فخور بك جدًا! 🐿️⭐",
+        },
     }
 
     LEAGUE_DEMOTION: Dict[str, Dict[str, str]] = {
@@ -589,6 +715,10 @@ class SparkNotificationMessages:
         "es": {
             "title": "😔 Descenso - Liga {to_tier}",
             "message": "Bajas a la liga {to_tier}... ¡Pero no te preocupes! ¡Spark cree en ti para volver a subir! 🐿️💪",
+        },
+        "ar": {
+            "title": "😔 تنزيل - دوري {to_tier}",
+            "message": "تنزل إلى دوري {to_tier}... لكن لا تقلق! سبارك يؤمن بقدرتك على الصعود! 🐿️💪",
         },
     }
 
@@ -660,6 +790,28 @@ class SparkNotificationMessages:
                 "title": "🐿️ Spark te sigue esperando...",
                 "message": "Un mes sin estudiar... ¡Pero nunca es tarde para retomar! Spark siempre estará aquí para ti 🐿️❤️",
                 "email_subject": "¡Nunca es tarde para volver! 🐿️",
+            },
+        },
+        "ar": {
+            "3_days": {
+                "title": "🐿️ سبارك يفتقدك!",
+                "message": "مرحبًا، مرت 3 أيام منذ آخر لقاء لنا! سلسلتك في خطر... عُد بسرعة لجلسة قصيرة! 📚",
+                "email_subject": "🐿️ سبارك يفتقدك!",
+            },
+            "7_days": {
+                "title": "😢 سبارك يبحث عنك...",
+                "message": "أسبوع كامل بدونك... بطاقاتك تتراكم وسبارك حزين! فقط 5 دقائق اليوم؟ 🥺",
+                "email_subject": "مر أسبوع... هل ستعود؟ 📚",
+            },
+            "14_days": {
+                "title": "💔 سبارك لم ينساك!",
+                "message": "أسبوعان مرّا! أصدقاؤك يواصلون التقدم. عُد وأظهر ما تستطيع! 💪",
+                "email_subject": "نشتاق إليك في ستوديرا!",
+            },
+            "30_days": {
+                "title": "🐿️ سبارك لا يزال ينتظر...",
+                "message": "شهر بدون دراسة... لكن لم يفت الأوان أبدًا للبدء من جديد! سبارك دائمًا هنا من أجلك 🐿️❤️",
+                "email_subject": "لم يفت الأوان للعودة! 🐿️",
             },
         },
     }

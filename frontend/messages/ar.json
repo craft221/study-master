@@ -1689,203 +1689,203 @@
     "xpGained": "+{xp} XP earned"
   },
   "sparkWidget": {
-    "askSpark": "Ask Spark a question!",
-    "dailyBriefing": "Daily briefing",
-    "todayGoals": "Today's goals",
-    "pendingReviews": "Pending reviews",
-    "itemsToReview": "{count} items to review",
-    "streak": "Streak",
-    "streakDays": "{count} days",
-    "keepItUp": "Keep it up!",
-    "letsGo": "Let's go!",
-    "notifications": "Notifications",
-    "newNotifications": "{count} new",
-    "noNotifications": "No notifications",
-    "sparkWillNotify": "Spark will notify you if needed!",
-    "markAllRead": "Mark all as read",
-    "askQuestion": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
-    "sparkUsesAI": "Spark uses AI to analyze your question and learning context.",
-    "errorMessage": "Oops! I had a problem. Try again!",
-    "hintFallback": "Think carefully... The answer is within reach!",
-    "hereIsMyAnswer": "Here's my answer!",
-    "errorAnswering": "Oops! I had a problem trying to answer. Try again!",
+    "askSpark": "اسأل سبارك سؤالاً!",
+    "dailyBriefing": "ملخص اليوم",
+    "todayGoals": "أهداف اليوم",
+    "pendingReviews": "مراجعات معلقة",
+    "itemsToReview": "{count} عنصر للمراجعة",
+    "streak": "السلسلة",
+    "streakDays": "{count} يومًا",
+    "keepItUp": "استمر!",
+    "letsGo": "هيا بنا!",
+    "notifications": "الإشعارات",
+    "newNotifications": "{count} جديد",
+    "noNotifications": "لا توجد إشعارات",
+    "sparkWillNotify": "سيُعلمك سبارك عند الحاجة!",
+    "markAllRead": "تحديد الكل كمقروء",
+    "askQuestion": "كيف يمكنني حفظ هذا الفصل بشكل أفضل؟ كيف أنظم مراجعاتي؟ ما البطاقات التي يجب أن أنشئها؟",
+    "sparkUsesAI": "يستخدم سبارك الذكاء الاصطناعي لتحليل سؤالك وسياق التعلم.",
+    "errorMessage": "عذرًا! واجهت مشكلة. حاول مجددًا!",
+    "hintFallback": "فكر مليًا... الإجابة قريبة منك!",
+    "hereIsMyAnswer": "إليك إجابتي!",
+    "errorAnswering": "عذرًا! واجهت مشكلة في الرد. حاول مجددًا!",
     "helpDialog": {
-      "title": "Ask Spark for Help",
-      "subtitle": "I'm here to help you!",
-      "questionLabel": "Your question for Spark",
-      "placeholder": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
-      "charCount": "{count}/500 characters",
-      "minCharsError": "Your question must be at least 3 characters",
-      "maxCharsError": "Your question is too long (max 500 characters)",
-      "aiInfo": "Spark uses AI to analyze your question and learning context. You'll receive personalized advice and action suggestions!",
-      "examplesTitle": "Example questions:",
-      "example1": "How to better revise math?",
-      "example2": "I have trouble memorizing, any tips?",
-      "example3": "What's the best method for learning?",
-      "thinking": "Spark is thinking...",
-      "askButton": "Ask Spark"
+      "title": "اطلب المساعدة من سبارك",
+      "subtitle": "أنا هنا لمساعدتك!",
+      "questionLabel": "سؤالك لسبارك",
+      "placeholder": "كيف يمكنني حفظ هذا الفصل بشكل أفضل؟ كيف أنظم مراجعاتي؟ ما البطاقات التي يجب أن أنشئها؟",
+      "charCount": "{count}/500 حرفًا",
+      "minCharsError": "يجب أن يحتوي سؤالك على 3 أحرف على الأقل",
+      "maxCharsError": "سؤالك طويل جدًا (الحد الأقصى 500 حرف)",
+      "aiInfo": "يستخدم سبارك الذكاء الاصطناعي لتحليل سؤالك وسياق التعلم. ستحصل على نصائح مخصصة واقتراحات للتحرك!",
+      "examplesTitle": "أمثلة على الأسئلة:",
+      "example1": "كيف أراجع الرياضيات بشكل أفضل؟",
+      "example2": "أواجه صعوبة في الحفظ، هل لديك نصائح؟",
+      "example3": "ما أفضل طريقة للتعلم؟",
+      "thinking": "سبارك يفكر...",
+      "askButton": "اسأل سبارك"
     },
     "answerCard": {
-      "title": "Spark answers",
-      "subtitle": "With AI assistance",
-      "suggestedActions": "Suggested actions",
-      "needMoreHelp": "Need more help? Click on Spark to ask another question!",
-      "followUpPlaceholder": "Ask a follow-up question..."
+      "title": "سبارك يجيب",
+      "subtitle": "بمساعدة الذكاء الاصطناعي",
+      "suggestedActions": "إجراءات مقترحة",
+      "needMoreHelp": "هل تحتاج لمساعدة إضافية؟ انقر على سبارك لطرح سؤال آخر!",
+      "followUpPlaceholder": "اطرح سؤال متابعة..."
     },
     "levels": {
-      "baby": "Baby Spark",
-      "junior": "Junior Spark",
-      "expert": "Expert Spark",
-      "sage": "Sage Spark",
-      "legendary": "Legendary Spark"
+      "baby": "سبارك صغير",
+      "junior": "سبارك مبتدئ",
+      "expert": "سبارك خبير",
+      "sage": "سبارك حكيم",
+      "legendary": "سبارك أسطوري"
     },
     "pageMessages": {
       "dashboard": [
-        "Welcome to your dashboard! Ready to study?",
-        "Hey! Check your stats, you're doing great!",
-        "Let's have a productive session!"
+        "مرحبًا بك في لوحتك! مستعد للدراسة؟",
+        "أهلاً! تحقق من إحصائياتك، أداؤك ممتاز!",
+        "لنخوض جلسة منتجة!"
       ],
       "notes": [
-        "Your notes are waiting! What are we reviewing today?",
-        "Taking notes is key! You're doing great!",
-        "Don't forget: reading your notes regularly helps memorize!"
+        "ملاحظاتك تنتظرك! ماذا نراجع اليوم؟",
+        "تدوين الملاحظات هو المفتاح! أداؤك ممتاز!",
+        "لا تنسَ: قراءة ملاحظاتك بانتظام يساعد على الحفظ!"
       ],
       "flashcards": [
-        "Flashcards! My favorite technique for memorizing!",
-        "Reviewing with flashcards is super effective!",
-        "Let's flip those cards! You'll remember everything!"
+        "البطاقات التعليمية! أسلوبي المفضل للحفظ!",
+        "المراجعة بالبطاقات فعّالة جدًا!",
+        "هيا نقلب هذه البطاقات! ستتذكر كل شيء!"
       ],
       "quizzes": [
-        "A quiz? I love it! Show me what you know!",
-        "Quizzes are the best way to test your knowledge!",
-        "Ready to challenge yourself? Let's go!"
+        "اختبار؟ أحبه! أرني ما تعرفه!",
+        "الاختبارات أفضل وسيلة لاختبار معرفتك!",
+        "مستعد لتحدي نفسك؟ هيا بنا!"
       ],
       "quests": [
-        "Your daily quests! Complete them all for the bonus!",
-        "3 quests = 3 rewards + bonus! You can do it!",
-        "Each completed quest brings you closer to your goal!"
+        "مهامك اليومية! أكملها كلها للحصول على المكافأة!",
+        "3 مهام = 3 مكافآت + إضافية! تستطيع فعلها!",
+        "كل مهمة منجزة تقربك من هدفك!"
       ],
       "leaderboard": [
-        "The leaderboard! Let's see where you stand...",
-        "Want to climb the rankings? Keep it up!",
-        "Healthy competition motivates! Are you in the top?"
+        "لوحة المتصدرين! لنرَ ترتيبك...",
+        "تريد التسلق في الترتيب؟ استمر!",
+        "المنافسة الصحية تحفّز! هل أنت في القمة؟"
       ],
       "achievements": [
-        "Your achievements! How many have you unlocked?",
-        "Each badge tells a story of success!",
-        "Keep going and you'll get them all!"
+        "إنجازاتك! كم منها فتحت؟",
+        "كل شارة تروي قصة نجاح!",
+        "استمر وستحصل عليها كلها!"
       ],
       "profile": [
-        "Your profile! Want to customize something?",
-        "This is where you can see your overall progress!"
+        "ملفك الشخصي! تريد تخصيص شيء ما؟",
+        "هنا يمكنك رؤية تقدمك العام!"
       ],
       "schedule": [
-        "Your schedule! Good organization is the key to success!",
-        "Exams coming up? I can help you prepare!",
-        "Planning your revisions helps reduce stress!"
+        "جدولك! التنظيم الجيد هو مفتاح النجاح!",
+        "امتحانات قادمة؟ يمكنني مساعدتك في الاستعداد!",
+        "تخطيط مراجعاتك يقلل التوتر!"
       ],
       "explore": [
-        "Explore! Discover what others have created!",
-        "You can find super useful resources here!",
-        "Sharing is growing together!"
+        "استكشف! اكتشف ما أنشأه الآخرون!",
+        "يمكنك العثور على موارد مفيدة جدًا هنا!",
+        "المشاركة هي النمو معًا!"
       ],
       "duels": [
-        "Duels! Ready to face other students?",
-        "A duel is fun AND educational! En garde!",
-        "Win a duel = bonus XP! Up for the challenge?"
+        "المبارزات! مستعد لمواجهة طلاب آخرين؟",
+        "المبارزة ممتعة وتعليمية! استعد!",
+        "اربح مبارزة = نقاط خبرة إضافية! هل تقبل التحدي؟"
       ],
       "focusRooms": [
-        "Focus Rooms! Studying together is more motivating!",
-        "Join a room and study as a group!",
-        "Shared focus boosts productivity!"
+        "غرف التركيز! الدراسة الجماعية أكثر تحفيزًا!",
+        "انضم إلى غرفة وادرس مع المجموعة!",
+        "التركيز المشترك يعزز الإنتاجية!"
       ],
       "ai": [
-        "Hey it's me! Want to chat?",
-        "I'm here to help! Ask me your questions!",
-        "Tutor mode activated! What do you want to learn?"
+        "أهلاً، أنا سبارك! تريد التحدث؟",
+        "أنا هنا للمساعدة! اسألني أسئلتك!",
+        "وضع المعلم مفعّل! ماذا تريد أن تتعلم؟"
       ],
       "documents": [
-        "Your documents! Need to organize them?",
-        "Well-organized documents are easier to find!",
-        "You can share your documents with other students!"
+        "مستنداتك! هل تحتاج لتنظيمها؟",
+        "المستندات المنظمة جيدًا أسهل في العثور عليها!",
+        "يمكنك مشاركة مستنداتك مع طلاب آخرين!"
       ],
       "subjects": [
-        "Your subjects! Which one is your favorite?",
-        "Organizing by subject helps review better!",
-        "Each subject is a new adventure!"
+        "موادك! أيها المفضلة لديك؟",
+        "التنظيم حسب المادة يساعد على المراجعة بشكل أفضل!",
+        "كل مادة هي مغامرة جديدة!"
       ],
       "sessions": [
-        "Study sessions! Ready for a productive session?",
-        "Pomodoro is life! 25 min of focus!",
-        "One session a day keeps failure away!"
+        "جلسات الدراسة! مستعد لجلسة منتجة؟",
+        "بومودورو رائع! 25 دقيقة من التركيز!",
+        "جلسة في اليوم تبعد الفشل!"
       ],
       "groups": [
-        "Study groups! Unity is strength!",
-        "Studying together is more fun!",
-        "Join or create a group to progress together!"
+        "مجموعات الدراسة! الاتحاد قوة!",
+        "الدراسة معًا أكثر متعة!",
+        "انضم أو أنشئ مجموعة للتقدم معًا!"
       ]
     },
     "automaticMessages": {
       "welcome": [
-        "Hey! Spark is here, ready to help! 🐿️⚡",
-        "Hello champion! Ready to study today?",
-        "Hi there! Let's make progress together! 🌰"
+        "أهلاً! سبارك هنا، جاهز للمساعدة! 🐿️⚡",
+        "مرحبًا بطلي! مستعد للدراسة اليوم؟",
+        "أهلاً! لنتقدم معًا! 🌰"
       ],
       "welcome_back": [
-        "Welcome back! I missed you! 🐿️",
-        "Hey, you're back! Let's continue where we left off!",
-        "There you are! Ready for another session?"
+        "أهلاً بعودتك! اشتقت إليك! 🐿️",
+        "مرحبًا، عدت! لنواصل من حيث توقفنا!",
+        "ها أنت! مستعد لجلسة أخرى؟"
       ],
       "streak_warning": [
-        "Hey, don't forget to study today to keep your streak! 🔥",
-        "Your streak is at risk! A quick session?",
-        "Don't let your streak end! Come study with me!"
+        "مرحبًا، لا تنسَ الدراسة اليوم للحفاظ على سلسلتك! 🔥",
+        "سلسلتك في خطر! جلسة سريعة؟",
+        "لا تدع سلسلتك تنتهي! تعال وادرس معي!"
       ],
       "streak_milestone": [
-        "Amazing! {days} days in a row! You're incredible! 🔥",
-        "Wow! {days} days of streak! Keep it up! 🎉",
-        "{days} consecutive days! You're on fire! 💪"
+        "رائع! {days} يومًا متتاليًا! أنت لا تصدق! 🔥",
+        "واو! {days} يومًا من السلسلة! استمر! 🎉",
+        "{days} يومًا متتاليًا! أنت متوهج! 💪"
       ],
       "quiz_perfect": [
-        "PERFECT! 100%! You're a genius! 🎉",
-        "Incredible! Perfect score! I'm so proud! ⭐",
-        "100%! Nothing gets past you! 🏆"
+        "ممتاز! 100%! أنت عبقري! 🎉",
+        "لا يصدق! نتيجة كاملة! أنا فخور جدًا! ⭐",
+        "100%! لا شيء يفوتك! 🏆"
       ],
       "quiz_success": [
-        "Well done! {score}% on {topic}! 💪",
-        "Nice job! {score}% is great! Keep it up!",
-        "Good work! {score}% on the quiz!"
+        "أحسنت! {score}% في {topic}! 💪",
+        "عمل رائع! {score}% ممتازة! استمر!",
+        "عمل جيد! {score}% في الاختبار!"
       ],
       "quiz_failed": [
-        "Don't give up! {score}% is a good start! 📚",
-        "Practice makes perfect! Try again?",
-        "Keep studying, you'll get there! 💪"
+        "لا تستسلم! {score}% بداية جيدة! 📚",
+        "التدريب يجعل الكمال! حاول مجددًا؟",
+        "استمر في الدراسة، ستصل! 💪"
       ],
       "level_up": [
-        "LEVEL UP! You reached level {level}! 🎉",
-        "Amazing! Level {level}! You're growing so fast! ⭐",
-        "Level {level} unlocked! You're awesome! 🏆"
+        "ارتفع المستوى! وصلت إلى المستوى {level}! 🎉",
+        "رائع! المستوى {level}! تنمو بسرعة! ⭐",
+        "تم فتح المستوى {level}! أنت رائع! 🏆"
       ],
       "exam_reminder": [
-        "Reminder: {exam_name} in {days_until} days! Time to prepare! 📚",
-        "Don't forget: {exam_name} is coming in {days_until} days!",
-        "Exam alert! {exam_name} in {days_until} days! Let's review!"
+        "تذكير: {exam_name} خلال {days_until} يومًا! حان وقت الاستعداد! 📚",
+        "لا تنسَ: {exam_name} قادم خلال {days_until} يومًا!",
+        "تنبيه امتحان! {exam_name} خلال {days_until} يومًا! لنراجع!"
       ],
       "focus_room": {
-        "milestone_15min": "15 minutes! You're getting started! 🚀",
-        "milestone_30min": "30 MINUTES! You're killing it! 🔥",
-        "milestone_45min": "45 min! Almost 1 hour, keep going! 💪",
-        "milestone_1h": "1 HOUR! You're a MACHINE! 🏆",
-        "milestone_90min": "1h30 of focus! Impressive! ⭐",
-        "milestone_2h": "2 HOURS!! You're INCREDIBLE! 🌟✨",
-        "milestone_3h": "3 HOURS!!! LEGENDARY! 👑🔥",
-        "milestone_4h": "4 HOURS!!!! YOU'RE A GOD! 🏆👑🔥✨",
-        "user_joined": "A new focus buddy joined! 👋",
-        "deep_work_started": "Deep Work mode activated! 🧘 I'll stay quiet...",
-        "deep_work_completed": "Deep Work COMPLETED! +50 XP bonus! 🎯",
-        "reward_claimed": "Chest opened! 🎁",
-        "first_in_room": "First in the room! You're setting the example! 🥇",
-        "room_goal_reached": "ROOM GOAL REACHED! CONGRATS EVERYONE! 🎊"
+        "milestone_15min": "15 دقيقة! بدأت! 🚀",
+        "milestone_30min": "30 دقيقة! أنت تتألق! 🔥",
+        "milestone_45min": "45 دقيقة! تقريبًا ساعة، استمر! 💪",
+        "milestone_1h": "ساعة كاملة! أنت آلة! 🏆",
+        "milestone_90min": "ساعة ونصف من التركيز! مذهل! ⭐",
+        "milestone_2h": "ساعتان!! أنت لا تُصدق! 🌟✨",
+        "milestone_3h": "3 ساعات!!! أسطوري! 👑🔥",
+        "milestone_4h": "4 ساعات!!!! أنت إله! 🏆👑🔥✨",
+        "user_joined": "صديق تركيز جديد انضم! 👋",
+        "deep_work_started": "وضع العمل العميق مفعّل! 🧘 سأبقى هادئًا...",
+        "deep_work_completed": "اكتمل العمل العميق! +50 نقطة خبرة! 🎯",
+        "reward_claimed": "تم فتح الصندوق! 🎁",
+        "first_in_room": "الأول في الغرفة! تضرب المثل! 🥇",
+        "room_goal_reached": "تم تحقيق هدف الغرفة! تهاني للجميع! 🎊"
       }
     }
   },
