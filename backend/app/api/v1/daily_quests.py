@@ -23,6 +23,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.daily_quest import QuestStatus, QuestDifficulty
 from app.services.daily_quest_service import daily_quest_service, spark_messages
+from app.services.translation_service import async_get_quest_template_translation
 
 router = APIRouter(prefix="/daily-quests", tags=["Daily Quests"])
 
@@ -120,15 +121,35 @@ async def get_daily_quests(
     """
     quests, stats = await daily_quest_service.get_user_daily_quests(db, current_user.id)
 
+    lang = current_user.language or "fr"
+
     quest_schemas = []
     for q in quests:
         progress_percent = (q.current_value / q.target_value * 100) if q.target_value > 0 else 0
+
+        # Resolve localized title/description from quest_template_translations
+        # Fallback to the FR strings stored on the row.
+        title = q.title
+        description = q.description
+        translation = await async_get_quest_template_translation(
+            db, q.quest_type.value, q.difficulty.value, lang
+        )
+        if translation:
+            t_title, t_desc = translation
+            title = t_title
+            # The DB description has already been .format()'d at creation time
+            # with the {target} value, so re-render the translated template.
+            try:
+                description = t_desc.format(target=q.target_value)
+            except (KeyError, IndexError):
+                description = t_desc
+
         quest_schemas.append(QuestSchema(
             id=q.id,
             quest_type=q.quest_type.value,
             difficulty=q.difficulty.value,
-            title=q.title,
-            description=q.description,
+            title=title,
+            description=description,
             icon=q.icon,
             target_value=q.target_value,
             current_value=q.current_value,

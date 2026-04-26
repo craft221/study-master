@@ -17,8 +17,20 @@ from app.schemas.gamification import (
 )
 from app.services.cache_service import cache_service
 from app.services.xp_service import award_xp
+from app.services.translation_service import async_bulk_achievement_translations
 
 router = APIRouter()
+
+
+def _localize(achievement_dict: dict, translations: dict) -> dict:
+    """Replace name/description in a serialized achievement dict if a
+    translation exists for its id. Mutates and returns the dict."""
+    aid = achievement_dict.get("id")
+    if aid in translations:
+        name, desc = translations[aid]
+        achievement_dict["name"] = name
+        achievement_dict["description"] = desc
+    return achievement_dict
 
 
 @router.get("/", response_model=AchievementListResponse)
@@ -29,8 +41,9 @@ async def get_all_achievements(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer tous les achievements disponibles (avec cache Redis 1h)"""
-    # Construire la clé de cache
-    cache_key_parts = ["achievements", "all"]
+    lang = current_user.language or "fr"
+    # Construire la clé de cache (lang-aware)
+    cache_key_parts = ["achievements", "all", f"lang:{lang}"]
     if category:
         cache_key_parts.append(f"cat:{category}")
     if rarity:
@@ -67,21 +80,29 @@ async def get_all_achievements(
     result = await db.execute(query)
     achievements = result.scalars().all()
 
+    # Lookup translations for all achievement ids in one query
+    translations = await async_bulk_achievement_translations(
+        db, [a.id for a in achievements], lang
+    )
+
     response_data = {
         "achievements": [
-            {
-                "id": a.id,
-                "name": a.name,
-                "description": a.description,
-                "category": a.category.value if a.category else None,
-                "rarity": a.rarity.value if a.rarity else None,
-                "icon": a.icon,
-                "xp_reward": a.xp_reward,
-                "requirement_value": a.requirement_value,
-                "requirement_type": a.requirement_type,
-                "is_active": a.is_active,
-                "created_at": a.created_at.isoformat() if a.created_at else None
-            }
+            _localize(
+                {
+                    "id": a.id,
+                    "name": a.name,
+                    "description": a.description,
+                    "category": a.category.value if a.category else None,
+                    "rarity": a.rarity.value if a.rarity else None,
+                    "icon": a.icon,
+                    "xp_reward": a.xp_reward,
+                    "requirement_value": a.requirement_value,
+                    "requirement_type": a.requirement_type,
+                    "is_active": a.is_active,
+                    "created_at": a.created_at.isoformat() if a.created_at else None,
+                },
+                translations,
+            )
             for a in achievements
         ],
         "total": len(achievements)
@@ -99,7 +120,10 @@ async def get_my_achievements(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer les achievements de l'utilisateur connecté (avec cache Redis 2min)"""
-    cache_key = cache_service.generate_key("achievements", f"user:{current_user.id}")
+    lang = current_user.language or "fr"
+    cache_key = cache_service.generate_key(
+        "achievements", f"user:{current_user.id}", f"lang:{lang}"
+    )
 
     # Vérifier le cache
     cached_data = await cache_service.get(cache_key)
@@ -118,6 +142,10 @@ async def get_my_achievements(
 
     result = await db.execute(query)
     user_achievements = result.scalars().all()
+
+    # Bulk-lookup translations for all linked achievements
+    achievement_ids = [ua.achievement_id for ua in user_achievements]
+    translations = await async_bulk_achievement_translations(db, achievement_ids, lang)
 
     # Les achievements sont maintenant déjà chargés via selectinload
     # Dédupliquer par achievement_id (garder le plus récent en cas de doublons)
@@ -142,19 +170,22 @@ async def get_my_achievements(
                 "progress": ua.progress,
                 "is_unlocked": ua.is_unlocked,
                 "created_at": ua.created_at.isoformat() if ua.created_at else None,
-                "achievement": {
-                    "id": achievement.id,
-                    "name": achievement.name,
-                    "description": achievement.description,
-                    "category": achievement.category.value if achievement.category else None,
-                    "rarity": achievement.rarity.value if achievement.rarity else None,
-                    "icon": achievement.icon,
-                    "xp_reward": achievement.xp_reward,
-                    "requirement_value": achievement.requirement_value,
-                    "requirement_type": achievement.requirement_type,
-                    "is_active": achievement.is_active,
-                    "created_at": achievement.created_at.isoformat() if achievement.created_at else None
-                }
+                "achievement": _localize(
+                    {
+                        "id": achievement.id,
+                        "name": achievement.name,
+                        "description": achievement.description,
+                        "category": achievement.category.value if achievement.category else None,
+                        "rarity": achievement.rarity.value if achievement.rarity else None,
+                        "icon": achievement.icon,
+                        "xp_reward": achievement.xp_reward,
+                        "requirement_value": achievement.requirement_value,
+                        "requirement_type": achievement.requirement_type,
+                        "is_active": achievement.is_active,
+                        "created_at": achievement.created_at.isoformat() if achievement.created_at else None,
+                    },
+                    translations,
+                ),
             })
 
     response_data = {
@@ -183,7 +214,10 @@ async def get_user_achievements(
             detail="User not found"
         )
 
-    cache_key = cache_service.generate_key("achievements", f"user:{user_id}")
+    lang = current_user.language or "fr"
+    cache_key = cache_service.generate_key(
+        "achievements", f"user:{user_id}", f"lang:{lang}"
+    )
 
     # Vérifier le cache
     cached_data = await cache_service.get(cache_key)
@@ -202,6 +236,9 @@ async def get_user_achievements(
 
     result = await db.execute(query)
     user_achievements = result.scalars().all()
+
+    achievement_ids = [ua.achievement_id for ua in user_achievements]
+    translations = await async_bulk_achievement_translations(db, achievement_ids, lang)
 
     # Les achievements sont maintenant déjà chargés via selectinload
     # Dédupliquer par achievement_id (garder le plus récent en cas de doublons)
@@ -226,19 +263,22 @@ async def get_user_achievements(
                 "progress": ua.progress,
                 "is_unlocked": ua.is_unlocked,
                 "created_at": ua.created_at.isoformat() if ua.created_at else None,
-                "achievement": {
-                    "id": achievement.id,
-                    "name": achievement.name,
-                    "description": achievement.description,
-                    "category": achievement.category.value if achievement.category else None,
-                    "rarity": achievement.rarity.value if achievement.rarity else None,
-                    "icon": achievement.icon,
-                    "xp_reward": achievement.xp_reward,
-                    "requirement_value": achievement.requirement_value,
-                    "requirement_type": achievement.requirement_type,
-                    "is_active": achievement.is_active,
-                    "created_at": achievement.created_at.isoformat() if achievement.created_at else None
-                }
+                "achievement": _localize(
+                    {
+                        "id": achievement.id,
+                        "name": achievement.name,
+                        "description": achievement.description,
+                        "category": achievement.category.value if achievement.category else None,
+                        "rarity": achievement.rarity.value if achievement.rarity else None,
+                        "icon": achievement.icon,
+                        "xp_reward": achievement.xp_reward,
+                        "requirement_value": achievement.requirement_value,
+                        "requirement_type": achievement.requirement_type,
+                        "is_active": achievement.is_active,
+                        "created_at": achievement.created_at.isoformat() if achievement.created_at else None,
+                    },
+                    translations,
+                ),
             })
 
     response_data = {
@@ -259,7 +299,10 @@ async def get_achievement(
     db: AsyncSession = Depends(get_db)
 ):
     """Récupérer un achievement spécifique (avec cache Redis 1h)"""
-    cache_key = cache_service.generate_key("achievement", str(achievement_id))
+    lang = current_user.language or "fr"
+    cache_key = cache_service.generate_key(
+        "achievement", str(achievement_id), f"lang:{lang}"
+    )
 
     # Vérifier le cache
     cached_data = await cache_service.get(cache_key)
@@ -277,19 +320,25 @@ async def get_achievement(
             detail="Achievement not found"
         )
 
-    achievement_data = {
-        "id": achievement.id,
-        "name": achievement.name,
-        "description": achievement.description,
-        "category": achievement.category.value if achievement.category else None,
-        "rarity": achievement.rarity.value if achievement.rarity else None,
-        "icon": achievement.icon,
-        "xp_reward": achievement.xp_reward,
-        "requirement_value": achievement.requirement_value,
-        "requirement_type": achievement.requirement_type,
-        "is_active": achievement.is_active,
-        "created_at": achievement.created_at.isoformat() if achievement.created_at else None
-    }
+    translations = await async_bulk_achievement_translations(
+        db, [achievement.id], lang
+    )
+    achievement_data = _localize(
+        {
+            "id": achievement.id,
+            "name": achievement.name,
+            "description": achievement.description,
+            "category": achievement.category.value if achievement.category else None,
+            "rarity": achievement.rarity.value if achievement.rarity else None,
+            "icon": achievement.icon,
+            "xp_reward": achievement.xp_reward,
+            "requirement_value": achievement.requirement_value,
+            "requirement_type": achievement.requirement_type,
+            "is_active": achievement.is_active,
+            "created_at": achievement.created_at.isoformat() if achievement.created_at else None,
+        },
+        translations,
+    )
 
     # Mettre en cache pour 1 heure (3600s)
     await cache_service.set(cache_key, achievement_data, ttl=3600)

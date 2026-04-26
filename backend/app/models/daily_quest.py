@@ -160,6 +160,26 @@ class MysteryChest(Base):
     user = relationship("User", back_populates="mystery_chests")
 
 
+class QuestTemplateTranslation(Base):
+    """
+    Traductions par (quest_type, difficulty, language).
+    Le code utilise un dictionnaire QUEST_CONFIG (cf. plus bas) pour identifier
+    le template par (type, difficulty). On résout le titre/description localisés
+    via cette table à la création/affichage de la quête.
+    """
+    __tablename__ = "quest_template_translations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quest_type = Column(String(50), nullable=False, index=True)  # values from QuestType enum
+    difficulty = Column(String(20), nullable=False, index=True)  # easy/medium/hard
+    language = Column(String(8), nullable=False, index=True)  # fr/en/es/ar
+
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)  # may contain {target} placeholder
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # Configuration des quêtes par difficulté
 QUEST_CONFIG = {
     QuestDifficulty.EASY: {

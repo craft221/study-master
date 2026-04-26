@@ -61,6 +61,30 @@ class UserAchievement(Base):
     achievement = relationship("Achievement", back_populates="user_achievements")
 
 
+class AchievementTranslation(Base):
+    """Localized name/description per achievement, per language."""
+    __tablename__ = "achievement_translations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    achievement_id = Column(
+        Integer,
+        ForeignKey("achievements.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    language = Column(String(8), nullable=False, index=True)  # 'fr', 'en', 'es', 'ar'
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    achievement = relationship("Achievement", backref="translations")
+
+    __table_args__ = (
+        # one translation per (achievement, lang)
+        # Index unique enforced via Alembic UniqueConstraint
+    )
+
+
 class LeaderboardType(enum.Enum):
     XP = "xp"
     STREAK = "streak"
