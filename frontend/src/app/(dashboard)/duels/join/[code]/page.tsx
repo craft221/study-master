@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Swords, User, Zap, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import duelsService, { DuelInviteDetails } from '@/services/duels'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 export default function JoinDuelPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const code = params.code as string
 
   const [loading, setLoading] = useState(true)
@@ -28,7 +30,7 @@ export default function JoinDuelPage() {
         setInvite(data)
       } catch (err: any) {
         console.error('Error fetching invite:', err)
-        setError(err.response?.data?.detail || 'Invitation invalide ou expirée')
+        setError(err.response?.data?.detail || t('duels.invalidOrExpired'))
       } finally {
         setLoading(false)
       }
@@ -37,7 +39,7 @@ export default function JoinDuelPage() {
     if (code) {
       fetchInvite()
     }
-  }, [code])
+  }, [code, t])
 
   const handleAccept = async () => {
     try {
@@ -45,8 +47,8 @@ export default function JoinDuelPage() {
       const duel = await duelsService.acceptInvite(code)
 
       toast({
-        title: 'Défi accepté ! 🎯',
-        description: 'Le duel a été créé. Que le meilleur gagne !',
+        title: t('duels.challengeAccepted'),
+        description: t('duels.duelCreatedMayBest'),
       })
 
       // Rediriger vers la page du quiz ou des duels
@@ -58,8 +60,8 @@ export default function JoinDuelPage() {
     } catch (err: any) {
       console.error('Error accepting invite:', err)
       toast({
-        title: 'Erreur',
-        description: err.response?.data?.detail || 'Impossible d\'accepter le défi',
+        title: t('common.error'),
+        description: err.response?.data?.detail || t('duels.acceptError'),
         variant: 'destructive'
       })
     } finally {
@@ -69,8 +71,8 @@ export default function JoinDuelPage() {
 
   const handleDecline = () => {
     toast({
-      title: 'Défi décliné',
-      description: 'Vous avez refusé l\'invitation',
+      title: t('duels.invitationDeclined'),
+      description: t('duels.youDeclinedInvite'),
     })
     router.push('/duels')
   }
@@ -80,7 +82,7 @@ export default function JoinDuelPage() {
       <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Chargement de l'invitation...</p>
+          <p className="text-muted-foreground">{t('duels.loadingInvitation')}</p>
         </div>
       </div>
     )
@@ -95,10 +97,10 @@ export default function JoinDuelPage() {
               <div className="p-4 rounded-full bg-red-100 w-fit mx-auto mb-4">
                 <AlertCircle className="h-12 w-12 text-red-600" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Invitation invalide</h2>
+              <h2 className="text-xl font-bold mb-2">{t('duels.invalidInvite')}</h2>
               <p className="text-muted-foreground mb-6">{error}</p>
               <Button onClick={() => router.push('/duels')} className="w-full">
-                Retour aux duels
+                {t('duels.backToDuels')}
               </Button>
             </div>
           </CardContent>
@@ -118,9 +120,9 @@ export default function JoinDuelPage() {
           <div className="p-4 rounded-full bg-orange-100 w-fit mx-auto mb-4">
             <Swords className="h-12 w-12 text-orange-600" />
           </div>
-          <CardTitle className="text-2xl">Invitation au duel !</CardTitle>
+          <CardTitle className="text-2xl">{t('duels.invitationLabel')}</CardTitle>
           <CardDescription>
-            Vous avez été invité à participer à un duel
+            {t('duels.youAreInvited')}
           </CardDescription>
         </CardHeader>
 
@@ -132,14 +134,14 @@ export default function JoinDuelPage() {
             </div>
             <div>
               <p className="font-semibold">{invite.challenger_username}</p>
-              <p className="text-sm text-muted-foreground">vous défie</p>
+              <p className="text-sm text-muted-foreground">{t('duels.challengesYou')}</p>
             </div>
           </div>
 
           {/* Quiz Info */}
           {invite.quiz_title && (
             <div className="p-4 rounded-lg border">
-              <p className="text-sm text-muted-foreground mb-1">Quiz</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('duels.quiz')}</p>
               <p className="font-semibold">{invite.quiz_title}</p>
             </div>
           )}
@@ -148,12 +150,12 @@ export default function JoinDuelPage() {
           <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/30">
             <Zap className="h-5 w-5 text-yellow-600" />
             <span className="font-semibold text-lg">{invite.stakes_xp} XP</span>
-            <span className="text-muted-foreground">en jeu</span>
+            <span className="text-muted-foreground">{t('duels.atStake')}</span>
           </div>
 
           {/* Duration */}
           <div className="text-center text-sm text-muted-foreground">
-            Durée du duel: {invite.duration_minutes} minutes
+            {t('duels.duelDuration', { minutes: invite.duration_minutes })}
           </div>
 
           {/* Actions */}
@@ -165,7 +167,7 @@ export default function JoinDuelPage() {
               disabled={accepting}
             >
               <XCircle className="h-4 w-4 mr-2" />
-              Décliner
+              {t('common.decline')}
             </Button>
             <Button
               className="flex-1"
@@ -177,12 +179,12 @@ export default function JoinDuelPage() {
               ) : (
                 <CheckCircle2 className="h-4 w-4 mr-2" />
               )}
-              Accepter le défi
+              {t('duels.acceptChallenge')}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Le gagnant remporte {invite.stakes_xp} XP, le perdant en perd {Math.round(invite.stakes_xp / 2)}
+            {t('duels.stakesExplanation', { stakes: invite.stakes_xp, loss: Math.round(invite.stakes_xp / 2) })}
           </p>
         </CardContent>
       </Card>

@@ -225,7 +225,7 @@ export default function LeaderboardPage() {
       }
     } catch (error) {
       console.error('Erreur chargement ligues:', error)
-      toast.error('Impossible de charger les données de ligue')
+      toast.error(t('leaderboard.loadError'))
     } finally {
       setLeagueLoading(false)
     }

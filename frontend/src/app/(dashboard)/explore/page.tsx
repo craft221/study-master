@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 // Types
 interface Author {
@@ -113,26 +114,26 @@ type ContentType = "all" | "notes" | "flashcards" | "quizzes";
 type SortBy = "recent" | "popular" | "rating";
 type LanguageFilter = "all" | "fr" | "en" | "es" | "ar";
 
-const languageConfig: Record<LanguageFilter, { label: string; flag: string }> = {
-  all: { label: "Toutes", flag: "🌍" },
-  fr: { label: "Français", flag: "🇫🇷" },
-  en: { label: "English", flag: "🇬🇧" },
-  es: { label: "Español", flag: "🇪🇸" },
-  ar: { label: "العربية", flag: "🇸🇦" },
+const languageFlags: Record<LanguageFilter, string> = {
+  all: "🌍",
+  fr: "🇫🇷",
+  en: "🇬🇧",
+  es: "🇪🇸",
+  ar: "🇸🇦",
 };
 
-const contentTypeConfig = {
-  all: { label: "Tout", icon: Sparkles },
-  notes: { label: "Notes", icon: BookOpen },
-  flashcards: { label: "Flashcards", icon: Brain },
-  quizzes: { label: "Quiz", icon: FileQuestion },
-};
+const contentTypeIcons = {
+  all: Sparkles,
+  notes: BookOpen,
+  flashcards: Brain,
+  quizzes: FileQuestion,
+} as const;
 
-const sortConfig = {
-  recent: { label: "Plus récents", icon: Clock },
-  popular: { label: "Populaires", icon: TrendingUp },
-  rating: { label: "Meilleurs scores", icon: Star },
-};
+const sortIcons = {
+  recent: Clock,
+  popular: TrendingUp,
+  rating: Star,
+} as const;
 
 const difficultyColors: Record<string, string> = {
   easy: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
@@ -143,6 +144,35 @@ const difficultyColors: Record<string, string> = {
 export default function ExplorePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t, locale } = useTranslation();
+
+  const languageConfig: Record<LanguageFilter, { label: string; flag: string }> = {
+    all: { label: t('explore.languageAll'), flag: languageFlags.all },
+    fr: { label: t('explore.languageFr'), flag: languageFlags.fr },
+    en: { label: t('explore.languageEn'), flag: languageFlags.en },
+    es: { label: t('explore.languageEs'), flag: languageFlags.es },
+    ar: { label: t('explore.languageAr'), flag: languageFlags.ar },
+  };
+
+  const contentTypeConfig = {
+    all: { label: t('explore.contentTypeAll'), icon: contentTypeIcons.all },
+    notes: { label: t('explore.contentTypeNotes'), icon: contentTypeIcons.notes },
+    flashcards: { label: t('explore.contentTypeFlashcards'), icon: contentTypeIcons.flashcards },
+    quizzes: { label: t('explore.contentTypeQuizzes'), icon: contentTypeIcons.quizzes },
+  };
+
+  const sortConfig = {
+    recent: { label: t('explore.sortRecent'), icon: sortIcons.recent },
+    popular: { label: t('explore.sortPopular'), icon: sortIcons.popular },
+    rating: { label: t('explore.sortRating'), icon: sortIcons.rating },
+  };
+
+  const localeMap: Record<string, string> = {
+    fr: 'fr-FR',
+    en: 'en-US',
+    es: 'es-ES',
+    ar: 'ar-SA',
+  };
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -205,8 +235,8 @@ export default function ExplorePage() {
     } catch (error) {
       console.error("Error searching content:", error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger le contenu",
+        title: t('common.error'),
+        description: t('explore.loadContentError'),
         variant: "destructive",
       });
     } finally {
@@ -217,8 +247,8 @@ export default function ExplorePage() {
   const copyShareCode = (code: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/play/${code}`);
     toast({
-      title: "Lien copié !",
-      description: "Le lien du quiz a été copié dans le presse-papier",
+      title: t('explore.linkCopied'),
+      description: t('explore.quizLinkCopied'),
     });
   };
 
@@ -237,13 +267,13 @@ export default function ExplorePage() {
       }
       const response = await api.post("/explore/duplicate", payload);
       toast({
-        title: "Dupliqué !",
+        title: t('explore.duplicated'),
         description: response.data.message,
       });
     } catch (error: any) {
       toast({
-        title: "Erreur",
-        description: error.response?.data?.detail || "Impossible de dupliquer",
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('explore.duplicateError'),
         variant: "destructive",
       });
     } finally {
@@ -259,13 +289,13 @@ export default function ExplorePage() {
         reason: reason,
       });
       toast({
-        title: "Signalement envoyé",
-        description: "Notre équipe va examiner ce contenu",
+        title: t('explore.reportSent'),
+        description: t('explore.reportSentDesc'),
       });
     } catch (error: any) {
       toast({
-        title: "Erreur",
-        description: error.response?.data?.detail || "Impossible de signaler",
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('explore.reportError'),
         variant: "destructive",
       });
     }
@@ -274,7 +304,7 @@ export default function ExplorePage() {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleDateString("fr-FR", {
+    return date.toLocaleDateString(localeMap[locale] || 'fr-FR', {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -298,10 +328,10 @@ export default function ExplorePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Sparkles className="w-8 h-8 text-purple-500" />
-          Explorer
+          {t('explore.title')}
         </h1>
         <p className="text-muted-foreground mt-2">
-          Découvre du contenu créé par la communauté Studera
+          {t('explore.subtitle')}
         </p>
       </div>
 
@@ -311,7 +341,7 @@ export default function ExplorePage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Rechercher des notes, flashcards, quiz..."
+            placeholder={t('explore.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -389,14 +419,14 @@ export default function ExplorePage() {
               <Button variant="outline" className="gap-2">
                 <Filter className="w-4 h-4" />
                 {selectedSubject
-                  ? popularSubjects.find((s) => s.id === selectedSubject)?.name || "Matière"
-                  : "Toutes les matières"}
+                  ? popularSubjects.find((s) => s.id === selectedSubject)?.name || t('explore.subjectFallbackShort')
+                  : t('explore.subjectsAll')}
                 <ChevronDown className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="max-h-64 overflow-y-auto">
               <DropdownMenuItem onClick={() => setSelectedSubject(null)}>
-                Toutes les matières
+                {t('explore.subjectsAll')}
               </DropdownMenuItem>
               {popularSubjects.map((subject) => (
                 <DropdownMenuItem
@@ -448,7 +478,7 @@ export default function ExplorePage() {
           {hasActiveFilters && (
             <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground">
               <X className="w-4 h-4 mr-1" />
-              Effacer les filtres
+              {t('explore.clearFilters')}
             </Button>
           )}
         </div>
@@ -472,8 +502,7 @@ export default function ExplorePage() {
           <>
             {/* Stats */}
             <div className="text-sm text-muted-foreground">
-              {results.total_count} résultat{results.total_count !== 1 ? "s" : ""} trouvé
-              {results.total_count !== 1 ? "s" : ""}
+              {t('explore.resultsCount', { count: results.total_count, plural: results.total_count !== 1 ? 's' : '' })}
             </div>
 
             {/* Notes */}
@@ -481,7 +510,7 @@ export default function ExplorePage() {
               <section>
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-blue-500" />
-                  Notes
+                  {t('explore.notesSection')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.notes.map((note) => (
@@ -511,7 +540,7 @@ export default function ExplorePage() {
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                             <span className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
-                              {note.author?.username || "Anonyme"}
+                              {note.author?.username || t('explore.anonymous')}
                             </span>
                             <span>{formatDate(note.created_at)}</span>
                           </div>
@@ -522,7 +551,7 @@ export default function ExplorePage() {
                               onClick={() => router.push(`/explore/notes/${note.id}`)}
                             >
                               <Eye className="w-4 h-4 mr-1" />
-                              Voir
+                              {t('explore.view')}
                             </Button>
                             <Button
                               size="sm"
@@ -535,7 +564,7 @@ export default function ExplorePage() {
                               ) : (
                                 <Copy className="w-4 h-4 mr-1" />
                               )}
-                              Dupliquer
+                              {t('explore.duplicate')}
                             </Button>
                             <Button
                               size="sm"
@@ -560,7 +589,7 @@ export default function ExplorePage() {
                 <section>
                   <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                     <Brain className="w-5 h-5 text-purple-500" />
-                    Decks de Flashcards
+                    {t('explore.flashcardDecksSection')}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {results.flashcards.map((deck, index) => (
@@ -587,7 +616,7 @@ export default function ExplorePage() {
                           <CardContent>
                             <div className="flex items-center gap-2 mb-4">
                               <Badge variant="outline">
-                                {deck.card_count} carte{deck.card_count !== 1 ? "s" : ""}
+                                {t('explore.cardsCount', { count: deck.card_count, plural: deck.card_count !== 1 ? 's' : '' })}
                               </Badge>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
@@ -615,7 +644,7 @@ export default function ExplorePage() {
                                 ) : (
                                   <Copy className="w-4 h-4 mr-1" />
                                 )}
-                                Dupliquer
+                                {t('explore.duplicate')}
                               </Button>
                               <Button
                                 size="sm"
@@ -639,7 +668,7 @@ export default function ExplorePage() {
               <section>
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <FileQuestion className="w-5 h-5 text-green-500" />
-                  Quiz
+                  {t('explore.quizzesSection')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.quizzes.map((quiz) => (
@@ -654,10 +683,10 @@ export default function ExplorePage() {
                             <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
                             <Badge className={difficultyColors[quiz.difficulty] || ""}>
                               {quiz.difficulty === "easy"
-                                ? "Facile"
+                                ? t('explore.difficultyEasy')
                                 : quiz.difficulty === "hard"
-                                ? "Difficile"
-                                : "Moyen"}
+                                ? t('explore.difficultyHard')
+                                : t('explore.difficultyMedium')}
                             </Badge>
                           </div>
                         </CardHeader>
@@ -670,18 +699,18 @@ export default function ExplorePage() {
 
                           <div className="flex flex-wrap gap-2 mb-4">
                             <Badge variant="outline">
-                              {quiz.question_count} question{quiz.question_count !== 1 ? "s" : ""}
+                              {t('explore.questionsCount', { count: quiz.question_count, plural: quiz.question_count !== 1 ? 's' : '' })}
                             </Badge>
                             {quiz.time_limit_minutes && (
                               <Badge variant="outline">
                                 <Clock className="w-3 h-3 mr-1" />
-                                {quiz.time_limit_minutes} min
+                                {quiz.time_limit_minutes} {t('explore.minutes')}
                               </Badge>
                             )}
                             {quiz.is_ai_generated && (
                               <Badge variant="secondary" className="bg-purple-100 text-purple-700">
                                 <Sparkles className="w-3 h-3 mr-1" />
-                                IA
+                                {t('explore.aiBadge')}
                               </Badge>
                             )}
                           </div>
@@ -689,7 +718,7 @@ export default function ExplorePage() {
                           <div className="flex items-center gap-4 text-sm mb-4">
                             <span className="flex items-center gap-1 text-muted-foreground">
                               <Play className="w-4 h-4" />
-                              {quiz.total_plays} partie{quiz.total_plays !== 1 ? "s" : ""}
+                              {t('explore.playsCount', { count: quiz.total_plays, plural: quiz.total_plays !== 1 ? 's' : '' })}
                             </span>
                             {quiz.average_score > 0 && (
                               <span className="flex items-center gap-1 text-muted-foreground">
@@ -702,7 +731,7 @@ export default function ExplorePage() {
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Users className="w-3 h-3" />
-                              {quiz.author?.username || "Anonyme"}
+                              {quiz.author?.username || t('explore.anonymous')}
                             </span>
                             <div className="flex gap-2">
                               {quiz.share_code && (
@@ -725,7 +754,7 @@ export default function ExplorePage() {
                                 }
                               >
                                 <Play className="w-4 h-4 mr-1" />
-                                Jouer
+                                {t('explore.play')}
                               </Button>
                             </div>
                           </div>
@@ -741,7 +770,7 @@ export default function ExplorePage() {
                               ) : (
                                 <Copy className="w-4 h-4 mr-1" />
                               )}
-                              Dupliquer
+                              {t('explore.duplicate')}
                             </Button>
                             <Button
                               size="sm"
@@ -766,11 +795,11 @@ export default function ExplorePage() {
               results.quizzes.length === 0 && (
                 <div className="text-center py-12">
                   <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Aucun contenu trouvé</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('explore.noContentFound')}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Essaie d'ajuster tes filtres ou ta recherche
+                    {t('explore.adjustFilters')}
                   </p>
-                  <Button onClick={clearFilters}>Effacer les filtres</Button>
+                  <Button onClick={clearFilters}>{t('explore.clearFilters')}</Button>
                 </div>
               )}
 
@@ -778,7 +807,7 @@ export default function ExplorePage() {
             {results.has_more && (
               <div className="text-center pt-4">
                 <Button variant="outline" onClick={() => setPage((p) => p + 1)} disabled={isLoading}>
-                  Charger plus
+                  {t('explore.loadMore')}
                 </Button>
               </div>
             )}

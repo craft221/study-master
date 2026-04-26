@@ -12,11 +12,13 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import duelsService, { Duel, DuelStatus } from '@/services/duels'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 export default function DuelDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [duel, setDuel] = useState<Duel | null>(null)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
@@ -28,8 +30,8 @@ export default function DuelDetailPage() {
     const fetchData = async () => {
       if (isNaN(duelId)) {
         toast({
-          title: 'Erreur',
-          description: 'ID de duel invalide',
+          title: t('common.error'),
+          description: t('duels.invalidDuelId'),
           variant: 'destructive'
         })
         router.push('/duels')
@@ -46,8 +48,8 @@ export default function DuelDetailPage() {
       } catch (error) {
         console.error('Error fetching duel:', error)
         toast({
-          title: 'Erreur',
-          description: 'Impossible de charger le duel',
+          title: t('common.error'),
+          description: t('duels.loadDuelError'),
           variant: 'destructive'
         })
         router.push('/duels')
@@ -59,7 +61,7 @@ export default function DuelDetailPage() {
     if (duelId) {
       fetchData()
     }
-  }, [duelId, toast, router])
+  }, [duelId, toast, router, t])
 
   // Auto-refresh every 10s for active duels (waiting for opponent)
   useEffect(() => {
@@ -82,14 +84,14 @@ export default function DuelDetailPage() {
       setActionLoading(true)
       await duelsService.accept(duelId)
       toast({
-        title: 'Defi accepte !',
-        description: 'Que le meilleur gagne !',
+        title: t('duels.challengeAccepted'),
+        description: t('duels.bestManWins'),
       })
       router.push('/duels')
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible d\'accepter le defi',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.acceptError'),
         variant: 'destructive'
       })
     } finally {
@@ -98,19 +100,19 @@ export default function DuelDetailPage() {
   }
 
   const handleDecline = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir refuser ce défi ?')) return
+    if (!confirm(t('duels.confirmDeclineChallenge'))) return
     try {
       setActionLoading(true)
       await duelsService.decline(duelId)
       toast({
-        title: 'Défi refusé',
-        description: 'Le défi a été décliné',
+        title: t('duels.challengeDeclined'),
+        description: t('duels.challengeDeclinedDesc'),
       })
       router.push('/duels')
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de refuser le défi',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.declineError'),
         variant: 'destructive'
       })
     } finally {
@@ -126,12 +128,12 @@ export default function DuelDetailPage() {
 
   const getStatusBadge = (status: DuelStatus) => {
     const variants: Record<DuelStatus, { icon: any, text: string, className: string }> = {
-      pending: { icon: Clock, text: 'En attente', className: 'bg-yellow-100 text-yellow-800' },
-      accepted: { icon: CheckCircle2, text: 'Accepte', className: 'bg-blue-100 text-blue-800' },
-      in_progress: { icon: Swords, text: 'En cours', className: 'bg-purple-100 text-purple-800' },
-      completed: { icon: Trophy, text: 'Termine', className: 'bg-green-100 text-green-800' },
-      declined: { icon: XCircle, text: 'Refuse', className: 'bg-red-100 text-red-800' },
-      cancelled: { icon: XCircle, text: 'Annule', className: 'bg-gray-100 text-gray-800' }
+      pending: { icon: Clock, text: t('common.pending'), className: 'bg-yellow-100 text-yellow-800' },
+      accepted: { icon: CheckCircle2, text: t('common.accepted'), className: 'bg-blue-100 text-blue-800' },
+      in_progress: { icon: Swords, text: t('common.inProgress'), className: 'bg-purple-100 text-purple-800' },
+      completed: { icon: Trophy, text: t('common.completed'), className: 'bg-green-100 text-green-800' },
+      declined: { icon: XCircle, text: t('common.declined'), className: 'bg-red-100 text-red-800' },
+      cancelled: { icon: XCircle, text: t('common.cancelled'), className: 'bg-gray-100 text-gray-800' }
     }
 
     const config = variants[status] || variants.pending
@@ -161,10 +163,10 @@ export default function DuelDetailPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <XCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">Duel introuvable</p>
+            <p className="text-muted-foreground mb-4">{t('duels.duelNotFound')}</p>
             <Button onClick={() => router.push('/duels')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux duels
+              {t('duels.backToDuels')}
             </Button>
           </CardContent>
         </Card>
@@ -202,10 +204,10 @@ export default function DuelDetailPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Swords className="h-6 w-6 text-orange-500" />
-            Duel #{duel.id}
+            {t('duels.duelNumber', { id: duel.id })}
           </h1>
           <p className="text-muted-foreground">
-            {isChallenger ? 'Vous avez lance ce defi' : 'Vous avez ete defie'}
+            {isChallenger ? t('duels.youLaunchedThis') : t('duels.youWereChallenged')}
           </p>
         </div>
       </div>
@@ -216,12 +218,12 @@ export default function DuelDetailPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
-              {duel.quiz?.title || 'Quiz'}
+              {duel.quiz?.title || t('duels.quiz')}
             </CardTitle>
             {getStatusBadge(duel.status)}
           </div>
           <CardDescription>
-            Enjeux: {duel.stakes_xp} XP
+            {t('duels.stakesLabel', { xp: duel.stakes_xp })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -232,8 +234,8 @@ export default function DuelDetailPage() {
               <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-950 mb-2">
                 <User className="h-8 w-8 text-blue-600" />
               </div>
-              <p className="font-semibold">{duel.challenger?.username || 'Challenger'}</p>
-              <Badge variant="outline">Niveau {duel.challenger?.level || '?'}</Badge>
+              <p className="font-semibold">{duel.challenger?.username || t('duels.challenger')}</p>
+              <Badge variant="outline">{t('common.level')} {duel.challenger?.level || '?'}</Badge>
               {duel.challenger_score !== null && (
                 <p className="text-lg font-bold mt-2">{duel.challenger_score}%</p>
               )}
@@ -250,8 +252,8 @@ export default function DuelDetailPage() {
               <div className="p-4 rounded-full bg-red-100 dark:bg-red-950 mb-2">
                 <User className="h-8 w-8 text-red-600" />
               </div>
-              <p className="font-semibold">{duel.opponent?.username || 'Opponent'}</p>
-              <Badge variant="outline">Niveau {duel.opponent?.level || '?'}</Badge>
+              <p className="font-semibold">{duel.opponent?.username || t('duels.opponentLabel')}</p>
+              <Badge variant="outline">{t('common.level')} {duel.opponent?.level || '?'}</Badge>
               {duel.opponent_score !== null && (
                 <p className="text-lg font-bold mt-2">{duel.opponent_score}%</p>
               )}
@@ -261,7 +263,7 @@ export default function DuelDetailPage() {
           {/* Stakes info */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Zap className="h-4 w-4 text-yellow-500" />
-            Le gagnant remporte {duel.stakes_xp} XP, le perdant en perd {Math.round(duel.stakes_xp / 2)}
+            {t('duels.stakesExplanation', { stakes: duel.stakes_xp, loss: Math.round(duel.stakes_xp / 2) })}
           </div>
 
           {/* Actions */}
@@ -278,7 +280,7 @@ export default function DuelDetailPage() {
                   ) : (
                     <XCircle className="h-4 w-4 mr-2" />
                   )}
-                  Refuser
+                  {t('common.decline')}
                 </Button>
                 <Button onClick={handleAccept} disabled={actionLoading}>
                   {actionLoading ? (
@@ -286,7 +288,7 @@ export default function DuelDetailPage() {
                   ) : (
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                   )}
-                  Accepter le defi
+                  {t('duels.acceptChallenge')}
                 </Button>
               </>
             )}
@@ -294,7 +296,7 @@ export default function DuelDetailPage() {
             {canStart && (
               <Button size="lg" onClick={startDuel}>
                 <Play className="h-5 w-5 mr-2" />
-                Commencer le quiz
+                {t('duels.startQuiz')}
               </Button>
             )}
 
@@ -302,16 +304,16 @@ export default function DuelDetailPage() {
             {hasCurrentUserPlayed && duel.status !== 'completed' && (
               <div className="text-center space-y-2">
                 <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-                <p className="text-lg font-bold">Vous avez deja joue !</p>
+                <p className="text-lg font-bold">{t('duels.alreadyPlayed')}</p>
                 <p className="text-2xl font-bold text-primary">{currentUserScore}%</p>
                 {!hasOpponentPlayed ? (
                   <p className="text-sm text-muted-foreground">
                     <Clock className="h-4 w-4 inline mr-1" />
-                    En attente de votre adversaire...
+                    {t('duels.waitingForOpponentLong')}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Calcul des resultats en cours...
+                    {t('duels.calculatingResults')}
                   </p>
                 )}
               </div>
@@ -322,10 +324,10 @@ export default function DuelDetailPage() {
                 <Trophy className="h-12 w-12 text-yellow-500 mx-auto mb-2" />
                 <p className="text-lg font-bold">
                   {duel.winner_id === null
-                    ? 'Egalite !'
+                    ? t('duels.draw')
                     : duel.winner_id === currentUserId
-                      ? 'Vous avez gagne !'
-                      : 'Vous avez perdu'}
+                      ? t('duels.youWon')
+                      : t('duels.youLost')}
                 </p>
                 {duel.winner_id === currentUserId && (
                   <p className="text-green-500 font-semibold">+{duel.stakes_xp} XP</p>
@@ -343,7 +345,7 @@ export default function DuelDetailPage() {
       <div className="flex justify-center">
         <Button variant="outline" onClick={() => router.push('/duels')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux duels
+          {t('duels.backToDuels')}
         </Button>
       </div>
     </div>
