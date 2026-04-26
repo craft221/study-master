@@ -109,7 +109,7 @@ export default function ActivityPage() {
   }
 
   const getLocaleString = () => {
-    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' }
+    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
     return localeMap[locale] || 'fr-FR'
   }
 

@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { Shield, ShieldAlert, ShieldCheck, Eye, AlertTriangle, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ViolationResponse } from '@/services/anti-cheat'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface AntiCheatMonitorProps {
   isActive: boolean
@@ -25,6 +26,7 @@ export function AntiCheatMonitor({
   focusLossCount,
   showDetails = false
 }: AntiCheatMonitorProps) {
+  const { t } = useTranslation()
   const [showWarning, setShowWarning] = useState(false)
   const [lastViolation, setLastViolation] = useState<ViolationResponse | null>(null)
 
@@ -45,17 +47,17 @@ export function AntiCheatMonitor({
 
   // Déterminer le statut global
   const getStatus = () => {
-    if (!isActive) return { color: 'gray', icon: Shield, text: 'Inactif' }
+    if (!isActive) return { color: 'gray', icon: Shield, text: t('antiCheat.statusInactive') }
 
     const highSeverity = violations.filter(v => v.severity === 'high' || v.severity === 'critical').length
 
     if (highSeverity > 0) {
-      return { color: 'red', icon: ShieldAlert, text: 'Alerte' }
+      return { color: 'red', icon: ShieldAlert, text: t('antiCheat.statusAlert') }
     }
     if (violations.length > 0 || tabSwitchCount > 3 || focusLossCount > 5) {
-      return { color: 'yellow', icon: AlertTriangle, text: 'Attention' }
+      return { color: 'yellow', icon: AlertTriangle, text: t('antiCheat.statusAttention') }
     }
-    return { color: 'green', icon: ShieldCheck, text: 'OK' }
+    return { color: 'green', icon: ShieldCheck, text: t('antiCheat.statusOk') }
   }
 
   const status = getStatus()
@@ -72,11 +74,11 @@ export function AntiCheatMonitor({
           status.color === 'red' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
           ''
         }`}
-        title="Mode anti-triche actif - Les comportements suspects sont enregistrés"
+        title={t('antiCheat.monitoringTooltip')}
       >
         <StatusIcon className="h-3 w-3" />
         <Eye className="h-3 w-3" />
-        Surveillance
+        {t('antiCheat.monitoring')}
       </Badge>
 
       {/* Avertissement temporaire */}
@@ -93,7 +95,7 @@ export function AntiCheatMonitor({
               ? 'text-red-600' : 'text-yellow-600'
           }`} />
           <div>
-            <p className="font-medium text-sm">Comportement détecté</p>
+            <p className="font-medium text-sm">{t('antiCheat.behaviorDetected')}</p>
             <p className="text-xs text-muted-foreground">{lastViolation.message}</p>
           </div>
         </div>
@@ -103,15 +105,15 @@ export function AntiCheatMonitor({
       {showDetails && isActive && (
         <div className="text-xs text-muted-foreground space-y-1 p-2 bg-muted rounded-lg">
           <div className="flex justify-between">
-            <span>Changements d'onglet:</span>
+            <span>{t('antiCheat.tabSwitches')}</span>
             <span className={tabSwitchCount > 3 ? 'text-yellow-500' : ''}>{tabSwitchCount}</span>
           </div>
           <div className="flex justify-between">
-            <span>Pertes de focus:</span>
+            <span>{t('antiCheat.focusLosses')}</span>
             <span className={focusLossCount > 5 ? 'text-yellow-500' : ''}>{focusLossCount}</span>
           </div>
           <div className="flex justify-between">
-            <span>Avertissements:</span>
+            <span>{t('antiCheat.warnings')}</span>
             <span className={violations.length > 0 ? 'text-red-500' : ''}>{violations.length}</span>
           </div>
         </div>
@@ -140,14 +142,16 @@ export function AntiCheatResult({
   adjustedScore,
   originalScore
 }: AntiCheatResultProps) {
+  const { t } = useTranslation()
+
   if (isValid && violationsCount === 0) {
     return (
       <div className="flex items-start gap-3 p-4 rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
         <ShieldCheck className="h-5 w-5 text-green-600 mt-0.5" />
         <div>
-          <h4 className="font-medium text-green-800 dark:text-green-300">Quiz validé</h4>
+          <h4 className="font-medium text-green-800 dark:text-green-300">{t('antiCheat.quizValidated')}</h4>
           <p className="text-sm text-green-700 dark:text-green-400">
-            Aucun comportement suspect détecté. Résultat validé !
+            {t('antiCheat.noSuspicious')}
           </p>
         </div>
       </div>
@@ -159,9 +163,9 @@ export function AntiCheatResult({
       <div className="flex items-start gap-3 p-4 rounded-lg border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
         <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
         <div>
-          <h4 className="font-medium text-red-800 dark:text-red-300">Résultat invalidé</h4>
+          <h4 className="font-medium text-red-800 dark:text-red-300">{t('antiCheat.resultInvalidated')}</h4>
           <p className="text-sm text-red-700 dark:text-red-400">
-            Des comportements suspects ont été détectés. Ce résultat ne sera pas comptabilisé.
+            {t('antiCheat.disqualifiedDescription')}
           </p>
           {warningMessage && <p className="text-sm text-red-600 mt-1">{warningMessage}</p>}
         </div>
@@ -174,19 +178,19 @@ export function AntiCheatResult({
       <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
       <div className="space-y-1">
         <h4 className="font-medium text-yellow-800 dark:text-yellow-300">
-          Avertissements détectés
+          {t('antiCheat.warningsDetected')}
         </h4>
         <p className="text-sm text-yellow-700 dark:text-yellow-400">
-          {warningMessage || `${violationsCount} comportement(s) suspect(s) enregistré(s).`}
+          {warningMessage || t('antiCheat.violationsRecorded', { count: violationsCount })}
         </p>
         {penaltyXp > 0 && (
           <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
-            Pénalité: -{penaltyXp} XP
+            {t('antiCheat.penaltyXp', { xp: penaltyXp })}
           </p>
         )}
         {adjustedScore !== null && adjustedScore !== originalScore && (
           <p className="text-sm text-yellow-700 dark:text-yellow-400">
-            Score ajusté: {originalScore}% → {Math.round(adjustedScore)}%
+            {t('antiCheat.scoreAdjusted', { original: originalScore, adjusted: Math.round(adjustedScore) })}
           </p>
         )}
       </div>

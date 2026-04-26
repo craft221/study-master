@@ -1,6 +1,5 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-
   "common": {
     "appName": "Studera",
     "loading": "Loading...",
@@ -31,7 +30,6 @@
     "upgrade": "Upgrade to Premium",
     "optional": "Optional"
   },
-
   "auth": {
     "login": "Login",
     "logout": "Logout",
@@ -68,7 +66,6 @@
     "invalidResetToken": "Invalid or expired reset link",
     "noResetToken": "No reset token provided"
   },
-
   "nav": {
     "dashboard": "Dashboard",
     "explore": "Explore",
@@ -100,7 +97,6 @@
       "more": "More"
     }
   },
-
   "dashboard": {
     "welcome": "Welcome",
     "welcomeBack": "Welcome back",
@@ -120,7 +116,6 @@
     "noActivity": "No recent activity",
     "startStudying": "Start studying"
   },
-
   "tooltips": {
     "dashboard": {
       "xp": "Earn experience points by completing quizzes and flashcards. Level up to unlock achievements!",
@@ -175,7 +170,6 @@
       "events": "No upcoming events. Visit the calendar to schedule study sessions or exams."
     }
   },
-
   "onboarding": {
     "step": "Step",
     "skip": "Skip",
@@ -237,7 +231,6 @@
     "suggestion2": "Check your daily quests to earn XP",
     "suggestion3": "Ask Spark if you need help!"
   },
-
   "sessionsPage": {
     "title": "Pomodoro Sessions",
     "subtitle": "Time management technique to improve your productivity",
@@ -267,7 +260,6 @@
     "untilLongBreak": "{count} pomodoro(s) until long break",
     "generalSession": "General session"
   },
-
   "notesPage": {
     "title": "My Notes",
     "cachedData": "Cached data",
@@ -282,7 +274,6 @@
     "createMyFirstNote": "Create my first note",
     "confirmDelete": "Are you sure you want to delete this note?"
   },
-
   "newNotePage": {
     "offlineMode": "Offline mode",
     "offlineSaveMessage": "Your note will be saved locally and synced automatically when you reconnect.",
@@ -329,7 +320,6 @@
     "quizCreated": "Quiz created successfully!",
     "summaryGenerated": "Summary generated!"
   },
-
   "quizzesPage": {
     "title": "Quizzes",
     "quizzesAvailable": "{count} quizzes available",
@@ -369,7 +359,6 @@
     "leaderboardError": "Error loading leaderboard",
     "sharingError": "Error enabling sharing"
   },
-
   "newQuizPage": {
     "offlineMode": "Offline mode",
     "offlineSaveMessage": "Your quiz will be saved locally and synced automatically when you reconnect.",
@@ -428,7 +417,6 @@
     "quizCreatedOffline": "Quiz created locally",
     "quizWillSync": "Quiz \"{title}\" will be synced when you reconnect"
   },
-
   "subjects": {
     "title": "My Subjects",
     "addSubject": "Add subject",
@@ -451,7 +439,6 @@
     "flashcardsCount": "{count} flashcards",
     "quizzesCount": "{count} quizzes"
   },
-
   "documents": {
     "title": "My Documents",
     "upload": "Upload",
@@ -468,7 +455,6 @@
     "used": "used",
     "of": "of"
   },
-
   "notes": {
     "title": "My Notes",
     "addNote": "New note",
@@ -485,7 +471,6 @@
     "preview": "Preview",
     "editor": "Editor"
   },
-
   "flashcards": {
     "title": "My Flashcards",
     "addDeck": "New deck",
@@ -515,7 +500,6 @@
     "accuracy": "Accuracy",
     "spacedRepetitionTitle": "Spaced Repetition"
   },
-
   "flashcardsPage": {
     "title": "Flashcards",
     "decksCount": "{count} decks",
@@ -546,7 +530,6 @@
     "deckDeletedSync": "Deck deleted (will be synced)",
     "deleteError": "Error while deleting"
   },
-
   "newFlashcardPage": {
     "title": "New Flashcard Deck",
     "subtitle": "Create a new deck and add your cards",
@@ -589,7 +572,6 @@
     "deckWillSync": "{count} card(s) will be synced when you reconnect",
     "error": "Error while creating deck"
   },
-
   "quiz": {
     "title": "My Quizzes",
     "addQuiz": "New quiz",
@@ -635,7 +617,6 @@
     "penaltyApplied": "Penalty applied",
     "submissionError": "Error during submission"
   },
-
   "calendar": {
     "title": "Schedule",
     "subtitle": "Plan and track your study events",
@@ -712,7 +693,6 @@
       "sat": "Sat"
     }
   },
-
   "groups": {
     "title": "Study Groups",
     "createGroup": "Create group",
@@ -758,9 +738,16 @@
       "deleteError": "Unable to delete message",
       "noMessages": "No messages yet",
       "startConversation": "Be the first to start the conversation!"
+    },
+    "flashcards": {
+      "empty": "No flashcards in this group",
+      "create": "Create flashcards"
+    },
+    "activity": {
+      "empty": "No activity in this group",
+      "recent": "Recent activity"
     }
   },
-
   "profile": {
     "title": "My Profile",
     "editProfile": "Edit profile",
@@ -774,7 +761,6 @@
     "achievements": "Achievements",
     "badges": "Badges"
   },
-
   "settings": {
     "title": "Settings",
     "account": "Account",
@@ -798,7 +784,6 @@
     "saveChanges": "Save changes",
     "changesSaved": "Changes saved"
   },
-
   "spark": {
     "greeting": "Hi! I'm Spark, your study companion!",
     "askMe": "Ask me a question...",
@@ -808,7 +793,6 @@
     "celebrate": "Great job! Keep it up!",
     "streak": "{days} day streak! Impressive!"
   },
-
   "errors": {
     "generic": "An error occurred",
     "network": "Connection error",
@@ -818,13 +802,11 @@
     "serverError": "Server error",
     "tryAgain": "Please try again"
   },
-
   "empty": {
     "noData": "No data",
     "noResults": "No results",
     "noMatch": "No match"
   },
-
   "time": {
     "justNow": "Just now",
     "minutesAgo": "{count} min ago",
@@ -835,7 +817,6 @@
     "monthsAgo": "{count} month(s) ago",
     "secondsAgo": "{count} sec ago"
   },
-
   "ai": {
     "title": "AI Hub",
     "subtitle": "Transform your notes with artificial intelligence",
@@ -930,7 +911,6 @@
     "explanationError": "Error during explanation",
     "loadError": "Unable to load data"
   },
-
   "ocr": {
     "title": "OCR - Text Extraction",
     "subtitle": "Upload PDFs or images to extract text automatically",
@@ -976,7 +956,6 @@
     "aiPostProcess": "AI error correction",
     "aiPostProcessDesc": "Uses Claude to correct OCR errors (uses 1 AI request)"
   },
-
   "activity": {
     "title": "Activity",
     "subtitle": "History of all your actions",
@@ -1001,7 +980,6 @@
     "loadError": "Error loading activities",
     "score": "Score"
   },
-
   "focusRoom": {
     "title": "Focus Rooms",
     "subtitle": "Study together virtually - Body Doubling",
@@ -1177,9 +1155,26 @@
       "reward": "Reward!",
       "clickToOpen": "Click to open",
       "rewardsCount": "Rewards"
+    },
+    "events": {
+      "empty": "No upcoming events",
+      "duration15": "15 minutes",
+      "duration30": "30 minutes",
+      "duration60": "60 minutes",
+      "duration90": "90 minutes",
+      "duration120": "120 minutes",
+      "categoryStudy": "Study",
+      "categoryWork": "Work",
+      "categoryReading": "Reading"
+    },
+    "deepWork": {
+      "started": "Deep work mode started",
+      "ended": "Deep work mode ended",
+      "paused": "Session paused",
+      "resumed": "Session resumed",
+      "error": "Unable to start session"
     }
   },
-
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",
@@ -1192,7 +1187,6 @@
     "important": "Important",
     "unread": "unread"
   },
-
   "pomodoro": {
     "focus": "Focus",
     "shortBreak": "Short break",
@@ -1208,7 +1202,6 @@
     "focusMode": "Focus mode",
     "breakMode": "Break mode"
   },
-
   "ambientSounds": {
     "title": "Ambient sounds",
     "active": "active",
@@ -1224,7 +1217,6 @@
       "birds": "Birds"
     }
   },
-
   "explore": {
     "title": "Explore",
     "subtitle": "Discover content created by the Studera community",
@@ -1292,7 +1284,6 @@
     },
     "aiGenerated": "AI"
   },
-
   "pricing": {
     "title": "Pricing",
     "subtitle": "Choose your plan",
@@ -1364,7 +1355,6 @@
       "other": "Other"
     }
   },
-
   "leaderboard": {
     "title": "Leaderboards & Leagues",
     "subtitle": "Compare your progress with other students",
@@ -1456,7 +1446,6 @@
     "universityNotConfigured": "Configure your university in your profile to see this leaderboard",
     "loadError": "Unable to load leaderboard"
   },
-
   "achievements": {
     "title": "Achievements & Badges",
     "subtitle": "Unlock badges by progressing in your studies",
@@ -1490,53 +1479,184 @@
     },
     "shareAchievement": "Share this achievement",
     "items": {
-      "first_note": { "name": "First Note", "description": "Create your first note" },
-      "amateur_writer": { "name": "Amateur Writer", "description": "Create 10 notes" },
-      "confirmed_writer": { "name": "Confirmed Writer", "description": "Create 50 notes" },
-      "expert_writer": { "name": "Expert Writer", "description": "Create 100 notes" },
-      "legendary_librarian": { "name": "Legendary Librarian", "description": "Create 500 notes" },
-      "first_flashcard": { "name": "First Flashcard", "description": "Create your first flashcard" },
-      "card_collector": { "name": "Card Collector", "description": "Create 25 flashcards" },
-      "flashcard_master": { "name": "Flashcard Master", "description": "Create 100 flashcards" },
-      "flashcard_legend": { "name": "Flashcard Legend", "description": "Create 500 flashcards" },
-      "first_quiz": { "name": "First Quiz", "description": "Complete your first quiz" },
-      "quiz_amateur": { "name": "Quiz Amateur", "description": "Complete 10 quizzes" },
-      "quiz_expert": { "name": "Quiz Expert", "description": "Complete 50 quizzes" },
-      "quiz_master": { "name": "Quiz Master", "description": "Complete 100 quizzes" },
-      "first_day": { "name": "First Day", "description": "Log in for 1 consecutive day" },
-      "fire_week": { "name": "Fire Week", "description": "Maintain a 7-day streak" },
-      "two_intense_weeks": { "name": "Two Intense Weeks", "description": "Maintain a 14-day streak" },
-      "determination_month": { "name": "Month of Determination", "description": "Maintain a 30-day streak" },
-      "quarterly_commitment": { "name": "Quarterly Commitment", "description": "Maintain a 90-day streak" },
-      "year_perseverance": { "name": "Year of Perseverance", "description": "Maintain a 365-day streak" },
-      "perfect_score": { "name": "Perfect Score", "description": "Get 100% on a quiz" },
-      "perfectionist": { "name": "Perfectionist", "description": "Get 100% on 10 quizzes" },
-      "flawless": { "name": "Flawless", "description": "Get 100% on 50 quizzes" },
-      "level_5": { "name": "Level 5", "description": "Reach level 5" },
-      "level_10": { "name": "Level 10", "description": "Reach level 10" },
-      "level_25": { "name": "Level 25", "description": "Reach level 25" },
-      "level_50": { "name": "Level 50", "description": "Reach level 50" },
-      "xp_1000": { "name": "1,000 XP", "description": "Accumulate 1,000 XP total" },
-      "xp_10000": { "name": "10,000 XP", "description": "Accumulate 10,000 XP total" },
-      "xp_100000": { "name": "100,000 XP", "description": "Accumulate 100,000 XP total" },
-      "first_duel": { "name": "First Duel", "description": "Participate in your first duel" },
-      "duelist": { "name": "Duelist", "description": "Participate in 10 duels" },
-      "duel_champion": { "name": "Duel Champion", "description": "Win 25 duels" },
-      "duel_legend": { "name": "Duel Legend", "description": "Win 100 duels" },
-      "first_victory": { "name": "First Victory", "description": "Win your first duel" },
-      "welcome": { "name": "Welcome!", "description": "Create your account" },
-      "pdf_import": { "name": "PDF Import", "description": "Import your first PDF with OCR" },
-      "scanner_pro": { "name": "Scanner Pro", "description": "Import 10 PDFs with OCR" },
-      "explorer": { "name": "Explorer", "description": "Visit all sections of the application" },
-      "daily_quest": { "name": "Daily Quest", "description": "Complete your first daily quest" },
-      "diligent_quester": { "name": "Diligent Quester", "description": "Complete 30 daily quests" },
-      "quest_master": { "name": "Quest Master", "description": "Complete 100 daily quests" },
-      "study_session": { "name": "Study Session", "description": "Study for 1 hour total" },
-      "devoted_student": { "name": "Devoted Student", "description": "Study for 10 hours total" },
-      "scholar": { "name": "Scholar", "description": "Study for 100 hours total" }
+      "first_note": {
+        "name": "First Note",
+        "description": "Create your first note"
+      },
+      "amateur_writer": {
+        "name": "Amateur Writer",
+        "description": "Create 10 notes"
+      },
+      "confirmed_writer": {
+        "name": "Confirmed Writer",
+        "description": "Create 50 notes"
+      },
+      "expert_writer": {
+        "name": "Expert Writer",
+        "description": "Create 100 notes"
+      },
+      "legendary_librarian": {
+        "name": "Legendary Librarian",
+        "description": "Create 500 notes"
+      },
+      "first_flashcard": {
+        "name": "First Flashcard",
+        "description": "Create your first flashcard"
+      },
+      "card_collector": {
+        "name": "Card Collector",
+        "description": "Create 25 flashcards"
+      },
+      "flashcard_master": {
+        "name": "Flashcard Master",
+        "description": "Create 100 flashcards"
+      },
+      "flashcard_legend": {
+        "name": "Flashcard Legend",
+        "description": "Create 500 flashcards"
+      },
+      "first_quiz": {
+        "name": "First Quiz",
+        "description": "Complete your first quiz"
+      },
+      "quiz_amateur": {
+        "name": "Quiz Amateur",
+        "description": "Complete 10 quizzes"
+      },
+      "quiz_expert": {
+        "name": "Quiz Expert",
+        "description": "Complete 50 quizzes"
+      },
+      "quiz_master": {
+        "name": "Quiz Master",
+        "description": "Complete 100 quizzes"
+      },
+      "first_day": {
+        "name": "First Day",
+        "description": "Log in for 1 consecutive day"
+      },
+      "fire_week": {
+        "name": "Fire Week",
+        "description": "Maintain a 7-day streak"
+      },
+      "two_intense_weeks": {
+        "name": "Two Intense Weeks",
+        "description": "Maintain a 14-day streak"
+      },
+      "determination_month": {
+        "name": "Month of Determination",
+        "description": "Maintain a 30-day streak"
+      },
+      "quarterly_commitment": {
+        "name": "Quarterly Commitment",
+        "description": "Maintain a 90-day streak"
+      },
+      "year_perseverance": {
+        "name": "Year of Perseverance",
+        "description": "Maintain a 365-day streak"
+      },
+      "perfect_score": {
+        "name": "Perfect Score",
+        "description": "Get 100% on a quiz"
+      },
+      "perfectionist": {
+        "name": "Perfectionist",
+        "description": "Get 100% on 10 quizzes"
+      },
+      "flawless": {
+        "name": "Flawless",
+        "description": "Get 100% on 50 quizzes"
+      },
+      "level_5": {
+        "name": "Level 5",
+        "description": "Reach level 5"
+      },
+      "level_10": {
+        "name": "Level 10",
+        "description": "Reach level 10"
+      },
+      "level_25": {
+        "name": "Level 25",
+        "description": "Reach level 25"
+      },
+      "level_50": {
+        "name": "Level 50",
+        "description": "Reach level 50"
+      },
+      "xp_1000": {
+        "name": "1,000 XP",
+        "description": "Accumulate 1,000 XP total"
+      },
+      "xp_10000": {
+        "name": "10,000 XP",
+        "description": "Accumulate 10,000 XP total"
+      },
+      "xp_100000": {
+        "name": "100,000 XP",
+        "description": "Accumulate 100,000 XP total"
+      },
+      "first_duel": {
+        "name": "First Duel",
+        "description": "Participate in your first duel"
+      },
+      "duelist": {
+        "name": "Duelist",
+        "description": "Participate in 10 duels"
+      },
+      "duel_champion": {
+        "name": "Duel Champion",
+        "description": "Win 25 duels"
+      },
+      "duel_legend": {
+        "name": "Duel Legend",
+        "description": "Win 100 duels"
+      },
+      "first_victory": {
+        "name": "First Victory",
+        "description": "Win your first duel"
+      },
+      "welcome": {
+        "name": "Welcome!",
+        "description": "Create your account"
+      },
+      "pdf_import": {
+        "name": "PDF Import",
+        "description": "Import your first PDF with OCR"
+      },
+      "scanner_pro": {
+        "name": "Scanner Pro",
+        "description": "Import 10 PDFs with OCR"
+      },
+      "explorer": {
+        "name": "Explorer",
+        "description": "Visit all sections of the application"
+      },
+      "daily_quest": {
+        "name": "Daily Quest",
+        "description": "Complete your first daily quest"
+      },
+      "diligent_quester": {
+        "name": "Diligent Quester",
+        "description": "Complete 30 daily quests"
+      },
+      "quest_master": {
+        "name": "Quest Master",
+        "description": "Complete 100 daily quests"
+      },
+      "study_session": {
+        "name": "Study Session",
+        "description": "Study for 1 hour total"
+      },
+      "devoted_student": {
+        "name": "Devoted Student",
+        "description": "Study for 10 hours total"
+      },
+      "scholar": {
+        "name": "Scholar",
+        "description": "Study for 100 hours total"
+      }
     }
   },
-
   "duels": {
     "title": "Duels",
     "subtitle": "Challenge your friends in real-time quizzes",
@@ -1568,7 +1688,6 @@
     "challengeReceived": "You received a challenge!",
     "xpGained": "+{xp} XP earned"
   },
-
   "sparkWidget": {
     "askSpark": "Ask Spark a question!",
     "dailyBriefing": "Daily briefing",
@@ -1770,7 +1889,6 @@
       }
     }
   },
-
   "quests": {
     "title": "Daily Quests",
     "daysStreak": "Days in a row",
@@ -1805,7 +1923,6 @@
       "legendary": "Legendary"
     }
   },
-
   "offline": {
     "title": "Offline mode",
     "subtitle": "Continue studying without connection",
@@ -1824,9 +1941,47 @@
       "flashcards": "Review your flashcards",
       "schedules": "View your schedule",
       "profile": "Access your profile"
+    },
+    "page": {
+      "title": "You are offline",
+      "description": "It looks like you don't have an internet connection right now.",
+      "retry": "Retry",
+      "tipsTitle": "While you wait, you can:",
+      "tipNotes": "View your cached notes",
+      "tipFlashcards": "Review your downloaded flashcards",
+      "tipSync": "Your changes will be synced automatically",
+      "checkConnection": "Check connection",
+      "checking": "Checking...",
+      "heroDescription": "No internet connection detected. Some features remain available thanks to your cached data.",
+      "featuresTitle": "Features available offline",
+      "featureNotesTitle": "Notes",
+      "featureNotesDesc": "View your downloaded notes",
+      "featureFlashcardsTitle": "Flashcards",
+      "featureFlashcardsDesc": "Review your cached flashcards",
+      "featureCalendarTitle": "Calendar",
+      "featureCalendarDesc": "View your schedule",
+      "featureStudyTitle": "Study",
+      "featureStudyDesc": "Continue your study sessions",
+      "modeTitle": "Offline mode enabled",
+      "tip1": "Your changes will be synced automatically",
+      "tip2": "Cached data is used for display",
+      "tip3": "Some features like live quizzes are unavailable",
+      "pwaNote": "Studera works even without a connection thanks to PWA technology."
+    },
+    "indicator": {
+      "online": "Online",
+      "offline": "Offline",
+      "syncing": "Syncing...",
+      "synced": "Synced",
+      "pendingChanges": "{count} pending changes",
+      "pendingActions": "{count} pending action(s)",
+      "pendingShort": "{count} pending",
+      "syncButton": "Sync",
+      "connectionRestored": "Connection restored",
+      "connectionRestoredSync": "Syncing {count} action(s)...",
+      "offlineMode": "Offline mode - Your changes will sync automatically"
     }
   },
-
   "share": {
     "title": "Share",
     "shareOn": "Share on",
@@ -1845,7 +2000,6 @@
       "email": "Email"
     }
   },
-
   "exam_mode": {
     "title": "Exam Mode",
     "subtitle": "Intelligent exam preparation",
@@ -1860,7 +2014,6 @@
     "limit_reached": "Limit reached",
     "upgrade_title": "Upgrade to Premium",
     "upgrade_description": "Prepare up to 5 exams simultaneously",
-
     "exam_name": "Exam name",
     "description": "Description",
     "exam_date": "Exam date",
@@ -1872,7 +2025,6 @@
     "no_notes": "No notes available",
     "notes_selected": "note(s) selected",
     "notes_count": "Number of notes",
-
     "hours_per_day": "Study hours per day",
     "preferred_times": "Preferred times",
     "difficulty": "Difficulty level",
@@ -1881,12 +2033,10 @@
     "notifications": "Notifications",
     "notifications_desc": "Receive daily reminders",
     "reminder_time": "Reminder time",
-
     "step1_desc": "Exam information",
     "step2_desc": "Select content to study",
     "step3_desc": "Schedule configuration",
     "step4_desc": "Preview and confirmation",
-
     "summary": "Summary",
     "plan_will_generate": "A personalized study plan will be generated automatically with daily tasks tailored to your goals.",
     "create": "Create session",
@@ -1896,7 +2046,6 @@
     "plan_generated": "Your study plan has been generated.",
     "create_error": "Error creating session",
     "session_deleted": "Session deleted",
-
     "progress": "Progress",
     "days_left": "Days left",
     "tasks_done": "Tasks done",
@@ -1907,17 +2056,14 @@
     "estimated": "estimated",
     "all_done_today": "All tasks for today are done!",
     "study_plan": "Study plan",
-
     "task_started": "Task started!",
     "task_completed": "Task completed!",
     "task_skipped": "Task skipped",
     "finish": "Finish",
-
     "active": "Active",
     "completed": "Completed",
     "paused": "Paused",
     "no_sessions": "No study sessions",
-
     "exams_prepared": "Exams prepared",
     "exams_completed": "Exams completed",
     "hours_studied": "Hours studied",
@@ -1925,7 +2071,6 @@
     "best_score": "Best score",
     "longest_streak": "Longest streak",
     "no_stats": "No statistics yet",
-
     "task_types": {
       "read": "Reading",
       "flashcards": "Flashcards",
@@ -1935,7 +2080,6 @@
       "summary": "Summary",
       "weak_points": "Weak points"
     },
-
     "ai_insights": "AI Insights",
     "ai_summary": "AI Summary",
     "ai_premium_title": "Premium AI Intelligence",
@@ -1944,39 +2088,32 @@
     "ai_premium_desc": "AI generation is reserved for Premium users",
     "no_active_for_ai": "No active exam",
     "create_for_ai": "Create a study session to access AI analysis.",
-
     "key_points": "Key Points",
     "key_points_analysis": "Key Points Analysis",
     "key_concepts": "Key Concepts",
     "formulas": "Formulas to Memorize",
     "revision_priorities": "Revision Priorities",
-
     "weak_points_title": "Weak Points",
     "weak_points_analysis": "Weak Points Detection",
     "no_weak_points": "No weak points detected!",
     "recommendations": "Recommendations",
-
     "advice": "Advice",
     "personalized_advice": "Personalized Advice",
     "global_strategy": "Global Strategy",
     "priority_focus": "Priority Focus",
     "recommended_methods": "Recommended Methods",
     "suggested_planning": "Suggested Planning",
-
     "predicted_score": "Predicted Score",
     "top_recommendations": "Top Recommendations",
-
     "generate_practice_exam": "Generate Practice Exam",
     "practice_exam_generated": "Practice exam generated!",
     "adapt_plan": "Adapt Plan",
     "plan_adapted": "Plan adapted!",
     "no_adaptation": "No changes needed",
     "plan_optimal": "Your plan is already optimal",
-
     "content_generated": "Content generated!",
     "content_linked": "Content linked"
   },
-
   "landing": {
     "nav": {
       "login": "Log in",
@@ -2090,18 +2227,54 @@
       "title": "Everything you need",
       "subtitle": "15+ features to ace your exams",
       "items": [
-        { "title": "Generative AI", "desc": "Create flashcards and quizzes from your notes" },
-        { "title": "FSRS Flashcards", "desc": "Memorize 2x faster, scientifically proven" },
-        { "title": "Adaptive Quizzes", "desc": "Questions that adapt to your level" },
-        { "title": "Focus Rooms", "desc": "Study in virtual groups" },
-        { "title": "Spark AI", "desc": "Your personal tutor available 24/7" },
-        { "title": "Duels", "desc": "Challenge your friends to quizzes" },
-        { "title": "Leaderboards", "desc": "Compare yourself to other students" },
-        { "title": "Streaks", "desc": "Keep your study day streak going" },
-        { "title": "Markdown Notes", "desc": "Powerful editor with LaTeX" },
-        { "title": "Pomodoro", "desc": "Built-in timer for your sessions" },
-        { "title": "Statistics", "desc": "Track your progress in detail" },
-        { "title": "Exam Mode", "desc": "Personalized AI study plan" }
+        {
+          "title": "Generative AI",
+          "desc": "Create flashcards and quizzes from your notes"
+        },
+        {
+          "title": "FSRS Flashcards",
+          "desc": "Memorize 2x faster, scientifically proven"
+        },
+        {
+          "title": "Adaptive Quizzes",
+          "desc": "Questions that adapt to your level"
+        },
+        {
+          "title": "Focus Rooms",
+          "desc": "Study in virtual groups"
+        },
+        {
+          "title": "Spark AI",
+          "desc": "Your personal tutor available 24/7"
+        },
+        {
+          "title": "Duels",
+          "desc": "Challenge your friends to quizzes"
+        },
+        {
+          "title": "Leaderboards",
+          "desc": "Compare yourself to other students"
+        },
+        {
+          "title": "Streaks",
+          "desc": "Keep your study day streak going"
+        },
+        {
+          "title": "Markdown Notes",
+          "desc": "Powerful editor with LaTeX"
+        },
+        {
+          "title": "Pomodoro",
+          "desc": "Built-in timer for your sessions"
+        },
+        {
+          "title": "Statistics",
+          "desc": "Track your progress in detail"
+        },
+        {
+          "title": "Exam Mode",
+          "desc": "Personalized AI study plan"
+        }
       ]
     },
     "cta": {
@@ -2140,7 +2313,6 @@
       "copyright": "© 2025 Studera. Made with 💜 for students."
     }
   },
-
   "about": {
     "nav": {
       "back": "Back"
@@ -2181,12 +2353,30 @@
     "features": {
       "title": "Key features",
       "list": [
-        { "title": "FSRS Flashcards", "description": "Memorize 2x faster with the most advanced algorithm" },
-        { "title": "Adaptive quizzes", "description": "Questions that adapt to your level" },
-        { "title": "Generative AI", "description": "Create content automatically from your notes" },
-        { "title": "Focus Rooms", "description": "Study virtually with groups" },
-        { "title": "Exam Mode", "description": "Personalized revision plan for your exams" },
-        { "title": "Gamification", "description": "XP, levels, streaks and leaderboards" }
+        {
+          "title": "FSRS Flashcards",
+          "description": "Memorize 2x faster with the most advanced algorithm"
+        },
+        {
+          "title": "Adaptive quizzes",
+          "description": "Questions that adapt to your level"
+        },
+        {
+          "title": "Generative AI",
+          "description": "Create content automatically from your notes"
+        },
+        {
+          "title": "Focus Rooms",
+          "description": "Study virtually with groups"
+        },
+        {
+          "title": "Exam Mode",
+          "description": "Personalized revision plan for your exams"
+        },
+        {
+          "title": "Gamification",
+          "description": "XP, levels, streaks and leaderboards"
+        }
       ]
     },
     "cta": {
@@ -2202,7 +2392,6 @@
       "terms": "Terms"
     }
   },
-
   "contact": {
     "nav": {
       "back": "Back"
@@ -2235,12 +2424,30 @@
       "subject": "Subject",
       "subjectSelect": "Select a subject",
       "subjects": [
-        { "value": "general", "label": "General question" },
-        { "value": "bug", "label": "Report a bug" },
-        { "value": "feature", "label": "Feature suggestion" },
-        { "value": "billing", "label": "Billing" },
-        { "value": "partnership", "label": "Partnership" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "general",
+          "label": "General question"
+        },
+        {
+          "value": "bug",
+          "label": "Report a bug"
+        },
+        {
+          "value": "feature",
+          "label": "Feature suggestion"
+        },
+        {
+          "value": "billing",
+          "label": "Billing"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "message": "Message",
       "messagePlaceholder": "Describe your request in detail...",
@@ -2266,7 +2473,6 @@
       "terms": "Terms"
     }
   },
-
   "legal": {
     "privacy": {
       "nav": {
@@ -2285,15 +2491,30 @@
           "categories": [
             {
               "title": "Account information",
-              "items": ["Name", "Email address", "Password (hashed)", "Profile picture (optional)"]
+              "items": [
+                "Name",
+                "Email address",
+                "Password (hashed)",
+                "Profile picture (optional)"
+              ]
             },
             {
               "title": "Learning data",
-              "items": ["Notes and documents", "Flashcards and decks", "Quizzes and results", "Progress and statistics"]
+              "items": [
+                "Notes and documents",
+                "Flashcards and decks",
+                "Quizzes and results",
+                "Progress and statistics"
+              ]
             },
             {
               "title": "Technical data",
-              "items": ["IP address", "Browser type", "Device used", "Pages visited"]
+              "items": [
+                "IP address",
+                "Browser type",
+                "Device used",
+                "Pages visited"
+              ]
             }
           ]
         },
@@ -2301,20 +2522,44 @@
           "title": "2. Use of data",
           "intro": "Your data is used to:",
           "uses": [
-            { "title": "Provide our services", "description": "Enable access to all platform features" },
-            { "title": "Personalization", "description": "Adapt the learning experience to your needs" },
-            { "title": "Communication", "description": "Send you important notifications and updates" },
-            { "title": "Improvement", "description": "Analyze usage to improve our services" }
+            {
+              "title": "Provide our services",
+              "description": "Enable access to all platform features"
+            },
+            {
+              "title": "Personalization",
+              "description": "Adapt the learning experience to your needs"
+            },
+            {
+              "title": "Communication",
+              "description": "Send you important notifications and updates"
+            },
+            {
+              "title": "Improvement",
+              "description": "Analyze usage to improve our services"
+            }
           ]
         },
         "dataProtection": {
           "title": "3. Data protection",
           "intro": "We implement robust security measures:",
           "measures": [
-            { "title": "SSL/TLS encryption", "description": "All communications are encrypted" },
-            { "title": "Password hashing", "description": "Your passwords are never stored in plain text" },
-            { "title": "Restricted access", "description": "Only authorized personnel have access to data" },
-            { "title": "Secure backups", "description": "Your data is backed up regularly" }
+            {
+              "title": "SSL/TLS encryption",
+              "description": "All communications are encrypted"
+            },
+            {
+              "title": "Password hashing",
+              "description": "Your passwords are never stored in plain text"
+            },
+            {
+              "title": "Restricted access",
+              "description": "Only authorized personnel have access to data"
+            },
+            {
+              "title": "Secure backups",
+              "description": "Your data is backed up regularly"
+            }
           ]
         },
         "dataSharing": {
@@ -2322,19 +2567,40 @@
           "noSale": "We never sell your personal data.",
           "intro": "Your data may only be shared in the following cases:",
           "cases": [
-            { "title": "Technical providers", "description": "Hosting, email, payment - under confidentiality agreement" },
-            { "title": "Legal obligations", "description": "If required by law or competent authority" },
-            { "title": "With your consent", "description": "For any other sharing, we ask for your agreement" }
+            {
+              "title": "Technical providers",
+              "description": "Hosting, email, payment - under confidentiality agreement"
+            },
+            {
+              "title": "Legal obligations",
+              "description": "If required by law or competent authority"
+            },
+            {
+              "title": "With your consent",
+              "description": "For any other sharing, we ask for your agreement"
+            }
           ]
         },
         "yourRights": {
           "title": "5. Your rights",
           "intro": "In accordance with GDPR, you have the following rights:",
           "rights": [
-            { "title": "Right of access", "description": "Obtain a copy of your data" },
-            { "title": "Right to rectification", "description": "Correct inaccurate data" },
-            { "title": "Right to erasure", "description": "Request deletion of your data" },
-            { "title": "Right to portability", "description": "Export your data in a standard format" }
+            {
+              "title": "Right of access",
+              "description": "Obtain a copy of your data"
+            },
+            {
+              "title": "Right to rectification",
+              "description": "Correct inaccurate data"
+            },
+            {
+              "title": "Right to erasure",
+              "description": "Request deletion of your data"
+            },
+            {
+              "title": "Right to portability",
+              "description": "Export your data in a standard format"
+            }
           ],
           "contact": "To exercise these rights, contact us at"
         },
@@ -2342,9 +2608,18 @@
           "title": "6. Cookies",
           "intro": "We use cookies to improve your experience:",
           "types": [
-            { "title": "Essential cookies", "description": "Required for website functionality" },
-            { "title": "Preference cookies", "description": "Remember your choices (language, theme)" },
-            { "title": "Analytical cookies", "description": "Help us understand site usage (with your consent)" }
+            {
+              "title": "Essential cookies",
+              "description": "Required for website functionality"
+            },
+            {
+              "title": "Preference cookies",
+              "description": "Remember your choices (language, theme)"
+            },
+            {
+              "title": "Analytical cookies",
+              "description": "Help us understand site usage (with your consent)"
+            }
           ],
           "manage": "You can manage your cookie preferences at any time."
         },
@@ -2352,9 +2627,18 @@
           "title": "7. Data retention",
           "intro": "We retain your data for:",
           "periods": [
-            { "title": "Active account", "duration": "As long as your account exists" },
-            { "title": "After deletion", "duration": "30 days (recovery period)" },
-            { "title": "Billing data", "duration": "10 years (legal requirement)" }
+            {
+              "title": "Active account",
+              "duration": "As long as your account exists"
+            },
+            {
+              "title": "After deletion",
+              "duration": "30 days (recovery period)"
+            },
+            {
+              "title": "Billing data",
+              "duration": "10 years (legal requirement)"
+            }
           ]
         },
         "minors": {
@@ -2393,11 +2677,26 @@
         "definitions": {
           "title": "Article 1 - Definitions",
           "items": [
-            { "term": "\"Platform\"", "definition": "means the studera.app website, mobile app and all associated services" },
-            { "term": "\"User\"", "definition": "means any person who accesses the Platform and/or creates an account" },
-            { "term": "\"Content\"", "definition": "means all data, texts, notes, flashcards, quizzes created by the User" },
-            { "term": "\"Services\"", "definition": "means all features offered by the Platform" },
-            { "term": "\"Premium\"", "definition": "means the paid subscription providing access to advanced features" }
+            {
+              "term": "\"Platform\"",
+              "definition": "means the studera.app website, mobile app and all associated services"
+            },
+            {
+              "term": "\"User\"",
+              "definition": "means any person who accesses the Platform and/or creates an account"
+            },
+            {
+              "term": "\"Content\"",
+              "definition": "means all data, texts, notes, flashcards, quizzes created by the User"
+            },
+            {
+              "term": "\"Services\"",
+              "definition": "means all features offered by the Platform"
+            },
+            {
+              "term": "\"Premium\"",
+              "definition": "means the paid subscription providing access to advanced features"
+            }
           ]
         },
         "acceptance": {
@@ -2477,10 +2776,22 @@
         "premium": {
           "title": "Article 7 - Premium subscription",
           "sections": [
-            { "title": "7.1 Pricing", "content": "Prices are displayed on the Platform and may be modified with notice." },
-            { "title": "7.2 Payment", "content": "Payments are processed securely by our partners (Stripe, PayPal, Mobile Money)." },
-            { "title": "7.3 Renewal", "content": "Subscriptions are automatically renewed unless cancelled before the renewal date." },
-            { "title": "7.4 Refund", "content": "You have 14 days after your first purchase to request a full refund." }
+            {
+              "title": "7.1 Pricing",
+              "content": "Prices are displayed on the Platform and may be modified with notice."
+            },
+            {
+              "title": "7.2 Payment",
+              "content": "Payments are processed securely by our partners (Stripe, PayPal, Mobile Money)."
+            },
+            {
+              "title": "7.3 Renewal",
+              "content": "Subscriptions are automatically renewed unless cancelled before the renewal date."
+            },
+            {
+              "title": "7.4 Refund",
+              "content": "You have 14 days after your first purchase to request a full refund."
+            }
           ]
         },
         "availability": {
@@ -2529,10 +2840,22 @@
         "miscellaneous": {
           "title": "Article 13 - Miscellaneous",
           "items": [
-            { "title": "Entirety", "description": "These Terms constitute the complete agreement between you and Studera." },
-            { "title": "Severability", "description": "If a clause is invalid, the others remain in effect." },
-            { "title": "Non-waiver", "description": "Not exercising a right does not constitute a waiver." },
-            { "title": "Assignment", "description": "You may not assign your rights without our written consent." }
+            {
+              "title": "Entirety",
+              "description": "These Terms constitute the complete agreement between you and Studera."
+            },
+            {
+              "title": "Severability",
+              "description": "If a clause is invalid, the others remain in effect."
+            },
+            {
+              "title": "Non-waiver",
+              "description": "Not exercising a right does not constitute a waiver."
+            },
+            {
+              "title": "Assignment",
+              "description": "You may not assign your rights without our written consent."
+            }
           ]
         }
       },
@@ -2549,5 +2872,70 @@
         "terms": "Terms"
       }
     }
+  },
+  "cookies": {
+    "title": "We use cookies",
+    "description": "We use cookies to improve your experience. You can manage your preferences at any time.",
+    "accept": "Accept all",
+    "reject": "Reject all",
+    "customize": "Customize",
+    "save": "Save my preferences",
+    "essential": "Essential",
+    "essentialDesc": "Necessary for the site to function (always on)",
+    "analytics": "Analytics",
+    "analyticsDesc": "Help us understand how you use the site",
+    "marketing": "Marketing",
+    "marketingDesc": "Used to personalize content and ads",
+    "learnMore": "Learn more",
+    "manageTitle": "Cookie management",
+    "managePreamble": "We use cookies to improve your experience and analyze use of our platform. You can choose to accept all cookies or only essential cookies.",
+    "essentialActive": "Always on",
+    "essentialFull": "Required for the site to function: authentication, security, session preferences.",
+    "analyticsOptional": "Optional",
+    "analyticsFull": "Google Analytics: helps us understand how you use the site to improve it. Data is anonymized.",
+    "essentialOnly": "Essential only",
+    "details": "Details",
+    "hide": "Hide",
+    "privacyLinkPrefix": "Learn more about our",
+    "privacyLinkLabel": "Privacy Policy",
+    "close": "Close"
+  },
+  "metadata": {
+    "title": "Studera - Your intelligent learning assistant",
+    "description": "Learning app with AI, flashcards, quizzes and gamification"
+  },
+  "editor": {
+    "errors": {
+      "imageUpload": "Error uploading image",
+      "imageSize": "Image is too large",
+      "imageType": "Unsupported image type",
+      "unknown": "An unknown error occurred"
+    }
+  },
+  "search": {
+    "empty": "No results"
+  },
+  "antiCheat": {
+    "warning": "Suspicious activity detected",
+    "tabSwitch": "Tab switch detected",
+    "fullscreenExit": "Fullscreen exit detected",
+    "statusInactive": "Inactive",
+    "statusAlert": "Alert",
+    "statusAttention": "Warning",
+    "statusOk": "OK",
+    "monitoring": "Monitoring",
+    "monitoringTooltip": "Anti-cheat mode active - Suspicious behaviors are recorded",
+    "behaviorDetected": "Behavior detected",
+    "tabSwitches": "Tab switches:",
+    "focusLosses": "Focus losses:",
+    "warnings": "Warnings:",
+    "quizValidated": "Quiz validated",
+    "noSuspicious": "No suspicious behavior detected. Result validated!",
+    "resultInvalidated": "Result invalidated",
+    "disqualifiedDescription": "Suspicious behaviors were detected. This result will not be counted.",
+    "warningsDetected": "Warnings detected",
+    "violationsRecorded": "{count} suspicious behavior(s) recorded.",
+    "penaltyXp": "Penalty: -{xp} XP",
+    "scoreAdjusted": "Adjusted score: {original}% → {adjusted}%"
   }
 }

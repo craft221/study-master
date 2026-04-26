@@ -368,7 +368,7 @@ export default function AIHubPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null
-    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' }
+    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
     return new Date(dateStr).toLocaleDateString(localeMap[locale] || 'fr-FR', {
       day: 'numeric',
       month: 'long',

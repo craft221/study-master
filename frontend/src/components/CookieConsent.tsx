@@ -3,18 +3,16 @@
 import { useState, useEffect } from 'react'
 import { X, Cookie, Shield, BarChart3, Settings } from 'lucide-react'
 import Link from 'next/link'
-
-type ConsentStatus = 'pending' | 'accepted' | 'rejected'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 export default function CookieConsent() {
+  const { t } = useTranslation()
   const [showBanner, setShowBanner] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
-    // Vérifier si l'utilisateur a déjà fait un choix
     const consent = localStorage.getItem('cookie_consent')
     if (!consent) {
-      // Attendre un peu avant d'afficher le bandeau
       const timer = setTimeout(() => setShowBanner(true), 1500)
       return () => clearTimeout(timer)
     }
@@ -24,7 +22,6 @@ export default function CookieConsent() {
     localStorage.setItem('cookie_consent', 'accepted')
     localStorage.setItem('cookie_consent_date', new Date().toISOString())
     setShowBanner(false)
-    // Recharger pour activer Google Analytics
     window.location.reload()
   }
 
@@ -55,12 +52,12 @@ export default function CookieConsent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Cookie className="h-6 w-6" />
-                <h2 className="text-lg font-bold">Gestion des cookies</h2>
+                <h2 className="text-lg font-bold">{t('cookies.manageTitle')}</h2>
               </div>
               <button
                 onClick={handleReject}
                 className="p-1 hover:bg-white/20 rounded-lg transition"
-                aria-label="Fermer"
+                aria-label={t('cookies.close')}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -70,8 +67,7 @@ export default function CookieConsent() {
           {/* Content */}
           <div className="p-6">
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Nous utilisons des cookies pour améliorer votre expérience et analyser l'utilisation de notre plateforme.
-              Vous pouvez choisir d'accepter tous les cookies ou uniquement les cookies essentiels.
+              {t('cookies.managePreamble')}
             </p>
 
             {/* Cookie Types */}
@@ -82,13 +78,13 @@ export default function CookieConsent() {
                   <Shield className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Cookies essentiels</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{t('cookies.essential')}</h3>
                       <span className="text-xs bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded">
-                        Toujours actifs
+                        {t('cookies.essentialActive')}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Nécessaires au fonctionnement du site : authentification, sécurité, préférences de session.
+                      {t('cookies.essentialFull')}
                     </p>
                   </div>
                 </div>
@@ -98,14 +94,13 @@ export default function CookieConsent() {
                   <BarChart3 className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Cookies analytiques</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{t('cookies.analytics')}</h3>
                       <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                        Optionnels
+                        {t('cookies.analyticsOptional')}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Google Analytics : nous aident à comprendre comment vous utilisez le site pour l'améliorer.
-                      Les données sont anonymisées.
+                      {t('cookies.analyticsFull')}
                     </p>
                   </div>
                 </div>
@@ -118,28 +113,28 @@ export default function CookieConsent() {
                 onClick={handleAccept}
                 className="flex-1 bg-gradient-to-r from-primary-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition"
               >
-                Accepter tout
+                {t('cookies.accept')}
               </button>
               <button
                 onClick={handleAcceptEssential}
                 className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
               >
-                Essentiels uniquement
+                {t('cookies.essentialOnly')}
               </button>
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <Settings className="h-4 w-4" />
-                <span className="text-sm">{showDetails ? 'Masquer' : 'Détails'}</span>
+                <span className="text-sm">{showDetails ? t('cookies.hide') : t('cookies.details')}</span>
               </button>
             </div>
 
             {/* Privacy Link */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
-              En savoir plus sur notre{' '}
+              {t('cookies.privacyLinkPrefix')}{' '}
               <Link href="/privacy" className="text-primary-600 hover:underline">
-                Politique de confidentialité
+                {t('cookies.privacyLinkLabel')}
               </Link>
             </p>
           </div>

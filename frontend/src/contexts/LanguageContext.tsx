@@ -22,6 +22,7 @@ import {
   getArray as getArrayTranslation,
   getInitialLocale,
   setStoredLocale,
+  isRTL as isRTLLocale,
   Messages,
 } from '@/lib/i18n';
 import { useAuth } from '@/store/auth-store';
@@ -37,6 +38,7 @@ interface LanguageContextType {
   supportedLocales: typeof SUPPORTED_LOCALES;
   localeNames: typeof LOCALE_NAMES;
   isLoading: boolean;
+  isRTL: boolean;
 }
 
 // Contexte
@@ -136,6 +138,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     supportedLocales: SUPPORTED_LOCALES,
     localeNames: LOCALE_NAMES,
     isLoading,
+    isRTL: isRTLLocale(locale),
   };
 
   return (

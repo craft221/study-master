@@ -1,0 +1,2941 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "common": {
+    "appName": "Studera",
+    "loading": "جارٍ التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "or": "أو",
+    "and": "و",
+    "all": "الكل",
+    "none": "لا شيء",
+    "error": "خطأ",
+    "success": "نجاح",
+    "warning": "تحذير",
+    "info": "معلومة",
+    "upgrade_premium": "الترقية إلى المميز",
+    "upgrade": "الترقية إلى المميز",
+    "optional": "اختياري"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "username": "اسم المستخدم",
+    "fullName": "الاسم الكامل",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "loginSuccess": "تم تسجيل الدخول بنجاح!",
+    "logoutSuccess": "تم تسجيل الخروج بنجاح",
+    "registerSuccess": "تم التسجيل بنجاح! مرحبًا بك في Studera",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "passwordMinLength": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+    "forgotPasswordTitle": "نسيت كلمة المرور",
+    "forgotPasswordSubtitle": "أدخل بريدك الإلكتروني لتلقي رابط إعادة التعيين",
+    "sendResetLink": "إرسال رابط إعادة التعيين",
+    "resetLinkSent": "إذا كان هذا البريد الإلكتروني مرتبطًا بحساب، فقد تم إرسال رابط إعادة التعيين.",
+    "checkEmail": "تحقق من بريدك الوارد",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "resetPasswordTitle": "كلمة مرور جديدة",
+    "resetPasswordSubtitle": "اختر كلمة مرور جديدة لحسابك",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+    "resetPasswordButton": "إعادة تعيين كلمة المرور",
+    "passwordResetSuccess": "تمت إعادة تعيين كلمة المرور بنجاح!",
+    "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
+    "invalidResetToken": "رابط إعادة التعيين غير صالح أو منتهي الصلاحية",
+    "noResetToken": "لم يتم تقديم رمز إعادة تعيين"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "explore": "استكشاف",
+    "quests": "المهام اليومية",
+    "subjects": "المواد",
+    "documents": "المستندات",
+    "notes": "الملاحظات",
+    "flashcards": "البطاقات التعليمية",
+    "quizzes": "الاختبارات",
+    "calendar": "التقويم",
+    "groups": "المجموعات",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "help": "مساعدة",
+    "spark": "مركز الذكاء الاصطناعي",
+    "sessions": "الجلسات",
+    "focusRooms": "غرف التركيز",
+    "achievements": "الإنجازات",
+    "duels": "المبارزات",
+    "leaderboard": "لوحة المتصدرين",
+    "export": "تصدير",
+    "pricing": "الأسعار",
+    "examMode": "وضع الامتحان",
+    "category": {
+      "main": "الرئيسية",
+      "study": "الدراسة",
+      "tools": "الأدوات",
+      "social": "اجتماعي",
+      "more": "المزيد"
+    }
+  },
+  "dashboard": {
+    "welcome": "مرحبًا، {name}!",
+    "welcomeBack": "مرحبًا بعودتك!",
+    "todayStats": "إحصائيات اليوم",
+    "totalStudyTime": "إجمالي وقت الدراسة",
+    "thisMonth": "هذا الشهر",
+    "weeklyProgress": "التقدم الأسبوعي",
+    "studyStreak": "سلسلة الدراسة",
+    "days": "أيام",
+    "xpEarned": "نقاط الخبرة المكتسبة",
+    "level": "المستوى",
+    "flashcardsDue": "بطاقات للمراجعة",
+    "quizzesTodo": "اختبارات للقيام بها",
+    "upcomingExams": "امتحانات قادمة",
+    "recentActivity": "النشاط الأخير",
+    "quickActions": "إجراءات سريعة",
+    "noActivity": "لا يوجد نشاط حديث",
+    "startStudying": "ابدأ الدراسة"
+  },
+  "tooltips": {
+    "dashboard": {
+      "xp": "احصل على نقاط الخبرة بإكمال الاختبارات والبطاقات. ارفع مستواك لفتح الإنجازات!",
+      "streak": "ادرس يوميًا للحفاظ على سلسلتك. السلاسل تعزز التحفيز والمكافآت!",
+      "studyTime": "إجمالي الوقت المخصص للدراسة. ثباتك مهم!",
+      "flashcardsDue": "بطاقات تنتظر المراجعة اليوم وفقًا لخوارزمية التكرار المتباعد. راجعها لتحسين الحفظ!",
+      "addDeck": "أنشئ مجموعة بطاقات تعليمية لتعلم نشط وفعال",
+      "addQuiz": "أنشئ اختبارًا لتقييم معرفتك ومتابعة تقدمك",
+      "spark": "مساعد ذكاء اصطناعي يساعدك على الفهم والتلخيص وإنشاء محتوى تعليمي",
+      "sessions": "استخدم تقنية بومودورو لجلسات دراسة مركزة"
+    },
+    "subjects": {
+      "color": "اختر لونًا للتعرف بصريًا على موادك",
+      "description": "اوصف محتوى المادة أو أهدافك. هذا يساعد في تنظيم دراستك.",
+      "notes": "ملاحظات الدراسة المنشأة في هذه المادة",
+      "docs": "المستندات والموارد المستوردة",
+      "cards": "مجموعات البطاقات لهذه المادة",
+      "quiz": "اختبارات لتقييم معرفتك"
+    },
+    "notes": {
+      "search": "ابحث بالعنوان أو المحتوى أو العلامات. اعثر على ما تبحث عنه بدقة.",
+      "favorites": "اعرض ملاحظاتك المفضلة فقط للوصول السريع للمحتوى المهم",
+      "tags": "العلامات تساعد في تنظيم الملاحظات حسب الموضوع. استخدمها لتصنيف أفضل.",
+      "view": "عرض الملاحظة كاملة",
+      "edit": "تعديل هذه الملاحظة",
+      "delete": "حذف هذه الملاحظة نهائيًا"
+    },
+    "flashcards": {
+      "cardsDue": "بطاقات مجدولة للمراجعة اليوم. ادرسها لتحسين الحفظ!",
+      "totalCards": "إجمالي عدد البطاقات في جميع مجموعاتك",
+      "mastered": "نسبة البطاقات التي أتقنتها بفضل التكرار",
+      "spacedRepetition": "التكرار المتباعد يجدول مراجعاتك لتحسين الحفظ. ادرس البطاقات في موعدها للحصول على أفضل النتائج!",
+      "review": "راجع البطاقات المستحقة اليوم",
+      "viewDeck": "عرض جميع بطاقات المجموعة وإدارتها",
+      "progress": "تقدمك: نسبة البطاقات المتقنة. واصل الدراسة لرفع هذه النسبة!"
+    },
+    "quizzes": {
+      "attempts": "العدد الإجمالي للمرات التي أجريت فيها أي اختبار",
+      "completed": "عدد الاختبارات التي أكملتها",
+      "avgScore": "متوسط نقاطك في جميع الاختبارات المكتملة",
+      "timeLimit": "الوقت الأقصى المسموح به. ∞ = بدون حد زمني",
+      "share": "شارك هذا الاختبار لإنشاء لوحة متصدرين وتحدي أصدقائك!",
+      "leaderboard": "اعرف أداء الآخرين في هذا الاختبار المشترك",
+      "bestScore": "أعلى نقاطك في هذا الاختبار. حاول تحطيمها!"
+    },
+    "emptyStates": {
+      "subjects": "المواد تنظم كل محتواك: ملاحظات، بطاقات، اختبارات. ابدأ بإنشاء واحدة!",
+      "notes": "ستظهر ملاحظاتك الدراسية هنا. أنشئ ملاحظتك الأولى للبدء!",
+      "flashcards": "البطاقات التعليمية من أكثر طرق الدراسة فعالية. أنشئ مجموعتك الأولى!",
+      "quizzes": "أنشئ اختبارات لتقييم معرفتك ومتابعة تقدمك!",
+      "activity": "سيظهر نشاط دراستك هنا. ابدأ بإنشاء ملاحظات، بطاقات أو اختبارات!",
+      "events": "لا توجد أحداث قادمة. زر التقويم لجدولة جلسات الدراسة أو الامتحانات."
+    }
+  },
+  "onboarding": {
+    "step": "خطوة",
+    "skip": "تخطي",
+    "start": "ابدأ",
+    "welcome": {
+      "title": "مرحبًا بك في Studera! 🎉",
+      "subtitle": "منصتك الذكية للتعلم",
+      "description": "في خطوات قليلة، ستقوم بإعداد مساحتك الدراسية الشخصية واكتشاف ميزات ستغير طريقة تعلمك."
+    },
+    "subjects": {
+      "title": "أنشئ موادك 📚",
+      "subtitle": "كل شيء يبدأ هنا!",
+      "description": "المواد هي قلب Studera. تنظم ملاحظاتك وبطاقاتك واختباراتك وكل محتواك. أنشئ مادة واحدة على الأقل للبدء."
+    },
+    "features": {
+      "title": "اكتشف الأدوات 🛠️",
+      "subtitle": "كل ما تحتاجه",
+      "description": "يجمع Studera كل الأدوات اللازمة للنجاح في دراستك."
+    },
+    "gamification": {
+      "title": "تعلم بمتعة 🎮",
+      "subtitle": "نقاط ومستويات ومكافآت",
+      "description": "اكسب نقاط الخبرة مع كل إجراء، ارفع مستواك، افتح الإنجازات وتحدَ أصدقاءك في المبارزات!"
+    },
+    "ready": {
+      "title": "أنت جاهز! 🚀",
+      "subtitle": "ابدأ مغامرتك",
+      "description": "تم إعداد مساحتك. حان الوقت لإنشاء ملاحظتك الأولى أو بطاقاتك!"
+    },
+    "feature": {
+      "notes": "Notes",
+      "notesDesc": "Take notes with Markdown and LaTeX support",
+      "flashcards": "Flashcards",
+      "flashcardsDesc": "Memorize with spaced repetition",
+      "quizzes": "Quizzes",
+      "quizzesDesc": "Test your knowledge",
+      "ai": "Spark AI",
+      "aiDesc": "An AI assistant to help you",
+      "calendar": "Calendar",
+      "calendarDesc": "Plan your revisions",
+      "pomodoro": "Pomodoro",
+      "pomodoroDesc": "Timed study sessions"
+    },
+    "subjectPlaceholder": "E.g.: Mathematics, Physics, History...",
+    "chooseColor": "Color",
+    "chooseIcon": "Icon",
+    "createSubject": "Create",
+    "addSubject": "Add a subject",
+    "needSubject": "You must create at least one subject to continue",
+    "xpPerNote": "per note created",
+    "achievementsToUnlock": "achievements to unlock",
+    "tip": "Tip",
+    "streakTip": "Log in every day to maintain your streak and earn bonuses!",
+    "allSet": "All set!",
+    "createdSubjects": "You created",
+    "subjectsCount": "subject(s)",
+    "noSubjectsYet": "You can create subjects later",
+    "suggestion1": "Start by creating a note in one of your subjects",
+    "suggestion2": "Check your daily quests to earn XP",
+    "suggestion3": "Ask Spark if you need help!"
+  },
+  "sessionsPage": {
+    "title": "Pomodoro Sessions",
+    "subtitle": "Time management technique to improve your productivity",
+    "pomodorosToday": "Pomodoros today",
+    "studyTime": "Study time",
+    "dayRecord": "Day record",
+    "pomodoro": "Pomodoro",
+    "shortBreak": "Short break",
+    "longBreak": "Long break",
+    "focus": "Focus",
+    "workingOn": "What are you working on? (optional)",
+    "start": "Start",
+    "pause": "Pause",
+    "reset": "Reset",
+    "sessionComplete": "completed!",
+    "howItWorks": "How does the Pomodoro technique work?",
+    "step1Title": "Work 25 min",
+    "step1Desc": "Focus on one task",
+    "step2Title": "Break 5 min",
+    "step2Desc": "Relax briefly",
+    "step3Title": "Repeat x4",
+    "step3Desc": "Complete 4 pomodoros",
+    "step4Title": "Break 15 min",
+    "step4Desc": "Well-deserved long break",
+    "completedPomodoros": "Completed Pomodoros",
+    "cycleComplete": "Cycle complete! Take a long break.",
+    "untilLongBreak": "{count} pomodoro(s) until long break",
+    "generalSession": "General session"
+  },
+  "notesPage": {
+    "title": "My Notes",
+    "cachedData": "Cached data",
+    "totalNotes": "{count} notes total",
+    "offlineMode": "Offline mode",
+    "newNote": "New note",
+    "searchPlaceholder": "Search your notes...",
+    "noNotesFound": "No notes found",
+    "noNotesYet": "No notes yet",
+    "tryDifferentSearch": "Try different search criteria",
+    "createFirstNote": "Start by creating your first study note",
+    "createMyFirstNote": "Create my first note",
+    "confirmDelete": "Are you sure you want to delete this note?"
+  },
+  "newNotePage": {
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your note will be saved locally and synced automatically when you reconnect.",
+    "title": "New Note",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "titleLabel": "Title",
+    "titlePlaceholder": "E.g.: Chapter 5 - Sorting Algorithms",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "contentLabel": "Content",
+    "contentPlaceholder": "Start taking notes... Use **bold** for key concepts, $formula$ for LaTeX",
+    "tagsLabel": "Tags",
+    "addTagPlaceholder": "Add a tag...",
+    "addButton": "Add",
+    "visibilityLabel": "Visibility",
+    "private": "Private",
+    "privateDesc": "Only visible to you",
+    "public": "Public",
+    "publicDesc": "Visible in Explore",
+    "publicNotice": "This note will be visible to all users in the Explore page",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore if the note is public",
+    "aiActions": "AI Actions",
+    "aiActionsDesc": "Use AI to automatically create flashcards, quizzes or summarize your note.",
+    "generateFlashcards": "Generate flashcards",
+    "createQuiz": "Create a quiz",
+    "summarize": "Summarize",
+    "saving": "Saving...",
+    "saveNote": "Save note",
+    "fillRequired": "Please fill in all required fields",
+    "noteCreated": "Note created successfully!",
+    "noteCreatedOffline": "Note created locally (will be synced)",
+    "addContentFirst": "Add content first",
+    "generatingFlashcards": "Generating flashcards with AI...",
+    "flashcardsGenerated": "{count} flashcards generated!",
+    "aiGenerationError": "Error during AI generation",
+    "difficulty": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "aiRequiresOnline": "Internet connection required for AI features",
+    "noteSavedForAI": "Note saved",
+    "quizCreated": "Quiz created successfully!",
+    "summaryGenerated": "Summary generated!"
+  },
+  "quizzesPage": {
+    "title": "Quizzes",
+    "quizzesAvailable": "{count} quizzes available",
+    "createQuiz": "Create a quiz",
+    "totalAttempts": "Total attempts",
+    "completedQuizzes": "Completed quizzes",
+    "averageScore": "Average score",
+    "searchPlaceholder": "Search a quiz...",
+    "noQuizFound": "No quiz found",
+    "noQuizAvailable": "No quiz available",
+    "tryDifferentSearch": "Try modifying your search",
+    "createFirstQuiz": "Create your first quiz to test your knowledge",
+    "createMyFirstQuiz": "Create my first quiz",
+    "questions": "Questions",
+    "minutes": "Minutes",
+    "attempts": "Attempts",
+    "bestScore": "Best score",
+    "start": "Start",
+    "waitingSync": "Waiting for sync",
+    "publicQuiz": "Public quiz",
+    "players": "players",
+    "last": "Last:",
+    "confirmDelete": "Delete this quiz?",
+    "quizDeleted": "Quiz deleted",
+    "linkCopiedPublic": "Link copied! The quiz is now public.",
+    "linkCopied": "Link copied!",
+    "leaderboard": "Leaderboard",
+    "noParticipants": "No participants",
+    "shareToSeeLeaderboard": "Share this quiz to see the leaderboard!",
+    "member": "Member",
+    "correctAnswers": "correct answers",
+    "participants": "participant(s)",
+    "refresh": "Refresh",
+    "offline": "Offline",
+    "error": "Error",
+    "loadError": "Error loading quizzes",
+    "leaderboardError": "Error loading leaderboard",
+    "sharingError": "Error enabling sharing"
+  },
+  "newQuizPage": {
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your quiz will be saved locally and synced automatically when you reconnect.",
+    "title": "New Quiz",
+    "subtitle": "Create a quiz to test your knowledge",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "quizInfo": "Quiz Information",
+    "titleLabel": "Title",
+    "titlePlaceholder": "E.g.: Review Quiz - Chapter 3",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Quiz description...",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "difficultyLabel": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore if the quiz is public",
+    "passingScore": "Passing score (%)",
+    "timedQuiz": "Timed quiz",
+    "timeLimit": "Time limit (minutes)",
+    "showCorrectAnswers": "Show correct answers after",
+    "shuffleQuestions": "Shuffle questions",
+    "shuffleOptions": "Shuffle options (MCQ)",
+    "questionsTitle": "Questions",
+    "totalPoints": "Total: {count} points",
+    "addQuestion": "Add a question",
+    "question": "Question",
+    "pts": "pts",
+    "valid": "Valid",
+    "questionLabel": "Question",
+    "questionPlaceholder": "Enter your question...",
+    "typeLabel": "Type",
+    "multipleChoice": "MCQ",
+    "trueFalse": "True/False",
+    "shortAnswer": "Short answer",
+    "optionsLabel": "Options",
+    "addOption": "Add option",
+    "correctAnswer": "Correct answer",
+    "selectCorrectAnswer": "Select the correct answer",
+    "pointsLabel": "Points",
+    "explanationLabel": "Explanation (optional)",
+    "explanationPlaceholder": "Explain why this is the correct answer...",
+    "creating": "Creating...",
+    "createQuiz": "Create Quiz ({count} questions)",
+    "warning": "Warning",
+    "atLeastOneQuestion": "You must have at least one question",
+    "missingFields": "Missing fields",
+    "fillSubjectAndTitle": "Please select a subject and give the quiz a title",
+    "noValidQuestion": "No valid question",
+    "addCompleteQuestion": "Add at least one complete question",
+    "quizCreated": "Quiz created",
+    "quizCreatedWith": "Quiz \"{title}\" created with {count} question(s)",
+    "quizCreatedOffline": "Quiz created locally",
+    "quizWillSync": "Quiz \"{title}\" will be synced when you reconnect"
+  },
+  "subjects": {
+    "title": "المواد",
+    "addSubject": "Add subject",
+    "editSubject": "Edit subject",
+    "deleteSubject": "Delete subject",
+    "subjectName": "Subject name",
+    "subjectColor": "Color",
+    "subjectIcon": "Icon",
+    "noSubjects": "No subjects created",
+    "createFirst": "Create my first subject",
+    "createFirstSubject": "Create your first subject to organize your notes and studies",
+    "description": "الوصف",
+    "descriptionPlaceholder": "وصف مختصر للمادة...",
+    "color": "اللون",
+    "notes": "Notes",
+    "docs": "Docs",
+    "cards": "Cards",
+    "quiz": "Quiz",
+    "notesCount": "{count} ملاحظات",
+    "flashcardsCount": "{count} بطاقات",
+    "quizzesCount": "{count} اختبارات"
+  },
+  "documents": {
+    "title": "My Documents",
+    "upload": "Upload",
+    "uploadDocument": "Upload document",
+    "dragDrop": "Drag and drop your files here",
+    "orClick": "or click to select",
+    "supportedFormats": "Supported formats: PDF, DOC, DOCX, TXT, MD",
+    "maxSize": "Maximum size: 10 MB",
+    "processing": "Processing...",
+    "noDocuments": "No documents",
+    "uploadFirst": "Upload your first document",
+    "deleteConfirm": "Are you sure you want to delete this document?",
+    "storage": "Storage",
+    "used": "used",
+    "of": "of"
+  },
+  "notes": {
+    "title": "العنوان",
+    "addNote": "New note",
+    "editNote": "Edit note",
+    "deleteNote": "Delete note",
+    "noteTitle": "Note title",
+    "noteContent": "Content",
+    "noNotes": "No notes",
+    "createFirst": "Create your first note",
+    "lastModified": "Last modified",
+    "generateFlashcards": "Generate flashcards",
+    "generateQuiz": "Generate quiz",
+    "summarize": "Summarize with AI",
+    "preview": "Preview",
+    "editor": "Editor"
+  },
+  "flashcards": {
+    "title": "البطاقات التعليمية",
+    "addDeck": "New deck",
+    "addFlashcard": "New flashcard",
+    "editFlashcard": "Edit flashcard",
+    "front": "الوجه الأمامي",
+    "back": "الوجه الخلفي",
+    "hint": "Hint",
+    "explanation": "Explanation",
+    "noFlashcards": "No flashcards",
+    "createFirst": "Create your first flashcard",
+    "study": "ادرس",
+    "studyAll": "Study all",
+    "dueToday": "Due today",
+    "mastered": "تم إتقانها",
+    "learning": "Learning",
+    "showAnswer": "Show answer",
+    "showHint": "Show hint",
+    "easy": "سهل",
+    "good": "جيد",
+    "hard": "صعب",
+    "again": "مرة أخرى",
+    "correct": "Correct!",
+    "incorrect": "Incorrect",
+    "sessionComplete": "Session complete!",
+    "cardsReviewed": "cards reviewed",
+    "accuracy": "Accuracy",
+    "spacedRepetitionTitle": "Spaced Repetition"
+  },
+  "flashcardsPage": {
+    "title": "Flashcards",
+    "decksCount": "{count} decks",
+    "cardsCount": "{count} cards",
+    "offlineMode": "Offline mode",
+    "cache": "Cache",
+    "newDeck": "New deck",
+    "cardsToReview": "Cards to review",
+    "startReview": "Start review",
+    "totalCards": "Total cards",
+    "masteredCards": "Mastered cards",
+    "progression": "progression",
+    "searchPlaceholder": "Search for a deck...",
+    "noDeckFound": "No deck found",
+    "noDeckYet": "No deck yet",
+    "tryDifferentSearch": "Try a different search",
+    "createFirstDeck": "Create your first flashcard deck to start reviewing",
+    "createMyFirstDeck": "Create my first deck",
+    "total": "Total",
+    "toReview": "To review",
+    "mastered": "Mastered",
+    "progress": "Progress",
+    "review": "Review",
+    "view": "View",
+    "lastReview": "Last review",
+    "confirmDelete": "Delete this deck and all its cards?",
+    "deckDeleted": "Deck deleted",
+    "deckDeletedSync": "Deck deleted (will be synced)",
+    "deleteError": "Error while deleting"
+  },
+  "newFlashcardPage": {
+    "title": "New Flashcard Deck",
+    "subtitle": "Create a new deck and add your cards",
+    "offlineMode": "Offline mode",
+    "offlineSaveMessage": "Your deck will be saved locally and synced automatically when you reconnect.",
+    "offline": "Offline",
+    "cancel": "Cancel",
+    "deckInfo": "Deck Information",
+    "deckName": "Deck Name",
+    "deckNamePlaceholder": "E.g.: English Vocabulary - Chapter 1",
+    "subjectLabel": "Subject",
+    "selectSubject": "Select a subject",
+    "tagsLabel": "Tags (comma separated)",
+    "tagsPlaceholder": "E.g.: vocabulary, exams, important",
+    "languageLabel": "Content language",
+    "languageNotice": "This language will be used for filtering in Explore",
+    "cardsTitle": "Cards",
+    "addCard": "Add a card",
+    "card": "Card",
+    "valid": "Valid",
+    "questionFront": "Question (Front)",
+    "questionPlaceholder": "Enter the question or term...",
+    "answerBack": "Answer (Back)",
+    "answerPlaceholder": "Enter the answer...",
+    "hintOptional": "Hint (optional)",
+    "hintPlaceholder": "A hint to help you...",
+    "explanationOptional": "Explanation (optional)",
+    "explanationPlaceholder": "Additional explanation...",
+    "creating": "Creating...",
+    "createDeck": "Create Deck ({count} cards)",
+    "warning": "Warning",
+    "atLeastOneCard": "You must have at least one card",
+    "missingFields": "Missing fields",
+    "fillSubjectAndName": "Please select a subject and name your deck",
+    "noValidCard": "No valid card",
+    "addCompleteCard": "Add at least one card with a question and answer",
+    "deckCreated": "Deck created",
+    "deckCreatedWith": "{count} card(s) successfully added to deck \"{name}\"",
+    "deckCreatedOffline": "Deck created locally",
+    "deckWillSync": "{count} card(s) will be synced when you reconnect",
+    "error": "Error while creating deck"
+  },
+  "quiz": {
+    "title": "الاختبار",
+    "addQuiz": "New quiz",
+    "editQuiz": "Edit quiz",
+    "startQuiz": "Start quiz",
+    "resumeQuiz": "Resume quiz",
+    "quizTitle": "Quiz title",
+    "question": "سؤال {current} من {total}",
+    "questions": "questions",
+    "answer": "Answer",
+    "options": "Options",
+    "correctAnswer": "Correct answer",
+    "noQuizzes": "No quizzes",
+    "createFirst": "Create your first quiz",
+    "submit": "إرسال",
+    "nextQuestion": "Next question",
+    "previousQuestion": "Previous question",
+    "finishQuiz": "Finish quiz",
+    "score": "النقاط",
+    "passed": "Passed!",
+    "failed": "Needs work",
+    "reviewAnswers": "Review answers",
+    "tryAgain": "حاول مرة أخرى",
+    "timeRemaining": "Time remaining",
+    "questionOf": "Question {current} of {total}",
+    "answerAllQuestions": "You must answer all questions ({count} question(s) unanswered)",
+    "retry": "Retry",
+    "viewDuelResults": "View duel results",
+    "backToQuizzes": "Back to quizzes",
+    "quizFinished": "Quiz finished!",
+    "resultInvalidated": "Result invalidated",
+    "yourResults": "Here are your results",
+    "finalScore": "Final score",
+    "correctAnswers": "Correct answers",
+    "incorrectAnswers": "Incorrect answers",
+    "reviewTitle": "Answer review",
+    "correct": "إجابة صحيحة",
+    "yourAnswer": "Your answer",
+    "explanation": "Explanation",
+    "previous": "السؤال السابق",
+    "next": "السؤال التالي",
+    "quickNav": "Quick navigation",
+    "penaltyApplied": "Penalty applied",
+    "submissionError": "Error during submission"
+  },
+  "calendar": {
+    "title": "التقويم",
+    "subtitle": "نظم جلسات الدراسة والامتحانات",
+    "today": "اليوم",
+    "month": "شهر",
+    "week": "أسبوع",
+    "day": "يوم",
+    "hour": "Hour",
+    "addEvent": "إضافة حدث",
+    "editEvent": "تعديل الحدث",
+    "eventTitle": "عنوان الحدث",
+    "eventType": "Type",
+    "exam": "Exam",
+    "homework": "Homework",
+    "deadline": "Deadline",
+    "studySession": "Study session",
+    "study": "Study",
+    "revision": "Revision",
+    "class": "Class",
+    "meeting": "Meeting",
+    "other": "Other",
+    "reminder": "Reminder",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "allDay": "طوال اليوم",
+    "noEvents": "لا توجد أحداث مجدولة",
+    "upcomingEvents": "Upcoming events",
+    "noUpcoming": "No upcoming events",
+    "legend": "Legend",
+    "tip": "Tip",
+    "tipMessage": "Drag and drop events to quickly move them to another date or time.",
+    "moreEvents": "+{count} more",
+    "loading": "Loading...",
+    "cache": "Cache",
+    "offlineMode": "Offline mode",
+    "dataFromCache": "Data loaded from cache",
+    "eventDeleted": "Event deleted",
+    "eventDeletedSync": "Event deleted (will be synced)",
+    "deleteError": "Error deleting event",
+    "eventMoved": "Event moved",
+    "moveError": "Error moving event",
+    "loadError": "Error loading events",
+    "confirmDelete": "Are you sure you want to delete this event?",
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "daysShort": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
+  "groups": {
+    "title": "المجموعات",
+    "createGroup": "Create group",
+    "joinGroup": "Join group",
+    "leaveGroup": "Leave group",
+    "groupName": "Group name",
+    "members": "الأعضاء",
+    "inviteCode": "رمز الدعوة",
+    "noGroups": "No groups",
+    "joinFirst": "Join or create a study group",
+    "pendingInvitations": "Pending Invitations",
+    "invitedBy": "Invited by {username}",
+    "invitationAccepted": "Invitation accepted",
+    "joiningGroup": "Joining {name}...",
+    "invitationDeclined": "Invitation declined",
+    "invitationError": "Error processing invitation",
+    "inviteFriend": "Invite a friend",
+    "inviteFriendTitle": "Invite a friend",
+    "inviteFriendDesc": "Search for a user to invite them to join this group.",
+    "searchUser": "Search for a user...",
+    "inviteMessage": "Message (optional)",
+    "inviteMessagePlaceholder": "E.g.: Come study with us!",
+    "noUserFound": "No user found",
+    "typeToSearch": "Type to search for users",
+    "invite": "دعوة",
+    "invitationSent": "Invitation sent",
+    "invitationSentDesc": "The user will receive a notification",
+    "messages": {
+      "placeholder": "Write your message... (@ to mention)",
+      "inputHelp": "Enter to send, Shift+Enter for new line, @ to mention",
+      "reply": "Reply",
+      "react": "React",
+      "edit": "Edit",
+      "delete": "Delete",
+      "editing": "Editing...",
+      "edited": "edited",
+      "deletedMessage": "This message was deleted",
+      "confirmDelete": "Are you sure you want to delete this message?",
+      "messageEdited": "Message edited",
+      "messageEditedDesc": "Your message has been updated",
+      "messageDeleted": "Message deleted",
+      "editError": "Unable to edit message",
+      "deleteError": "Unable to delete message",
+      "noMessages": "No messages yet",
+      "startConversation": "Be the first to start the conversation!"
+    },
+    "flashcards": {
+      "empty": "لا توجد بطاقات تعليمية في هذه المجموعة",
+      "create": "إنشاء بطاقات"
+    },
+    "activity": {
+      "empty": "لا يوجد نشاط في هذه المجموعة",
+      "recent": "النشاط الأخير"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "editProfile": "تعديل الملف الشخصي",
+    "avatar": "Profile picture",
+    "changeAvatar": "تغيير الصورة الرمزية",
+    "bio": "السيرة الذاتية",
+    "university": "University",
+    "major": "Major",
+    "year": "Year",
+    "stats": "Statistics",
+    "achievements": "Achievements",
+    "badges": "Badges"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "account": "الحساب",
+    "appearance": "المظهر",
+    "notifications": "الإشعارات",
+    "language": "اللغة",
+    "selectLanguage": "Select language",
+    "theme": "النمط",
+    "lightTheme": "Light",
+    "darkTheme": "Dark",
+    "systemTheme": "System",
+    "emailNotifications": "Email notifications",
+    "pushNotifications": "Push notifications",
+    "studyReminders": "Study reminders",
+    "changePassword": "تغيير كلمة المرور",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "deleteAccount": "حذف الحساب",
+    "deleteAccountWarning": "This action is irreversible",
+    "saveChanges": "Save changes",
+    "changesSaved": "Changes saved"
+  },
+  "spark": {
+    "greeting": "Hi! I'm Spark, your study companion!",
+    "askMe": "Ask me a question...",
+    "thinking": "يفكر...",
+    "hint": "Need a hint?",
+    "encourage": "You can do it!",
+    "celebrate": "Great job! Keep it up!",
+    "streak": "{days} day streak! Impressive!"
+  },
+  "errors": {
+    "generic": "حدث خطأ",
+    "network": "خطأ في الاتصال",
+    "notFound": "الصفحة غير موجودة",
+    "unauthorized": "غير مصرح",
+    "forbidden": "الوصول مرفوض",
+    "serverError": "خطأ في الخادم",
+    "tryAgain": "يرجى المحاولة مرة أخرى"
+  },
+  "empty": {
+    "noData": "No data",
+    "noResults": "No results",
+    "noMatch": "No match"
+  },
+  "time": {
+    "justNow": "الآن",
+    "minutesAgo": "منذ {count} د",
+    "hoursAgo": "منذ {count} س",
+    "daysAgo": "منذ {count} يوم",
+    "yesterday": "أمس",
+    "weeksAgo": "منذ {count} أسبوع",
+    "monthsAgo": "منذ {count} شهر",
+    "secondsAgo": "منذ {count} ث"
+  },
+  "ai": {
+    "title": "الذكاء الاصطناعي",
+    "subtitle": "مساعدك الذكي",
+    "mySubscription": "My Subscription",
+    "active": "Active",
+    "expiresOn": "Expires on {date}",
+    "upgradeToPremium": "UPGRADE TO PREMIUM",
+    "dailyQuota": "Daily Quota",
+    "usageToday": "AI usage today",
+    "remaining": "remaining",
+    "limitPerDay": "Limit/day",
+    "available": "Available",
+    "quotaReached": "Quota reached.",
+    "goToPremium": "Upgrade to Premium",
+    "usageStats": "Usage Statistics",
+    "totalRequests": "Total: {count} requests",
+    "summaries": "Summaries",
+    "explanations": "Explanations",
+    "generate": "توليد",
+    "analyze": "Analyze",
+    "explain": "Explain",
+    "generateFlashcards": "Generate Flashcards",
+    "createFlashcardsFromNotes": "Create flashcards from your notes",
+    "sourceNote": "Source note",
+    "selectNote": "Select a note",
+    "flashcardCount": "Number of flashcards (1-20)",
+    "difficulty": "Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "generating": "جارٍ التوليد...",
+    "generateFlashcardsBtn": "Generate Flashcards",
+    "generateQuiz": "Generate a Quiz",
+    "createQuizFromNotes": "Create a quiz from your notes",
+    "questionCount": "Number of questions (5-20)",
+    "generateQuizBtn": "Generate Quiz",
+    "summarizeNote": "Summarize a Note",
+    "createConciseSummary": "Create a concise summary",
+    "noteToSummarize": "Note to summarize",
+    "maxLength": "Max length (words): {count}",
+    "summarizing": "Summarizing...",
+    "summarizeBtn": "Summarize Note",
+    "extractKeywords": "Extract Keywords",
+    "identifyKeyConcepts": "Identify key concepts",
+    "keywordCount": "Number of keywords (3-20)",
+    "extracting": "Extracting...",
+    "extractBtn": "Extract Keywords",
+    "explainConcept": "Explain a Concept",
+    "getPedagogicalExplanation": "Get a pedagogical explanation",
+    "conceptToExplain": "Concept to explain",
+    "conceptPlaceholder": "E.g.: Photosynthesis, Integrals, etc.",
+    "context": "Context (optional)",
+    "contextPlaceholder": "Add context for a more precise explanation...",
+    "knowledgeLevel": "Knowledge level",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "explaining": "Explaining...",
+    "explainBtn": "Explain Concept",
+    "availableFeatures": "Available AI Features",
+    "flashcardGeneration": "Flashcard Generation",
+    "flashcardGenerationDesc": "1-20 cards per note",
+    "quizGeneration": "Quiz Generation",
+    "quizGenerationDesc": "5-20 varied questions",
+    "noteSummary": "Note Summary",
+    "noteSummaryDesc": "Concise and precise summaries",
+    "keywordExtraction": "Keyword Extraction",
+    "keywordExtractionDesc": "3-20 relevant keywords",
+    "conceptExplanation": "Concept Explanation",
+    "conceptExplanationDesc": "Pedagogical explanations",
+    "latexSupport": "LaTeX Support",
+    "latexSupportDesc": "Mathematical formulas",
+    "missingNote": "Missing note",
+    "pleaseSelectNote": "Please select a note",
+    "flashcardsGenerated": "Flashcards generated",
+    "flashcardsCreatedSuccess": "{count} flashcards created successfully! +10 XP",
+    "quizGenerated": "Quiz generated",
+    "quizCreatedSuccess": "Quiz created successfully! +15 XP",
+    "summaryGenerated": "Summary generated",
+    "summaryCreatedWords": "Summary of {count} words created",
+    "summaryOf": "Summary of \"{title}\"",
+    "keywordsExtracted": "Keywords extracted",
+    "keywordsFound": "{count} keywords found",
+    "keywordsOf": "Keywords from \"{title}\"",
+    "explanationGenerated": "Explanation generated",
+    "explanationOf": "Explanation of \"{concept}\"",
+    "missingConcept": "Missing concept",
+    "pleaseEnterConcept": "Please enter a concept to explain",
+    "generationError": "Error during generation",
+    "summaryError": "Error during summary",
+    "extractionError": "Error during extraction",
+    "explanationError": "Error during explanation",
+    "loadError": "Unable to load data"
+  },
+  "ocr": {
+    "title": "OCR",
+    "subtitle": "استخراج النص من الصور",
+    "fileUpload": "File Upload",
+    "fileUploadDesc": "PDF (max 50 MB) or Images (max 10 MB)",
+    "clickOrDrag": "Click or drag a file",
+    "extracting": "Extracting...",
+    "supportedFiles": "PDF, JPG, PNG, BMP, TIFF, GIF",
+    "documentLanguage": "Document language",
+    "french": "French",
+    "english": "English",
+    "frenchEnglish": "French + English",
+    "createNoteAuto": "Automatically create a note",
+    "noteTitle": "Note title",
+    "noteTitlePlaceholder": "Auto title from filename",
+    "subject": "Subject",
+    "selectSubject": "Select a subject",
+    "extractedText": "Extracted text",
+    "confidence": "Confidence",
+    "textPlaceholder": "Extracted text will appear here...",
+    "noteCreatedSuccess": "Note created successfully!",
+    "xpGained": "+15 XP earned",
+    "viewNote": "View note",
+    "createNoteNow": "Create a note now",
+    "supportedFormats": "Supported formats",
+    "maxSize": "Maximum size",
+    "pdfMaxSize": "PDF: 50 MB",
+    "imageMaxSize": "Images: 10 MB",
+    "supportedLanguages": "Supported languages",
+    "multiLanguage": "Multi-language",
+    "unsupportedFormat": "Unsupported format",
+    "pleaseUploadPdfOrImage": "Please upload a PDF or image (JPG, PNG, etc.)",
+    "success": "تم الاستخراج بنجاح",
+    "textExtractedWithConfidence": "Text extracted with {percent}% confidence. Note created!",
+    "extractionSuccess": "Extraction successful",
+    "textExtractedConfidence": "Text extracted with {percent}% confidence",
+    "extractionError": "Extraction error",
+    "cannotExtractText": "Unable to extract text",
+    "noteCreated": "Note created",
+    "noteCreatedFromText": "Note created from extracted text",
+    "advancedOptions": "Advanced options",
+    "detectLayout": "Detect tables and columns",
+    "aiPostProcess": "AI error correction",
+    "aiPostProcessDesc": "Uses Claude to correct OCR errors (uses 1 AI request)"
+  },
+  "activity": {
+    "title": "النشاط",
+    "subtitle": "اطلع على نشاطك الأخير",
+    "backToDashboard": "Back to dashboard",
+    "total": "Total",
+    "last7Days": "Last 7 days",
+    "last14Days": "Last 14 days",
+    "last30Days": "Last 30 days",
+    "last60Days": "Last 60 days",
+    "last90Days": "Last 90 days",
+    "allActivities": "All activities",
+    "notesOnly": "Notes only",
+    "flashcardsOnly": "Flashcards only",
+    "quizzesOnly": "Quizzes only",
+    "noActivityForPeriod": "No activity for this period",
+    "startCreating": "Start creating notes, reviewing flashcards or taking quizzes!",
+    "periodSummary": "Period summary",
+    "periodSummaryText": "Over the last {days} days, you completed {total} action(s)",
+    "notesCreated": "{count} note(s) created",
+    "flashcardsReviewed": "{count} flashcard(s) reviewed",
+    "quizzesCompleted": "{count} quiz(zes) completed",
+    "loadError": "خطأ في تحميل النشاط",
+    "score": "Score"
+  },
+  "focusRoom": {
+    "title": "غرف التركيز",
+    "subtitle": "ادرس مع آخرين",
+    "createRoom": "Create a room",
+    "returnToSession": "Return to my session",
+    "createFocusRoom": "Create a Focus Room",
+    "createDescription": "Create a space to study with others",
+    "roomName": "Room name",
+    "roomNamePlaceholder": "E.g.: Math Revision Session",
+    "emoji": "Emoji",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the goal of this session...",
+    "roomType": "Room type",
+    "category": "Category",
+    "subject": "Subject",
+    "selectSubject": "Select a subject",
+    "maxCapacity": "Maximum capacity",
+    "privateRoom": "Private room (invitation or code only)",
+    "creating": "Creating...",
+    "createBtn": "Create room",
+    "searchRoom": "Search for a room...",
+    "allCategories": "All",
+    "recent": "Recent",
+    "popular": "Popular",
+    "myRooms": "My Rooms",
+    "noRoomFound": "No room found",
+    "noRoomAvailable": "No room available",
+    "modifySearch": "Try modifying your search",
+    "createFirstRoom": "Create your first room to start studying together",
+    "join": "الانضمام",
+    "full": "Full",
+    "onlineNow": "Online now",
+    "myTotalTime": "My total time",
+    "streakDays": "Streak days",
+    "xpEarned": "XP earned",
+    "categories": {
+      "general": "General",
+      "sciences": "Sciences",
+      "humanities": "Humanities",
+      "languages": "Languages",
+      "business": "Business",
+      "technology": "Technology",
+      "medicine": "Medicine",
+      "law": "Law",
+      "other": "Other"
+    },
+    "roomTypes": {
+      "public": "Public",
+      "subject": "By subject",
+      "university": "University",
+      "private": "Private",
+      "event": "Event"
+    },
+    "status": {
+      "focusing": "Focusing",
+      "deepWork": "Deep Work",
+      "break": "Break",
+      "idle": "Idle",
+      "away": "Away"
+    },
+    "themes": {
+      "default": "Default",
+      "forest": "Forest",
+      "ocean": "Ocean",
+      "sunset": "Sunset",
+      "night": "Starry night",
+      "cozy": "Cozy",
+      "cafe": "Cozy cafe",
+      "library": "Library",
+      "sunrise": "Sunrise"
+    },
+    "bodyDoublingTitle": "What is Body Doubling?",
+    "bodyDoublingDesc": "Body doubling is a productivity technique where the simple presence of others helps you stay focused and motivated. Focus Rooms allow you to recreate this effect virtually.",
+    "xpBonus": "Earn +20% XP bonus by studying in a Focus Room",
+    "milestones": "Reach milestones (30min, 1h, 2h, 3h) for extra bonuses",
+    "streakBonus": "Maintain your Focus Room streak to progress even faster",
+    "error": "Error",
+    "loadError": "Unable to load rooms",
+    "roomNameRequired": "Room name is required",
+    "invalidRoomId": "Error creating room (invalid ID)",
+    "success": "Success",
+    "roomCreated": "Room created successfully (+25 XP)",
+    "joinError": "Unable to join room",
+    "joining": "Joining...",
+    "privateRoomTitle": "Private Room",
+    "enterInviteCode": "This room is private. Enter the invite code to join.",
+    "inviteCode": "Invite Code",
+    "alreadyInSession": "Already in session",
+    "alreadyInRoomRedirect": "You are already in a focus room. Redirecting...",
+    "leaveRoom": "Leave room",
+    "participants": "المشاركون",
+    "focusTime": "Focus time",
+    "todayFocus": "Today's focus",
+    "sessionStarted": "Session started",
+    "sessionEnded": "Session ended",
+    "selectTheme": "Select a theme",
+    "ambientSounds": "Ambient sounds",
+    "userJoined": "{username} joined",
+    "newFocusBuddy": "A new focus buddy!",
+    "milestoneReached": "🎉 {username} reached {milestone}!",
+    "congrats": "Well done!",
+    "roomNotFound": "Room not found",
+    "backToRooms": "Back to rooms",
+    "leave": "مغادرة",
+    "visualTheme": "Visual theme",
+    "pomodoroComplete": "🍅 Pomodoro complete!",
+    "takeBreak": "Well done! Take a break.",
+    "deepWorkActivated": "Deep Work mode activated",
+    "notificationsBlocked": "Notifications are blocked. Stay focused!",
+    "deepWorkEnded": "Deep Work session ended!",
+    "bonusXp": "+50 XP bonus!",
+    "online": "Online",
+    "xpBonusActive": "+20% XP Bonus active",
+    "pendingInvitations": "Pending Invitations",
+    "invitedBy": "Invited by {username}",
+    "invitationAccepted": "Invitation accepted",
+    "joiningRoom": "Joining {name}...",
+    "invitationDeclined": "Invitation declined",
+    "invitationError": "Error processing invitation",
+    "accept": "Accept",
+    "decline": "Decline",
+    "inviteFriend": "Invite a friend",
+    "inviteFriendTitle": "Invite a friend",
+    "inviteFriendDesc": "Search for a user to invite them to join this focus room.",
+    "searchUser": "Search for a user...",
+    "inviteMessage": "Message",
+    "inviteMessagePlaceholder": "E.g.: Come study with me!",
+    "noUserFound": "No user found",
+    "typeToSearch": "Type to search for users",
+    "invite": "Invite",
+    "invitationSent": "Invitation sent",
+    "invitationSentDesc": "The user will receive a notification",
+    "socialPressure": {
+      "watchingYou": "{count} person is watching you",
+      "watchingYouPlural": "{count} people are watching you",
+      "dontDisappoint": "Don't let them down!",
+      "inFocus": "In focus",
+      "of": "of",
+      "yourRank": "Your rank",
+      "vsGroupAverage": "Vs. group average",
+      "average": "Avg",
+      "min": "min",
+      "new": "New",
+      "dominant": "Dominant",
+      "aboveAverage": "Above average",
+      "onAverage": "On average",
+      "behind": "Behind",
+      "catchUp": "Catch up!",
+      "belowAverage": "You're below average!",
+      "peopleWorking": "{count} people are working. Don't fall behind!",
+      "streakWarning": "If you leave now, you'll lose your {minutes} min streak"
+    },
+    "leaderboard": {
+      "title": "Live Leaderboard",
+      "live": "Live",
+      "you": "(you)",
+      "focus": "Focus",
+      "minToday": "min today",
+      "noParticipants": "No participants",
+      "continueToAppear": "Keep going to appear on the leaderboard!"
+    },
+    "streak": {
+      "title": "Focus Streak",
+      "level": "Level",
+      "milestoneReached": "Milestone reached!",
+      "ofFocus": "of focus!",
+      "xpBonus": "XP Bonus!",
+      "moreMinFor": "{minutes} more min for {milestone}",
+      "continueBonus": "Keep going! {xp} XP bonus in {minutes} min",
+      "allMilestones": "Amazing! You've reached all milestones!"
+    },
+    "rewards": {
+      "reward": "Reward!",
+      "clickToOpen": "Click to open",
+      "rewardsCount": "Rewards"
+    },
+    "events": {
+      "empty": "لا توجد فعاليات قادمة",
+      "duration15": "15 دقيقة",
+      "duration30": "30 دقيقة",
+      "duration60": "60 دقيقة",
+      "duration90": "90 دقيقة",
+      "duration120": "120 دقيقة",
+      "categoryStudy": "دراسة",
+      "categoryWork": "عمل",
+      "categoryReading": "قراءة"
+    },
+    "deepWork": {
+      "started": "بدأ وضع العمل العميق",
+      "ended": "انتهى وضع العمل العميق",
+      "paused": "تم إيقاف الجلسة مؤقتًا",
+      "resumed": "تم استئناف الجلسة",
+      "error": "تعذر بدء الجلسة"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تعليم الكل كمقروء",
+    "noNotifications": "لا يوجد لديك إشعارات",
+    "receiveHere": "You will receive notifications here",
+    "viewAll": "عرض كل الإشعارات",
+    "markAsRead": "Mark as read",
+    "delete": "حذف",
+    "urgent": "Urgent",
+    "important": "Important",
+    "unread": "غير مقروء"
+  },
+  "pomodoro": {
+    "focus": "Focus",
+    "shortBreak": "استراحة قصيرة",
+    "longBreak": "استراحة طويلة",
+    "start": "بدء",
+    "pause": "إيقاف مؤقت",
+    "reset": "إعادة تعيين",
+    "skip": "Skip",
+    "sessions": "Sessions",
+    "focusMinutes": "Focus min.",
+    "avgPerSession": "Avg/session",
+    "pomodoroTimer": "Pomodoro Timer",
+    "focusMode": "Focus mode",
+    "breakMode": "Break mode"
+  },
+  "ambientSounds": {
+    "title": "أصوات محيطية",
+    "active": "active",
+    "actives": "active",
+    "sounds": {
+      "rain": "Rain",
+      "cafe": "Cafe",
+      "library": "Library",
+      "lofi": "Lo-Fi",
+      "ocean": "Ocean",
+      "wind": "Wind",
+      "fire": "Fire",
+      "birds": "Birds"
+    }
+  },
+  "explore": {
+    "title": "استكشف",
+    "subtitle": "اكتشف المحتوى المشترك",
+    "searchPlaceholder": "Search notes, flashcards, quizzes...",
+    "allContent": "All",
+    "notesTab": "Notes",
+    "flashcardsTab": "Flashcards",
+    "flashcardDecks": "Flashcard Decks",
+    "quizzesTab": "Quizzes",
+    "sortBy": "Sort by",
+    "recent": "الأحدث",
+    "popular": "الأكثر شعبية",
+    "rating": "التقييم",
+    "allSubjects": "All subjects",
+    "allLanguages": "All",
+    "trending": "Trending",
+    "trendingSubtitle": "Popular content this week",
+    "popularSubjects": "Popular subjects",
+    "noResults": "No content found",
+    "noResultsSubtitle": "Try adjusting your filters or search",
+    "resultsFound": "{count} result(s) found",
+    "cards": "cards",
+    "card": "card",
+    "questions": "questions",
+    "question": "question",
+    "plays": "plays",
+    "play": "play",
+    "views": "views",
+    "by": "by",
+    "anonymous": "Anonymous",
+    "see": "View",
+    "duplicate": "نسخ",
+    "duplicated": "تم النسخ",
+    "playQuiz": "Play",
+    "linkCopied": "Link copied!",
+    "linkCopiedDesc": "The quiz link has been copied to your clipboard",
+    "report": "Report",
+    "reportSent": "Report sent",
+    "reportSentDesc": "Our team will review this content",
+    "makePublic": "Make public",
+    "makePrivate": "Make private",
+    "myPublicContent": "My public content",
+    "shareWithCommunity": "Share your creations with the community",
+    "publicNotes": "Public notes",
+    "publicDecks": "Public decks",
+    "publicQuizzes": "Public quizzes",
+    "studyNow": "Study",
+    "preview": "Preview",
+    "copy": "Copy",
+    "copySuccess": "Content copied to your library!",
+    "copyError": "Error copying content",
+    "loadError": "Unable to load content",
+    "clearFilters": "Clear filters",
+    "loadMore": "Load more",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "languages": {
+      "all": "All",
+      "fr": "Français",
+      "en": "English",
+      "es": "Español"
+    },
+    "aiGenerated": "AI"
+  },
+  "pricing": {
+    "title": "الأسعار",
+    "subtitle": "اختر الخطة المناسبة لك",
+    "unlockPotential": "Unlock the full potential of Studera with a subscription tailored to your needs",
+    "currentPlan": "الخطة الحالية",
+    "popular": "الأكثر شعبية",
+    "selected": "Selected",
+    "choose": "Choose",
+    "free": "مجاني",
+    "premium": "مميز",
+    "premiumPlus": "Premium+",
+    "institutional": "Institutional",
+    "premiumYearly": "Premium Yearly",
+    "month": "شهر",
+    "year": "سنة",
+    "currentSubscription": "Current subscription",
+    "expiresOn": "Expires on {date}",
+    "daysRemaining": "{count} days remaining",
+    "saveWithAnnual": "Save with the annual plan!",
+    "twoMonthsFree": "2 months FREE",
+    "savePercent": "Save {percent}%",
+    "switchToAnnual": "Switch to annual",
+    "paymentMethod": "Payment method",
+    "selectPaymentMethod": "Select a payment method",
+    "creditCard": "Credit card",
+    "mobileMoney": "Mobile Money",
+    "phoneNumber": "Phone number",
+    "phoneNumberPlaceholder": "E.g.: +1 555 123 4567",
+    "promoCode": "Promo code",
+    "promoCodePlaceholder": "Enter your promo code",
+    "apply": "Apply",
+    "validPromo": "Valid promo code!",
+    "invalidPromo": "Invalid promo code",
+    "discount": "Discount",
+    "total": "Total",
+    "pay": "Pay",
+    "processing": "Processing...",
+    "paymentError": "Payment error",
+    "enterPhoneNumber": "Please enter your phone number",
+    "features": {
+      "aiRequestsPerDay": "{count} AI requests per day",
+      "unlimitedNotes": "Unlimited notes",
+      "unlimitedFlashcards": "Unlimited flashcards",
+      "unlimitedQuizzes": "Unlimited quizzes",
+      "storage": "{size} storage",
+      "noAds": "No ads",
+      "prioritySupport": "Priority support",
+      "vipSupport": "VIP support 24/7",
+      "advancedAnalytics": "Advanced analytics",
+      "export": "PDF/Word export",
+      "collaboration": "Study groups",
+      "earlyAccess": "Early access to new features",
+      "exclusiveThemes": "Exclusive themes",
+      "premiumBadge": "Premium badge",
+      "multiUser": "Multi-user management",
+      "adminDashboard": "Admin dashboard",
+      "dedicatedApi": "Dedicated API",
+      "dedicatedSupport": "Dedicated support",
+      "trainingIncluded": "Training included",
+      "businessBilling": "Business billing",
+      "fsrsAlgorithm": "FSRS algorithm",
+      "offlineMode": "Offline mode"
+    },
+    "regions": {
+      "europe": "Europe",
+      "america": "America",
+      "westAfrica": "West Africa",
+      "centralAfrica": "Central Africa",
+      "other": "Other"
+    }
+  },
+  "leaderboard": {
+    "title": "لوحة المتصدرين",
+    "subtitle": "تنافس مع المستخدمين الآخرين",
+    "global": "عالمي",
+    "friends": "الأصدقاء",
+    "university": "University",
+    "myUniversity": "My University",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "daily": "Today",
+    "allTime": "كل الأوقات",
+    "xp": "نقاط الخبرة",
+    "streak": "السلسلة",
+    "streakDays": "Streak (days)",
+    "quizzes": "Quizzes",
+    "quizzesCompleted": "Quizzes completed",
+    "flashcards": "Flashcards",
+    "flashcardsReviewed": "Flashcards reviewed",
+    "notes": "Notes",
+    "notesCreated": "Notes created",
+    "studyTime": "Study time",
+    "studyTimeMin": "Study time (min)",
+    "yourRank": "Your rank",
+    "yourPosition": "Your position",
+    "top": "Top {percent}%",
+    "rank": "المرتبة",
+    "currentRank": "Current rank",
+    "user": "المستخدم",
+    "score": "النقاط",
+    "level": "المستوى",
+    "noData": "No data for this leaderboard",
+    "loading": "Loading...",
+    "online": "Live",
+    "offline": "Offline",
+    "liveActivity": "Live activity",
+    "liveUpdates": "Live updates",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "recentActivity": "Recent activity",
+    "gainedXp": "+{xp} XP",
+    "levelUp": "Level Up!",
+    "fullLeaderboard": "Full leaderboard",
+    "leagues": "Leagues",
+    "leaderboardTab": "Leaderboard",
+    "myLeague": "My league",
+    "leagueRank": "League rank",
+    "weekInLeague": "Week {count} in this league",
+    "weeklyXP": "XP this week",
+    "xpWeek": "Weekly XP",
+    "promotion": "Promotion",
+    "promotionZone": "Promotion zone!",
+    "relegation": "Relegation",
+    "relegationZone": "Danger zone!",
+    "safe": "Safe zone",
+    "towards": "To {league}",
+    "bestLeague": "Best league",
+    "weekEndsIn": "Week ends in",
+    "days": "days",
+    "hours": "hours",
+    "leagueTiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond",
+      "master": "Master"
+    },
+    "leagueLeaderboard": "League {league} Leaderboard",
+    "noPlayersInLeague": "No players in this league yet",
+    "you": "أنت",
+    "share": "Share",
+    "shareProgress": "Share my progress",
+    "shareLeague": "Share your league!",
+    "howToClimb": "How to climb the leaderboard?",
+    "howToClimbTips": [
+      "Complete quizzes and get good scores",
+      "Review your flashcards daily",
+      "Create and share quality notes",
+      "Maintain your learning streak",
+      "Participate in group study sessions"
+    ],
+    "howLeaguesWork": "How do leagues work?",
+    "howLeaguesTips": [
+      "Earn XP each week to climb the rankings",
+      "Top 3 in each league get promoted to the next level",
+      "Bottom players risk relegation",
+      "Rankings reset every Monday at midnight",
+      "Higher leagues give you more bonuses!"
+    ],
+    "universityNotConfigured": "Configure your university in your profile to see this leaderboard",
+    "loadError": "Unable to load leaderboard"
+  },
+  "achievements": {
+    "title": "الإنجازات",
+    "subtitle": "افتح الشارات",
+    "unlocked": "مفتوح",
+    "locked": "مغلق",
+    "progress": "التقدم",
+    "total": "Total",
+    "recent": "Recent",
+    "rare": "Rare",
+    "xpReward": "+{xp} XP",
+    "unlockedOn": "Unlocked on {date}",
+    "successUnlocked": "Achievements Unlocked",
+    "completed": "completed",
+    "xpEarned": "XP Earned",
+    "thanksToAchievements": "From achievements",
+    "rarity": "Rarity",
+    "byRarity": "By rarity level",
+    "unlockedLabel": "Unlocked",
+    "noAchievementInCategory": "No achievements in this category",
+    "categories": {
+      "all": "All",
+      "study": "Study",
+      "learning": "Learning",
+      "streak": "Streaks",
+      "social": "Social",
+      "mastery": "Mastery",
+      "exploration": "Exploration",
+      "special": "Special",
+      "duels": "Duels",
+      "study_time": "Study time"
+    },
+    "shareAchievement": "Share this achievement",
+    "items": {
+      "first_note": {
+        "name": "First Note",
+        "description": "Create your first note"
+      },
+      "amateur_writer": {
+        "name": "Amateur Writer",
+        "description": "Create 10 notes"
+      },
+      "confirmed_writer": {
+        "name": "Confirmed Writer",
+        "description": "Create 50 notes"
+      },
+      "expert_writer": {
+        "name": "Expert Writer",
+        "description": "Create 100 notes"
+      },
+      "legendary_librarian": {
+        "name": "Legendary Librarian",
+        "description": "Create 500 notes"
+      },
+      "first_flashcard": {
+        "name": "First Flashcard",
+        "description": "Create your first flashcard"
+      },
+      "card_collector": {
+        "name": "Card Collector",
+        "description": "Create 25 flashcards"
+      },
+      "flashcard_master": {
+        "name": "Flashcard Master",
+        "description": "Create 100 flashcards"
+      },
+      "flashcard_legend": {
+        "name": "Flashcard Legend",
+        "description": "Create 500 flashcards"
+      },
+      "first_quiz": {
+        "name": "First Quiz",
+        "description": "Complete your first quiz"
+      },
+      "quiz_amateur": {
+        "name": "Quiz Amateur",
+        "description": "Complete 10 quizzes"
+      },
+      "quiz_expert": {
+        "name": "Quiz Expert",
+        "description": "Complete 50 quizzes"
+      },
+      "quiz_master": {
+        "name": "Quiz Master",
+        "description": "Complete 100 quizzes"
+      },
+      "first_day": {
+        "name": "First Day",
+        "description": "Log in for 1 consecutive day"
+      },
+      "fire_week": {
+        "name": "Fire Week",
+        "description": "Maintain a 7-day streak"
+      },
+      "two_intense_weeks": {
+        "name": "Two Intense Weeks",
+        "description": "Maintain a 14-day streak"
+      },
+      "determination_month": {
+        "name": "Month of Determination",
+        "description": "Maintain a 30-day streak"
+      },
+      "quarterly_commitment": {
+        "name": "Quarterly Commitment",
+        "description": "Maintain a 90-day streak"
+      },
+      "year_perseverance": {
+        "name": "Year of Perseverance",
+        "description": "Maintain a 365-day streak"
+      },
+      "perfect_score": {
+        "name": "Perfect Score",
+        "description": "Get 100% on a quiz"
+      },
+      "perfectionist": {
+        "name": "Perfectionist",
+        "description": "Get 100% on 10 quizzes"
+      },
+      "flawless": {
+        "name": "Flawless",
+        "description": "Get 100% on 50 quizzes"
+      },
+      "level_5": {
+        "name": "Level 5",
+        "description": "Reach level 5"
+      },
+      "level_10": {
+        "name": "Level 10",
+        "description": "Reach level 10"
+      },
+      "level_25": {
+        "name": "Level 25",
+        "description": "Reach level 25"
+      },
+      "level_50": {
+        "name": "Level 50",
+        "description": "Reach level 50"
+      },
+      "xp_1000": {
+        "name": "1,000 XP",
+        "description": "Accumulate 1,000 XP total"
+      },
+      "xp_10000": {
+        "name": "10,000 XP",
+        "description": "Accumulate 10,000 XP total"
+      },
+      "xp_100000": {
+        "name": "100,000 XP",
+        "description": "Accumulate 100,000 XP total"
+      },
+      "first_duel": {
+        "name": "First Duel",
+        "description": "Participate in your first duel"
+      },
+      "duelist": {
+        "name": "Duelist",
+        "description": "Participate in 10 duels"
+      },
+      "duel_champion": {
+        "name": "Duel Champion",
+        "description": "Win 25 duels"
+      },
+      "duel_legend": {
+        "name": "Duel Legend",
+        "description": "Win 100 duels"
+      },
+      "first_victory": {
+        "name": "First Victory",
+        "description": "Win your first duel"
+      },
+      "welcome": {
+        "name": "Welcome!",
+        "description": "Create your account"
+      },
+      "pdf_import": {
+        "name": "PDF Import",
+        "description": "Import your first PDF with OCR"
+      },
+      "scanner_pro": {
+        "name": "Scanner Pro",
+        "description": "Import 10 PDFs with OCR"
+      },
+      "explorer": {
+        "name": "Explorer",
+        "description": "Visit all sections of the application"
+      },
+      "daily_quest": {
+        "name": "Daily Quest",
+        "description": "Complete your first daily quest"
+      },
+      "diligent_quester": {
+        "name": "Diligent Quester",
+        "description": "Complete 30 daily quests"
+      },
+      "quest_master": {
+        "name": "Quest Master",
+        "description": "Complete 100 daily quests"
+      },
+      "study_session": {
+        "name": "Study Session",
+        "description": "Study for 1 hour total"
+      },
+      "devoted_student": {
+        "name": "Devoted Student",
+        "description": "Study for 10 hours total"
+      },
+      "scholar": {
+        "name": "Scholar",
+        "description": "Study for 100 hours total"
+      }
+    }
+  },
+  "duels": {
+    "title": "المبارزات",
+    "subtitle": "تحدى أصدقاءك",
+    "createDuel": "Create a duel",
+    "joinDuel": "Join a duel",
+    "activeDuels": "Active duels",
+    "completedDuels": "Completed duels",
+    "pendingDuels": "Pending duels",
+    "noDuels": "No duels",
+    "startFirst": "Create your first duel to challenge your friends!",
+    "opponent": "الخصم",
+    "subject": "Subject",
+    "questionCount": "Number of questions",
+    "timePerQuestion": "Time per question",
+    "seconds": "seconds",
+    "challenge": "Challenge",
+    "accept": "Accept",
+    "decline": "Decline",
+    "waiting": "في انتظار خصم...",
+    "yourTurn": "It's your turn!",
+    "opponentTurn": "Opponent's turn",
+    "victory": "Victory!",
+    "defeat": "Defeat",
+    "draw": "تعادل",
+    "score": "النقاط",
+    "rematch": "Rematch",
+    "backToList": "Back to list",
+    "challengeSent": "Challenge sent!",
+    "challengeReceived": "You received a challenge!",
+    "xpGained": "+{xp} XP earned"
+  },
+  "sparkWidget": {
+    "askSpark": "Ask Spark a question!",
+    "dailyBriefing": "Daily briefing",
+    "todayGoals": "Today's goals",
+    "pendingReviews": "Pending reviews",
+    "itemsToReview": "{count} items to review",
+    "streak": "Streak",
+    "streakDays": "{count} days",
+    "keepItUp": "Keep it up!",
+    "letsGo": "Let's go!",
+    "notifications": "Notifications",
+    "newNotifications": "{count} new",
+    "noNotifications": "No notifications",
+    "sparkWillNotify": "Spark will notify you if needed!",
+    "markAllRead": "Mark all as read",
+    "askQuestion": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
+    "sparkUsesAI": "Spark uses AI to analyze your question and learning context.",
+    "errorMessage": "Oops! I had a problem. Try again!",
+    "hintFallback": "Think carefully... The answer is within reach!",
+    "hereIsMyAnswer": "Here's my answer!",
+    "errorAnswering": "Oops! I had a problem trying to answer. Try again!",
+    "helpDialog": {
+      "title": "Ask Spark for Help",
+      "subtitle": "I'm here to help you!",
+      "questionLabel": "Your question for Spark",
+      "placeholder": "How can I better memorize this chapter? How to organize my revisions? What flashcards should I create?",
+      "charCount": "{count}/500 characters",
+      "minCharsError": "Your question must be at least 3 characters",
+      "maxCharsError": "Your question is too long (max 500 characters)",
+      "aiInfo": "Spark uses AI to analyze your question and learning context. You'll receive personalized advice and action suggestions!",
+      "examplesTitle": "Example questions:",
+      "example1": "How to better revise math?",
+      "example2": "I have trouble memorizing, any tips?",
+      "example3": "What's the best method for learning?",
+      "thinking": "Spark is thinking...",
+      "askButton": "Ask Spark"
+    },
+    "answerCard": {
+      "title": "Spark answers",
+      "subtitle": "With AI assistance",
+      "suggestedActions": "Suggested actions",
+      "needMoreHelp": "Need more help? Click on Spark to ask another question!",
+      "followUpPlaceholder": "Ask a follow-up question..."
+    },
+    "levels": {
+      "baby": "Baby Spark",
+      "junior": "Junior Spark",
+      "expert": "Expert Spark",
+      "sage": "Sage Spark",
+      "legendary": "Legendary Spark"
+    },
+    "pageMessages": {
+      "dashboard": [
+        "Welcome to your dashboard! Ready to study?",
+        "Hey! Check your stats, you're doing great!",
+        "Let's have a productive session!"
+      ],
+      "notes": [
+        "Your notes are waiting! What are we reviewing today?",
+        "Taking notes is key! You're doing great!",
+        "Don't forget: reading your notes regularly helps memorize!"
+      ],
+      "flashcards": [
+        "Flashcards! My favorite technique for memorizing!",
+        "Reviewing with flashcards is super effective!",
+        "Let's flip those cards! You'll remember everything!"
+      ],
+      "quizzes": [
+        "A quiz? I love it! Show me what you know!",
+        "Quizzes are the best way to test your knowledge!",
+        "Ready to challenge yourself? Let's go!"
+      ],
+      "quests": [
+        "Your daily quests! Complete them all for the bonus!",
+        "3 quests = 3 rewards + bonus! You can do it!",
+        "Each completed quest brings you closer to your goal!"
+      ],
+      "leaderboard": [
+        "The leaderboard! Let's see where you stand...",
+        "Want to climb the rankings? Keep it up!",
+        "Healthy competition motivates! Are you in the top?"
+      ],
+      "achievements": [
+        "Your achievements! How many have you unlocked?",
+        "Each badge tells a story of success!",
+        "Keep going and you'll get them all!"
+      ],
+      "profile": [
+        "Your profile! Want to customize something?",
+        "This is where you can see your overall progress!"
+      ],
+      "schedule": [
+        "Your schedule! Good organization is the key to success!",
+        "Exams coming up? I can help you prepare!",
+        "Planning your revisions helps reduce stress!"
+      ],
+      "explore": [
+        "Explore! Discover what others have created!",
+        "You can find super useful resources here!",
+        "Sharing is growing together!"
+      ],
+      "duels": [
+        "Duels! Ready to face other students?",
+        "A duel is fun AND educational! En garde!",
+        "Win a duel = bonus XP! Up for the challenge?"
+      ],
+      "focusRooms": [
+        "Focus Rooms! Studying together is more motivating!",
+        "Join a room and study as a group!",
+        "Shared focus boosts productivity!"
+      ],
+      "ai": [
+        "Hey it's me! Want to chat?",
+        "I'm here to help! Ask me your questions!",
+        "Tutor mode activated! What do you want to learn?"
+      ],
+      "documents": [
+        "Your documents! Need to organize them?",
+        "Well-organized documents are easier to find!",
+        "You can share your documents with other students!"
+      ],
+      "subjects": [
+        "Your subjects! Which one is your favorite?",
+        "Organizing by subject helps review better!",
+        "Each subject is a new adventure!"
+      ],
+      "sessions": [
+        "Study sessions! Ready for a productive session?",
+        "Pomodoro is life! 25 min of focus!",
+        "One session a day keeps failure away!"
+      ],
+      "groups": [
+        "Study groups! Unity is strength!",
+        "Studying together is more fun!",
+        "Join or create a group to progress together!"
+      ]
+    },
+    "automaticMessages": {
+      "welcome": [
+        "Hey! Spark is here, ready to help! 🐿️⚡",
+        "Hello champion! Ready to study today?",
+        "Hi there! Let's make progress together! 🌰"
+      ],
+      "welcome_back": [
+        "Welcome back! I missed you! 🐿️",
+        "Hey, you're back! Let's continue where we left off!",
+        "There you are! Ready for another session?"
+      ],
+      "streak_warning": [
+        "Hey, don't forget to study today to keep your streak! 🔥",
+        "Your streak is at risk! A quick session?",
+        "Don't let your streak end! Come study with me!"
+      ],
+      "streak_milestone": [
+        "Amazing! {days} days in a row! You're incredible! 🔥",
+        "Wow! {days} days of streak! Keep it up! 🎉",
+        "{days} consecutive days! You're on fire! 💪"
+      ],
+      "quiz_perfect": [
+        "PERFECT! 100%! You're a genius! 🎉",
+        "Incredible! Perfect score! I'm so proud! ⭐",
+        "100%! Nothing gets past you! 🏆"
+      ],
+      "quiz_success": [
+        "Well done! {score}% on {topic}! 💪",
+        "Nice job! {score}% is great! Keep it up!",
+        "Good work! {score}% on the quiz!"
+      ],
+      "quiz_failed": [
+        "Don't give up! {score}% is a good start! 📚",
+        "Practice makes perfect! Try again?",
+        "Keep studying, you'll get there! 💪"
+      ],
+      "level_up": [
+        "LEVEL UP! You reached level {level}! 🎉",
+        "Amazing! Level {level}! You're growing so fast! ⭐",
+        "Level {level} unlocked! You're awesome! 🏆"
+      ],
+      "exam_reminder": [
+        "Reminder: {exam_name} in {days_until} days! Time to prepare! 📚",
+        "Don't forget: {exam_name} is coming in {days_until} days!",
+        "Exam alert! {exam_name} in {days_until} days! Let's review!"
+      ],
+      "focus_room": {
+        "milestone_15min": "15 minutes! You're getting started! 🚀",
+        "milestone_30min": "30 MINUTES! You're killing it! 🔥",
+        "milestone_45min": "45 min! Almost 1 hour, keep going! 💪",
+        "milestone_1h": "1 HOUR! You're a MACHINE! 🏆",
+        "milestone_90min": "1h30 of focus! Impressive! ⭐",
+        "milestone_2h": "2 HOURS!! You're INCREDIBLE! 🌟✨",
+        "milestone_3h": "3 HOURS!!! LEGENDARY! 👑🔥",
+        "milestone_4h": "4 HOURS!!!! YOU'RE A GOD! 🏆👑🔥✨",
+        "user_joined": "A new focus buddy joined! 👋",
+        "deep_work_started": "Deep Work mode activated! 🧘 I'll stay quiet...",
+        "deep_work_completed": "Deep Work COMPLETED! +50 XP bonus! 🎯",
+        "reward_claimed": "Chest opened! 🎁",
+        "first_in_room": "First in the room! You're setting the example! 🥇",
+        "room_goal_reached": "ROOM GOAL REACHED! CONGRATS EVERYONE! 🎊"
+      }
+    }
+  },
+  "quests": {
+    "title": "المهام اليومية",
+    "daysStreak": "Days in a row",
+    "dailyProgress": "Today's progress",
+    "completed": "مكتمل",
+    "claimBonus": "Claim Bonus (+50 XP + Mystery Chest!)",
+    "bonusClaimed": "Daily bonus claimed! Come back tomorrow for new quests.",
+    "claimReward": "Claim reward",
+    "questComplete": "Completed!",
+    "continueActivities": "Continue your activities to complete this quest!",
+    "mysteryChests": "Mystery Chests",
+    "chestsToOpen": "You have chests to open! Click to reveal their contents.",
+    "questStats": "Quest Statistics",
+    "currentStreak": "Current streak",
+    "longestStreak": "Best streak",
+    "questsCompleted": "Quests completed",
+    "bonusesClaimed": "Bonuses claimed",
+    "totalXP": "Total XP",
+    "streakBonuses": "Streak Bonuses",
+    "streakBonusDesc": "Complete 3/3 quests multiple days in a row to unlock bonuses!",
+    "days": "days",
+    "chest": "Chest",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "chestRarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    }
+  },
+  "offline": {
+    "title": "غير متصل بالإنترنت",
+    "subtitle": "Continue studying without connection",
+    "youAreOffline": "You are offline",
+    "dataAvailable": "Data available offline",
+    "syncPending": "Sync pending",
+    "pendingChanges": "{count} pending changes",
+    "willSyncWhenOnline": "Will sync when back online",
+    "lastSync": "Last sync",
+    "syncNow": "Sync now",
+    "syncing": "Syncing...",
+    "syncComplete": "Sync complete",
+    "syncError": "Sync error",
+    "offlineFeatures": {
+      "notes": "View your notes",
+      "flashcards": "Review your flashcards",
+      "schedules": "View your schedule",
+      "profile": "Access your profile"
+    },
+    "page": {
+      "title": "أنت غير متصل بالإنترنت",
+      "description": "يبدو أنك غير متصل بالإنترنت حاليًا.",
+      "retry": "إعادة المحاولة",
+      "tipsTitle": "في هذه الأثناء، يمكنك:",
+      "tipNotes": "الاطلاع على ملاحظاتك المخزنة",
+      "tipFlashcards": "مراجعة بطاقاتك التعليمية المحفوظة",
+      "tipSync": "ستتم مزامنة تغييراتك تلقائيًا",
+      "checkConnection": "التحقق من الاتصال",
+      "checking": "جارٍ التحقق...",
+      "heroDescription": "لم يتم اكتشاف اتصال بالإنترنت. تبقى بعض الميزات متاحة بفضل بياناتك المخزنة.",
+      "featuresTitle": "الميزات المتاحة دون اتصال",
+      "featureNotesTitle": "ملاحظات",
+      "featureNotesDesc": "اطلع على ملاحظاتك المحفوظة",
+      "featureFlashcardsTitle": "بطاقات تعليمية",
+      "featureFlashcardsDesc": "راجع بطاقاتك المخزنة",
+      "featureCalendarTitle": "التقويم",
+      "featureCalendarDesc": "اطلع على جدولك",
+      "featureStudyTitle": "الدراسة",
+      "featureStudyDesc": "تابع جلسات دراستك",
+      "modeTitle": "تم تفعيل وضع عدم الاتصال",
+      "tip1": "ستتم مزامنة تغييراتك تلقائيًا",
+      "tip2": "تُستخدم البيانات المخزنة للعرض",
+      "tip3": "بعض الميزات مثل الاختبارات المباشرة غير متاحة",
+      "pwaNote": "يعمل Studera حتى بدون اتصال بفضل تقنية PWA."
+    },
+    "indicator": {
+      "online": "متصل",
+      "offline": "غير متصل",
+      "syncing": "جارٍ المزامنة...",
+      "synced": "تمت المزامنة",
+      "pendingChanges": "{count} تغييرات معلقة",
+      "pendingActions": "{count} إجراءات معلقة",
+      "pendingShort": "{count} معلق",
+      "syncButton": "مزامنة",
+      "connectionRestored": "تمت استعادة الاتصال",
+      "connectionRestoredSync": "جارٍ مزامنة {count} إجراءات...",
+      "offlineMode": "وضع عدم الاتصال - ستتم مزامنة تغييراتك تلقائيًا"
+    }
+  },
+  "share": {
+    "title": "مشاركة",
+    "shareOn": "Share on",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!",
+    "shareCode": "Share code",
+    "qrCode": "QR Code",
+    "inviteFriends": "Invite friends",
+    "shareMessage": "Join me on Studera!",
+    "platforms": {
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "twitter": "Twitter",
+      "facebook": "Facebook",
+      "linkedin": "LinkedIn",
+      "email": "Email"
+    }
+  },
+  "exam_mode": {
+    "title": "وضع الامتحان",
+    "subtitle": "حالة محاكاة للامتحان",
+    "dashboard": "Dashboard",
+    "my_exams": "My exams",
+    "statistics": "Statistics",
+    "new_exam": "New exam",
+    "create_session": "Create a study session",
+    "create_first": "Create my first session",
+    "no_active_session": "No active exam",
+    "start_description": "Create a study session for an upcoming exam and let us generate a personalized plan.",
+    "limit_reached": "Limit reached",
+    "upgrade_title": "Upgrade to Premium",
+    "upgrade_description": "Prepare up to 5 exams simultaneously",
+    "exam_name": "Exam name",
+    "description": "Description",
+    "exam_date": "Exam date",
+    "exam_time": "Exam time",
+    "subject": "Subject",
+    "select_subject": "Select a subject",
+    "select_notes": "Notes to study",
+    "select_notes_desc": "Select the notes you want to include in your study plan",
+    "no_notes": "No notes available",
+    "notes_selected": "note(s) selected",
+    "notes_count": "Number of notes",
+    "hours_per_day": "Study hours per day",
+    "preferred_times": "Preferred times",
+    "difficulty": "Difficulty level",
+    "include_weekends": "Include weekends",
+    "include_weekends_desc": "Study on Saturday and Sunday too",
+    "notifications": "Notifications",
+    "notifications_desc": "Receive daily reminders",
+    "reminder_time": "Reminder time",
+    "step1_desc": "Exam information",
+    "step2_desc": "Select content to study",
+    "step3_desc": "Schedule configuration",
+    "step4_desc": "Preview and confirmation",
+    "summary": "Summary",
+    "plan_will_generate": "A personalized study plan will be generated automatically with daily tasks tailored to your goals.",
+    "create": "Create session",
+    "validation_error": "Validation error",
+    "fill_required_fields": "Please fill in all required fields",
+    "created_success": "Session created!",
+    "plan_generated": "Your study plan has been generated.",
+    "create_error": "Error creating session",
+    "session_deleted": "Session deleted",
+    "progress": "Progress",
+    "days_left": "Days left",
+    "tasks_done": "Tasks done",
+    "prediction": "Prediction",
+    "study_time": "Study time",
+    "today_tasks": "Today's tasks",
+    "remaining": "remaining",
+    "estimated": "estimated",
+    "all_done_today": "All tasks for today are done!",
+    "study_plan": "Study plan",
+    "task_started": "Task started!",
+    "task_completed": "Task completed!",
+    "task_skipped": "Task skipped",
+    "finish": "Finish",
+    "active": "Active",
+    "completed": "Completed",
+    "paused": "Paused",
+    "no_sessions": "No study sessions",
+    "exams_prepared": "Exams prepared",
+    "exams_completed": "Exams completed",
+    "hours_studied": "Hours studied",
+    "xp_earned": "XP earned",
+    "best_score": "Best score",
+    "longest_streak": "Longest streak",
+    "no_stats": "No statistics yet",
+    "task_types": {
+      "read": "Reading",
+      "flashcards": "Flashcards",
+      "quiz": "Quiz",
+      "review": "Review",
+      "practice_exam": "Practice exam",
+      "summary": "Summary",
+      "weak_points": "Weak points"
+    },
+    "ai_insights": "AI Insights",
+    "ai_summary": "AI Summary",
+    "ai_premium_title": "Premium AI Intelligence",
+    "ai_premium_description": "Unlock advanced AI analysis: key points, weakness detection, personalized advice, and dynamic plan adaptation.",
+    "premium_required": "Premium required",
+    "ai_premium_desc": "AI generation is reserved for Premium users",
+    "no_active_for_ai": "No active exam",
+    "create_for_ai": "Create a study session to access AI analysis.",
+    "key_points": "Key Points",
+    "key_points_analysis": "Key Points Analysis",
+    "key_concepts": "Key Concepts",
+    "formulas": "Formulas to Memorize",
+    "revision_priorities": "Revision Priorities",
+    "weak_points_title": "Weak Points",
+    "weak_points_analysis": "Weak Points Detection",
+    "no_weak_points": "No weak points detected!",
+    "recommendations": "Recommendations",
+    "advice": "Advice",
+    "personalized_advice": "Personalized Advice",
+    "global_strategy": "Global Strategy",
+    "priority_focus": "Priority Focus",
+    "recommended_methods": "Recommended Methods",
+    "suggested_planning": "Suggested Planning",
+    "predicted_score": "Predicted Score",
+    "top_recommendations": "Top Recommendations",
+    "generate_practice_exam": "Generate Practice Exam",
+    "practice_exam_generated": "Practice exam generated!",
+    "adapt_plan": "Adapt Plan",
+    "plan_adapted": "Plan adapted!",
+    "no_adaptation": "No changes needed",
+    "plan_optimal": "Your plan is already optimal",
+    "content_generated": "Content generated!",
+    "content_linked": "Content linked"
+  },
+  "landing": {
+    "nav": {
+      "login": "Log in",
+      "startFree": "Start for free",
+      "studentsOnline": "{count} students online"
+    },
+    "hero": {
+      "badge": "New — Join the free beta",
+      "title1": "Stop struggling.",
+      "title2": "Start dominating.",
+      "subtitle": "Anki + Quizlet + Notion + Duolingo — combined in one free app.",
+      "subtitleHighlight": "With an AI that knows you and group study rooms.",
+      "cta": "Create my free account",
+      "watchFeatures": "See features",
+      "trust1": "100% free to start",
+      "trust2": "No credit card required",
+      "trust3": "Ready in 30 seconds"
+    },
+    "socialProof": {
+      "betaOpen": "Open beta",
+      "fsrs": "#1 algorithm worldwide",
+      "claudeAI": "Most advanced AI",
+      "allSubjects": "All subjects"
+    },
+    "problem": {
+      "title": "You know this feeling?",
+      "subtitle": "Hours of studying... only to forget everything on exam day.",
+      "without": "Without Studera",
+      "with": "With Studera",
+      "problems": [
+        "You study for hours but forget everything",
+        "You procrastinate alone in your room",
+        "You use 10 different apps (Anki, Notion, Quizlet...)",
+        "You don't know if you're ready for the exam",
+        "Zero motivation after 2 days"
+      ],
+      "solutions": [
+        "You memorize 2x faster with the FSRS algorithm",
+        "You study with others in Focus Rooms (like at the library)",
+        "Everything in one place: notes, flashcards, quizzes, AI",
+        "The AI tells you exactly what to review",
+        "Addictive gamification: XP, streaks, duels, leaderboards"
+      ]
+    },
+    "features": {
+      "title": "What no other app does",
+      "subtitle": "3 unique features that change everything",
+      "examMode": {
+        "badge": "#1",
+        "title": "Exam Mode",
+        "description": "Enter your exam date, the AI generates a personalized day-by-day study plan with score prediction.",
+        "feature1": "Auto-generated AI planning",
+        "feature2": "Final grade prediction",
+        "feature3": "Detects your weak points"
+      },
+      "spark": {
+        "title": "Spark — Your AI tutor",
+        "description": "An AI assistant with a real personality who knows you, encourages you and explains everything.",
+        "poweredBy": "Powered by Claude (best AI on the market)"
+      },
+      "focusRooms": {
+        "title": "Focus Rooms",
+        "description": "Study in virtual groups, like at the library. Seeing others work motivates you to work.",
+        "studying": "people studying now"
+      }
+    },
+    "examModeDetail": {
+      "badge": "Key feature",
+      "title": "Exam Mode:",
+      "titleHighlight": "Your personal AI coach",
+      "description": "Got an exam in 2 weeks? Enter the date, select your notes, and the AI generates a custom study plan for you.",
+      "feature1Title": "Day-by-day plan",
+      "feature1Desc": "Daily tasks: reading, quizzes, flashcards, targeted review",
+      "feature2Title": "Score prediction",
+      "feature2Desc": "The AI predicts your grade based on your actual progress",
+      "feature3Title": "Weakness detection",
+      "feature3Desc": "Analyzes your mistakes and adapts the plan automatically",
+      "feature4Title": "Generated mock exam",
+      "feature4Desc": "Complete quiz based on your notes to test yourself before the big day",
+      "cta": "Try Exam Mode for free",
+      "preview": "Live Preview",
+      "previewExam": "Mathematics Midterm",
+      "previewDays": "In 12 days",
+      "previewScore": "Predicted score",
+      "previewProgress": "Progress",
+      "previewTasks": "Today's tasks",
+      "previewTask1": "Reading: Integrals (Chapter 4)",
+      "previewTask2": "Quiz: Derivatives (15 questions)",
+      "previewTask3": "Flashcards: Key formulas",
+      "previewMotivation": "You're on track! Keep it up and you'll crush it."
+    },
+    "comparison": {
+      "title": "Why switch?",
+      "subtitle": "Studera vs. what you're probably using",
+      "feature": "Feature",
+      "features": [
+        "AI study plan (Exam Mode)",
+        "Exam score prediction",
+        "FSRS flashcards (best algorithm)",
+        "AI content generation",
+        "Adaptive quizzes",
+        "Focus Rooms (group study)",
+        "Personalized AI assistant",
+        "PvP duels",
+        "Full gamification",
+        "Notes + Flashcards + Quizzes",
+        "100% free to start"
+      ]
+    },
+    "allFeatures": {
+      "title": "Everything you need",
+      "subtitle": "15+ features to ace your exams",
+      "items": [
+        {
+          "title": "Generative AI",
+          "desc": "Create flashcards and quizzes from your notes"
+        },
+        {
+          "title": "FSRS Flashcards",
+          "desc": "Memorize 2x faster, scientifically proven"
+        },
+        {
+          "title": "Adaptive Quizzes",
+          "desc": "Questions that adapt to your level"
+        },
+        {
+          "title": "Focus Rooms",
+          "desc": "Study in virtual groups"
+        },
+        {
+          "title": "Spark AI",
+          "desc": "Your personal tutor available 24/7"
+        },
+        {
+          "title": "Duels",
+          "desc": "Challenge your friends to quizzes"
+        },
+        {
+          "title": "Leaderboards",
+          "desc": "Compare yourself to other students"
+        },
+        {
+          "title": "Streaks",
+          "desc": "Keep your study day streak going"
+        },
+        {
+          "title": "Markdown Notes",
+          "desc": "Powerful editor with LaTeX"
+        },
+        {
+          "title": "Pomodoro",
+          "desc": "Built-in timer for your sessions"
+        },
+        {
+          "title": "Statistics",
+          "desc": "Track your progress in detail"
+        },
+        {
+          "title": "Exam Mode",
+          "desc": "Personalized AI study plan"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to crush it?",
+      "subtitle": "Join the students who decided to stop struggling.",
+      "free": "It's free. Forever.",
+      "button": "Create my free account",
+      "note": "Sign up in 30 seconds • No credit card required"
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "questions": [
+        {
+          "q": "Is it really free?",
+          "a": "Yes! You get access to all basic features for free, forever. The Premium plan unlocks more AI requests and advanced features."
+        },
+        {
+          "q": "What is the FSRS algorithm?",
+          "a": "FSRS (Free Spaced Repetition Scheduler) is the most advanced memorization algorithm in the world. It's 30% more efficient than Anki's old algorithm. Study less, remember more."
+        },
+        {
+          "q": "Can I use it for any subject?",
+          "a": "Absolutely! Medicine, law, languages, sciences, history... Studera works for all subjects. The AI adapts to your field."
+        },
+        {
+          "q": "Is my data secure?",
+          "a": "Yes. Your data is encrypted and stored securely. We never sell your data to third parties."
+        }
+      ]
+    },
+    "footer": {
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "copyright": "© 2025 Studera. Made with 💜 for students."
+    }
+  },
+  "about": {
+    "nav": {
+      "back": "Back"
+    },
+    "hero": {
+      "title": "About",
+      "subtitle": "The intelligent learning assistant for ambitious students"
+    },
+    "story": {
+      "title": "Our story",
+      "p1": "Studera was born from a frustration shared by millions of students: spending hours studying only to forget everything on exam day.",
+      "p2": "We combined the best research in cognitive science with the most advanced AI to create a tool that truly adapts to each student.",
+      "p3": "Today, Studera helps students worldwide learn more effectively, whether in medicine, law, languages, or any other field."
+    },
+    "mission": {
+      "title": "Our mission",
+      "description": "Democratizing access to effective learning through artificial intelligence and scientifically proven methods."
+    },
+    "values": {
+      "title": "Our values",
+      "innovation": {
+        "title": "Innovation",
+        "description": "We use the most advanced AI to personalize each student's learning experience."
+      },
+      "accessibility": {
+        "title": "Accessibility",
+        "description": "Quality education should be accessible to everyone, not just those who can afford private tutors."
+      },
+      "community": {
+        "title": "Community",
+        "description": "Learning together is more effective and motivating than learning alone."
+      },
+      "passion": {
+        "title": "Passion",
+        "description": "Every feature is based on validated scientific research in cognitive science."
+      }
+    },
+    "features": {
+      "title": "Key features",
+      "list": [
+        {
+          "title": "FSRS Flashcards",
+          "description": "Memorize 2x faster with the most advanced algorithm"
+        },
+        {
+          "title": "Adaptive quizzes",
+          "description": "Questions that adapt to your level"
+        },
+        {
+          "title": "Generative AI",
+          "description": "Create content automatically from your notes"
+        },
+        {
+          "title": "Focus Rooms",
+          "description": "Study virtually with groups"
+        },
+        {
+          "title": "Exam Mode",
+          "description": "Personalized revision plan for your exams"
+        },
+        {
+          "title": "Gamification",
+          "description": "XP, levels, streaks and leaderboards"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to transform the way you learn?",
+      "subtitle": "Join thousands of students who succeed with Studera.",
+      "button": "Get started for free"
+    },
+    "footer": {
+      "copyright": "© 2025 Studera. All rights reserved.",
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+  "contact": {
+    "nav": {
+      "back": "Back"
+    },
+    "hero": {
+      "title1": "Contact ",
+      "title2": "our team",
+      "subtitle": "Have a question? An issue? We're here to help."
+    },
+    "info": {
+      "email": {
+        "title": "Email",
+        "description": "For general inquiries"
+      },
+      "support": {
+        "title": "Technical support",
+        "description": "For technical issues"
+      },
+      "response": {
+        "title": "Response time",
+        "description": "We typically respond <strong>within 24 hours</strong> on business days."
+      }
+    },
+    "form": {
+      "title": "Send us a message",
+      "name": "الاسم",
+      "namePlaceholder": "Your name",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "your@email.com",
+      "subject": "الموضوع",
+      "subjectSelect": "Select a subject",
+      "subjects": [
+        {
+          "value": "general",
+          "label": "General question"
+        },
+        {
+          "value": "bug",
+          "label": "Report a bug"
+        },
+        {
+          "value": "feature",
+          "label": "Feature suggestion"
+        },
+        {
+          "value": "billing",
+          "label": "Billing"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ],
+      "message": "الرسالة",
+      "messagePlaceholder": "Describe your request in detail...",
+      "submit": "Send message",
+      "sending": "جارٍ الإرسال...",
+      "success": {
+        "title": "Message sent!",
+        "message": "We will respond as soon as possible.",
+        "sendAnother": "Send another message"
+      }
+    },
+    "faq": {
+      "title": "Need quick help?",
+      "description": "Check our resources to find answers to your questions.",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "footer": {
+      "copyright": "© 2025 Studera. All rights reserved.",
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "nav": {
+        "back": "Back"
+      },
+      "hero": {
+        "title1": "Privacy ",
+        "title2": "Policy",
+        "lastUpdate": "Last updated: December 2025"
+      },
+      "intro": "Studera (\"we\", \"our\") is committed to protecting your privacy. This policy explains how we collect, use and protect your personal data.",
+      "sections": {
+        "dataCollected": {
+          "title": "1. Data collected",
+          "intro": "We collect the following data:",
+          "categories": [
+            {
+              "title": "Account information",
+              "items": [
+                "Name",
+                "Email address",
+                "Password (hashed)",
+                "Profile picture (optional)"
+              ]
+            },
+            {
+              "title": "Learning data",
+              "items": [
+                "Notes and documents",
+                "Flashcards and decks",
+                "Quizzes and results",
+                "Progress and statistics"
+              ]
+            },
+            {
+              "title": "Technical data",
+              "items": [
+                "IP address",
+                "Browser type",
+                "Device used",
+                "Pages visited"
+              ]
+            }
+          ]
+        },
+        "dataUsage": {
+          "title": "2. Use of data",
+          "intro": "Your data is used to:",
+          "uses": [
+            {
+              "title": "Provide our services",
+              "description": "Enable access to all platform features"
+            },
+            {
+              "title": "Personalization",
+              "description": "Adapt the learning experience to your needs"
+            },
+            {
+              "title": "Communication",
+              "description": "Send you important notifications and updates"
+            },
+            {
+              "title": "Improvement",
+              "description": "Analyze usage to improve our services"
+            }
+          ]
+        },
+        "dataProtection": {
+          "title": "3. Data protection",
+          "intro": "We implement robust security measures:",
+          "measures": [
+            {
+              "title": "SSL/TLS encryption",
+              "description": "All communications are encrypted"
+            },
+            {
+              "title": "Password hashing",
+              "description": "Your passwords are never stored in plain text"
+            },
+            {
+              "title": "Restricted access",
+              "description": "Only authorized personnel have access to data"
+            },
+            {
+              "title": "Secure backups",
+              "description": "Your data is backed up regularly"
+            }
+          ]
+        },
+        "dataSharing": {
+          "title": "4. Data sharing",
+          "noSale": "We never sell your personal data.",
+          "intro": "Your data may only be shared in the following cases:",
+          "cases": [
+            {
+              "title": "Technical providers",
+              "description": "Hosting, email, payment - under confidentiality agreement"
+            },
+            {
+              "title": "Legal obligations",
+              "description": "If required by law or competent authority"
+            },
+            {
+              "title": "With your consent",
+              "description": "For any other sharing, we ask for your agreement"
+            }
+          ]
+        },
+        "yourRights": {
+          "title": "5. Your rights",
+          "intro": "In accordance with GDPR, you have the following rights:",
+          "rights": [
+            {
+              "title": "Right of access",
+              "description": "Obtain a copy of your data"
+            },
+            {
+              "title": "Right to rectification",
+              "description": "Correct inaccurate data"
+            },
+            {
+              "title": "Right to erasure",
+              "description": "Request deletion of your data"
+            },
+            {
+              "title": "Right to portability",
+              "description": "Export your data in a standard format"
+            }
+          ],
+          "contact": "To exercise these rights, contact us at"
+        },
+        "cookies": {
+          "title": "6. Cookies",
+          "intro": "We use cookies to improve your experience:",
+          "types": [
+            {
+              "title": "Essential cookies",
+              "description": "Required for website functionality"
+            },
+            {
+              "title": "Preference cookies",
+              "description": "Remember your choices (language, theme)"
+            },
+            {
+              "title": "Analytical cookies",
+              "description": "Help us understand site usage (with your consent)"
+            }
+          ],
+          "manage": "You can manage your cookie preferences at any time."
+        },
+        "dataRetention": {
+          "title": "7. Data retention",
+          "intro": "We retain your data for:",
+          "periods": [
+            {
+              "title": "Active account",
+              "duration": "As long as your account exists"
+            },
+            {
+              "title": "After deletion",
+              "duration": "30 days (recovery period)"
+            },
+            {
+              "title": "Billing data",
+              "duration": "10 years (legal requirement)"
+            }
+          ]
+        },
+        "minors": {
+          "title": "8. Protection of minors",
+          "content": "Studera is intended for users aged 13 and older. Users under 16 must have parental or guardian authorization."
+        },
+        "changes": {
+          "title": "9. Changes",
+          "content": "We may modify this policy at any time. Significant changes will be notified by email at least 30 days before taking effect."
+        }
+      },
+      "contact": {
+        "title": "Contact us",
+        "description": "For any questions regarding your personal data or this privacy policy:",
+        "form": "Contact form"
+      },
+      "footer": {
+        "copyright": "© 2025 Studera. All rights reserved.",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    },
+    "terms": {
+      "nav": {
+        "back": "Back"
+      },
+      "hero": {
+        "title1": "Terms of ",
+        "title2": "Service",
+        "lastUpdate": "Last updated: December 2025"
+      },
+      "intro": "Welcome to Studera! These Terms of Service govern your access and use of the Studera platform. By using our services, you accept these terms in their entirety.",
+      "articles": {
+        "definitions": {
+          "title": "Article 1 - Definitions",
+          "items": [
+            {
+              "term": "\"Platform\"",
+              "definition": "means the studera.app website, mobile app and all associated services"
+            },
+            {
+              "term": "\"User\"",
+              "definition": "means any person who accesses the Platform and/or creates an account"
+            },
+            {
+              "term": "\"Content\"",
+              "definition": "means all data, texts, notes, flashcards, quizzes created by the User"
+            },
+            {
+              "term": "\"Services\"",
+              "definition": "means all features offered by the Platform"
+            },
+            {
+              "term": "\"Premium\"",
+              "definition": "means the paid subscription providing access to advanced features"
+            }
+          ]
+        },
+        "acceptance": {
+          "title": "Article 2 - Acceptance of terms",
+          "intro": "By creating an account or using the Platform, you declare:",
+          "items": [
+            "Having read and accepted these Terms",
+            "Having legal capacity to enter into a contract",
+            "Providing accurate information when registering",
+            "Complying with applicable laws in your country"
+          ]
+        },
+        "services": {
+          "title": "Article 3 - Description of services",
+          "intro": "Studera offers a learning platform including:",
+          "free": {
+            "title": "Free features",
+            "items": [
+              "Create notes and documents",
+              "Flashcards with spaced repetition (FSRS)",
+              "Quizzes and exercises",
+              "Gamification system (XP, levels)",
+              "Pomodoro timer",
+              "Basic statistics"
+            ]
+          },
+          "premium": {
+            "title": "Premium features",
+            "items": [
+              "Unlimited AI generation",
+              "Focus Rooms (study rooms)",
+              "Advanced statistics",
+              "Multi-device sync",
+              "Priority support",
+              "Early access to new features"
+            ]
+          }
+        },
+        "account": {
+          "title": "Article 4 - Account creation",
+          "intro": "To use the Services, you must create an account by providing:",
+          "requirements": [
+            "A valid email address",
+            "A secure password",
+            "A unique username"
+          ],
+          "important": {
+            "title": "Important",
+            "content": "You are responsible for keeping your login credentials confidential. Any activity from your account is presumed to be yours."
+          }
+        },
+        "prohibited": {
+          "title": "Article 5 - Prohibited uses",
+          "intro": "It is strictly prohibited to:",
+          "items": [
+            "Use the Platform for illegal or fraudulent purposes",
+            "Post unlawful, defamatory or hateful content",
+            "Attempt to bypass security measures",
+            "Use robots or automated tools",
+            "Resell or redistribute the Services",
+            "Create multiple accounts to bypass limitations",
+            "Disrupt the operation of the Platform"
+          ],
+          "warning": "Any violation may result in suspension or deletion of your account, without notice or refund."
+        },
+        "ip": {
+          "title": "Article 6 - Intellectual property",
+          "yourContent": {
+            "title": "Your content",
+            "description": "You retain all rights to the Content you create. By using the Services, you grant us a limited license to store and display this content."
+          },
+          "ourContent": {
+            "title": "Our content",
+            "description": "Studera, its logo, interface and algorithms are protected by copyright. Any unauthorized reproduction is prohibited."
+          }
+        },
+        "premium": {
+          "title": "Article 7 - Premium subscription",
+          "sections": [
+            {
+              "title": "7.1 Pricing",
+              "content": "Prices are displayed on the Platform and may be modified with notice."
+            },
+            {
+              "title": "7.2 Payment",
+              "content": "Payments are processed securely by our partners (Stripe, PayPal, Mobile Money)."
+            },
+            {
+              "title": "7.3 Renewal",
+              "content": "Subscriptions are automatically renewed unless cancelled before the renewal date."
+            },
+            {
+              "title": "7.4 Refund",
+              "content": "You have 14 days after your first purchase to request a full refund."
+            }
+          ]
+        },
+        "availability": {
+          "title": "Article 8 - Service availability",
+          "intro": "We strive to ensure maximum availability. We reserve the right to:",
+          "items": [
+            "Perform scheduled maintenance",
+            "Temporarily interrupt the service in case of emergency",
+            "Modify or discontinue certain features"
+          ],
+          "compensation": "In case of prolonged interruption, Premium users may receive compensation."
+        },
+        "liability": {
+          "title": "Article 9 - Limitation of liability",
+          "intro": "Studera is provided \"as is\". Within the limits of the law:",
+          "items": [
+            "We do not guarantee that Services will meet all your needs",
+            "We are not responsible for academic results",
+            "We are not responsible for content created by Users",
+            "Our liability is limited to amounts paid in the last 12 months"
+          ],
+          "exception": "This limitation does not apply in case of intentional fault or gross negligence."
+        },
+        "termination": {
+          "title": "Article 10 - Termination",
+          "byUser": {
+            "title": "By User",
+            "description": "You can delete your account at any time. Your data will be deleted after 30 days."
+          },
+          "byUs": {
+            "title": "By Studera",
+            "description": "We may suspend or delete an account in case of Terms violation or fraudulent activity."
+          }
+        },
+        "modifications": {
+          "title": "Article 11 - Modifications to Terms",
+          "content1": "We may modify these Terms at any time. Modifications will be communicated at least 30 days before taking effect.",
+          "content2": "Your continued use after modifications constitutes acceptance of the new Terms."
+        },
+        "governingLaw": {
+          "title": "Article 12 - Governing law",
+          "content1": "These Terms are governed by the applicable law in your country of residence.",
+          "content2": "In case of dispute, we favor amicable resolution. Contact us at",
+          "content3": "If no agreement is reached, competent courts will be seized."
+        },
+        "miscellaneous": {
+          "title": "Article 13 - Miscellaneous",
+          "items": [
+            {
+              "title": "Entirety",
+              "description": "These Terms constitute the complete agreement between you and Studera."
+            },
+            {
+              "title": "Severability",
+              "description": "If a clause is invalid, the others remain in effect."
+            },
+            {
+              "title": "Non-waiver",
+              "description": "Not exercising a right does not constitute a waiver."
+            },
+            {
+              "title": "Assignment",
+              "description": "You may not assign your rights without our written consent."
+            }
+          ]
+        }
+      },
+      "contact": {
+        "title": "Questions about these terms?",
+        "description": "If you have any questions about these Terms of Service, please don't hesitate to contact us.",
+        "form": "Contact form"
+      },
+      "footer": {
+        "copyright": "© 2025 Studera. All rights reserved.",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    }
+  },
+  "cookies": {
+    "title": "نحن نستخدم ملفات تعريف الارتباط",
+    "description": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك. يمكنك إدارة تفضيلاتك في أي وقت.",
+    "accept": "قبول الكل",
+    "reject": "رفض الكل",
+    "customize": "تخصيص",
+    "save": "حفظ تفضيلاتي",
+    "essential": "أساسية",
+    "essentialDesc": "ضرورية لعمل الموقع (دائمًا نشطة)",
+    "analytics": "تحليلية",
+    "analyticsDesc": "تساعدنا في فهم كيفية استخدامك للموقع",
+    "marketing": "تسويقية",
+    "marketingDesc": "تُستخدم لتخصيص المحتوى والإعلانات",
+    "learnMore": "اعرف المزيد",
+    "manageTitle": "إدارة ملفات تعريف الارتباط",
+    "managePreamble": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك وتحليل استخدام منصتنا. يمكنك اختيار قبول كل ملفات تعريف الارتباط أو فقط الأساسية منها.",
+    "essentialActive": "دائمًا نشطة",
+    "essentialFull": "ضرورية لعمل الموقع: المصادقة والأمان وتفضيلات الجلسة.",
+    "analyticsOptional": "اختيارية",
+    "analyticsFull": "Google Analytics: تساعدنا في فهم كيفية استخدامك للموقع لتحسينه. البيانات مجهولة الهوية.",
+    "essentialOnly": "الأساسية فقط",
+    "details": "التفاصيل",
+    "hide": "إخفاء",
+    "privacyLinkPrefix": "اعرف المزيد عن",
+    "privacyLinkLabel": "سياسة الخصوصية",
+    "close": "إغلاق"
+  },
+  "metadata": {
+    "title": "Studera - مساعدك الذكي للتعلم",
+    "description": "تطبيق تعلم يجمع بين الذكاء الاصطناعي والبطاقات التعليمية والاختبارات والتلعيب"
+  },
+  "editor": {
+    "errors": {
+      "imageUpload": "خطأ أثناء رفع الصورة",
+      "imageSize": "حجم الصورة كبير جدًا",
+      "imageType": "نوع الصورة غير مدعوم",
+      "unknown": "حدث خطأ غير متوقع"
+    }
+  },
+  "search": {
+    "empty": "لا توجد نتائج"
+  },
+  "antiCheat": {
+    "warning": "تم اكتشاف نشاط مشبوه",
+    "tabSwitch": "تم اكتشاف تغيير علامة التبويب",
+    "fullscreenExit": "تم الخروج من وضع ملء الشاشة",
+    "statusInactive": "غير نشط",
+    "statusAlert": "تنبيه",
+    "statusAttention": "انتباه",
+    "statusOk": "جيد",
+    "monitoring": "مراقبة",
+    "monitoringTooltip": "وضع منع الغش نشط - يتم تسجيل السلوكيات المشبوهة",
+    "behaviorDetected": "تم اكتشاف سلوك",
+    "tabSwitches": "تغييرات علامة التبويب:",
+    "focusLosses": "فقدان التركيز:",
+    "warnings": "تحذيرات:",
+    "quizValidated": "تم التحقق من الاختبار",
+    "noSuspicious": "لم يتم اكتشاف سلوك مشبوه. تم التحقق من النتيجة!",
+    "resultInvalidated": "تم إبطال النتيجة",
+    "disqualifiedDescription": "تم اكتشاف سلوكيات مشبوهة. لن يتم احتساب هذه النتيجة.",
+    "warningsDetected": "تم اكتشاف تحذيرات",
+    "violationsRecorded": "تم تسجيل {count} سلوكيات مشبوهة.",
+    "penaltyXp": "عقوبة: -{xp} نقطة خبرة",
+    "scoreAdjusted": "النقاط المعدلة: {original}% ← {adjusted}%"
+  }
+}

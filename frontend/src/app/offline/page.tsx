@@ -5,9 +5,11 @@ import { WifiOff, RefreshCw, BookOpen, Brain, Calendar, FileText } from 'lucide-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 export default function OfflinePage() {
-  const [isOnline, setIsOnline] = useState(false)
+  const { t } = useTranslation()
+  const [, setIsOnline] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
@@ -15,7 +17,6 @@ export default function OfflinePage() {
 
     const handleOnline = () => {
       setIsOnline(true)
-      // Rediriger vers la page d'accueil après connexion
       window.location.href = '/'
     }
 
@@ -38,7 +39,7 @@ export default function OfflinePage() {
         window.location.href = '/'
       }
     } catch {
-      // Toujours hors ligne
+      // Still offline
     }
     setIsChecking(false)
   }
@@ -46,29 +47,29 @@ export default function OfflinePage() {
   const offlineFeatures = [
     {
       icon: FileText,
-      title: 'Notes',
-      description: 'Consultez vos notes téléchargées',
+      title: t('offline.page.featureNotesTitle'),
+      description: t('offline.page.featureNotesDesc'),
       href: '/notes',
       available: true,
     },
     {
       icon: Brain,
-      title: 'Flashcards',
-      description: 'Révisez vos flashcards en cache',
+      title: t('offline.page.featureFlashcardsTitle'),
+      description: t('offline.page.featureFlashcardsDesc'),
       href: '/flashcards',
       available: true,
     },
     {
       icon: Calendar,
-      title: 'Calendrier',
-      description: 'Consultez votre emploi du temps',
+      title: t('offline.page.featureCalendarTitle'),
+      description: t('offline.page.featureCalendarDesc'),
       href: '/schedule',
       available: true,
     },
     {
       icon: BookOpen,
-      title: 'Étude',
-      description: 'Continuez vos sessions d\'étude',
+      title: t('offline.page.featureStudyTitle'),
+      description: t('offline.page.featureStudyDesc'),
       href: '/study',
       available: true,
     },
@@ -82,10 +83,10 @@ export default function OfflinePage() {
             <WifiOff className="w-10 h-10 text-orange-500" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Vous êtes hors ligne
+            {t('offline.page.title')}
           </h1>
           <p className="text-gray-600 max-w-md mx-auto">
-            Pas de connexion Internet détectée. Certaines fonctionnalités restent disponibles grâce à vos données en cache.
+            {t('offline.page.heroDescription')}
           </p>
         </div>
 
@@ -96,13 +97,13 @@ export default function OfflinePage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
-            {isChecking ? 'Vérification...' : 'Vérifier la connexion'}
+            {isChecking ? t('offline.page.checking') : t('offline.page.checkConnection')}
           </Button>
         </div>
 
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-            Fonctionnalités disponibles hors ligne
+            {t('offline.page.featuresTitle')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {offlineFeatures.map((feature) => (
@@ -127,19 +128,17 @@ export default function OfflinePage() {
 
         <div className="bg-blue-50 rounded-lg p-4">
           <h3 className="font-medium text-blue-900 mb-2">
-            Mode hors ligne activé
+            {t('offline.page.modeTitle')}
           </h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Vos modifications seront synchronisées automatiquement</li>
-            <li>• Les données en cache sont utilisées pour l'affichage</li>
-            <li>• Certaines fonctionnalités comme les quiz en direct sont indisponibles</li>
+            <li>• {t('offline.page.tip1')}</li>
+            <li>• {t('offline.page.tip2')}</li>
+            <li>• {t('offline.page.tip3')}</li>
           </ul>
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>
-            Studera fonctionne même sans connexion grâce à la technologie PWA.
-          </p>
+          <p>{t('offline.page.pwaNote')}</p>
         </div>
       </div>
     </div>

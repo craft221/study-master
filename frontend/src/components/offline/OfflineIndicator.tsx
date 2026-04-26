@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface OfflineIndicatorProps {
   className?: string
@@ -25,8 +26,9 @@ export function OfflineIndicator({
   showSyncButton = true,
   compact = false,
 }: OfflineIndicatorProps) {
+  const { t } = useTranslation()
   const { isOnline, isSyncing, pendingCount, sync } = useOfflineContext()
-  const [showOfflineMessage, setShowOfflineMessage] = useState(false)
+  const [, setShowOfflineMessage] = useState(false)
 
   useEffect(() => {
     if (!isOnline) {
@@ -66,8 +68,8 @@ export function OfflineIndicator({
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              {isOnline ? 'En ligne' : 'Hors ligne'}
-              {pendingCount > 0 && ` - ${pendingCount} action(s) en attente`}
+              {isOnline ? t('offline.indicator.online') : t('offline.indicator.offline')}
+              {pendingCount > 0 && ` - ${t('offline.indicator.pendingActions', { count: pendingCount })}`}
             </p>
           </TooltipContent>
         </Tooltip>
@@ -95,17 +97,17 @@ export function OfflineIndicator({
 
         <span className="text-sm font-medium">
           {isSyncing
-            ? 'Synchronisation...'
+            ? t('offline.indicator.syncing')
             : isOnline
-            ? 'En ligne'
-            : 'Hors ligne'}
+            ? t('offline.indicator.online')
+            : t('offline.indicator.offline')}
         </span>
       </div>
 
       {/* Compteur d'actions en attente */}
       {showPendingCount && pendingCount > 0 && (
         <span className="px-2 py-0.5 text-xs font-medium bg-orange-200 text-orange-800 rounded-full">
-          {pendingCount} en attente
+          {t('offline.indicator.pendingShort', { count: pendingCount })}
         </span>
       )}
 
@@ -118,7 +120,7 @@ export function OfflineIndicator({
           className="h-6 px-2"
         >
           <RefreshCw className="w-3 h-3 mr-1" />
-          Sync
+          {t('offline.indicator.syncButton')}
         </Button>
       )}
     </div>
@@ -129,6 +131,7 @@ export function OfflineIndicator({
  * Bannière de notification hors ligne
  */
 export function OfflineBanner() {
+  const { t } = useTranslation()
   const { isOnline, pendingCount } = useOfflineContext()
   const [isVisible, setIsVisible] = useState(false)
 
@@ -156,13 +159,13 @@ export function OfflineBanner() {
       {isOnline ? (
         <span className="flex items-center justify-center gap-2">
           <Wifi className="w-4 h-4" />
-          Connexion rétablie
-          {pendingCount > 0 && ` - Synchronisation de ${pendingCount} action(s)...`}
+          {t('offline.indicator.connectionRestored')}
+          {pendingCount > 0 && ` - ${t('offline.indicator.connectionRestoredSync', { count: pendingCount })}`}
         </span>
       ) : (
         <span className="flex items-center justify-center gap-2">
           <WifiOff className="w-4 h-4" />
-          Mode hors ligne - Vos modifications seront synchronisées automatiquement
+          {t('offline.indicator.offlineMode')}
         </span>
       )}
     </div>

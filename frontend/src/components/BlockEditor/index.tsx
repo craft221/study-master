@@ -18,6 +18,7 @@ import {
   CALLOUT_ICONS, CODE_LANGUAGES, CalloutBlock, ToggleBlock
 } from '@/types/blocks'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.studera.app'
 
@@ -34,6 +35,7 @@ export default function BlockEditor({
   placeholder = 'Tapez / pour les commandes...',
   className = '',
 }: BlockEditorProps) {
+  const { t } = useTranslation()
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 })
@@ -185,7 +187,7 @@ export default function BlockEditor({
   // Uploader une image
   const uploadImage = async (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image trop volumineuse (max 10 MB)')
+      toast.error(t('editor.errors.imageSize'))
       return null
     }
     setIsUploading(true)
@@ -199,7 +201,7 @@ export default function BlockEditor({
         return response.data.url
       }
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Erreur upload image')
+      toast.error(e.response?.data?.detail || t('editor.errors.imageUpload'))
     } finally {
       setIsUploading(false)
     }

@@ -1,6 +1,5 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-
   "common": {
     "appName": "Studera",
     "loading": "Cargando...",
@@ -31,7 +30,6 @@
     "upgrade": "Actualizar a Premium",
     "optional": "Opcional"
   },
-
   "auth": {
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
@@ -68,7 +66,6 @@
     "invalidResetToken": "Enlace de restablecimiento inválido o expirado",
     "noResetToken": "No se proporcionó un token de restablecimiento"
   },
-
   "nav": {
     "dashboard": "Panel de control",
     "explore": "Explorar",
@@ -100,7 +97,6 @@
       "more": "Más"
     }
   },
-
   "dashboard": {
     "welcome": "Bienvenido",
     "welcomeBack": "Bienvenido de nuevo",
@@ -120,7 +116,6 @@
     "noActivity": "Sin actividad reciente",
     "startStudying": "Empezar a estudiar"
   },
-
   "tooltips": {
     "dashboard": {
       "xp": "Gana puntos de experiencia completando cuestionarios y flashcards. ¡Sube de nivel para desbloquear logros!",
@@ -175,7 +170,6 @@
       "events": "Sin eventos próximos. Visita el calendario para programar sesiones de estudio o exámenes."
     }
   },
-
   "onboarding": {
     "step": "Paso",
     "skip": "Omitir",
@@ -237,7 +231,6 @@
     "suggestion2": "Revisa tus misiones diarias para ganar XP",
     "suggestion3": "¡Pregúntale a Spark si necesitas ayuda!"
   },
-
   "sessionsPage": {
     "title": "Sesiones Pomodoro",
     "subtitle": "Técnica de gestión del tiempo para mejorar tu productividad",
@@ -267,7 +260,6 @@
     "untilLongBreak": "{count} pomodoro(s) hasta la pausa larga",
     "generalSession": "Sesión general"
   },
-
   "notesPage": {
     "title": "Mis Notas",
     "cachedData": "Datos en caché",
@@ -282,7 +274,6 @@
     "createMyFirstNote": "Crear mi primera nota",
     "confirmDelete": "¿Estás seguro de que quieres eliminar esta nota?"
   },
-
   "newNotePage": {
     "offlineMode": "Modo sin conexión",
     "offlineSaveMessage": "Tu nota se guardará localmente y se sincronizará automáticamente cuando te reconectes.",
@@ -329,7 +320,6 @@
     "quizCreated": "¡Cuestionario creado con éxito!",
     "summaryGenerated": "¡Resumen generado!"
   },
-
   "quizzesPage": {
     "title": "Cuestionarios",
     "quizzesAvailable": "{count} cuestionarios disponibles",
@@ -369,7 +359,6 @@
     "leaderboardError": "Error al cargar clasificación",
     "sharingError": "Error al activar el compartir"
   },
-
   "newQuizPage": {
     "offlineMode": "Modo sin conexión",
     "offlineSaveMessage": "Tu cuestionario se guardará localmente y se sincronizará automáticamente cuando te reconectes.",
@@ -428,7 +417,6 @@
     "quizCreatedOffline": "Cuestionario creado localmente",
     "quizWillSync": "Cuestionario \"{title}\" se sincronizará cuando te reconectes"
   },
-
   "subjects": {
     "title": "Mis Materias",
     "addSubject": "Añadir materia",
@@ -451,7 +439,6 @@
     "flashcardsCount": "{count} tarjetas",
     "quizzesCount": "{count} cuestionarios"
   },
-
   "documents": {
     "title": "Mis Documentos",
     "upload": "Subir",
@@ -468,7 +455,6 @@
     "used": "usado",
     "of": "de"
   },
-
   "notes": {
     "title": "Mis Notas",
     "addNote": "Nueva nota",
@@ -485,7 +471,6 @@
     "preview": "Vista previa",
     "editor": "Editor"
   },
-
   "flashcards": {
     "title": "Mis Tarjetas",
     "addDeck": "Nuevo mazo",
@@ -515,7 +500,6 @@
     "accuracy": "Precisión",
     "spacedRepetitionTitle": "Repetición espaciada"
   },
-
   "flashcardsPage": {
     "title": "Tarjetas",
     "decksCount": "{count} mazos",
@@ -546,7 +530,6 @@
     "deckDeletedSync": "Mazo eliminado (se sincronizará)",
     "deleteError": "Error al eliminar"
   },
-
   "newFlashcardPage": {
     "title": "Nuevo Mazo de Tarjetas",
     "subtitle": "Crea un nuevo mazo y añade tus tarjetas",
@@ -589,7 +572,6 @@
     "deckWillSync": "{count} tarjeta(s) se sincronizarán cuando te reconectes",
     "error": "Error al crear el mazo"
   },
-
   "quiz": {
     "title": "Mis Cuestionarios",
     "addQuiz": "Nuevo cuestionario",
@@ -635,7 +617,6 @@
     "penaltyApplied": "Penalización aplicada",
     "submissionError": "Error al enviar"
   },
-
   "calendar": {
     "title": "Horario",
     "subtitle": "Planifica y sigue tus eventos de estudio",
@@ -712,7 +693,6 @@
       "sat": "Sáb"
     }
   },
-
   "groups": {
     "title": "Grupos de estudio",
     "createGroup": "Crear grupo",
@@ -758,9 +738,16 @@
       "deleteError": "No se pudo eliminar el mensaje",
       "noMessages": "Aún no hay mensajes",
       "startConversation": "¡Sé el primero en iniciar la conversación!"
+    },
+    "flashcards": {
+      "empty": "No hay flashcards en este grupo",
+      "create": "Crear flashcards"
+    },
+    "activity": {
+      "empty": "Sin actividad en este grupo",
+      "recent": "Actividad reciente"
     }
   },
-
   "profile": {
     "title": "Mi Perfil",
     "editProfile": "Editar perfil",
@@ -774,7 +761,6 @@
     "achievements": "Logros",
     "badges": "Insignias"
   },
-
   "settings": {
     "title": "Configuración",
     "account": "Cuenta",
@@ -798,7 +784,6 @@
     "saveChanges": "Guardar cambios",
     "changesSaved": "Cambios guardados"
   },
-
   "spark": {
     "greeting": "¡Hola! Soy Spark, tu compañero de estudio.",
     "askMe": "Hazme una pregunta...",
@@ -808,7 +793,6 @@
     "celebrate": "¡Muy bien! ¡Sigue así!",
     "streak": "¡Racha de {days} días! ¡Impresionante!"
   },
-
   "errors": {
     "generic": "Ha ocurrido un error",
     "network": "Error de conexión",
@@ -818,13 +802,11 @@
     "serverError": "Error del servidor",
     "tryAgain": "Por favor, inténtalo de nuevo"
   },
-
   "empty": {
     "noData": "Sin datos",
     "noResults": "Sin resultados",
     "noMatch": "Sin coincidencias"
   },
-
   "time": {
     "justNow": "Ahora mismo",
     "minutesAgo": "Hace {count} min",
@@ -835,7 +817,6 @@
     "monthsAgo": "Hace {count} mes(es)",
     "secondsAgo": "Hace {count} seg"
   },
-
   "ai": {
     "title": "Hub IA",
     "subtitle": "Transforma tus notas con inteligencia artificial",
@@ -930,7 +911,6 @@
     "explanationError": "Error durante la explicación",
     "loadError": "No se pueden cargar los datos"
   },
-
   "ocr": {
     "title": "OCR - Extracción de texto",
     "subtitle": "Sube PDFs o imágenes para extraer el texto automáticamente",
@@ -976,7 +956,6 @@
     "aiPostProcess": "Corrección de errores con IA",
     "aiPostProcessDesc": "Usa Claude para corregir errores de OCR (usa 1 solicitud de IA)"
   },
-
   "activity": {
     "title": "Actividad",
     "subtitle": "Historial de todas tus acciones",
@@ -1001,7 +980,6 @@
     "loadError": "Error al cargar las actividades",
     "score": "Puntuación"
   },
-
   "focusRoom": {
     "title": "Salas de Enfoque",
     "subtitle": "Estudia virtualmente en grupo - Body Doubling",
@@ -1177,9 +1155,26 @@
       "reward": "¡Recompensa!",
       "clickToOpen": "Clic para abrir",
       "rewardsCount": "Recompensas"
+    },
+    "events": {
+      "empty": "No hay eventos próximos",
+      "duration15": "15 minutos",
+      "duration30": "30 minutos",
+      "duration60": "60 minutos",
+      "duration90": "90 minutos",
+      "duration120": "120 minutos",
+      "categoryStudy": "Estudio",
+      "categoryWork": "Trabajo",
+      "categoryReading": "Lectura"
+    },
+    "deepWork": {
+      "started": "Modo Trabajo Profundo iniciado",
+      "ended": "Modo Trabajo Profundo terminado",
+      "paused": "Sesión en pausa",
+      "resumed": "Sesión reanudada",
+      "error": "No se pudo iniciar la sesión"
     }
   },
-
   "notifications": {
     "title": "Notificaciones",
     "markAllRead": "Marcar todo como leído",
@@ -1192,7 +1187,6 @@
     "important": "Importante",
     "unread": "no leídas"
   },
-
   "pomodoro": {
     "focus": "Enfoque",
     "shortBreak": "Pausa corta",
@@ -1208,7 +1202,6 @@
     "focusMode": "Modo enfoque",
     "breakMode": "Modo pausa"
   },
-
   "ambientSounds": {
     "title": "Sonidos ambientales",
     "active": "activo",
@@ -1224,7 +1217,6 @@
       "birds": "Pájaros"
     }
   },
-
   "explore": {
     "title": "Explorar",
     "subtitle": "Descubre contenido creado por la comunidad Studera",
@@ -1292,7 +1284,6 @@
     },
     "aiGenerated": "IA"
   },
-
   "pricing": {
     "title": "Precios",
     "subtitle": "Elige tu plan",
@@ -1364,7 +1355,6 @@
       "other": "Otros"
     }
   },
-
   "leaderboard": {
     "title": "Clasificaciones y Ligas",
     "subtitle": "Compara tu progreso con otros estudiantes",
@@ -1456,7 +1446,6 @@
     "universityNotConfigured": "Configura tu universidad en tu perfil para ver esta clasificación",
     "loadError": "No se pudo cargar la clasificación"
   },
-
   "achievements": {
     "title": "Logros e Insignias",
     "subtitle": "Desbloquea insignias progresando en tus estudios",
@@ -1490,53 +1479,184 @@
     },
     "shareAchievement": "Compartir este logro",
     "items": {
-      "first_note": { "name": "Primera Nota", "description": "Crear tu primera nota" },
-      "amateur_writer": { "name": "Escritor Amateur", "description": "Crear 10 notas" },
-      "confirmed_writer": { "name": "Escritor Confirmado", "description": "Crear 50 notas" },
-      "expert_writer": { "name": "Escritor Experto", "description": "Crear 100 notas" },
-      "legendary_librarian": { "name": "Bibliotecario Legendario", "description": "Crear 500 notas" },
-      "first_flashcard": { "name": "Primera Flashcard", "description": "Crear tu primera flashcard" },
-      "card_collector": { "name": "Coleccionista de Cartas", "description": "Crear 25 flashcards" },
-      "flashcard_master": { "name": "Maestro de Flashcards", "description": "Crear 100 flashcards" },
-      "flashcard_legend": { "name": "Leyenda de Flashcards", "description": "Crear 500 flashcards" },
-      "first_quiz": { "name": "Primer Quiz", "description": "Completar tu primer quiz" },
-      "quiz_amateur": { "name": "Amateur de Quiz", "description": "Completar 10 quizzes" },
-      "quiz_expert": { "name": "Experto en Quiz", "description": "Completar 50 quizzes" },
-      "quiz_master": { "name": "Maestro de Quiz", "description": "Completar 100 quizzes" },
-      "first_day": { "name": "Primer Día", "description": "Conectarse 1 día consecutivo" },
-      "fire_week": { "name": "Semana de Fuego", "description": "Mantener una racha de 7 días" },
-      "two_intense_weeks": { "name": "Dos Semanas Intensas", "description": "Mantener una racha de 14 días" },
-      "determination_month": { "name": "Mes de Determinación", "description": "Mantener una racha de 30 días" },
-      "quarterly_commitment": { "name": "Compromiso Trimestral", "description": "Mantener una racha de 90 días" },
-      "year_perseverance": { "name": "Año de Perseverancia", "description": "Mantener una racha de 365 días" },
-      "perfect_score": { "name": "Puntuación Perfecta", "description": "Obtener 100% en un quiz" },
-      "perfectionist": { "name": "Perfeccionista", "description": "Obtener 100% en 10 quizzes" },
-      "flawless": { "name": "Sin Errores", "description": "Obtener 100% en 50 quizzes" },
-      "level_5": { "name": "Nivel 5", "description": "Alcanzar el nivel 5" },
-      "level_10": { "name": "Nivel 10", "description": "Alcanzar el nivel 10" },
-      "level_25": { "name": "Nivel 25", "description": "Alcanzar el nivel 25" },
-      "level_50": { "name": "Nivel 50", "description": "Alcanzar el nivel 50" },
-      "xp_1000": { "name": "1.000 XP", "description": "Acumular 1.000 XP en total" },
-      "xp_10000": { "name": "10.000 XP", "description": "Acumular 10.000 XP en total" },
-      "xp_100000": { "name": "100.000 XP", "description": "Acumular 100.000 XP en total" },
-      "first_duel": { "name": "Primer Duelo", "description": "Participar en tu primer duelo" },
-      "duelist": { "name": "Duelista", "description": "Participar en 10 duelos" },
-      "duel_champion": { "name": "Campeón de Duelos", "description": "Ganar 25 duelos" },
-      "duel_legend": { "name": "Leyenda de Duelos", "description": "Ganar 100 duelos" },
-      "first_victory": { "name": "Primera Victoria", "description": "Ganar tu primer duelo" },
-      "welcome": { "name": "¡Bienvenido!", "description": "Crear tu cuenta" },
-      "pdf_import": { "name": "Importar PDF", "description": "Importar tu primer PDF con OCR" },
-      "scanner_pro": { "name": "Scanner Pro", "description": "Importar 10 PDFs con OCR" },
-      "explorer": { "name": "Explorador", "description": "Visitar todas las secciones de la aplicación" },
-      "daily_quest": { "name": "Misión Diaria", "description": "Completar tu primera misión diaria" },
-      "diligent_quester": { "name": "Buscador Diligente", "description": "Completar 30 misiones diarias" },
-      "quest_master": { "name": "Maestro de Misiones", "description": "Completar 100 misiones diarias" },
-      "study_session": { "name": "Sesión de Estudio", "description": "Estudiar durante 1 hora en total" },
-      "devoted_student": { "name": "Estudiante Dedicado", "description": "Estudiar durante 10 horas en total" },
-      "scholar": { "name": "Erudito", "description": "Estudiar durante 100 horas en total" }
+      "first_note": {
+        "name": "Primera Nota",
+        "description": "Crear tu primera nota"
+      },
+      "amateur_writer": {
+        "name": "Escritor Amateur",
+        "description": "Crear 10 notas"
+      },
+      "confirmed_writer": {
+        "name": "Escritor Confirmado",
+        "description": "Crear 50 notas"
+      },
+      "expert_writer": {
+        "name": "Escritor Experto",
+        "description": "Crear 100 notas"
+      },
+      "legendary_librarian": {
+        "name": "Bibliotecario Legendario",
+        "description": "Crear 500 notas"
+      },
+      "first_flashcard": {
+        "name": "Primera Flashcard",
+        "description": "Crear tu primera flashcard"
+      },
+      "card_collector": {
+        "name": "Coleccionista de Cartas",
+        "description": "Crear 25 flashcards"
+      },
+      "flashcard_master": {
+        "name": "Maestro de Flashcards",
+        "description": "Crear 100 flashcards"
+      },
+      "flashcard_legend": {
+        "name": "Leyenda de Flashcards",
+        "description": "Crear 500 flashcards"
+      },
+      "first_quiz": {
+        "name": "Primer Quiz",
+        "description": "Completar tu primer quiz"
+      },
+      "quiz_amateur": {
+        "name": "Amateur de Quiz",
+        "description": "Completar 10 quizzes"
+      },
+      "quiz_expert": {
+        "name": "Experto en Quiz",
+        "description": "Completar 50 quizzes"
+      },
+      "quiz_master": {
+        "name": "Maestro de Quiz",
+        "description": "Completar 100 quizzes"
+      },
+      "first_day": {
+        "name": "Primer Día",
+        "description": "Conectarse 1 día consecutivo"
+      },
+      "fire_week": {
+        "name": "Semana de Fuego",
+        "description": "Mantener una racha de 7 días"
+      },
+      "two_intense_weeks": {
+        "name": "Dos Semanas Intensas",
+        "description": "Mantener una racha de 14 días"
+      },
+      "determination_month": {
+        "name": "Mes de Determinación",
+        "description": "Mantener una racha de 30 días"
+      },
+      "quarterly_commitment": {
+        "name": "Compromiso Trimestral",
+        "description": "Mantener una racha de 90 días"
+      },
+      "year_perseverance": {
+        "name": "Año de Perseverancia",
+        "description": "Mantener una racha de 365 días"
+      },
+      "perfect_score": {
+        "name": "Puntuación Perfecta",
+        "description": "Obtener 100% en un quiz"
+      },
+      "perfectionist": {
+        "name": "Perfeccionista",
+        "description": "Obtener 100% en 10 quizzes"
+      },
+      "flawless": {
+        "name": "Sin Errores",
+        "description": "Obtener 100% en 50 quizzes"
+      },
+      "level_5": {
+        "name": "Nivel 5",
+        "description": "Alcanzar el nivel 5"
+      },
+      "level_10": {
+        "name": "Nivel 10",
+        "description": "Alcanzar el nivel 10"
+      },
+      "level_25": {
+        "name": "Nivel 25",
+        "description": "Alcanzar el nivel 25"
+      },
+      "level_50": {
+        "name": "Nivel 50",
+        "description": "Alcanzar el nivel 50"
+      },
+      "xp_1000": {
+        "name": "1.000 XP",
+        "description": "Acumular 1.000 XP en total"
+      },
+      "xp_10000": {
+        "name": "10.000 XP",
+        "description": "Acumular 10.000 XP en total"
+      },
+      "xp_100000": {
+        "name": "100.000 XP",
+        "description": "Acumular 100.000 XP en total"
+      },
+      "first_duel": {
+        "name": "Primer Duelo",
+        "description": "Participar en tu primer duelo"
+      },
+      "duelist": {
+        "name": "Duelista",
+        "description": "Participar en 10 duelos"
+      },
+      "duel_champion": {
+        "name": "Campeón de Duelos",
+        "description": "Ganar 25 duelos"
+      },
+      "duel_legend": {
+        "name": "Leyenda de Duelos",
+        "description": "Ganar 100 duelos"
+      },
+      "first_victory": {
+        "name": "Primera Victoria",
+        "description": "Ganar tu primer duelo"
+      },
+      "welcome": {
+        "name": "¡Bienvenido!",
+        "description": "Crear tu cuenta"
+      },
+      "pdf_import": {
+        "name": "Importar PDF",
+        "description": "Importar tu primer PDF con OCR"
+      },
+      "scanner_pro": {
+        "name": "Scanner Pro",
+        "description": "Importar 10 PDFs con OCR"
+      },
+      "explorer": {
+        "name": "Explorador",
+        "description": "Visitar todas las secciones de la aplicación"
+      },
+      "daily_quest": {
+        "name": "Misión Diaria",
+        "description": "Completar tu primera misión diaria"
+      },
+      "diligent_quester": {
+        "name": "Buscador Diligente",
+        "description": "Completar 30 misiones diarias"
+      },
+      "quest_master": {
+        "name": "Maestro de Misiones",
+        "description": "Completar 100 misiones diarias"
+      },
+      "study_session": {
+        "name": "Sesión de Estudio",
+        "description": "Estudiar durante 1 hora en total"
+      },
+      "devoted_student": {
+        "name": "Estudiante Dedicado",
+        "description": "Estudiar durante 10 horas en total"
+      },
+      "scholar": {
+        "name": "Erudito",
+        "description": "Estudiar durante 100 horas en total"
+      }
     }
   },
-
   "duels": {
     "title": "Duelos",
     "subtitle": "Desafía a tus amigos en cuestionarios en tiempo real",
@@ -1568,7 +1688,6 @@
     "challengeReceived": "¡Has recibido un desafío!",
     "xpGained": "+{xp} XP ganados"
   },
-
   "sparkWidget": {
     "askSpark": "¡Hazle una pregunta a Spark!",
     "dailyBriefing": "Resumen del día",
@@ -1770,7 +1889,6 @@
       }
     }
   },
-
   "quests": {
     "title": "Objetivos del Día",
     "daysStreak": "Días seguidos",
@@ -1805,7 +1923,6 @@
       "legendary": "Legendario"
     }
   },
-
   "offline": {
     "title": "Modo sin conexión",
     "subtitle": "Continúa estudiando sin conexión",
@@ -1824,9 +1941,47 @@
       "flashcards": "Repasar tus tarjetas",
       "schedules": "Ver tu horario",
       "profile": "Acceder a tu perfil"
+    },
+    "page": {
+      "title": "Estás sin conexión",
+      "description": "Parece que no tienes conexión a internet en este momento.",
+      "retry": "Reintentar",
+      "tipsTitle": "Mientras tanto, puedes:",
+      "tipNotes": "Ver tus notas en caché",
+      "tipFlashcards": "Revisar tus flashcards descargadas",
+      "tipSync": "Tus cambios se sincronizarán automáticamente",
+      "checkConnection": "Verificar conexión",
+      "checking": "Verificando...",
+      "heroDescription": "No se detectó conexión a internet. Algunas funciones siguen disponibles gracias a tus datos en caché.",
+      "featuresTitle": "Funciones disponibles sin conexión",
+      "featureNotesTitle": "Notas",
+      "featureNotesDesc": "Consulta tus notas descargadas",
+      "featureFlashcardsTitle": "Flashcards",
+      "featureFlashcardsDesc": "Revisa tus flashcards en caché",
+      "featureCalendarTitle": "Calendario",
+      "featureCalendarDesc": "Consulta tu horario",
+      "featureStudyTitle": "Estudio",
+      "featureStudyDesc": "Continúa tus sesiones de estudio",
+      "modeTitle": "Modo sin conexión activado",
+      "tip1": "Tus cambios se sincronizarán automáticamente",
+      "tip2": "Los datos en caché se usan para la visualización",
+      "tip3": "Algunas funciones como los cuestionarios en vivo no están disponibles",
+      "pwaNote": "Studera funciona incluso sin conexión gracias a la tecnología PWA."
+    },
+    "indicator": {
+      "online": "En línea",
+      "offline": "Sin conexión",
+      "syncing": "Sincronizando...",
+      "synced": "Sincronizado",
+      "pendingChanges": "{count} cambios pendientes",
+      "pendingActions": "{count} acción(es) pendientes",
+      "pendingShort": "{count} pendientes",
+      "syncButton": "Sincronizar",
+      "connectionRestored": "Conexión restaurada",
+      "connectionRestoredSync": "Sincronizando {count} acción(es)...",
+      "offlineMode": "Modo sin conexión - Tus cambios se sincronizarán automáticamente"
     }
   },
-
   "share": {
     "title": "Compartir",
     "shareOn": "Compartir en",
@@ -1845,7 +2000,6 @@
       "email": "Email"
     }
   },
-
   "exam_mode": {
     "title": "Modo Examen",
     "subtitle": "Preparación inteligente para exámenes",
@@ -1860,7 +2014,6 @@
     "limit_reached": "Límite alcanzado",
     "upgrade_title": "Pasa a Premium",
     "upgrade_description": "Prepara hasta 5 exámenes simultáneamente",
-
     "exam_name": "Nombre del examen",
     "description": "Descripción",
     "exam_date": "Fecha del examen",
@@ -1872,7 +2025,6 @@
     "no_notes": "No hay notas disponibles",
     "notes_selected": "nota(s) seleccionada(s)",
     "notes_count": "Número de notas",
-
     "hours_per_day": "Horas de estudio por día",
     "preferred_times": "Horarios preferidos",
     "difficulty": "Nivel de dificultad",
@@ -1881,12 +2033,10 @@
     "notifications": "Notificaciones",
     "notifications_desc": "Recibir recordatorios diarios",
     "reminder_time": "Hora del recordatorio",
-
     "step1_desc": "Información del examen",
     "step2_desc": "Seleccionar contenido a estudiar",
     "step3_desc": "Configuración del horario",
     "step4_desc": "Vista previa y confirmación",
-
     "summary": "Resumen",
     "plan_will_generate": "Se generará automáticamente un plan de estudio personalizado con tareas diarias adaptadas a tus objetivos.",
     "create": "Crear sesión",
@@ -1896,7 +2046,6 @@
     "plan_generated": "Tu plan de estudio ha sido generado.",
     "create_error": "Error al crear la sesión",
     "session_deleted": "Sesión eliminada",
-
     "progress": "Progreso",
     "days_left": "Días restantes",
     "tasks_done": "Tareas completadas",
@@ -1907,17 +2056,14 @@
     "estimated": "estimado",
     "all_done_today": "¡Todas las tareas de hoy están completadas!",
     "study_plan": "Plan de estudio",
-
     "task_started": "¡Tarea iniciada!",
     "task_completed": "¡Tarea completada!",
     "task_skipped": "Tarea omitida",
     "finish": "Finalizar",
-
     "active": "Activo",
     "completed": "Completado",
     "paused": "Pausado",
     "no_sessions": "Sin sesiones de estudio",
-
     "exams_prepared": "Exámenes preparados",
     "exams_completed": "Exámenes completados",
     "hours_studied": "Horas estudiadas",
@@ -1925,7 +2071,6 @@
     "best_score": "Mejor puntuación",
     "longest_streak": "Racha más larga",
     "no_stats": "Aún no hay estadísticas",
-
     "task_types": {
       "read": "Lectura",
       "flashcards": "Tarjetas",
@@ -1935,7 +2080,6 @@
       "summary": "Resumen",
       "weak_points": "Puntos débiles"
     },
-
     "ai_insights": "Análisis IA",
     "ai_summary": "Resumen IA",
     "ai_premium_title": "Inteligencia IA Premium",
@@ -1944,39 +2088,32 @@
     "ai_premium_desc": "La generación de IA está reservada para usuarios Premium",
     "no_active_for_ai": "Sin examen activo",
     "create_for_ai": "Crea una sesión de estudio para acceder al análisis de IA.",
-
     "key_points": "Puntos clave",
     "key_points_analysis": "Análisis de puntos clave",
     "key_concepts": "Conceptos clave",
     "formulas": "Fórmulas a memorizar",
     "revision_priorities": "Prioridades de repaso",
-
     "weak_points_title": "Puntos débiles",
     "weak_points_analysis": "Detección de puntos débiles",
     "no_weak_points": "¡No se detectaron puntos débiles!",
     "recommendations": "Recomendaciones",
-
     "advice": "Consejos",
     "personalized_advice": "Consejos personalizados",
     "global_strategy": "Estrategia global",
     "priority_focus": "Enfoque prioritario",
     "recommended_methods": "Métodos recomendados",
     "suggested_planning": "Planificación sugerida",
-
     "predicted_score": "Puntuación predicha",
     "top_recommendations": "Principales recomendaciones",
-
     "generate_practice_exam": "Generar examen de práctica",
     "practice_exam_generated": "¡Examen de práctica generado!",
     "adapt_plan": "Adaptar plan",
     "plan_adapted": "¡Plan adaptado!",
     "no_adaptation": "No se necesitan cambios",
     "plan_optimal": "Tu plan ya es óptimo",
-
     "content_generated": "¡Contenido generado!",
     "content_linked": "Contenido vinculado"
   },
-
   "landing": {
     "nav": {
       "login": "Iniciar sesión",
@@ -2090,18 +2227,54 @@
       "title": "Todo lo que necesitas",
       "subtitle": "Más de 15 funcionalidades para aprobar tus exámenes",
       "items": [
-        { "title": "IA Generativa", "desc": "Crea tarjetas y cuestionarios desde tus notas" },
-        { "title": "Tarjetas FSRS", "desc": "Memoriza 2 veces más rápido, científicamente probado" },
-        { "title": "Cuestionarios Adaptativos", "desc": "Preguntas que se adaptan a tu nivel" },
-        { "title": "Focus Rooms", "desc": "Estudia en grupo virtual" },
-        { "title": "Spark IA", "desc": "Tu tutor personal disponible 24/7" },
-        { "title": "Duelos", "desc": "Desafía a tus amigos en cuestionarios" },
-        { "title": "Clasificaciones", "desc": "Compárate con otros estudiantes" },
-        { "title": "Rachas", "desc": "Mantén tu racha de días de estudio" },
-        { "title": "Notas Markdown", "desc": "Editor potente con LaTeX" },
-        { "title": "Pomodoro", "desc": "Temporizador integrado para tus sesiones" },
-        { "title": "Estadísticas", "desc": "Sigue tu progreso en detalle" },
-        { "title": "Modo Examen", "desc": "Plan de repaso IA personalizado" }
+        {
+          "title": "IA Generativa",
+          "desc": "Crea tarjetas y cuestionarios desde tus notas"
+        },
+        {
+          "title": "Tarjetas FSRS",
+          "desc": "Memoriza 2 veces más rápido, científicamente probado"
+        },
+        {
+          "title": "Cuestionarios Adaptativos",
+          "desc": "Preguntas que se adaptan a tu nivel"
+        },
+        {
+          "title": "Focus Rooms",
+          "desc": "Estudia en grupo virtual"
+        },
+        {
+          "title": "Spark IA",
+          "desc": "Tu tutor personal disponible 24/7"
+        },
+        {
+          "title": "Duelos",
+          "desc": "Desafía a tus amigos en cuestionarios"
+        },
+        {
+          "title": "Clasificaciones",
+          "desc": "Compárate con otros estudiantes"
+        },
+        {
+          "title": "Rachas",
+          "desc": "Mantén tu racha de días de estudio"
+        },
+        {
+          "title": "Notas Markdown",
+          "desc": "Editor potente con LaTeX"
+        },
+        {
+          "title": "Pomodoro",
+          "desc": "Temporizador integrado para tus sesiones"
+        },
+        {
+          "title": "Estadísticas",
+          "desc": "Sigue tu progreso en detalle"
+        },
+        {
+          "title": "Modo Examen",
+          "desc": "Plan de repaso IA personalizado"
+        }
       ]
     },
     "cta": {
@@ -2140,7 +2313,6 @@
       "copyright": "© 2025 Studera. Hecho con 💜 para estudiantes."
     }
   },
-
   "about": {
     "nav": {
       "back": "Volver"
@@ -2169,13 +2341,13 @@
         "title": "Accesibilidad",
         "description": "La educación de calidad debe ser accesible para todos, sin importar los recursos financieros."
       },
-      "passion": {
-        "title": "Pasión",
-        "description": "Cada funcionalidad se basa en investigaciones científicas validadas en ciencias cognitivas."
-      },
       "community": {
         "title": "Comunidad",
         "description": "Aprender juntos es más eficaz y motivador que aprender solo."
+      },
+      "passion": {
+        "title": "Pasión",
+        "description": "Cada funcionalidad se basa en investigaciones científicas validadas en ciencias cognitivas."
       }
     },
     "features": {
@@ -2196,18 +2368,16 @@
         {
           "title": "Focus Rooms",
           "description": "Estudia en grupo virtual como en una biblioteca. La presencia de otros te motiva a concentrarte."
+        },
+        {
+          "title": "IA personalizada",
+          "description": "Una asistencia adaptada a tu forma de estudiar"
+        },
+        {
+          "title": "Comunidad activa",
+          "description": "Aprende con otros y comparte tus mejores recursos"
         }
       ]
-    },
-    "team": {
-      "title": "El equipo",
-      "description": "Un equipo apasionado por la educación y la tecnología, decidido a revolucionar la forma en que los estudiantes aprenden."
-    },
-    "stats": {
-      "users": "Usuarios",
-      "cardsCreated": "Tarjetas creadas",
-      "quizzesTaken": "Cuestionarios completados",
-      "studyHours": "Horas de estudio"
     },
     "cta": {
       "title": "¿Listo para revolucionar tu aprendizaje?",
@@ -2222,7 +2392,6 @@
       "terms": "Términos"
     }
   },
-
   "contact": {
     "nav": {
       "back": "Volver"
@@ -2253,14 +2422,32 @@
       "email": "Dirección de correo",
       "emailPlaceholder": "su@correo.com",
       "subject": "Asunto",
-      "subjectPlaceholder": "Seleccione un asunto",
+      "subjectSelect": "Selecciona un asunto",
       "subjects": [
-        { "value": "general", "label": "Pregunta general" },
-        { "value": "bug", "label": "Reportar un error" },
-        { "value": "feature", "label": "Sugerencia de funcionalidad" },
-        { "value": "billing", "label": "Facturación" },
-        { "value": "partnership", "label": "Colaboración" },
-        { "value": "other", "label": "Otro" }
+        {
+          "value": "general",
+          "label": "Pregunta general"
+        },
+        {
+          "value": "bug",
+          "label": "Reportar un error"
+        },
+        {
+          "value": "feature",
+          "label": "Sugerencia de funcionalidad"
+        },
+        {
+          "value": "billing",
+          "label": "Facturación"
+        },
+        {
+          "value": "partnership",
+          "label": "Colaboración"
+        },
+        {
+          "value": "other",
+          "label": "Otro"
+        }
       ],
       "message": "Su mensaje",
       "messagePlaceholder": "Describa su consulta con detalle...",
@@ -2268,14 +2455,15 @@
       "sending": "Enviando...",
       "success": {
         "title": "¡Mensaje enviado!",
-        "description": "Gracias por su mensaje. Le responderemos lo antes posible."
-      },
-      "error": "Se produjo un error. Inténtelo de nuevo."
+        "message": "Te responderemos lo antes posible.",
+        "sendAnother": "Enviar otro mensaje"
+      }
     },
     "faq": {
       "title": "Preguntas frecuentes",
       "description": "Quizás la respuesta a su pregunta ya está aquí.",
-      "button": "Ver las FAQ"
+      "terms": "Terminos de uso",
+      "privacy": "Politica de privacidad"
     },
     "footer": {
       "copyright": "© 2025 Studera. Todos los derechos reservados.",
@@ -2285,7 +2473,6 @@
       "terms": "Términos"
     }
   },
-
   "legal": {
     "privacy": {
       "nav": {
@@ -2303,138 +2490,164 @@
           "intro": "Recopilamos varios tipos de datos para ofrecerle la mejor experiencia de aprendizaje posible:",
           "categories": [
             {
-              "icon": "user",
               "title": "Datos de identificación",
-              "items": ["Nombre y apellido", "Dirección de correo electrónico", "Foto de perfil (opcional)", "Universidad/Escuela (opcional)"]
+              "items": [
+                "Nombre y apellido",
+                "Dirección de correo electrónico",
+                "Foto de perfil (opcional)",
+                "Universidad/Escuela (opcional)"
+              ]
             },
             {
-              "icon": "book",
               "title": "Datos de aprendizaje",
-              "items": ["Notas y documentos creados", "Tarjetas y cuestionarios", "Puntuaciones y progreso", "Tiempos de estudio"]
+              "items": [
+                "Notas y documentos creados",
+                "Tarjetas y cuestionarios",
+                "Puntuaciones y progreso",
+                "Tiempos de estudio"
+              ]
             },
             {
-              "icon": "chart",
               "title": "Datos de uso",
-              "items": ["Páginas visitadas", "Funcionalidades utilizadas", "Preferencias de configuración", "Interacciones con la IA"]
-            },
-            {
-              "icon": "globe",
-              "title": "Datos técnicos",
-              "items": ["Dirección IP (anonimizada)", "Tipo de navegador", "Sistema operativo", "Identificador del dispositivo"]
+              "items": [
+                "Páginas visitadas",
+                "Funcionalidades utilizadas",
+                "Preferencias de configuración",
+                "Interacciones con la IA"
+              ]
             }
           ]
         },
         "dataUsage": {
           "title": "Uso de los datos",
           "intro": "Sus datos se utilizan para:",
-          "items": [
-            "Proporcionar y mejorar nuestros servicios de aprendizaje",
-            "Personalizar su experiencia y recomendaciones",
-            "Sincronizar su progreso en todos sus dispositivos",
-            "Enviarle notificaciones sobre su aprendizaje (con su consentimiento)",
-            "Generar estadísticas anónimas para mejorar la plataforma",
-            "Garantizar la seguridad de su cuenta"
+          "uses": [
+            {
+              "title": "Provide our services",
+              "description": "Enable access to all platform features"
+            },
+            {
+              "title": "Personalization",
+              "description": "Adapt the learning experience to your needs"
+            },
+            {
+              "title": "Communication",
+              "description": "Send you important notifications and updates"
+            },
+            {
+              "title": "Improvement",
+              "description": "Analyze usage to improve our services"
+            }
+          ]
+        },
+        "dataProtection": {
+          "title": "Proteccion de datos",
+          "intro": "Implementamos las siguientes medidas para proteger tus datos:",
+          "measures": [
+            {
+              "title": "SSL/TLS encryption",
+              "description": "All communications are encrypted"
+            },
+            {
+              "title": "Password hashing",
+              "description": "Your passwords are never stored in plain text"
+            },
+            {
+              "title": "Restricted access",
+              "description": "Only authorized personnel have access to data"
+            },
+            {
+              "title": "Secure backups",
+              "description": "Your data is backed up regularly"
+            }
           ]
         },
         "dataSharing": {
           "title": "Compartición de datos",
+          "noSale": "We never sell your personal data.",
           "intro": "Nunca vendemos sus datos personales. Pueden ser compartidos con:",
-          "items": [
+          "cases": [
             {
-              "title": "Proveedores técnicos",
-              "description": "Alojamiento (Vercel), base de datos (PostgreSQL), análisis (Google Analytics con anonimización)"
+              "title": "Technical providers",
+              "description": "Hosting, email, payment - under confidentiality agreement"
             },
             {
-              "title": "Socios de IA",
-              "description": "Anthropic (Claude) para funcionalidades de IA. Sus datos se procesan de forma segura y no se utilizan para entrenar modelos."
+              "title": "Legal obligations",
+              "description": "If required by law or competent authority"
             },
             {
-              "title": "Obligaciones legales",
-              "description": "Si la ley lo exige, podemos divulgar información a las autoridades competentes."
+              "title": "With your consent",
+              "description": "For any other sharing, we ask for your agreement"
             }
           ]
         },
-        "security": {
-          "title": "Seguridad de los datos",
-          "items": [
+        "yourRights": {
+          "title": "Tus derechos",
+          "intro": "De conformidad con el RGPD, dispones de los siguientes derechos:",
+          "rights": [
             {
-              "title": "Cifrado SSL/TLS",
-              "description": "Todas las comunicaciones están cifradas en tránsito"
+              "title": "Right of access",
+              "description": "Obtain a copy of your data"
             },
             {
-              "title": "Hash de contraseñas",
-              "description": "Sus contraseñas nunca se almacenan en texto plano"
+              "title": "Right to rectification",
+              "description": "Correct inaccurate data"
             },
             {
-              "title": "Acceso restringido",
-              "description": "Solo el personal autorizado puede acceder a los datos"
+              "title": "Right to erasure",
+              "description": "Request deletion of your data"
             },
             {
-              "title": "Copias de seguridad regulares",
-              "description": "Sus datos se respaldan diariamente de forma segura"
+              "title": "Right to portability",
+              "description": "Export your data in a standard format"
             }
-          ]
-        },
-        "retention": {
-          "title": "Conservación de datos",
-          "active": "Cuenta activa",
-          "activeDesc": "Sus datos se conservan mientras su cuenta esté activa.",
-          "deletion": "Eliminación",
-          "deletionDesc": "Al solicitar la eliminación de su cuenta, sus datos se eliminan definitivamente en un plazo de 30 días.",
-          "backup": "Copias de seguridad",
-          "backupDesc": "Los datos en las copias de seguridad se eliminan automáticamente después de 90 días."
-        },
-        "rights": {
-          "title": "Sus derechos",
-          "intro": "De conformidad con el RGPD y la legislación vigente, tiene derecho a:",
-          "items": [
-            {
-              "title": "Acceso",
-              "description": "Obtener una copia de todos sus datos personales"
-            },
-            {
-              "title": "Rectificación",
-              "description": "Corregir datos inexactos o incompletos"
-            },
-            {
-              "title": "Supresión",
-              "description": "Solicitar la eliminación de sus datos"
-            },
-            {
-              "title": "Portabilidad",
-              "description": "Recuperar sus datos en un formato reutilizable"
-            },
-            {
-              "title": "Oposición",
-              "description": "Oponerse a ciertos tratamientos de sus datos"
-            },
-            {
-              "title": "Limitación",
-              "description": "Solicitar la limitación del tratamiento de sus datos"
-            }
-          ]
+          ],
+          "contact": "To exercise these rights, contact us at"
         },
         "cookies": {
           "title": "Cookies",
           "intro": "Utilizamos diferentes tipos de cookies:",
           "types": [
             {
-              "type": "Esenciales",
-              "description": "Necesarias para el funcionamiento del sitio (autenticación, preferencias)",
-              "duration": "Sesión"
+              "title": "Cookies esenciales",
+              "description": "Necesarias para el funcionamiento del sitio (autenticación, preferencias)"
             },
             {
-              "type": "Analíticas",
-              "description": "Google Analytics (con anonimización IP) para mejorar nuestros servicios",
-              "duration": "13 meses"
+              "title": "Cookies analiticas",
+              "description": "Google Analytics (con anonimización IP) para mejorar nuestros servicios"
             },
             {
-              "type": "Funcionales",
-              "description": "Memorizar sus preferencias de tema, idioma, etc.",
-              "duration": "1 año"
+              "title": "Cookies de preferencias",
+              "description": "Memorizar sus preferencias de tema, idioma, etc."
             }
           ],
-          "note": "Puede gestionar sus preferencias de cookies en cualquier momento desde la configuración."
+          "manage": "Puedes administrar tus preferencias de cookies en cualquier momento desde la configuracion de tu cuenta."
+        },
+        "dataRetention": {
+          "title": "Conservacion de datos",
+          "intro": "Conservamos tus datos durante los siguientes periodos:",
+          "periods": [
+            {
+              "title": "Active account",
+              "duration": "As long as your account exists"
+            },
+            {
+              "title": "After deletion",
+              "duration": "30 days (recovery period)"
+            },
+            {
+              "title": "Billing data",
+              "duration": "10 years (legal requirement)"
+            }
+          ]
+        },
+        "minors": {
+          "title": "Menores",
+          "content": "Nuestro servicio esta dirigido a personas mayores de 13 anos. Si descubrimos que hemos recopilado datos de un menor de 13 anos sin el consentimiento de los padres, eliminaremos estos datos rapidamente."
+        },
+        "changes": {
+          "title": "Cambios en esta politica",
+          "content": "Podemos actualizar esta politica de privacidad ocasionalmente. Te notificaremos cualquier cambio importante por correo electronico o mediante un aviso en nuestra plataforma."
         }
       },
       "contact": {
@@ -2464,10 +2677,26 @@
         "definitions": {
           "title": "Artículo 1 - Definiciones",
           "items": [
-            { "term": "Servicio", "definition": "La plataforma Studera y todas sus funcionalidades (sitio web, aplicación móvil, API)." },
-            { "term": "Usuario", "definition": "Toda persona física que utilice el Servicio, de forma gratuita o con una suscripción de pago." },
-            { "term": "Contenido", "definition": "Todo dato, texto, imagen o material creado, subido o compartido por el Usuario en el Servicio." },
-            { "term": "Suscripción Premium", "definition": "Oferta de pago que ofrece acceso a funcionalidades avanzadas del Servicio." }
+            {
+              "term": "Servicio",
+              "definition": "La plataforma Studera y todas sus funcionalidades (sitio web, aplicación móvil, API)."
+            },
+            {
+              "term": "Usuario",
+              "definition": "Toda persona física que utilice el Servicio, de forma gratuita o con una suscripción de pago."
+            },
+            {
+              "term": "Contenido",
+              "definition": "Todo dato, texto, imagen o material creado, subido o compartido por el Usuario en el Servicio."
+            },
+            {
+              "term": "Suscripción Premium",
+              "definition": "Oferta de pago que ofrece acceso a funcionalidades avanzadas del Servicio."
+            },
+            {
+              "term": "\"Premium\"",
+              "definition": "means the paid subscription providing access to advanced features"
+            }
           ]
         },
         "acceptance": {
@@ -2485,11 +2714,25 @@
           "intro": "Studera ofrece una plataforma de aprendizaje inteligente que incluye:",
           "free": {
             "title": "Gratis",
-            "items": ["Creación de notas y tarjetas", "Cuestionarios básicos", "Algoritmo FSRS estándar", "5 solicitudes de IA por día", "Focus Rooms públicas"]
+            "items": [
+              "Creación de notas y tarjetas",
+              "Cuestionarios básicos",
+              "Algoritmo FSRS estándar",
+              "5 solicitudes de IA por día",
+              "Focus Rooms públicas",
+              "Basic statistics"
+            ]
           },
           "premium": {
             "title": "Premium",
-            "items": ["Solicitudes de IA ilimitadas", "Modo Examen con IA", "Estadísticas avanzadas", "Exportación PDF/Word", "Soporte prioritario"]
+            "items": [
+              "Solicitudes de IA ilimitadas",
+              "Modo Examen con IA",
+              "Estadísticas avanzadas",
+              "Exportación PDF/Word",
+              "Soporte prioritario",
+              "Early access to new features"
+            ]
           }
         },
         "account": {
@@ -2498,8 +2741,7 @@
           "requirements": [
             "Proporcionar una dirección de correo electrónico válida y única",
             "Elegir una contraseña segura (mínimo 8 caracteres)",
-            "No compartir sus credenciales con terceros",
-            "Notificarnos inmediatamente cualquier uso no autorizado"
+            "No compartir sus credenciales con terceros"
           ],
           "important": {
             "title": "Importante",
@@ -2534,10 +2776,22 @@
         "premium": {
           "title": "Artículo 7 - Suscripción Premium",
           "sections": [
-            { "title": "Facturación", "content": "Las suscripciones se facturan por adelantado, mensual o anualmente según su elección." },
-            { "title": "Renovación", "content": "Las suscripciones se renuevan automáticamente. Puede cancelar en cualquier momento desde su cuenta." },
-            { "title": "Reembolso", "content": "Por regla general, los reembolsos no están disponibles. Sin embargo, puede contactarnos en caso de problema técnico grave." },
-            { "title": "Cambio de precio", "content": "Cualquier cambio de precio se comunicará con 30 días de antelación. El nuevo precio se aplicará en la próxima renovación." }
+            {
+              "title": "Facturación",
+              "content": "Las suscripciones se facturan por adelantado, mensual o anualmente según su elección."
+            },
+            {
+              "title": "Renovación",
+              "content": "Las suscripciones se renuevan automáticamente. Puede cancelar en cualquier momento desde su cuenta."
+            },
+            {
+              "title": "Reembolso",
+              "content": "Por regla general, los reembolsos no están disponibles. Sin embargo, puede contactarnos en caso de problema técnico grave."
+            },
+            {
+              "title": "Cambio de precio",
+              "content": "Cualquier cambio de precio se comunicará con 30 días de antelación. El nuevo precio se aplicará en la próxima renovación."
+            }
           ]
         },
         "availability": {
@@ -2586,9 +2840,22 @@
         "miscellaneous": {
           "title": "Artículo 13 - Disposiciones diversas",
           "items": [
-            { "title": "Divisibilidad", "description": "Si una disposición de las CGU fuera declarada nula, las demás permanecerían plenamente vigentes." },
-            { "title": "No renuncia", "description": "El hecho de no ejercer un derecho no constituye una renuncia a este derecho." },
-            { "title": "Acuerdo completo", "description": "Las presentes CGU constituyen el acuerdo completo entre usted y Studera." }
+            {
+              "title": "Divisibilidad",
+              "description": "Si una disposición de las CGU fuera declarada nula, las demás permanecerían plenamente vigentes."
+            },
+            {
+              "title": "No renuncia",
+              "description": "El hecho de no ejercer un derecho no constituye una renuncia a este derecho."
+            },
+            {
+              "title": "Acuerdo completo",
+              "description": "Las presentes CGU constituyen el acuerdo completo entre usted y Studera."
+            },
+            {
+              "title": "Assignment",
+              "description": "You may not assign your rights without our written consent."
+            }
           ]
         }
       },
@@ -2605,5 +2872,70 @@
         "terms": "Términos"
       }
     }
+  },
+  "cookies": {
+    "title": "Usamos cookies",
+    "description": "Usamos cookies para mejorar tu experiencia. Puedes gestionar tus preferencias en cualquier momento.",
+    "accept": "Aceptar todo",
+    "reject": "Rechazar todo",
+    "customize": "Personalizar",
+    "save": "Guardar mis preferencias",
+    "essential": "Esenciales",
+    "essentialDesc": "Necesarias para el funcionamiento del sitio (siempre activas)",
+    "analytics": "Analíticas",
+    "analyticsDesc": "Nos ayudan a entender cómo usas el sitio",
+    "marketing": "Marketing",
+    "marketingDesc": "Usadas para personalizar contenidos y anuncios",
+    "learnMore": "Saber más",
+    "manageTitle": "Gestión de cookies",
+    "managePreamble": "Usamos cookies para mejorar tu experiencia y analizar el uso de nuestra plataforma. Puedes elegir aceptar todas las cookies o solo las esenciales.",
+    "essentialActive": "Siempre activas",
+    "essentialFull": "Necesarias para el funcionamiento del sitio: autenticación, seguridad, preferencias de sesión.",
+    "analyticsOptional": "Opcionales",
+    "analyticsFull": "Google Analytics: nos ayudan a entender cómo usas el sitio para mejorarlo. Los datos son anonimizados.",
+    "essentialOnly": "Solo esenciales",
+    "details": "Detalles",
+    "hide": "Ocultar",
+    "privacyLinkPrefix": "Saber más sobre nuestra",
+    "privacyLinkLabel": "Política de privacidad",
+    "close": "Cerrar"
+  },
+  "metadata": {
+    "title": "Studera - Tu asistente de aprendizaje inteligente",
+    "description": "Aplicación de aprendizaje con IA, flashcards, cuestionarios y gamificación"
+  },
+  "editor": {
+    "errors": {
+      "imageUpload": "Error al subir la imagen",
+      "imageSize": "La imagen es demasiado grande",
+      "imageType": "Tipo de imagen no admitido",
+      "unknown": "Ocurrió un error desconocido"
+    }
+  },
+  "search": {
+    "empty": "Sin resultados"
+  },
+  "antiCheat": {
+    "warning": "Actividad sospechosa detectada",
+    "tabSwitch": "Cambio de pestaña detectado",
+    "fullscreenExit": "Salida del modo pantalla completa detectada",
+    "statusInactive": "Inactivo",
+    "statusAlert": "Alerta",
+    "statusAttention": "Atención",
+    "statusOk": "OK",
+    "monitoring": "Supervisión",
+    "monitoringTooltip": "Modo anti-trampa activo - Los comportamientos sospechosos se registran",
+    "behaviorDetected": "Comportamiento detectado",
+    "tabSwitches": "Cambios de pestaña:",
+    "focusLosses": "Pérdidas de foco:",
+    "warnings": "Advertencias:",
+    "quizValidated": "Cuestionario validado",
+    "noSuspicious": "No se detectó comportamiento sospechoso. ¡Resultado validado!",
+    "resultInvalidated": "Resultado invalidado",
+    "disqualifiedDescription": "Se detectaron comportamientos sospechosos. Este resultado no se contabilizará.",
+    "warningsDetected": "Advertencias detectadas",
+    "violationsRecorded": "{count} comportamiento(s) sospechoso(s) registrado(s).",
+    "penaltyXp": "Penalización: -{xp} XP",
+    "scoreAdjusted": "Puntuación ajustada: {original}% → {adjusted}%"
   }
 }

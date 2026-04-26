@@ -9,20 +9,32 @@
 import frMessages from '../../messages/fr.json';
 import enMessages from '../../messages/en.json';
 import esMessages from '../../messages/es.json';
+import arMessages from '../../messages/ar.json';
 
 // Types
-export type Locale = 'fr' | 'en' | 'es';
+export type Locale = 'fr' | 'en' | 'es' | 'ar';
 export type Messages = typeof frMessages;
 
 // Langues supportées
-export const SUPPORTED_LOCALES: Locale[] = ['fr', 'en', 'es'];
+export const SUPPORTED_LOCALES: Locale[] = ['fr', 'en', 'es', 'ar'];
 export const DEFAULT_LOCALE: Locale = 'fr';
+
+// Langues à écriture droite-à-gauche
+export const RTL_LOCALES: Locale[] = ['ar'];
+
+/**
+ * Indique si une locale utilise l'écriture droite-à-gauche.
+ */
+export function isRTL(locale: Locale): boolean {
+  return RTL_LOCALES.includes(locale);
+}
 
 // Noms des langues pour l'affichage
 export const LOCALE_NAMES: Record<Locale, { native: string; english: string }> = {
   fr: { native: 'Français', english: 'French' },
   en: { native: 'English', english: 'English' },
   es: { native: 'Español', english: 'Spanish' },
+  ar: { native: 'العربية', english: 'Arabic' },
 };
 
 // Messages par langue (cast to Messages to allow minor structural differences)
@@ -30,6 +42,7 @@ const messages: Record<Locale, Messages> = {
   fr: frMessages as Messages,
   en: enMessages as unknown as Messages,
   es: esMessages as unknown as Messages,
+  ar: arMessages as unknown as Messages,
 };
 
 /**

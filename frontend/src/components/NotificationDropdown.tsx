@@ -134,7 +134,7 @@ export default function NotificationDropdown() {
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
-    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' }
+    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
 
     if (diffMins < 1) return t('time.justNow')
     if (diffMins < 60) return t('time.minutesAgo', { count: diffMins })

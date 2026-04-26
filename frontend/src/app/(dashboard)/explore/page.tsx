@@ -111,13 +111,14 @@ interface SearchResults {
 
 type ContentType = "all" | "notes" | "flashcards" | "quizzes";
 type SortBy = "recent" | "popular" | "rating";
-type LanguageFilter = "all" | "fr" | "en" | "es";
+type LanguageFilter = "all" | "fr" | "en" | "es" | "ar";
 
 const languageConfig: Record<LanguageFilter, { label: string; flag: string }> = {
   all: { label: "Toutes", flag: "🌍" },
   fr: { label: "Français", flag: "🇫🇷" },
   en: { label: "English", flag: "🇬🇧" },
   es: { label: "Español", flag: "🇪🇸" },
+  ar: { label: "العربية", flag: "🇸🇦" },
 };
 
 const contentTypeConfig = {
@@ -160,7 +161,7 @@ export default function ExplorePage() {
     fetchPopularSubjects();
     // Détecter la langue du navigateur
     const browserLang = navigator.language.split("-")[0];
-    if (browserLang === "fr" || browserLang === "en" || browserLang === "es") {
+    if (browserLang === "fr" || browserLang === "en" || browserLang === "es" || browserLang === "ar") {
       setSelectedLanguage(browserLang as LanguageFilter);
     }
   }, []);

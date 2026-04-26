@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, FileText, CreditCard, Brain, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface SearchResult {
   id: number
@@ -19,6 +20,7 @@ interface GlobalSearchProps {
 }
 
 const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -259,7 +261,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
                   </ul>
                 ) : query.length >= 2 && !isLoading ? (
                   <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    Aucun résultat pour "{query}"
+                    {t('search.empty')} "{query}"
                   </div>
                 ) : query.length < 2 && query.length > 0 ? (
                   <div className="py-8 text-center text-gray-500 dark:text-gray-400">

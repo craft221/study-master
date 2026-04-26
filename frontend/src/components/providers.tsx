@@ -5,6 +5,7 @@ import { AuthProvider } from '@/store/auth-store'
 import { ThemeProvider } from 'next-themes'
 import { OfflineProvider } from '@/components/providers/OfflineProvider'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import { HtmlLangSync } from '@/components/HtmlLangSync'
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <OfflineProvider>
         <AuthProvider>
           <LanguageProvider>
+            <HtmlLangSync />
             {children}
           </LanguageProvider>
         </AuthProvider>
