@@ -28,7 +28,39 @@
     "info": "Información",
     "upgrade_premium": "Actualizar a Premium",
     "upgrade": "Actualizar a Premium",
-    "optional": "Opcional"
+    "optional": "Opcional",
+    "copied": "¡Copiado!",
+    "copiedToClipboard": "Copiado al portapapeles",
+    "linkCopied": "¡Enlace copiado!",
+    "allFem": "Todas",
+    "play": "Jugar",
+    "played": "Jugado",
+    "view": "Ver",
+    "ok": "OK",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "pending": "Pendiente",
+    "accepted": "Aceptado",
+    "inProgress": "En curso",
+    "completed": "Completado",
+    "cancelled": "Cancelado",
+    "declined": "Rechazado",
+    "waiting": "Esperando",
+    "you": "Tú",
+    "anonymous": "Anónimo",
+    "victory": "Victoria",
+    "draw": "Empate",
+    "loadMore": "Cargar más",
+    "level": "Niv.",
+    "minutes": "{count} min",
+    "hours": "{count}h",
+    "hoursMinutes": "{hours}h {minutes}min",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil"
+    },
+    "linkCopiedToClipboard": "El enlace se copió al portapapeles"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -498,7 +530,8 @@
     "sessionComplete": "¡Sesión completada!",
     "cardsReviewed": "tarjetas revisadas",
     "accuracy": "Precisión",
-    "spacedRepetitionTitle": "Repetición espaciada"
+    "spacedRepetitionTitle": "Repetición espaciada",
+    "noCardToReview": "Sin cartas para revisar"
   },
   "flashcardsPage": {
     "title": "Tarjetas",
@@ -746,7 +779,9 @@
     "activity": {
       "empty": "Sin actividad en este grupo",
       "recent": "Actividad reciente"
-    }
+    },
+    "loadError": "No se pueden cargar los grupos",
+    "loadGroupError": "No se puede cargar el grupo"
   },
   "profile": {
     "title": "Mi Perfil",
@@ -759,7 +794,8 @@
     "year": "Año",
     "stats": "Estadísticas",
     "achievements": "Logros",
-    "badges": "Insignias"
+    "badges": "Insignias",
+    "loadError": "No se puede cargar el perfil"
   },
   "settings": {
     "title": "Configuración",
@@ -782,7 +818,8 @@
     "deleteAccount": "Eliminar cuenta",
     "deleteAccountWarning": "Esta acción es irreversible",
     "saveChanges": "Guardar cambios",
-    "changesSaved": "Cambios guardados"
+    "changesSaved": "Cambios guardados",
+    "loadError": "No se puede cargar el perfil"
   },
   "spark": {
     "greeting": "¡Hola! Soy Spark, tu compañero de estudio.",
@@ -1226,7 +1263,11 @@
     "flashcardsTab": "Tarjetas",
     "flashcardDecks": "Mazos de Tarjetas",
     "quizzesTab": "Cuestionarios",
-    "sortBy": "Ordenar por",
+    "sortBy": {
+      "recent": "Más recientes",
+      "popular": "Populares",
+      "bestRating": "Mejor valorados"
+    },
     "recent": "Más recientes",
     "popular": "Populares",
     "rating": "Mejores puntuaciones",
@@ -1282,7 +1323,21 @@
       "en": "English",
       "es": "Español"
     },
-    "aiGenerated": "IA"
+    "aiGenerated": "IA",
+    "notes": "Notas",
+    "flashcards": "Flashcards",
+    "quiz": "Cuestionarios",
+    "duplicateError": "No se puede duplicar",
+    "loadContentError": "No se puede cargar el contenido",
+    "quizLinkCopiedToClipboard": "El enlace del cuestionario se copió al portapapeles",
+    "teamWillReview": "Nuestro equipo revisará este contenido",
+    "reportError": "No se puede reportar",
+    "cardCount": "{count} carta(s)",
+    "questionCount": "{count} pregunta(s)",
+    "playCount": "{count} partida(s)",
+    "ai": "IA",
+    "noContentFound": "No se encontró contenido",
+    "adjustFiltersOrSearch": "Intenta ajustar tus filtros o búsqueda"
   },
   "pricing": {
     "title": "Precios",
@@ -1686,7 +1741,66 @@
     "backToList": "Volver a la lista",
     "challengeSent": "¡Desafío enviado!",
     "challengeReceived": "¡Has recibido un desafío!",
-    "xpGained": "+{xp} XP ganados"
+    "xpGained": "+{xp} XP ganados",
+    "loadError": "No se pueden cargar los duelos",
+    "invalidDuelId": "ID de duelo inválido",
+    "acceptError": "No se puede aceptar el desafío",
+    "selectOpponentAndQuiz": "Selecciona un oponente y un cuestionario",
+    "challengeReceivedNotif": "Tu oponente recibió tu desafío",
+    "challengeAccepted": "¡Desafío aceptado! 🎯",
+    "bestManWins": "¡Que gane el mejor!",
+    "confirmDeclineChallenge": "¿Estás seguro de que quieres rechazar este desafío?",
+    "challengeDeclined": "Desafío rechazado",
+    "challengeDeclinedDesc": "El desafío ha sido rechazado",
+    "confirmCancelChallenge": "¿Estás seguro de que quieres cancelar este desafío?",
+    "challengeCancelled": "Desafío cancelado",
+    "challengeCancelledDesc": "El desafío ha sido cancelado",
+    "inviteLinkCreated": "¡Enlace creado! 🔗",
+    "shareWithOpponent": "Compártelo con tu oponente",
+    "matchQuality": {
+      "excellent": "Partido perfecto",
+      "good": "Buen partido",
+      "fair": "Partido equilibrado"
+    },
+    "launchChallenge": "Lanzar un desafío",
+    "createDuelDesc": "Elige un oponente y un cuestionario para el desafío",
+    "selectOpponent": "Selecciona un oponente",
+    "quiz": "Cuestionario",
+    "selectQuiz": "Selecciona un cuestionario",
+    "stakeXP": "Apuesta XP",
+    "stakesExplanation": "El ganador obtiene {stakes} XP, el perdedor pierde {loss}",
+    "sendChallenge": "Enviar desafío",
+    "createInviteLink": "Crear enlace de invitación",
+    "shareInviteLinkDesc": "Comparte el enlace para desafiar a cualquiera",
+    "inviteLinkCreatedTitle": "¡Enlace de invitación creado!",
+    "inviteLinkExpiresIn24h": "Comparte este enlace con la persona que quieres desafiar. Caduca en 24 horas.",
+    "shareMessage": "¡Te desafío a un duelo!\n\nHaz clic aquí para aceptar: {link}",
+    "copyMessage": "Copiar mensaje",
+    "recommendedOpponents": "Oponentes recomendados",
+    "playersWithSimilarLevel": "Jugadores con un nivel similar",
+    "active": "Activos",
+    "requests": "Solicitudes",
+    "wins": "Victorias",
+    "netXP": "XP Neto",
+    "sent": "Enviados",
+    "history": "Historial",
+    "noChallengeRequests": "Sin solicitudes de duelo",
+    "userChallengesYou": "¡{username} te desafía!",
+    "noPendingChallenge": "Sin desafíos pendientes",
+    "challengeTo": "Desafío a {username}",
+    "noActiveDuel": "Sin duelos activos",
+    "opponentHasNotPlayed": "{username} no ha jugado",
+    "waitingForOpponent": "Esperando al oponente...",
+    "noCompletedDuel": "Sin duelos completados",
+    "createChallengeError": "No se puede crear el desafío",
+    "declineError": "No se puede rechazar el desafío",
+    "cancelError": "No se puede cancelar el desafío",
+    "createLinkError": "No se puede crear el enlace",
+    "selectQuizForDuel": "Selecciona un cuestionario para el duelo",
+    "launchAChallenge": "¡Lanza un desafío!",
+    "opponentShort": "Op",
+    "messageCopied": "¡Mensaje copiado!",
+    "readyToShare": "Listo para compartir"
   },
   "sparkWidget": {
     "askSpark": "¡Hazle una pregunta a Spark!",
@@ -2937,5 +3051,15 @@
     "violationsRecorded": "{count} comportamiento(s) sospechoso(s) registrado(s).",
     "penaltyXp": "Penalización: -{xp} XP",
     "scoreAdjusted": "Puntuación ajustada: {original}% → {adjusted}%"
+  },
+  "admin": {
+    "noData": "Sin datos",
+    "noEmailFound": "Ningún correo encontrado"
+  },
+  "examMode": {
+    "noDocument": "Sin documento"
+  },
+  "export": {
+    "loadError": "No se pueden cargar los datos"
   }
 }

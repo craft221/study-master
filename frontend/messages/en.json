@@ -28,7 +28,39 @@
     "info": "Information",
     "upgrade_premium": "Upgrade to Premium",
     "upgrade": "Upgrade to Premium",
-    "optional": "Optional"
+    "optional": "Optional",
+    "copied": "Copied!",
+    "copiedToClipboard": "Copied to clipboard",
+    "linkCopied": "Link copied!",
+    "allFem": "All",
+    "play": "Play",
+    "played": "Played",
+    "view": "View",
+    "ok": "OK",
+    "accept": "Accept",
+    "decline": "Decline",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "declined": "Declined",
+    "waiting": "Waiting",
+    "you": "You",
+    "anonymous": "Anonymous",
+    "victory": "Victory",
+    "draw": "Draw",
+    "loadMore": "Load more",
+    "level": "Lv.",
+    "minutes": "{count} min",
+    "hours": "{count}h",
+    "hoursMinutes": "{hours}h {minutes}min",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "linkCopiedToClipboard": "The link has been copied to clipboard"
   },
   "auth": {
     "login": "Login",
@@ -498,7 +530,8 @@
     "sessionComplete": "Session complete!",
     "cardsReviewed": "cards reviewed",
     "accuracy": "Accuracy",
-    "spacedRepetitionTitle": "Spaced Repetition"
+    "spacedRepetitionTitle": "Spaced Repetition",
+    "noCardToReview": "No card to review"
   },
   "flashcardsPage": {
     "title": "Flashcards",
@@ -746,7 +779,9 @@
     "activity": {
       "empty": "No activity in this group",
       "recent": "Recent activity"
-    }
+    },
+    "loadError": "Unable to load groups",
+    "loadGroupError": "Unable to load group"
   },
   "profile": {
     "title": "My Profile",
@@ -759,7 +794,8 @@
     "year": "Year",
     "stats": "Statistics",
     "achievements": "Achievements",
-    "badges": "Badges"
+    "badges": "Badges",
+    "loadError": "Unable to load profile"
   },
   "settings": {
     "title": "Settings",
@@ -782,7 +818,8 @@
     "deleteAccount": "Delete account",
     "deleteAccountWarning": "This action is irreversible",
     "saveChanges": "Save changes",
-    "changesSaved": "Changes saved"
+    "changesSaved": "Changes saved",
+    "loadError": "Unable to load profile"
   },
   "spark": {
     "greeting": "Hi! I'm Spark, your study companion!",
@@ -1226,7 +1263,11 @@
     "flashcardsTab": "Flashcards",
     "flashcardDecks": "Flashcard Decks",
     "quizzesTab": "Quizzes",
-    "sortBy": "Sort by",
+    "sortBy": {
+      "recent": "Most recent",
+      "popular": "Popular",
+      "bestRating": "Best rated"
+    },
     "recent": "Most recent",
     "popular": "Popular",
     "rating": "Best scores",
@@ -1282,7 +1323,21 @@
       "en": "English",
       "es": "Español"
     },
-    "aiGenerated": "AI"
+    "aiGenerated": "AI",
+    "notes": "Notes",
+    "flashcards": "Flashcards",
+    "quiz": "Quiz",
+    "duplicateError": "Unable to duplicate",
+    "loadContentError": "Unable to load content",
+    "quizLinkCopiedToClipboard": "The quiz link has been copied to the clipboard",
+    "teamWillReview": "Our team will review this content",
+    "reportError": "Unable to report",
+    "cardCount": "{count} card(s)",
+    "questionCount": "{count} question(s)",
+    "playCount": "{count} play(s)",
+    "ai": "AI",
+    "noContentFound": "No content found",
+    "adjustFiltersOrSearch": "Try adjusting your filters or search"
   },
   "pricing": {
     "title": "Pricing",
@@ -1686,7 +1741,66 @@
     "backToList": "Back to list",
     "challengeSent": "Challenge sent!",
     "challengeReceived": "You received a challenge!",
-    "xpGained": "+{xp} XP earned"
+    "xpGained": "+{xp} XP earned",
+    "loadError": "Unable to load duels",
+    "invalidDuelId": "Invalid duel ID",
+    "acceptError": "Unable to accept challenge",
+    "selectOpponentAndQuiz": "Select an opponent and a quiz",
+    "challengeReceivedNotif": "Your opponent received your challenge",
+    "challengeAccepted": "Challenge accepted! 🎯",
+    "bestManWins": "May the best one win!",
+    "confirmDeclineChallenge": "Are you sure you want to decline this challenge?",
+    "challengeDeclined": "Challenge declined",
+    "challengeDeclinedDesc": "The challenge has been declined",
+    "confirmCancelChallenge": "Are you sure you want to cancel this challenge?",
+    "challengeCancelled": "Challenge cancelled",
+    "challengeCancelledDesc": "The challenge has been cancelled",
+    "inviteLinkCreated": "Link created! 🔗",
+    "shareWithOpponent": "Share it with your opponent",
+    "matchQuality": {
+      "excellent": "Perfect match",
+      "good": "Good match",
+      "fair": "Balanced match"
+    },
+    "launchChallenge": "Launch a challenge",
+    "createDuelDesc": "Choose an opponent and a quiz for the challenge",
+    "selectOpponent": "Select an opponent",
+    "quiz": "Quiz",
+    "selectQuiz": "Select a quiz",
+    "stakeXP": "XP stakes",
+    "stakesExplanation": "Winner gets {stakes} XP, loser loses {loss}",
+    "sendChallenge": "Send challenge",
+    "createInviteLink": "Create invite link",
+    "shareInviteLinkDesc": "Share the link to challenge anyone",
+    "inviteLinkCreatedTitle": "Invite link created!",
+    "inviteLinkExpiresIn24h": "Share this link with the person you want to challenge. It expires in 24 hours.",
+    "shareMessage": "I challenge you to a duel!\n\nClick here to accept: {link}",
+    "copyMessage": "Copy message",
+    "recommendedOpponents": "Recommended opponents",
+    "playersWithSimilarLevel": "Players with a similar level",
+    "active": "Active",
+    "requests": "Requests",
+    "wins": "Wins",
+    "netXP": "Net XP",
+    "sent": "Sent",
+    "history": "History",
+    "noChallengeRequests": "No duel requests",
+    "userChallengesYou": "{username} is challenging you!",
+    "noPendingChallenge": "No pending challenge",
+    "challengeTo": "Challenge to {username}",
+    "noActiveDuel": "No active duel",
+    "opponentHasNotPlayed": "{username} hasn't played",
+    "waitingForOpponent": "Waiting for opponent...",
+    "noCompletedDuel": "No completed duel",
+    "createChallengeError": "Unable to create challenge",
+    "declineError": "Unable to decline challenge",
+    "cancelError": "Unable to cancel challenge",
+    "createLinkError": "Unable to create link",
+    "selectQuizForDuel": "Select a quiz for the duel",
+    "launchAChallenge": "Launch a challenge!",
+    "opponentShort": "Opp",
+    "messageCopied": "Message copied!",
+    "readyToShare": "Ready to share"
   },
   "sparkWidget": {
     "askSpark": "Ask Spark a question!",
@@ -2937,5 +3051,15 @@
     "violationsRecorded": "{count} suspicious behavior(s) recorded.",
     "penaltyXp": "Penalty: -{xp} XP",
     "scoreAdjusted": "Adjusted score: {original}% → {adjusted}%"
+  },
+  "admin": {
+    "noData": "No data",
+    "noEmailFound": "No email found"
+  },
+  "examMode": {
+    "noDocument": "No document"
+  },
+  "export": {
+    "loadError": "Unable to load data"
   }
 }

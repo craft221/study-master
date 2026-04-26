@@ -28,7 +28,39 @@
     "info": "معلومة",
     "upgrade_premium": "الترقية إلى المميز",
     "upgrade": "الترقية إلى المميز",
-    "optional": "اختياري"
+    "optional": "اختياري",
+    "copied": "تم النسخ!",
+    "copiedToClipboard": "تم النسخ إلى الحافظة",
+    "linkCopied": "تم نسخ الرابط!",
+    "allFem": "الكل",
+    "play": "العب",
+    "played": "تم اللعب",
+    "view": "عرض",
+    "ok": "حسنًا",
+    "accept": "قبول",
+    "decline": "رفض",
+    "pending": "قيد الانتظار",
+    "accepted": "مقبول",
+    "inProgress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "cancelled": "ملغى",
+    "declined": "مرفوض",
+    "waiting": "في الانتظار",
+    "you": "أنت",
+    "anonymous": "مجهول",
+    "victory": "انتصار",
+    "draw": "تعادل",
+    "loadMore": "تحميل المزيد",
+    "level": "المستوى",
+    "minutes": "{count} دقيقة",
+    "hours": "{count} ساعة",
+    "hoursMinutes": "{hours} ساعة {minutes} دقيقة",
+    "difficulty": {
+      "easy": "سهل",
+      "medium": "متوسط",
+      "hard": "صعب"
+    },
+    "linkCopiedToClipboard": "تم نسخ الرابط إلى الحافظة"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -498,7 +530,8 @@
     "sessionComplete": "Session complete!",
     "cardsReviewed": "cards reviewed",
     "accuracy": "Accuracy",
-    "spacedRepetitionTitle": "Spaced Repetition"
+    "spacedRepetitionTitle": "Spaced Repetition",
+    "noCardToReview": "لا توجد بطاقات للمراجعة"
   },
   "flashcardsPage": {
     "title": "Flashcards",
@@ -746,7 +779,9 @@
     "activity": {
       "empty": "لا يوجد نشاط في هذه المجموعة",
       "recent": "النشاط الأخير"
-    }
+    },
+    "loadError": "تعذر تحميل المجموعات",
+    "loadGroupError": "تعذر تحميل المجموعة"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -759,7 +794,8 @@
     "year": "Year",
     "stats": "Statistics",
     "achievements": "Achievements",
-    "badges": "Badges"
+    "badges": "Badges",
+    "loadError": "تعذر تحميل الملف الشخصي"
   },
   "settings": {
     "title": "الإعدادات",
@@ -782,7 +818,8 @@
     "deleteAccount": "حذف الحساب",
     "deleteAccountWarning": "This action is irreversible",
     "saveChanges": "Save changes",
-    "changesSaved": "Changes saved"
+    "changesSaved": "Changes saved",
+    "loadError": "تعذر تحميل الملف الشخصي"
   },
   "spark": {
     "greeting": "Hi! I'm Spark, your study companion!",
@@ -1226,7 +1263,11 @@
     "flashcardsTab": "Flashcards",
     "flashcardDecks": "Flashcard Decks",
     "quizzesTab": "Quizzes",
-    "sortBy": "Sort by",
+    "sortBy": {
+      "recent": "الأحدث",
+      "popular": "الأكثر شعبية",
+      "bestRating": "الأعلى تقييمًا"
+    },
     "recent": "الأحدث",
     "popular": "الأكثر شعبية",
     "rating": "التقييم",
@@ -1282,7 +1323,21 @@
       "en": "English",
       "es": "Español"
     },
-    "aiGenerated": "AI"
+    "aiGenerated": "AI",
+    "notes": "الملاحظات",
+    "flashcards": "البطاقات",
+    "quiz": "الاختبارات",
+    "duplicateError": "تعذر النسخ",
+    "loadContentError": "تعذر تحميل المحتوى",
+    "quizLinkCopiedToClipboard": "تم نسخ رابط الاختبار إلى الحافظة",
+    "teamWillReview": "سيراجع فريقنا هذا المحتوى",
+    "reportError": "تعذر الإبلاغ",
+    "cardCount": "{count} بطاقة",
+    "questionCount": "{count} سؤالًا",
+    "playCount": "{count} لعبة",
+    "ai": "ذكاء اصطناعي",
+    "noContentFound": "لم يتم العثور على محتوى",
+    "adjustFiltersOrSearch": "جرب تعديل الفلاتر أو البحث"
   },
   "pricing": {
     "title": "الأسعار",
@@ -1686,7 +1741,66 @@
     "backToList": "Back to list",
     "challengeSent": "Challenge sent!",
     "challengeReceived": "You received a challenge!",
-    "xpGained": "+{xp} XP earned"
+    "xpGained": "+{xp} XP earned",
+    "loadError": "تعذر تحميل المبارزات",
+    "invalidDuelId": "معرّف المبارزة غير صالح",
+    "acceptError": "تعذر قبول التحدي",
+    "selectOpponentAndQuiz": "اختر منافسًا واختبارًا",
+    "challengeReceivedNotif": "استلم منافسك تحديك",
+    "challengeAccepted": "تم قبول التحدي! 🎯",
+    "bestManWins": "ليفز الأفضل!",
+    "confirmDeclineChallenge": "هل أنت متأكد من رفض هذا التحدي؟",
+    "challengeDeclined": "تم رفض التحدي",
+    "challengeDeclinedDesc": "تم رفض التحدي",
+    "confirmCancelChallenge": "هل أنت متأكد من إلغاء هذا التحدي؟",
+    "challengeCancelled": "تم إلغاء التحدي",
+    "challengeCancelledDesc": "تم إلغاء التحدي",
+    "inviteLinkCreated": "تم إنشاء الرابط! 🔗",
+    "shareWithOpponent": "شاركه مع منافسك",
+    "matchQuality": {
+      "excellent": "تطابق مثالي",
+      "good": "تطابق جيد",
+      "fair": "تطابق متوازن"
+    },
+    "launchChallenge": "ابدأ تحديًا",
+    "createDuelDesc": "اختر منافسًا واختبارًا للتحدي",
+    "selectOpponent": "اختر منافسًا",
+    "quiz": "اختبار",
+    "selectQuiz": "اختر اختبارًا",
+    "stakeXP": "نقاط الخبرة المراهنة",
+    "stakesExplanation": "الفائز يربح {stakes} نقطة خبرة، الخاسر يفقد {loss}",
+    "sendChallenge": "أرسل التحدي",
+    "createInviteLink": "إنشاء رابط دعوة",
+    "shareInviteLinkDesc": "شارك الرابط لتحدي أي شخص",
+    "inviteLinkCreatedTitle": "تم إنشاء رابط الدعوة!",
+    "inviteLinkExpiresIn24h": "شارك هذا الرابط مع الشخص الذي تريد تحديه. ينتهي خلال 24 ساعة.",
+    "shareMessage": "أتحداك في مبارزة!\n\nانقر هنا للقبول: {link}",
+    "copyMessage": "نسخ الرسالة",
+    "recommendedOpponents": "المنافسون المقترحون",
+    "playersWithSimilarLevel": "لاعبون بمستوى مماثل",
+    "active": "نشطة",
+    "requests": "طلبات",
+    "wins": "انتصارات",
+    "netXP": "صافي نقاط الخبرة",
+    "sent": "مرسلة",
+    "history": "السجل",
+    "noChallengeRequests": "لا توجد طلبات مبارزة",
+    "userChallengesYou": "{username} يتحداك!",
+    "noPendingChallenge": "لا توجد تحديات معلقة",
+    "challengeTo": "تحدٍ إلى {username}",
+    "noActiveDuel": "لا توجد مبارزات نشطة",
+    "opponentHasNotPlayed": "{username} لم يلعب بعد",
+    "waitingForOpponent": "في انتظار المنافس...",
+    "noCompletedDuel": "لا توجد مبارزات منتهية",
+    "createChallengeError": "تعذر إنشاء التحدي",
+    "declineError": "تعذر رفض التحدي",
+    "cancelError": "تعذر إلغاء التحدي",
+    "createLinkError": "تعذر إنشاء الرابط",
+    "selectQuizForDuel": "اختر اختبارًا للمبارزة",
+    "launchAChallenge": "ابدأ تحديًا!",
+    "opponentShort": "م",
+    "messageCopied": "تم نسخ الرسالة!",
+    "readyToShare": "جاهز للمشاركة"
   },
   "sparkWidget": {
     "askSpark": "اسأل سبارك سؤالاً!",
@@ -2937,5 +3051,15 @@
     "violationsRecorded": "تم تسجيل {count} سلوكيات مشبوهة.",
     "penaltyXp": "عقوبة: -{xp} نقطة خبرة",
     "scoreAdjusted": "النقاط المعدلة: {original}% ← {adjusted}%"
+  },
+  "admin": {
+    "noData": "لا توجد بيانات",
+    "noEmailFound": "لم يتم العثور على بريد إلكتروني"
+  },
+  "examMode": {
+    "noDocument": "لا توجد وثيقة"
+  },
+  "export": {
+    "loadError": "تعذر تحميل البيانات"
   }
 }

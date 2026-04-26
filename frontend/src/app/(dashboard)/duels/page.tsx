@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import duelsService, { Duel, DuelStatus, DuelStats, RecommendedOpponent } from '@/services/duels'
 import api from '@/lib/api'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface Quiz {
   id: number
@@ -34,6 +35,7 @@ interface UserOption {
 export default function DuelsPage() {
   const { toast } = useToast()
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [duels, setDuels] = useState<Duel[]>([])
   const [pendingDuels, setPendingDuels] = useState<Duel[]>([])
@@ -87,14 +89,14 @@ export default function DuelsPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les duels',
+        title: t('common.error'),
+        description: t('duels.loadError'),
         variant: 'destructive'
       })
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [toast, t])
 
   useEffect(() => {
     fetchData()
@@ -115,8 +117,8 @@ export default function DuelsPage() {
   const handleCreateDuel = async () => {
     if (!selectedOpponent || !selectedQuiz) {
       toast({
-        title: 'Attention',
-        description: 'Sélectionnez un adversaire et un quiz',
+        title: t('common.warning'),
+        description: t('duels.selectOpponentAndQuiz'),
         variant: 'destructive'
       })
       return
@@ -131,8 +133,8 @@ export default function DuelsPage() {
       })
 
       toast({
-        title: 'Défi envoyé ! ⚔️',
-        description: 'Votre adversaire a reçu votre défi',
+        title: t('duels.challengeSent'),
+        description: t('duels.challengeReceivedNotif'),
       })
 
       setCreateDialogOpen(false)
@@ -143,8 +145,8 @@ export default function DuelsPage() {
     } catch (error: any) {
       console.error('Create duel error:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de créer le défi',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.createChallengeError'),
         variant: 'destructive'
       })
     } finally {
@@ -157,15 +159,15 @@ export default function DuelsPage() {
     try {
       await duelsService.accept(duelId)
       toast({
-        title: 'Défi accepté ! 🎯',
-        description: 'Que le meilleur gagne !',
+        title: t('duels.challengeAccepted'),
+        description: t('duels.bestManWins'),
       })
       fetchData()
     } catch (error: any) {
       console.error('Accept error:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible d\'accepter le défi',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.acceptError'),
         variant: 'destructive'
       })
     } finally {
@@ -174,20 +176,20 @@ export default function DuelsPage() {
   }
 
   const handleDeclineDuel = async (duelId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir refuser ce défi ?')) return
+    if (!confirm(t('duels.confirmDeclineChallenge'))) return
     setActionLoading(prev => new Set(prev).add(duelId))
     try {
       await duelsService.decline(duelId)
       toast({
-        title: 'Défi refusé',
-        description: 'Le défi a été décliné',
+        title: t('duels.challengeDeclined'),
+        description: t('duels.challengeDeclinedDesc'),
       })
       fetchData()
     } catch (error: any) {
       console.error('Decline error:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de refuser le défi',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.declineError'),
         variant: 'destructive'
       })
     } finally {
@@ -209,8 +211,8 @@ export default function DuelsPage() {
   const handleCreateInviteLink = async () => {
     if (!selectedQuiz) {
       toast({
-        title: 'Attention',
-        description: 'Sélectionnez un quiz pour le duel',
+        title: t('common.warning'),
+        description: t('duels.selectQuizForDuel'),
         variant: 'destructive'
       })
       return
@@ -228,14 +230,14 @@ export default function DuelsPage() {
       setInviteDialogOpen(true)
 
       toast({
-        title: 'Lien créé ! 🔗',
-        description: 'Partagez-le avec votre adversaire',
+        title: t('duels.inviteLinkCreated'),
+        description: t('duels.shareWithOpponent'),
       })
     } catch (error: any) {
       console.error('Create invite link error:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de créer le lien',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('duels.createLinkError'),
         variant: 'destructive'
       })
     } finally {
@@ -248,8 +250,8 @@ export default function DuelsPage() {
     try {
       await navigator.clipboard.writeText(inviteLink)
       toast({
-        title: 'Copié !',
-        description: 'Le lien a été copié dans le presse-papiers',
+        title: t('common.copied'),
+        description: t('common.linkCopiedToClipboard'),
       })
     } catch {
       // Fallback for non-HTTPS contexts
@@ -260,8 +262,8 @@ export default function DuelsPage() {
       document.execCommand('copy')
       document.body.removeChild(textArea)
       toast({
-        title: 'Copié !',
-        description: 'Le lien a été copié dans le presse-papiers',
+        title: t('common.copied'),
+        description: t('common.linkCopiedToClipboard'),
       })
     }
   }
@@ -269,9 +271,9 @@ export default function DuelsPage() {
   // Badge de qualité du match
   const getMatchQualityBadge = (quality: string) => {
     const config = {
-      excellent: { className: 'bg-green-100 text-green-800', text: 'Match parfait' },
-      good: { className: 'bg-blue-100 text-blue-800', text: 'Bon match' },
-      fair: { className: 'bg-yellow-100 text-yellow-800', text: 'Match équilibré' }
+      excellent: { className: 'bg-green-100 text-green-800', text: t('duels.matchQuality.excellent') },
+      good: { className: 'bg-blue-100 text-blue-800', text: t('duels.matchQuality.good') },
+      fair: { className: 'bg-yellow-100 text-yellow-800', text: t('duels.matchQuality.fair') }
     }
     const c = config[quality as keyof typeof config] || config.fair
     return <Badge className={c.className}>{c.text}</Badge>
@@ -280,12 +282,12 @@ export default function DuelsPage() {
   // Badge de statut avec couleurs appropriées
   const getStatusBadge = (status: DuelStatus) => {
     const variants: Record<DuelStatus, { variant: 'default' | 'secondary' | 'outline' | 'destructive', icon: any, text: string, className: string }> = {
-      pending: { variant: 'secondary', icon: Clock, text: 'En attente', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-      accepted: { variant: 'default', icon: CheckCircle2, text: 'Accepté', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-      in_progress: { variant: 'default', icon: Swords, text: 'En cours', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
-      completed: { variant: 'outline', icon: Trophy, text: 'Terminé', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
-      declined: { variant: 'destructive', icon: XCircle, text: 'Refusé', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-      cancelled: { variant: 'secondary', icon: XCircle, text: 'Annulé', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
+      pending: { variant: 'secondary', icon: Clock, text: t('common.pending'), className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+      accepted: { variant: 'default', icon: CheckCircle2, text: t('common.accepted'), className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+      in_progress: { variant: 'default', icon: Swords, text: t('common.inProgress'), className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
+      completed: { variant: 'outline', icon: Trophy, text: t('common.completed'), className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+      declined: { variant: 'destructive', icon: XCircle, text: t('common.declined'), className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+      cancelled: { variant: 'secondary', icon: XCircle, text: t('common.cancelled'), className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
     }
 
     const config = variants[status] || variants.pending
@@ -323,10 +325,10 @@ export default function DuelsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2">
             <Swords className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-orange-500" />
-            Duels
+            {t('duels.title')}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Défiez vos amis et gagnez de l'XP !
+            {t('duels.subtitle')}
           </p>
         </div>
 
@@ -335,29 +337,29 @@ export default function DuelsPage() {
             <DialogTrigger asChild>
               <Button size="default" className="gap-1 sm:gap-2 text-sm sm:text-base px-3 sm:px-4">
                 <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="hidden sm:inline">Lancer un défi</span>
-                <span className="sm:hidden">Défier</span>
+                <span className="hidden sm:inline">{t('duels.launchChallenge')}</span>
+                <span className="sm:hidden">{t('duels.challenge')}</span>
               </Button>
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Créer un duel</DialogTitle>
+              <DialogTitle>{t('duels.createDuel')}</DialogTitle>
               <DialogDescription>
-                Choisissez un adversaire et un quiz pour le défi
+                {t('duels.createDuelDesc')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="opponent">Adversaire</Label>
+                <Label htmlFor="opponent">{t('duels.opponent')}</Label>
                 <Select value={selectedOpponent} onValueChange={setSelectedOpponent}>
                   <SelectTrigger id="opponent">
-                    <SelectValue placeholder="Sélectionner un adversaire" />
+                    <SelectValue placeholder={t('duels.selectOpponent')} />
                   </SelectTrigger>
                   <SelectContent>
                     {users.map(user => (
                       <SelectItem key={user.id} value={user.id.toString()}>
-                        {user.username} (Niveau {user.level})
+                        {user.username} ({t('common.level')} {user.level})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -365,10 +367,10 @@ export default function DuelsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="quiz">Quiz</Label>
+                <Label htmlFor="quiz">{t('duels.quiz')}</Label>
                 <Select value={selectedQuiz} onValueChange={setSelectedQuiz}>
                   <SelectTrigger id="quiz">
-                    <SelectValue placeholder="Sélectionner un quiz" />
+                    <SelectValue placeholder={t('duels.selectQuiz')} />
                   </SelectTrigger>
                   <SelectContent>
                     {quizzes.map(quiz => (
@@ -381,7 +383,7 @@ export default function DuelsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="stakes">Enjeux XP</Label>
+                <Label htmlFor="stakes">{t('duels.stakeXP')}</Label>
                 <Input
                   id="stakes"
                   type="number"
@@ -392,7 +394,7 @@ export default function DuelsPage() {
                   onChange={(e) => setStakesXP(parseInt(e.target.value) || 50)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Le gagnant remporte {stakesXP} XP, le perdant en perd {Math.round(stakesXP / 2)}
+                  {t('duels.stakesExplanation', { stakes: stakesXP, loss: Math.round(stakesXP / 2) })}
                 </p>
               </div>
             </div>
@@ -403,7 +405,7 @@ export default function DuelsPage() {
               ) : (
                 <Swords className="h-4 w-4 mr-2" />
               )}
-              Envoyer le défi
+              {t('duels.sendChallenge')}
             </Button>
 
             <div className="relative my-4">
@@ -411,7 +413,7 @@ export default function DuelsPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">ou</span>
+                <span className="bg-background px-2 text-muted-foreground">{t('common.or')}</span>
               </div>
             </div>
 
@@ -426,10 +428,10 @@ export default function DuelsPage() {
               ) : (
                 <Link2 className="h-4 w-4" />
               )}
-              Créer un lien d'invitation
+              {t('duels.createInviteLink')}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              Partagez le lien pour défier n'importe qui
+              {t('duels.shareInviteLinkDesc')}
             </p>
           </DialogContent>
         </Dialog>
@@ -442,10 +444,10 @@ export default function DuelsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="h-5 w-5 text-primary" />
-              Lien d'invitation créé !
+              {t('duels.inviteLinkCreatedTitle')}
             </DialogTitle>
             <DialogDescription>
-              Partagez ce lien avec la personne que vous voulez défier. Il expire dans 24 heures.
+              {t('duels.inviteLinkExpiresIn24h')}
             </DialogDescription>
           </DialogHeader>
 
@@ -466,7 +468,7 @@ export default function DuelsPage() {
                 variant="outline"
                 className="flex-1 gap-2"
                 onClick={async () => {
-                  const text = `Je te défie en duel !\n\nClique ici pour accepter: ${inviteLink}`
+                  const text = t('duels.shareMessage', { link: inviteLink })
                   try {
                     await navigator.clipboard.writeText(text)
                   } catch {
@@ -477,21 +479,21 @@ export default function DuelsPage() {
                     document.execCommand('copy')
                     document.body.removeChild(textArea)
                   }
-                  toast({ title: 'Message copié !', description: 'Prêt à partager' })
+                  toast({ title: t('duels.messageCopied'), description: t('duels.readyToShare') })
                 }}
               >
                 <Copy className="h-4 w-4" />
-                Copier le message
+                {t('duels.copyMessage')}
               </Button>
             </div>
 
             <p className="text-sm text-muted-foreground text-center">
-              Enjeux: <span className="font-bold text-primary">{stakesXP} XP</span>
+              {t('duels.stakeXP')}: <span className="font-bold text-primary">{stakesXP} XP</span>
             </p>
           </div>
 
           <Button onClick={() => setInviteDialogOpen(false)} className="w-full">
-            Fermer
+            {t('common.close')}
           </Button>
         </DialogContent>
       </Dialog>
@@ -502,10 +504,10 @@ export default function DuelsPage() {
           <CardHeader className="p-3 sm:p-4 lg:p-6">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-              Adversaires recommandés
+              {t('duels.recommendedOpponents')}
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Joueurs avec un niveau similaire
+              {t('duels.playersWithSimilarLevel')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
@@ -521,7 +523,7 @@ export default function DuelsPage() {
                   <h4 className="font-semibold text-center text-xs sm:text-sm truncate max-w-full">{opponent.username}</h4>
                   <div className="flex items-center gap-1 text-[10px] sm:text-sm text-muted-foreground">
                     <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                    Niv. {opponent.level}
+                    {t('common.level')} {opponent.level}
                   </div>
                   <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2 hidden sm:block">
                     {opponent.total_xp} XP ({opponent.xp_difference > 0 ? '+' : ''}{opponent.xp_difference})
@@ -533,7 +535,7 @@ export default function DuelsPage() {
                     onClick={() => handleChallengeRecommended(opponent)}
                     disabled={opponent.has_pending_duel}
                   >
-                    {opponent.has_pending_duel ? 'En cours' : 'Défier'}
+                    {opponent.has_pending_duel ? t('common.inProgress') : t('duels.challenge')}
                   </Button>
                 </div>
               ))}
@@ -546,7 +548,7 @@ export default function DuelsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <Card className="p-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Actifs</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('duels.active')}</CardTitle>
             <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
           </CardHeader>
           <CardContent className="p-3 sm:p-4 pt-0">
@@ -556,7 +558,7 @@ export default function DuelsPage() {
 
         <Card className="p-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Demandes</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('duels.requests')}</CardTitle>
             <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
           </CardHeader>
           <CardContent className="p-3 sm:p-4 pt-0">
@@ -566,7 +568,7 @@ export default function DuelsPage() {
 
         <Card className="p-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Victoires</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('duels.wins')}</CardTitle>
             <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
           </CardHeader>
           <CardContent className="p-3 sm:p-4 pt-0">
@@ -579,7 +581,7 @@ export default function DuelsPage() {
 
         <Card className="p-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">XP Net</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">{t('duels.netXP')}</CardTitle>
             {(stats?.net_xp || 0) >= 0 ? (
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
             ) : (
@@ -601,22 +603,22 @@ export default function DuelsPage() {
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger value="pending" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
-            <span className="hidden sm:inline">Demandes</span>
+            <span className="hidden sm:inline">{t('duels.requests')}</span>
             <span className="sm:hidden">📥</span>
             <span className="ml-1">({pendingDuels.length})</span>
           </TabsTrigger>
           <TabsTrigger value="sent" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
-            <span className="hidden sm:inline">Envoyés</span>
+            <span className="hidden sm:inline">{t('duels.sent')}</span>
             <span className="sm:hidden">📤</span>
             <span className="ml-1">({sentDuels.length})</span>
           </TabsTrigger>
           <TabsTrigger value="active" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
-            <span className="hidden sm:inline">Actifs</span>
+            <span className="hidden sm:inline">{t('duels.active')}</span>
             <span className="sm:hidden">⚔️</span>
             <span className="ml-1">({activeDuels.length})</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
-            <span className="hidden sm:inline">Historique</span>
+            <span className="hidden sm:inline">{t('duels.history')}</span>
             <span className="sm:hidden">📜</span>
             <span className="ml-1">({completedDuels.length})</span>
           </TabsTrigger>
@@ -628,7 +630,7 @@ export default function DuelsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                <p className="text-muted-foreground text-sm sm:text-base">Aucune demande de duel</p>
+                <p className="text-muted-foreground text-sm sm:text-base">{t('duels.noChallengeRequests')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -642,13 +644,13 @@ export default function DuelsPage() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-sm sm:text-lg truncate">
-                          {duel.challenger?.username || 'Utilisateur'} vous défie !
+                          {t('duels.userChallengesYou', { username: duel.challenger?.username || t('common.anonymous') })}
                         </h3>
                         <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                          {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
+                          {duel.quiz?.title || t('duels.quiz')} • {duel.stakes_xp} XP
                         </p>
                         <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
-                          <Badge variant="outline" className="text-xs">Niv. {duel.challenger?.level || '?'}</Badge>
+                          <Badge variant="outline" className="text-xs">{t('common.level')} {duel.challenger?.level || '?'}</Badge>
                           {getStatusBadge(duel.status)}
                         </div>
                       </div>
@@ -667,7 +669,7 @@ export default function DuelsPage() {
                         ) : (
                           <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
                         )}
-                        <span className="hidden sm:inline">Refuser</span>
+                        <span className="hidden sm:inline">{t('common.decline')}</span>
                       </Button>
                       <Button size="sm" onClick={() => handleAcceptDuel(duel.id)} disabled={actionLoading.has(duel.id)} className="text-xs sm:text-sm">
                         {actionLoading.has(duel.id) ? (
@@ -675,8 +677,8 @@ export default function DuelsPage() {
                         ) : (
                           <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
                         )}
-                        <span className="hidden sm:inline">Accepter</span>
-                        <span className="sm:hidden">OK</span>
+                        <span className="hidden sm:inline">{t('common.accept')}</span>
+                        <span className="sm:hidden">{t('common.ok')}</span>
                       </Button>
                     </div>
                   </div>
@@ -692,9 +694,9 @@ export default function DuelsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                <p className="text-muted-foreground text-sm sm:text-base">Aucun défi en attente</p>
+                <p className="text-muted-foreground text-sm sm:text-base">{t('duels.noPendingChallenge')}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                  Lancez un défi !
+                  {t('duels.launchAChallenge')}
                 </p>
               </CardContent>
             </Card>
@@ -709,16 +711,16 @@ export default function DuelsPage() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-sm sm:text-lg truncate">
-                          Défi à {duel.opponent?.username || 'Adversaire'}
+                          {t('duels.challengeTo', { username: duel.opponent?.username || t('duels.opponent') })}
                         </h3>
                         <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                          {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
+                          {duel.quiz?.title || t('duels.quiz')} • {duel.stakes_xp} XP
                         </p>
                         <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
-                          <Badge variant="outline" className="text-xs">Niv. {duel.opponent?.level || '?'}</Badge>
+                          <Badge variant="outline" className="text-xs">{t('common.level')} {duel.opponent?.level || '?'}</Badge>
                           <Badge variant="secondary" className="text-blue-600 text-xs">
                             <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                            Attente
+                            {t('common.waiting')}
                           </Badge>
                         </div>
                       </div>
@@ -729,25 +731,25 @@ export default function DuelsPage() {
                       size="sm"
                       className="text-xs sm:text-sm"
                       onClick={async () => {
-                        if (!confirm('Êtes-vous sûr de vouloir annuler ce défi ?')) return
+                        if (!confirm(t('duels.confirmCancelChallenge'))) return
                         try {
                           await duelsService.cancel(duel.id)
                           toast({
-                            title: 'Défi annulé',
-                            description: 'Le défi a été annulé'
+                            title: t('duels.challengeCancelled'),
+                            description: t('duels.challengeCancelledDesc')
                           })
                           fetchData()
                         } catch (error: any) {
                           toast({
-                            title: 'Erreur',
-                            description: error.response?.data?.detail || 'Impossible d\'annuler le défi',
+                            title: t('common.error'),
+                            description: error.response?.data?.detail || t('duels.cancelError'),
                             variant: 'destructive'
                           })
                         }
                       }}
                     >
                       <XCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Annuler</span>
+                      <span className="hidden sm:inline">{t('common.cancel')}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -762,7 +764,7 @@ export default function DuelsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <Swords className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                <p className="text-muted-foreground text-sm sm:text-base">Aucun duel actif</p>
+                <p className="text-muted-foreground text-sm sm:text-base">{t('duels.noActiveDuel')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -794,13 +796,13 @@ export default function DuelsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="font-semibold text-sm sm:text-lg truncate">
-                            vs {opponent?.username || 'Adversaire'}
+                            vs {opponent?.username || t('duels.opponent')}
                           </h3>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                            {duel.quiz?.title || 'Quiz'} • {duel.stakes_xp} XP
+                            {duel.quiz?.title || t('duels.quiz')} • {duel.stakes_xp} XP
                           </p>
                           <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
-                            <Badge variant="outline" className="text-xs">Niv. {opponent?.level || '?'}</Badge>
+                            <Badge variant="outline" className="text-xs">{t('common.level')} {opponent?.level || '?'}</Badge>
                             {getStatusBadge(duel.status)}
                           </div>
 
@@ -808,19 +810,19 @@ export default function DuelsPage() {
                           {currentUserHasPlayed && (
                             <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 sm:mt-3 p-2 sm:p-3 bg-muted/50 rounded-lg text-xs sm:text-sm">
                               <div>
-                                <span className="text-muted-foreground">Vous:</span>{' '}
+                                <span className="text-muted-foreground">{t('common.you')}:</span>{' '}
                                 <span className="font-bold text-primary">{myScore ?? '?'}</span>
                               </div>
                               {opponentHasPlayed ? (
                                 <div>
-                                  <span className="text-muted-foreground">Adverse:</span>{' '}
+                                  <span className="text-muted-foreground">{t('duels.opponentShort')}:</span>{' '}
                                   <span className="font-bold">{opponentScore ?? '?'}</span>
                                 </div>
                               ) : (
                                 <div className="text-muted-foreground flex items-center gap-1">
                                   <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  <span className="hidden sm:inline">{opponent?.username || 'Adversaire'} n'a pas joué</span>
-                                  <span className="sm:hidden">En attente</span>
+                                  <span className="hidden sm:inline">{t('duels.opponentHasNotPlayed', { username: opponent?.username || t('duels.opponent') })}</span>
+                                  <span className="sm:hidden">{t('common.pending')}</span>
                                 </div>
                               )}
                             </div>
@@ -833,17 +835,17 @@ export default function DuelsPage() {
                           {!currentUserHasPlayed ? (
                             <Button size="sm" onClick={() => startDuel(duel.quiz!.id, duel.id)} className="text-xs sm:text-sm">
                               <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              Jouer
+                              {t('common.play')}
                             </Button>
                           ) : (
                             <Badge variant="secondary" className="text-green-600 bg-green-100 dark:bg-green-900/30 text-xs">
                               <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                              Joué
+                              {t('common.played')}
                             </Badge>
                           )}
                           {currentUserHasPlayed && !opponentHasPlayed && (
                             <p className="text-[10px] sm:text-xs text-muted-foreground">
-                              Attente adversaire...
+                              {t('duels.waitingForOpponent')}
                             </p>
                           )}
                         </div>
@@ -862,7 +864,7 @@ export default function DuelsPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                <p className="text-muted-foreground text-sm sm:text-base">Aucun duel terminé</p>
+                <p className="text-muted-foreground text-sm sm:text-base">{t('duels.noCompletedDuel')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -894,32 +896,32 @@ export default function DuelsPage() {
                         )}
                         <div className="min-w-0">
                           <h3 className="font-semibold text-sm sm:text-lg flex flex-wrap items-center gap-1 sm:gap-2">
-                            <span className="truncate">vs {opponent?.username || 'Adversaire'}</span>
+                            <span className="truncate">vs {opponent?.username || t('duels.opponent')}</span>
                             {isWinner && (
                               <Badge variant="outline" className="text-yellow-600 border-yellow-600 text-xs">
                                 <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                                <span className="hidden sm:inline">Victoire</span>
+                                <span className="hidden sm:inline">{t('common.victory')}</span>
                                 <span className="sm:hidden">W</span>
                               </Badge>
                             )}
                             {isDraw && (
                               <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
                                 <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                                <span className="hidden sm:inline">Égalité</span>
+                                <span className="hidden sm:inline">{t('common.draw')}</span>
                                 <span className="sm:hidden">=</span>
                               </Badge>
                             )}
                           </h3>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                            {duel.quiz?.title || 'Quiz'}
+                            {duel.quiz?.title || t('duels.quiz')}
                           </p>
                           <div className="flex flex-wrap gap-2 sm:gap-4 mt-1 sm:mt-2 text-xs sm:text-sm">
                             <div>
-                              <span className="text-muted-foreground">Vous:</span>{' '}
+                              <span className="text-muted-foreground">{t('common.you')}:</span>{' '}
                               <span className="font-bold">{myScore ?? '?'}</span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Adv:</span>{' '}
+                              <span className="text-muted-foreground">{t('duels.opponentShort')}:</span>{' '}
                               <span className="font-bold">{opponentScore ?? '?'}</span>
                             </div>
                             <div>
