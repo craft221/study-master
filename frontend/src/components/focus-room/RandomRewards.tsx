@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Gift, Sparkles, Zap, Star, Trophy, Flame, Diamond } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,18 +15,6 @@ interface Reward {
   value: number
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
 }
-
-const POSSIBLE_REWARDS: Omit<Reward, 'id'>[] = [
-  { type: 'xp', name: 'Bonus XP', description: '+15 XP bonus', emoji: '✨', value: 15, rarity: 'common' },
-  { type: 'xp', name: 'Super Bonus', description: '+30 XP bonus', emoji: '💫', value: 30, rarity: 'rare' },
-  { type: 'xp', name: 'Mega Bonus', description: '+50 XP bonus', emoji: '⭐', value: 50, rarity: 'epic' },
-  { type: 'xp', name: 'Jackpot XP!', description: '+100 XP bonus!', emoji: '🌟', value: 100, rarity: 'legendary' },
-  { type: 'multiplier', name: 'Double XP', description: 'x2 XP pendant 5 min', emoji: '🔥', value: 2, rarity: 'rare' },
-  { type: 'multiplier', name: 'Triple XP', description: 'x3 XP pendant 3 min', emoji: '💎', value: 3, rarity: 'epic' },
-  { type: 'streak_saver', name: 'Streak Shield', description: 'Protège ta streak', emoji: '🛡️', value: 1, rarity: 'rare' },
-  { type: 'badge', name: 'Badge Focus', description: 'Badge exclusif', emoji: '🏅', value: 1, rarity: 'epic' },
-  { type: 'mystery', name: 'Coffre Mystère', description: '???', emoji: '🎁', value: 1, rarity: 'legendary' },
-]
 
 const RARITY_CONFIG = {
   common: { color: 'from-gray-400 to-gray-500', glow: 'shadow-gray-500/30', chance: 0.5 },
@@ -48,6 +36,18 @@ export default function RandomRewards({ isActive, focusMinutes, onRewardClaimed,
   const [claimedRewards, setClaimedRewards] = useState<Reward[]>([])
   const [isOpening, setIsOpening] = useState(false)
   const [lastRewardMinute, setLastRewardMinute] = useState(0)
+
+  const POSSIBLE_REWARDS: Omit<Reward, 'id'>[] = useMemo(() => [
+    { type: 'xp', name: t('focusRoom.rewards.bonusXp'), description: t('focusRoom.rewards.descBonus15'), emoji: '✨', value: 15, rarity: 'common' },
+    { type: 'xp', name: t('focusRoom.rewards.superBonus'), description: t('focusRoom.rewards.descBonus30'), emoji: '💫', value: 30, rarity: 'rare' },
+    { type: 'xp', name: t('focusRoom.rewards.megaBonus'), description: t('focusRoom.rewards.descBonus50'), emoji: '⭐', value: 50, rarity: 'epic' },
+    { type: 'xp', name: t('focusRoom.rewards.jackpot'), description: t('focusRoom.rewards.descBonus100'), emoji: '🌟', value: 100, rarity: 'legendary' },
+    { type: 'multiplier', name: t('focusRoom.rewards.doubleXp'), description: t('focusRoom.rewards.descDouble'), emoji: '🔥', value: 2, rarity: 'rare' },
+    { type: 'multiplier', name: t('focusRoom.rewards.tripleXp'), description: t('focusRoom.rewards.descTriple'), emoji: '💎', value: 3, rarity: 'epic' },
+    { type: 'streak_saver', name: t('focusRoom.rewards.streakShield'), description: t('focusRoom.rewards.descStreakShield'), emoji: '🛡️', value: 1, rarity: 'rare' },
+    { type: 'badge', name: t('focusRoom.rewards.focusBadge'), description: t('focusRoom.rewards.descFocusBadge'), emoji: '🏅', value: 1, rarity: 'epic' },
+    { type: 'mystery', name: t('focusRoom.rewards.mysteryChest'), description: t('focusRoom.rewards.descMystery'), emoji: '🎁', value: 1, rarity: 'legendary' },
+  ], [t])
 
   // Check for random rewards every 5 minutes of focus
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function RandomRewards({ isActive, focusMinutes, onRewardClaimed,
     if (navigator.vibrate) {
       navigator.vibrate([100, 50, 100])
     }
-  }, [])
+  }, [POSSIBLE_REWARDS])
 
   const claimReward = () => {
     if (!pendingReward) return

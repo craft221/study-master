@@ -11,18 +11,21 @@ import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { useTranslation } from '@/contexts/LanguageContext'
 
-const loginSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Mot de passe minimum 6 caractères'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
+type LoginForm = {
+  email: string
+  password: string
+}
 
 export default function LoginPage() {
   const router = useRouter()
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const loginSchema = z.object({
+    email: z.string().email(t('auth.emailInvalid')),
+    password: z.string().min(6, t('auth.passwordMin6')),
+  })
 
   const {
     register,

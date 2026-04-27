@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 // Imports dynamiques pour éviter les erreurs d'hydratation
 const UniversitySelect = dynamic(() => import('@/components/ui/UniversitySelect'), {
@@ -95,6 +96,8 @@ interface UserStats {
 
 export default function ProfilePage() {
   const { toast } = useToast()
+  const { t, locale } = useTranslation()
+  const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
@@ -151,8 +154,8 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error fetching profile:', error)
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger le profil',
+        title: t('common.error'),
+        description: t('profile.loadError'),
         variant: 'destructive'
       })
     } finally {
@@ -176,13 +179,13 @@ export default function ProfilePage() {
       setProfile(response.data)
       setEditing(false)
       toast({
-        title: 'Profil mis à jour',
-        description: 'Vos informations ont été enregistrées',
+        title: t('profile.profileUpdated'),
+        description: t('profile.infoSaved'),
       })
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de mettre à jour le profil',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('profile.updateError'),
         variant: 'destructive'
       })
     } finally {
@@ -195,8 +198,8 @@ export default function ProfilePage() {
 
     if (passwordForm.new_password !== passwordForm.confirm_password) {
       toast({
-        title: 'Erreur',
-        description: 'Les mots de passe ne correspondent pas',
+        title: t('common.error'),
+        description: t('auth.passwordsDoNotMatch'),
         variant: 'destructive'
       })
       return
@@ -210,8 +213,8 @@ export default function ProfilePage() {
       })
 
       toast({
-        title: 'Mot de passe modifié',
-        description: 'Votre mot de passe a été mis à jour avec succès',
+        title: t('profile.passwordChanged'),
+        description: t('profile.passwordChangedDesc'),
       })
 
       setPasswordForm({
@@ -221,8 +224,8 @@ export default function ProfilePage() {
       })
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de changer le mot de passe',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('profile.passwordChangeError'),
         variant: 'destructive'
       })
     }
@@ -233,7 +236,7 @@ export default function ProfilePage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="mt-4 text-gray-600">Chargement du profil...</p>
+          <p className="mt-4 text-gray-600">{t('profile.loadingProfile')}</p>
         </div>
       </div>
     )
@@ -253,12 +256,12 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold text-gray-900">{profile.username}</h1>
             <p className="text-gray-600">{profile.email}</p>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="default">Niveau {profile.level}</Badge>
-              <Badge variant="secondary">{profile.total_xp} XP</Badge>
+              <Badge variant="default">{t('profile.levelBadge', { level: profile.level })}</Badge>
+              <Badge variant="secondary">{t('profile.xpBadge', { count: profile.total_xp })}</Badge>
               {profile.current_streak > 0 && (
                 <Badge variant="outline">
                   <Zap className="h-3 w-3 mr-1 text-orange-500" />
-                  {profile.current_streak} jours
+                  {t('profile.daysBadge', { count: profile.current_streak })}
                 </Badge>
               )}
             </div>
@@ -268,17 +271,17 @@ export default function ProfilePage() {
         {!editing ? (
           <Button onClick={() => setEditing(true)}>
             <Edit className="h-4 w-4 mr-2" />
-            Modifier
+            {t('common.edit')}
           </Button>
         ) : (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setEditing(false)}>
               <X className="h-4 w-4 mr-2" />
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Enregistrement...' : 'Enregistrer'}
+              {saving ? t('profile.saving') : t('common.save')}
             </Button>
           </div>
         )}
@@ -290,7 +293,7 @@ export default function ProfilePage() {
           <CardContent className="pt-6">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">Progression vers le niveau {stats.level + 1}</span>
+                <span className="font-medium">{t('profile.xpProgress', { level: stats.level + 1 })}</span>
                 <span className="text-gray-600">
                   {stats.xp_progress} / {stats.xp_needed_for_next_level} XP
                 </span>
@@ -304,23 +307,23 @@ export default function ProfilePage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="info">Informations</TabsTrigger>
-          <TabsTrigger value="stats">Statistiques</TabsTrigger>
-          <TabsTrigger value="settings">Paramètres</TabsTrigger>
+          <TabsTrigger value="info">{t('profile.tabInfo')}</TabsTrigger>
+          <TabsTrigger value="stats">{t('profile.tabStats')}</TabsTrigger>
+          <TabsTrigger value="settings">{t('profile.tabSettings')}</TabsTrigger>
         </TabsList>
 
         {/* Info Tab */}
         <TabsContent value="info" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Informations personnelles</CardTitle>
+              <CardTitle>{t('profile.personalInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {editing ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="full_name">Nom complet</Label>
+                      <Label htmlFor="full_name">{t('profile.fullName')}</Label>
                       <Input
                         id="full_name"
                         value={editForm.full_name}
@@ -328,21 +331,21 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="university">Université</Label>
+                      <Label htmlFor="university">{t('profile.university')}</Label>
                       <UniversitySelect
                         value={editForm.university}
                         onChange={(value) => setEditForm({ ...editForm, university: value })}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="major">Filière</Label>
+                      <Label htmlFor="major">{t('profile.major')}</Label>
                       <MajorCombobox
                         value={editForm.major}
                         onChange={(value) => setEditForm({ ...editForm, major: value })}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="promotion">Promotion</Label>
+                      <Label htmlFor="promotion">{t('profile.promotion')}</Label>
                       <Input
                         id="promotion"
                         value={editForm.promotion}
@@ -350,7 +353,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country">Pays</Label>
+                      <Label htmlFor="country">{t('profile.country')}</Label>
                       <Input
                         id="country"
                         value={editForm.country}
@@ -358,7 +361,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="city">Ville</Label>
+                      <Label htmlFor="city">{t('profile.city')}</Label>
                       <Input
                         id="city"
                         value={editForm.city}
@@ -367,13 +370,13 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="bio">Bio</Label>
+                    <Label htmlFor="bio">{t('profile.bio')}</Label>
                     <Textarea
                       id="bio"
                       rows={3}
                       value={editForm.bio}
                       onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                      placeholder="Parlez-nous de vous..."
+                      placeholder={t('profile.bioPlaceholder')}
                     />
                   </div>
                 </>
@@ -383,7 +386,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-3">
                       <User className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-600">Nom complet</p>
+                        <p className="text-sm text-gray-600">{t('profile.fullName')}</p>
                         <p className="font-medium">{profile.full_name}</p>
                       </div>
                     </div>
@@ -392,7 +395,7 @@ export default function ProfilePage() {
                     <div className="flex items-start gap-3">
                       <BookOpen className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-600">Bio</p>
+                        <p className="text-sm text-gray-600">{t('profile.bio')}</p>
                         <p className="font-medium">{profile.bio}</p>
                       </div>
                     </div>
@@ -401,7 +404,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-3">
                       <GraduationCap className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-600">Université</p>
+                        <p className="text-sm text-gray-600">{t('profile.university')}</p>
                         <p className="font-medium">{profile.university}</p>
                       </div>
                     </div>
@@ -410,7 +413,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-3">
                       <BookOpen className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-600">Filière</p>
+                        <p className="text-sm text-gray-600">{t('profile.major')}</p>
                         <p className="font-medium">{profile.major}</p>
                       </div>
                     </div>
@@ -419,7 +422,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-3">
                       <MapPin className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-600">Localisation</p>
+                        <p className="text-sm text-gray-600">{t('profile.location')}</p>
                         <p className="font-medium">
                           {[profile.city, profile.country].filter(Boolean).join(', ')}
                         </p>
@@ -429,9 +432,9 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-600">Membre depuis</p>
+                      <p className="text-sm text-gray-600">{t('profile.memberSince')}</p>
                       <p className="font-medium">
-                        {new Date(profile.created_at).toLocaleDateString('fr-FR', {
+                        {new Date(profile.created_at).toLocaleDateString(localeMap[locale] || 'fr-FR', {
                           day: 'numeric',
                           month: 'long',
                           year: 'numeric'
@@ -447,29 +450,29 @@ export default function ProfilePage() {
           {/* Gamification Stats */}
           <Card>
             <CardHeader>
-              <CardTitle>Gamification</CardTitle>
+              <CardTitle>{t('profile.gamification')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <Trophy className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
                   <p className="text-2xl font-bold">{profile.level}</p>
-                  <p className="text-sm text-gray-600">Niveau</p>
+                  <p className="text-sm text-gray-600">{t('profile.level')}</p>
                 </div>
                 <div className="text-center">
                   <Award className="h-8 w-8 mx-auto text-blue-500 mb-2" />
                   <p className="text-2xl font-bold">{profile.total_xp}</p>
-                  <p className="text-sm text-gray-600">XP Total</p>
+                  <p className="text-sm text-gray-600">{t('profile.xpTotal')}</p>
                 </div>
                 <div className="text-center">
                   <Zap className="h-8 w-8 mx-auto text-orange-500 mb-2" />
                   <p className="text-2xl font-bold">{profile.current_streak}</p>
-                  <p className="text-sm text-gray-600">Série actuelle</p>
+                  <p className="text-sm text-gray-600">{t('profile.currentStreak')}</p>
                 </div>
                 <div className="text-center">
                   <Zap className="h-8 w-8 mx-auto text-purple-500 mb-2" />
                   <p className="text-2xl font-bold">{profile.longest_streak}</p>
-                  <p className="text-sm text-gray-600">Meilleure série</p>
+                  <p className="text-sm text-gray-600">{t('profile.longestStreak')}</p>
                 </div>
               </div>
             </CardContent>
@@ -485,13 +488,13 @@ export default function ProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-blue-500" />
-                      Notes
+                      {t('profile.notesCard')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.total_notes}</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {stats.notes_this_week} cette semaine
+                      {t('profile.notesThisWeek', { count: stats.notes_this_week })}
                     </p>
                   </CardContent>
                 </Card>
@@ -500,13 +503,13 @@ export default function ProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Brain className="h-4 w-4 text-purple-500" />
-                      Flashcards
+                      {t('profile.flashcardsCard')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.total_flashcards}</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {stats.flashcards_due_today} à réviser aujourd'hui
+                      {t('profile.flashcardsDueToday', { count: stats.flashcards_due_today })}
                     </p>
                   </CardContent>
                 </Card>
@@ -515,13 +518,13 @@ export default function ProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Trophy className="h-4 w-4 text-yellow-500" />
-                      Quiz
+                      {t('profile.quizCard')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold">{stats.completed_quiz_attempts}</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      Score moyen: {stats.average_quiz_score.toFixed(1)}%
+                      {t('profile.averageScore', { score: stats.average_quiz_score.toFixed(1) })}
                     </p>
                   </CardContent>
                 </Card>
@@ -529,27 +532,27 @@ export default function ProfilePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Activité hebdomadaire</CardTitle>
+                  <CardTitle>{t('profile.weeklyActivity')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span>Notes créées</span>
+                        <span>{t('profile.notesCreatedThisWeek')}</span>
                         <span className="font-medium">{stats.notes_this_week}</span>
                       </div>
                       <Progress value={(stats.notes_this_week / 10) * 100} />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span>Flashcards révisées</span>
+                        <span>{t('profile.flashcardsThisWeek')}</span>
                         <span className="font-medium">{stats.flashcards_reviewed_this_week}</span>
                       </div>
                       <Progress value={(stats.flashcards_reviewed_this_week / 50) * 100} />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span>Quiz complétés</span>
+                        <span>{t('profile.quizThisWeek')}</span>
                         <span className="font-medium">{stats.quizzes_taken_this_week}</span>
                       </div>
                       <Progress value={(stats.quizzes_taken_this_week / 5) * 100} />
@@ -560,24 +563,24 @@ export default function ProfilePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Statistiques globales</CardTitle>
+                  <CardTitle>{t('profile.globalStats')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
-                      <p className="text-sm text-gray-600">Matières</p>
+                      <p className="text-sm text-gray-600">{t('profile.subjects')}</p>
                       <p className="text-2xl font-bold">{stats.total_subjects}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Révisions</p>
+                      <p className="text-sm text-gray-600">{t('profile.reviews')}</p>
                       <p className="text-2xl font-bold">{stats.total_flashcards_reviewed}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Quiz créés</p>
+                      <p className="text-sm text-gray-600">{t('profile.quizzesCreated')}</p>
                       <p className="text-2xl font-bold">{stats.total_quizzes}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Requêtes IA</p>
+                      <p className="text-sm text-gray-600">{t('profile.aiRequests')}</p>
                       <p className="text-2xl font-bold">{profile.total_ai_requests}</p>
                     </div>
                   </div>
@@ -591,13 +594,13 @@ export default function ProfilePage() {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Préférences</CardTitle>
+              <CardTitle>{t('profile.preferences')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="notifications">Notifications</Label>
-                  <p className="text-sm text-gray-600">Recevoir des notifications dans l'app</p>
+                  <Label htmlFor="notifications">{t('profile.notifications')}</Label>
+                  <p className="text-sm text-gray-600">{t('profile.notifInApp')}</p>
                 </div>
                 <Switch
                   id="notifications"
@@ -611,8 +614,8 @@ export default function ProfilePage() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="email_notifs">Notifications par email</Label>
-                  <p className="text-sm text-gray-600">Recevoir des emails pour les événements importants</p>
+                  <Label htmlFor="email_notifs">{t('profile.emailNotifications')}</Label>
+                  <p className="text-sm text-gray-600">{t('profile.emailNotifDesc')}</p>
                 </div>
                 <Switch
                   id="email_notifs"
@@ -630,13 +633,13 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="h-5 w-5" />
-                Changer le mot de passe
+                {t('profile.changePassword')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 <div>
-                  <Label htmlFor="current_password">Mot de passe actuel</Label>
+                  <Label htmlFor="current_password">{t('profile.currentPassword')}</Label>
                   <Input
                     id="current_password"
                     type="password"
@@ -648,7 +651,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="new_password">Nouveau mot de passe</Label>
+                  <Label htmlFor="new_password">{t('auth.newPassword')}</Label>
                   <Input
                     id="new_password"
                     type="password"
@@ -661,7 +664,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="confirm_password">Confirmer le mot de passe</Label>
+                  <Label htmlFor="confirm_password">{t('profile.confirmPasswordLabel')}</Label>
                   <Input
                     id="confirm_password"
                     type="password"
@@ -674,7 +677,7 @@ export default function ProfilePage() {
                 </div>
                 <Button type="submit">
                   <Lock className="h-4 w-4 mr-2" />
-                  Changer le mot de passe
+                  {t('profile.changePassword')}
                 </Button>
               </form>
             </CardContent>

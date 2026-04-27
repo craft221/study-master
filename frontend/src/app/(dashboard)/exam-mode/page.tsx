@@ -82,24 +82,28 @@ const parseLocalDate = (dateStr: string) => {
 const WIZARD_STEPS = ['info', 'content', 'schedule', 'preview'] as const
 type WizardStep = typeof WIZARD_STEPS[number]
 
-const DIFFICULTY_LABELS: Record<DifficultyLevel, { label: string; description: string; color: string }> = {
-  easy: { label: 'Facile', description: 'Révision légère, bases solides', color: 'text-green-500' },
-  medium: { label: 'Moyen', description: 'Équilibre lecture/exercices', color: 'text-yellow-500' },
-  hard: { label: 'Difficile', description: 'Préparation intensive', color: 'text-red-500' }
-}
-
-const STUDY_TIMES = [
-  { value: 'morning', label: 'Matin (6h-12h)' },
-  { value: 'afternoon', label: 'Après-midi (12h-18h)' },
-  { value: 'evening', label: 'Soir (18h-22h)' },
-  { value: 'night', label: 'Nuit (22h-6h)' }
-]
-
 export default function ExamModePage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const { isOnline } = useOfflineContext()
+
+  const DIFFICULTY_LABELS: Record<DifficultyLevel, { label: string; description: string; color: string }> = {
+    easy: { label: t('exam_mode.difficulty_easy'), description: t('exam_mode.difficulty_easy_desc'), color: 'text-green-500' },
+    medium: { label: t('exam_mode.difficulty_medium'), description: t('exam_mode.difficulty_medium_desc'), color: 'text-yellow-500' },
+    hard: { label: t('exam_mode.difficulty_hard'), description: t('exam_mode.difficulty_hard_desc'), color: 'text-red-500' }
+  }
+
+  const STUDY_TIMES = [
+    { value: 'morning', label: t('exam_mode.time_morning') },
+    { value: 'afternoon', label: t('exam_mode.time_afternoon') },
+    { value: 'evening', label: t('exam_mode.time_evening') },
+    { value: 'night', label: t('exam_mode.time_night') }
+  ]
+
+  // BCP-47 mapping for date formatting
+  const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
+  const dateLocale = localeMap[locale] || 'fr-FR'
 
   // Data states
   const [loading, setLoading] = useState(true)
@@ -267,8 +271,8 @@ export default function ExamModePage() {
     const hasContent = formData.note_ids.length > 0 || formData.document_ids.length > 0
     if (!formData.exam_name || !formData.exam_date || !hasContent) {
       toast({
-        title: t('exam_mode.validation_error') || 'Erreur',
-        description: t('exam_mode.fill_required_fields') || 'Veuillez remplir tous les champs et sélectionner du contenu',
+        title: t('exam_mode.validation_error'),
+        description: t('exam_mode.fill_required_fields'),
         variant: 'destructive'
       })
       return
@@ -284,8 +288,8 @@ export default function ExamModePage() {
       resetWizard()
 
       toast({
-        title: t('exam_mode.created_success') || 'Session créée !',
-        description: t('exam_mode.plan_generated') || 'Votre plan de révision a été généré.'
+        title: t('exam_mode.created_success'),
+        description: t('exam_mode.plan_generated')
       })
 
       // La session est déjà démarrée automatiquement par le backend (status = ACTIVE après generate_study_plan)
@@ -293,7 +297,7 @@ export default function ExamModePage() {
       await fetchData()
     } catch (error: any) {
       toast({
-        title: t('common.error') || 'Erreur',
+        title: t('common.error'),
         description: error.response?.data?.detail || t('exam_mode.create_error'),
         variant: 'destructive'
       })
@@ -339,23 +343,23 @@ export default function ExamModePage() {
         // Pour quiz/flashcards: générer le contenu si pas encore créé
         if ((taskType === 'quiz' || taskType === 'practice_exam') && !quizId) {
           try {
-            toast({ title: 'Génération du quiz en cours...' })
+            toast({ title: t('exam_mode.generating_quiz') })
             const generated = await examModeService.generateTaskContent(taskId)
             if (generated.quiz) {
               quizId = generated.quiz.id
             }
           } catch {
-            toast({ title: 'Impossible de générer le quiz', variant: 'destructive' })
+            toast({ title: t('exam_mode.cannot_generate_quiz'), variant: 'destructive' })
           }
         } else if (taskType === 'flashcards' && !deckId) {
           try {
-            toast({ title: 'Génération des flashcards en cours...' })
+            toast({ title: t('exam_mode.generating_flashcards') })
             const generated = await examModeService.generateTaskContent(taskId)
             if (generated.flashcard_deck) {
               deckId = generated.flashcard_deck.id
             }
           } catch {
-            toast({ title: 'Impossible de générer les flashcards', variant: 'destructive' })
+            toast({ title: t('exam_mode.cannot_generate_flashcards'), variant: 'destructive' })
           }
         }
 
@@ -372,7 +376,7 @@ export default function ExamModePage() {
         }
 
         // Fallback: rester sur la page si pas de destination
-        toast({ title: t('exam_mode.task_started') || 'Tâche démarrée !' })
+        toast({ title: t('exam_mode.task_started') })
         await fetchData()
       } else {
         // Mode offline: mise à jour optimiste locale
@@ -394,7 +398,7 @@ export default function ExamModePage() {
             { task_id: taskId }
           )
         }
-        toast({ title: t('exam_mode.task_started') || 'Tâche démarrée (sera synchronisée)' })
+        toast({ title: t('exam_mode.task_started_offline') })
       }
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
@@ -412,7 +416,7 @@ export default function ExamModePage() {
     try {
       if (isOnline) {
         await examModeService.completeTask(taskId, score)
-        toast({ title: t('exam_mode.task_completed') || 'Tâche terminée !', description: '+10 XP' })
+        toast({ title: t('exam_mode.task_completed'), description: t('exam_mode.xp_awarded') })
       } else {
         // Mode offline: mise à jour optimiste locale
         if (activeSession) {
@@ -440,7 +444,7 @@ export default function ExamModePage() {
             { task_id: taskId, score }
           )
         }
-        toast({ title: t('exam_mode.task_completed') || 'Tâche terminée (sera synchronisée)' })
+        toast({ title: t('exam_mode.task_completed_offline') })
       }
       if (isOnline) await fetchData()
     } catch (error) {
@@ -455,7 +459,7 @@ export default function ExamModePage() {
     try {
       if (isOnline) {
         await examModeService.skipTask(taskId)
-        toast({ title: t('exam_mode.task_skipped') || 'Tâche passée' })
+        toast({ title: t('exam_mode.task_skipped') })
       } else {
         // Mode offline: mise à jour optimiste locale
         if (activeSession) {
@@ -479,7 +483,7 @@ export default function ExamModePage() {
             { task_id: taskId }
           )
         }
-        toast({ title: t('exam_mode.task_skipped') || 'Tâche passée (sera synchronisée)' })
+        toast({ title: t('exam_mode.task_skipped_offline') })
       }
       if (isOnline) await fetchData()
     } catch (error) {
@@ -491,14 +495,14 @@ export default function ExamModePage() {
 
   const handleDeleteSession = async (sessionId: number) => {
     // Confirmation avant suppression
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette session ? Cette action est irréversible.')) {
+    if (!window.confirm(t('exam_mode.delete_confirm'))) {
       return
     }
 
     if (!isOnline) {
       toast({
-        title: 'Hors-ligne',
-        description: 'La suppression nécessite une connexion internet.',
+        title: t('exam_mode.mobile_offline'),
+        description: t('exam_mode.offline_delete_error'),
         variant: 'destructive'
       })
       return
@@ -511,7 +515,7 @@ export default function ExamModePage() {
         setActiveSession(null)
         setTodayProgress(null)
       }
-      toast({ title: t('exam_mode.session_deleted') || 'Session supprimée' })
+      toast({ title: t('exam_mode.session_deleted') })
     } catch (error) {
       toast({ title: t('common.error'), variant: 'destructive' })
     }
@@ -527,7 +531,7 @@ export default function ExamModePage() {
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail?.message || 'Erreur lors du chargement',
+        description: error.response?.data?.detail?.message || t('exam_mode.load_error'),
         variant: 'destructive'
       })
     } finally {
@@ -544,7 +548,7 @@ export default function ExamModePage() {
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail?.message || 'Erreur lors du chargement',
+        description: error.response?.data?.detail?.message || t('exam_mode.load_error'),
         variant: 'destructive'
       })
     } finally {
@@ -561,7 +565,7 @@ export default function ExamModePage() {
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail?.message || 'Erreur lors du chargement',
+        description: error.response?.data?.detail?.message || t('exam_mode.load_error'),
         variant: 'destructive'
       })
     } finally {
@@ -578,7 +582,7 @@ export default function ExamModePage() {
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail?.message || 'Erreur lors du chargement',
+        description: error.response?.data?.detail?.message || t('exam_mode.load_error'),
         variant: 'destructive'
       })
     } finally {
@@ -592,14 +596,14 @@ export default function ExamModePage() {
     try {
       const result = await examModeService.generateTaskContent(taskId)
       toast({
-        title: result.generated ? t('exam_mode.content_generated') || 'Contenu généré !' : t('exam_mode.content_linked') || 'Contenu lié',
+        title: result.generated ? t('exam_mode.content_generated') : t('exam_mode.content_linked'),
         description: result.message
       })
       await fetchData()
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail?.message || 'Erreur',
+        description: error.response?.data?.detail?.message || t('exam_mode.error_generic'),
         variant: 'destructive'
       })
     } finally {
@@ -613,8 +617,8 @@ export default function ExamModePage() {
     try {
       const result = await examModeService.generatePracticeExam(activeSession.id, 60)
       toast({
-        title: t('exam_mode.practice_exam_generated') || 'Examen blanc généré !',
-        description: `${result.question_count} questions - ${result.duration_minutes} minutes`
+        title: t('exam_mode.practice_exam_generated'),
+        description: t('exam_mode.practice_exam_desc', { count: result.question_count, minutes: result.duration_minutes })
       })
       // Naviguer vers le quiz généré
       if (result.quiz_id) {
@@ -623,7 +627,7 @@ export default function ExamModePage() {
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail || 'Erreur',
+        description: error.response?.data?.detail || t('exam_mode.error_generic'),
         variant: 'destructive'
       })
     } finally {
@@ -638,20 +642,20 @@ export default function ExamModePage() {
       const result = await examModeService.adaptStudyPlan(activeSession.id)
       if (result.status === 'adapted') {
         toast({
-          title: t('exam_mode.plan_adapted') || 'Plan adapté !',
-          description: `${result.adaptations.length} adaptation(s) appliquée(s)`
+          title: t('exam_mode.plan_adapted'),
+          description: t('exam_mode.plan_adapted_desc', { count: result.adaptations.length })
         })
         fetchData()
       } else {
         toast({
-          title: t('exam_mode.no_adaptation') || 'Pas de modification nécessaire',
-          description: t('exam_mode.plan_optimal') || 'Votre plan est déjà optimal'
+          title: t('exam_mode.no_adaptation'),
+          description: t('exam_mode.plan_optimal')
         })
       }
     } catch (error: any) {
       toast({
         title: t('common.error'),
-        description: error.response?.data?.detail || 'Erreur',
+        description: error.response?.data?.detail || t('exam_mode.error_generic'),
         variant: 'destructive'
       })
     } finally {
@@ -697,10 +701,10 @@ export default function ExamModePage() {
             <CloudOff className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5 sm:mt-0" />
             <div>
               <p className="font-medium text-sm sm:text-base text-orange-900 dark:text-orange-100">
-                Mode hors-ligne
+                {t('exam_mode.offline_mode')}
               </p>
               <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300">
-                Vos actions seront synchronisées au retour de la connexion.
+                {t('exam_mode.offline_sync_info')}
               </p>
             </div>
           </div>
@@ -714,18 +718,18 @@ export default function ExamModePage() {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3">
               <GraduationCap className="w-6 h-6 sm:w-8 sm:h-8 text-primary shrink-0" />
               <span className="hidden sm:inline">{t('exam_mode.title') || 'Exam Mode'}</span>
-              <span className="sm:hidden">Examen</span>
+              <span className="sm:hidden">{t('exam_mode.mobile_title')}</span>
             </h1>
             {isFromCache && (
               <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                 <CloudOff className="w-3 h-3 mr-0.5 sm:mr-1" />
-                <span className="hidden sm:inline">Cache</span>
+                <span className="hidden sm:inline">{t('exam_mode.mobile_cache')}</span>
               </span>
             )}
             {!isOnline && (
               <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 <CloudOff className="w-3 h-3 mr-0.5 sm:mr-1" />
-                <span className="hidden sm:inline">Hors-ligne</span>
+                <span className="hidden sm:inline">{t('exam_mode.mobile_offline')}</span>
               </span>
             )}
           </div>
@@ -738,20 +742,20 @@ export default function ExamModePage() {
           {!isOnline ? (
             <Button variant="outline" disabled size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm">
               <CloudOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Créer (hors-ligne)</span>
-              <span className="sm:hidden">Hors-ligne</span>
+              <span className="hidden sm:inline">{t('exam_mode.create_offline_disabled')}</span>
+              <span className="sm:hidden">{t('exam_mode.mobile_offline')}</span>
             </Button>
           ) : premiumStatus && !premiumStatus.can_create_exam ? (
             <Button variant="outline" disabled size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm">
               <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('exam_mode.limit_reached') || 'Limite atteinte'}</span>
-              <span className="sm:hidden">Limite</span>
+              <span className="sm:hidden">{t('exam_mode.mobile_limit')}</span>
             </Button>
           ) : (
             <Button onClick={() => setWizardOpen(true)} size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm">
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('exam_mode.new_exam') || 'Nouvel examen'}</span>
-              <span className="sm:hidden">Créer</span>
+              <span className="sm:hidden">{t('exam_mode.mobile_create')}</span>
             </Button>
           )}
         </div>
@@ -765,22 +769,22 @@ export default function ExamModePage() {
           <TabsTrigger value="dashboard" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-2 sm:px-3 flex-col sm:flex-row h-auto">
             <Target className="w-4 h-4" />
             <span className="hidden sm:inline">{t('exam_mode.dashboard') || 'Dashboard'}</span>
-            <span className="sm:hidden text-[10px]">Accueil</span>
+            <span className="sm:hidden text-[10px]">{t('exam_mode.mobile_home')}</span>
           </TabsTrigger>
           <TabsTrigger value="sessions" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-2 sm:px-3 flex-col sm:flex-row h-auto">
             <Calendar className="w-4 h-4" />
             <span className="hidden sm:inline">{t('exam_mode.my_exams') || 'Mes examens'}</span>
-            <span className="sm:hidden text-[10px]">Examens</span>
+            <span className="sm:hidden text-[10px]">{t('exam_mode.mobile_exams')}</span>
           </TabsTrigger>
           <TabsTrigger value="stats" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-2 sm:px-3 flex-col sm:flex-row h-auto">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">{t('exam_mode.statistics') || 'Statistiques'}</span>
-            <span className="sm:hidden text-[10px]">Stats</span>
+            <span className="sm:hidden text-[10px]">{t('exam_mode.mobile_stats')}</span>
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-2 sm:px-3 flex-col sm:flex-row h-auto">
             <Sparkles className="w-4 h-4" />
             <span className="hidden sm:inline">{t('exam_mode.ai_insights') || 'IA Insights'}</span>
-            <span className="sm:hidden text-[10px]">IA</span>
+            <span className="sm:hidden text-[10px]">{t('exam_mode.mobile_ai')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -809,11 +813,11 @@ export default function ExamModePage() {
                       )}
                       {activeSession.days_until_exam < 0 && (
                         <Badge variant="destructive" className="text-xs px-1.5 sm:px-2">
-                          Passé
+                          {t('exam_mode.past')}
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-xs px-1.5 sm:px-2">
-                        {parseLocalDate(activeSession.exam_date).toLocaleDateString('fr-FR', {
+                        {parseLocalDate(activeSession.exam_date).toLocaleDateString(dateLocale, {
                           day: 'numeric',
                           month: 'short'
                         })}
@@ -849,7 +853,7 @@ export default function ExamModePage() {
                     </div>
                     <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
                       <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-500">
-                        {examModeService.formatDuration(activeSession.total_study_minutes)}
+                        {examModeService.formatDuration(activeSession.total_study_minutes, t)}
                       </div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.study_time') || 'Étudié'}</div>
                     </div>
@@ -873,12 +877,12 @@ export default function ExamModePage() {
                   <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden sm:inline">{t('exam_mode.today_tasks') || "Tâches d'aujourd'hui"}</span>
-                    <span className="sm:hidden">Aujourd'hui</span>
+                    <span className="sm:hidden">{t('exam_mode.mobile_today')}</span>
                   </CardTitle>
                   {todayProgress && (
                     <CardDescription className="text-xs sm:text-sm">
                       {todayProgress.tasks_remaining} {t('exam_mode.remaining') || 'restantes'} -
-                      {' '}{examModeService.formatDuration(todayProgress.estimated_time_remaining)}
+                      {' '}{examModeService.formatDuration(todayProgress.estimated_time_remaining, t)}
                     </CardDescription>
                   )}
                 </CardHeader>
@@ -907,8 +911,8 @@ export default function ExamModePage() {
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-sm sm:text-base truncate">{task.title}</p>
                               <p className="text-xs sm:text-sm text-muted-foreground">
-                                <span className="hidden sm:inline">{examModeService.getTaskTypeLabel(task.task_type)} - </span>
-                                {task.estimated_minutes}min
+                                <span className="hidden sm:inline">{examModeService.getTaskTypeLabel(task.task_type, t)} - </span>
+                                {t('exam_mode.min_unit', { count: task.estimated_minutes })}
                               </p>
                             </div>
                           </div>
@@ -995,7 +999,7 @@ export default function ExamModePage() {
                           )}
                         >
                           <div className="text-[10px] text-muted-foreground">
-                            {parseLocalDate(day.study_date).toLocaleDateString('fr-FR', { weekday: 'narrow' })}
+                            {parseLocalDate(day.study_date).toLocaleDateString(dateLocale, { weekday: 'narrow' })}
                           </div>
                           <div className="font-bold text-sm">
                             {parseLocalDate(day.study_date).getDate()}
@@ -1027,7 +1031,7 @@ export default function ExamModePage() {
                         )}
                       >
                         <div className="text-xs text-muted-foreground">
-                          {parseLocalDate(day.study_date).toLocaleDateString('fr-FR', { weekday: 'short' })}
+                          {parseLocalDate(day.study_date).toLocaleDateString(dateLocale, { weekday: 'short' })}
                         </div>
                         <div className="font-bold">
                           {parseLocalDate(day.study_date).getDate()}
@@ -1061,7 +1065,7 @@ export default function ExamModePage() {
                 <Button onClick={() => setWizardOpen(true)} size="sm" className="gap-2 text-sm sm:text-base">
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden sm:inline">{t('exam_mode.create_first') || 'Créer ma première session'}</span>
-                  <span className="sm:hidden">Créer une session</span>
+                  <span className="sm:hidden">{t('exam_mode.mobile_create_session')}</span>
                 </Button>
               </CardContent>
             </Card>
@@ -1091,7 +1095,7 @@ export default function ExamModePage() {
                         )}
                       </CardTitle>
                       <CardDescription className="text-xs sm:text-sm mt-1">
-                        {parseLocalDate(session.exam_date).toLocaleDateString('fr-FR', {
+                        {parseLocalDate(session.exam_date).toLocaleDateString(dateLocale, {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
@@ -1123,7 +1127,7 @@ export default function ExamModePage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                      {examModeService.formatDuration(session.total_study_minutes)}
+                      {examModeService.formatDuration(session.total_study_minutes, t)}
                     </span>
                     {session.predicted_score != null && (
                       <span className="flex items-center gap-1">
@@ -1286,7 +1290,7 @@ export default function ExamModePage() {
                     <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
                   <span className="hidden sm:inline">{t('exam_mode.generate_practice_exam') || 'Générer un examen blanc'}</span>
-                  <span className="sm:hidden">Examen blanc</span>
+                  <span className="sm:hidden">{t('exam_mode.mobile_practice_exam')}</span>
                 </Button>
 
                 <Button
@@ -1302,7 +1306,7 @@ export default function ExamModePage() {
                     <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
                   <span className="hidden sm:inline">{t('exam_mode.adapt_plan') || 'Adapter le plan'}</span>
-                  <span className="sm:hidden">Adapter</span>
+                  <span className="sm:hidden">{t('exam_mode.mobile_adapt')}</span>
                 </Button>
               </div>
 
@@ -1437,19 +1441,19 @@ export default function ExamModePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                       <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
                         <div className="text-lg sm:text-xl font-bold">{weakPoints.performance_summary.tasks_analyzed}</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Analysées</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.stat_analyzed')}</div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
                         <div className="text-lg sm:text-xl font-bold">{weakPoints.performance_summary.average_score}%</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Moyenne</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.stat_average')}</div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
                         <div className="text-lg sm:text-xl font-bold text-red-500">{weakPoints.performance_summary.low_score_count}</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Faibles</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.stat_low')}</div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-muted/50 rounded-lg">
                         <div className="text-lg sm:text-xl font-bold text-orange-500">{weakPoints.performance_summary.time_issues_count}</div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground">Temps</div>
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">{t('exam_mode.stat_time')}</div>
                       </div>
                     </div>
 
@@ -1471,7 +1475,7 @@ export default function ExamModePage() {
                               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                                 <span className="text-xs sm:text-sm">{wp.score_moyen}%</span>
                                 <Badge variant={wp.severite === 'haute' ? 'destructive' : 'outline'} className="text-xs">
-                                  {wp.severite}
+                                  {wp.severite === 'haute' ? t('exam_mode.severity_high') : wp.severite === 'moyenne' ? t('exam_mode.severity_medium') : t('exam_mode.severity_low')}
                                 </Badge>
                               </div>
                             </div>
@@ -1553,15 +1557,15 @@ export default function ExamModePage() {
                         <h4 className="font-medium mb-2 text-sm sm:text-base">{t('exam_mode.suggested_planning') || 'Planning'}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
                           <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">Aujourd'hui</p>
+                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">{t('exam_mode.planning_today')}</p>
                             <p className="line-clamp-2">{advice.planning_suggere.aujourd_hui}</p>
                           </div>
                           <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">Semaine</p>
+                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">{t('exam_mode.planning_week')}</p>
                             <p className="line-clamp-2">{advice.planning_suggere.cette_semaine}</p>
                           </div>
                           <div className="p-2 sm:p-3 bg-muted/50 rounded-lg">
-                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">Avant examen</p>
+                            <p className="font-medium text-[10px] sm:text-xs text-muted-foreground mb-1">{t('exam_mode.planning_before')}</p>
                             <p className="line-clamp-2">{advice.planning_suggere.avant_examen}</p>
                           </div>
                         </div>
@@ -1578,7 +1582,7 @@ export default function ExamModePage() {
                     {/* Learning style */}
                     {advice.context?.learning_style && (
                       <div className="text-xs sm:text-sm text-muted-foreground text-center">
-                        Style : <span className="font-medium text-primary">{advice.context.learning_style}</span>
+                        {t('exam_mode.learning_style')} : <span className="font-medium text-primary">{advice.context.learning_style}</span>
                       </div>
                     )}
                   </CardContent>
@@ -1596,7 +1600,7 @@ export default function ExamModePage() {
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline">{t('exam_mode.create_session') || 'Créer une session de révision'}</span>
-              <span className="sm:hidden">Nouvelle session</span>
+              <span className="sm:hidden">{t('exam_mode.mobile_new_session')}</span>
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               {wizardStep === 'info' && (t('exam_mode.step1_desc') || "Infos examen")}
@@ -1639,7 +1643,7 @@ export default function ExamModePage() {
                   id="exam_name"
                   value={formData.exam_name}
                   onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
-                  placeholder="Ex: Partiel de Maths"
+                  placeholder={t('exam_mode.exam_name_placeholder')}
                   className="h-9 sm:h-10 text-sm"
                 />
               </div>
@@ -1650,7 +1654,7 @@ export default function ExamModePage() {
                   id="exam_description"
                   value={formData.exam_description}
                   onChange={(e) => setFormData({ ...formData, exam_description: e.target.value })}
-                  placeholder="Optionnel..."
+                  placeholder={t('exam_mode.description_placeholder')}
                   rows={2}
                   className="text-sm"
                 />
@@ -1706,7 +1710,7 @@ export default function ExamModePage() {
             <div className="space-y-3 sm:space-y-4">
               <div className="p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
-                  Sélectionnez au moins une note ou un document.
+                  {t('exam_mode.select_at_least_one')}
                 </p>
               </div>
 
@@ -1753,7 +1757,7 @@ export default function ExamModePage() {
 
               {formData.note_ids.length > 0 && (
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  {formData.note_ids.length} note(s)
+                  {t('exam_mode.notes_count', { count: formData.note_ids.length })}
                 </div>
               )}
 
@@ -1793,14 +1797,14 @@ export default function ExamModePage() {
                 ) : (
                   <div className="p-4 sm:p-6 text-center text-muted-foreground">
                     <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs sm:text-sm">Aucun document</p>
+                    <p className="text-xs sm:text-sm">{t('exam_mode.no_documents')}</p>
                   </div>
                 )}
               </div>
 
               {formData.document_ids.length > 0 && (
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  {formData.document_ids.length} document(s)
+                  {t('exam_mode.documents_count_summary', { count: formData.document_ids.length })}
                 </div>
               )}
 
@@ -1811,7 +1815,7 @@ export default function ExamModePage() {
                     "font-medium",
                     (formData.note_ids.length > 0 || formData.document_ids.length > 0) ? "text-green-600" : "text-orange-600"
                   )}>
-                    Total: {formData.note_ids.length} note(s), {formData.document_ids.length} doc(s)
+                    {t('exam_mode.total_summary', { notes: formData.note_ids.length, docs: formData.document_ids.length })}
                   </span>
                 </div>
               </div>
@@ -1833,7 +1837,7 @@ export default function ExamModePage() {
                   <SelectContent>
                     {[0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6].map((h) => (
                       <SelectItem key={h} value={h.toString()}>
-                        {h}h/jour
+                        {t('exam_mode.hours_per_day_value', { hours: h })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1944,7 +1948,7 @@ export default function ExamModePage() {
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.exam_date') || 'Date'}</p>
                     <p className="font-medium">
-                      {formData.exam_date && parseLocalDate(formData.exam_date).toLocaleDateString('fr-FR', {
+                      {formData.exam_date && parseLocalDate(formData.exam_date).toLocaleDateString(dateLocale, {
                         day: 'numeric',
                         month: 'short'
                       })}
@@ -1953,12 +1957,12 @@ export default function ExamModePage() {
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.content_count') || 'Contenu'}</p>
                     <p className="font-medium">
-                      {formData.note_ids.length}n, {formData.document_ids.length}d
+                      {t('exam_mode.preview_notes_docs', { notes: formData.note_ids.length, docs: formData.document_ids.length })}
                     </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.hours_per_day') || 'Heures'}</p>
-                    <p className="font-medium">{formData.study_hours_per_day}h/j</p>
+                    <p className="font-medium">{t('exam_mode.preview_hours_per_day', { hours: formData.study_hours_per_day })}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.difficulty') || 'Difficulté'}</p>
@@ -1969,7 +1973,7 @@ export default function ExamModePage() {
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.notifications') || 'Rappels'}</p>
                     <p className="font-medium">
-                      {formData.notifications_enabled ? formData.reminder_time : 'Non'}
+                      {formData.notifications_enabled ? formData.reminder_time : t('exam_mode.notifications_disabled_short')}
                     </p>
                   </div>
                 </div>
@@ -1996,13 +2000,13 @@ export default function ExamModePage() {
                   className="text-xs sm:text-sm"
                 >
                   <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                  Retour
+                  {t('exam_mode.back')}
                 </Button>
               )}
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => { setWizardOpen(false); resetWizard() }} className="text-xs sm:text-sm">
-                Annuler
+                {t('exam_mode.cancel')}
               </Button>
               {wizardStep !== 'preview' ? (
                 <Button
@@ -2017,7 +2021,7 @@ export default function ExamModePage() {
                   }
                   className="text-xs sm:text-sm"
                 >
-                  Suivant
+                  {t('exam_mode.next')}
                   <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
                 </Button>
               ) : (
@@ -2028,7 +2032,7 @@ export default function ExamModePage() {
                     <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   )}
                   <span className="hidden sm:inline">{t('exam_mode.create') || 'Créer la session'}</span>
-                  <span className="sm:hidden">Créer</span>
+                  <span className="sm:hidden">{t('exam_mode.create_short')}</span>
                 </Button>
               )}
             </div>

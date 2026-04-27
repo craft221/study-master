@@ -566,14 +566,18 @@ export const examModeService = {
 
   /**
    * Formater la durée en heures et minutes
+   * @param t Optional translation function for i18n
    */
-  formatDuration(minutes: number): string {
+  formatDuration(minutes: number, t?: (key: string, params?: Record<string, any>) => string): string {
     if (minutes < 60) {
-      return `${minutes}min`
+      return t ? t('exam_mode.min_unit', { count: minutes }) : `${minutes}min`
     }
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`
+    if (mins > 0) {
+      return t ? t('exam_mode.hour_min_unit', { hours, minutes: mins }) : `${hours}h ${mins}min`
+    }
+    return t ? t('exam_mode.hour_unit', { hours }) : `${hours}h`
   },
 
   /**
@@ -608,8 +612,12 @@ export const examModeService = {
 
   /**
    * Obtenir le label du type de tâche
+   * @param t Optional translation function for i18n
    */
-  getTaskTypeLabel(type: StudyTaskType): string {
+  getTaskTypeLabel(type: StudyTaskType, t?: (key: string, params?: Record<string, any>) => string): string {
+    if (t) {
+      return t(`exam_mode.task_types.${type}`)
+    }
     const labels: Record<StudyTaskType, string> = {
       read: 'Lecture',
       flashcards: 'Flashcards',
@@ -634,19 +642,35 @@ export const examModeService = {
 
   /**
    * Obtenir le message d'urgence
+   * @param t Optional translation function for i18n
    */
-  getUrgencyMessage(daysUntilExam: number): { message: string; color: string } | null {
+  getUrgencyMessage(
+    daysUntilExam: number,
+    t?: (key: string, params?: Record<string, any>) => string
+  ): { message: string; color: string } | null {
     if (daysUntilExam <= 0) {
-      return { message: "C'est le jour J !", color: 'text-purple-500' }
+      return {
+        message: t ? t('exam_mode.urgency_today') : "C'est le jour J !",
+        color: 'text-purple-500'
+      }
     }
     if (daysUntilExam === 1) {
-      return { message: 'Demain !', color: 'text-red-500' }
+      return {
+        message: t ? t('exam_mode.urgency_tomorrow') : 'Demain !',
+        color: 'text-red-500'
+      }
     }
     if (daysUntilExam <= 3) {
-      return { message: `J-${daysUntilExam}`, color: 'text-orange-500' }
+      return {
+        message: t ? t('exam_mode.days_remaining', { count: daysUntilExam }) : `J-${daysUntilExam}`,
+        color: 'text-orange-500'
+      }
     }
     if (daysUntilExam <= 7) {
-      return { message: `J-${daysUntilExam}`, color: 'text-yellow-500' }
+      return {
+        message: t ? t('exam_mode.days_remaining', { count: daysUntilExam }) : `J-${daysUntilExam}`,
+        color: 'text-yellow-500'
+      }
     }
     return null
   },

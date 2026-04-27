@@ -226,7 +226,7 @@ export default function PomodoroTimer({ onStatusChange, onComplete, className }:
             {formatTime(timeLeft)}
           </span>
           <span className="text-sm text-gray-400 mt-2">
-            Session {sessionsCompleted + 1}
+            {t('focusRoom.pomodoro.sessionN', { n: sessionsCompleted + 1 })}
           </span>
         </div>
 

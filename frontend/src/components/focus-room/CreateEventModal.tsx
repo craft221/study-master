@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import { format, addHours, addDays, startOfHour } from 'date-fns'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface CreateEventModalProps {
   isOpen: boolean
@@ -13,29 +14,31 @@ interface CreateEventModalProps {
   onCreated?: (roomId: number) => void
 }
 
-const CATEGORIES = [
-  { value: 'general', label: 'General' },
-  { value: 'sciences', label: 'Sciences' },
-  { value: 'humanities', label: 'Lettres & Sciences Humaines' },
-  { value: 'languages', label: 'Langues' },
-  { value: 'business', label: 'Business & Economie' },
-  { value: 'technology', label: 'Technologie & Informatique' },
-  { value: 'medicine', label: 'Medecine & Sante' },
-  { value: 'law', label: 'Droit' },
-  { value: 'other', label: 'Autre' },
-]
-
 const EMOJIS = ['📚', '💻', '🎯', '🧠', '📖', '✏️', '🔬', '🎓', '💡', '🚀', '⚡', '🌟']
-
-const QUICK_DURATIONS = [
-  { label: '1 heure', hours: 1 },
-  { label: '2 heures', hours: 2 },
-  { label: '3 heures', hours: 3 },
-  { label: 'Demi-journee', hours: 4 },
-]
 
 export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateEventModalProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
+
+  const CATEGORIES = [
+    { value: 'general', label: t('focusRoom.categories.general') },
+    { value: 'sciences', label: t('focusRoom.categories.sciences') },
+    { value: 'humanities', label: t('focusRoom.createEvent.categoryHumanities') },
+    { value: 'languages', label: t('focusRoom.categories.languages') },
+    { value: 'business', label: t('focusRoom.createEvent.categoryBusiness') },
+    { value: 'technology', label: t('focusRoom.createEvent.categoryTechnology') },
+    { value: 'medicine', label: t('focusRoom.createEvent.categoryMedicine') },
+    { value: 'law', label: t('focusRoom.categories.law') },
+    { value: 'other', label: t('focusRoom.categories.other') },
+  ]
+
+  const QUICK_DURATIONS = [
+    { label: t('focusRoom.createEvent.duration1h'), hours: 1 },
+    { label: t('focusRoom.createEvent.duration2h'), hours: 2 },
+    { label: t('focusRoom.createEvent.duration3h'), hours: 3 },
+    { label: t('focusRoom.createEvent.durationHalfDay'), hours: 4 },
+  ]
+
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -61,7 +64,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      toast({ title: 'Le nom est requis', variant: 'destructive' })
+      toast({ title: t('focusRoom.createEvent.nameRequired'), variant: 'destructive' })
       return
     }
 
@@ -69,12 +72,12 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
     const endsAt = new Date(formData.ends_at)
 
     if (endsAt <= startsAt) {
-      toast({ title: 'La date de fin doit etre apres la date de debut', variant: 'destructive' })
+      toast({ title: t('focusRoom.createEvent.endAfterStart'), variant: 'destructive' })
       return
     }
 
     if (startsAt < new Date()) {
-      toast({ title: 'La date de debut doit etre dans le futur', variant: 'destructive' })
+      toast({ title: t('focusRoom.createEvent.startInFuture'), variant: 'destructive' })
       return
     }
 
@@ -87,7 +90,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
         ends_at: endsAt.toISOString(),
       })
 
-      toast({ title: 'Evenement cree avec succes!' })
+      toast({ title: t('focusRoom.createEvent.success') })
       onCreated?.(response.data.id)
       onClose()
 
@@ -103,7 +106,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
         ends_at: format(addHours(startOfHour(new Date()), 3), "yyyy-MM-dd'T'HH:mm"),
       })
     } catch (error: any) {
-      toast({ title: error.response?.data?.detail || 'Erreur lors de la creation', variant: 'destructive' })
+      toast({ title: error.response?.data?.detail || t('focusRoom.createEvent.error'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -124,7 +127,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
             <div className="p-2 rounded-xl bg-blue-500/20">
               <Calendar className="h-5 w-5 text-blue-400" />
             </div>
-            <h2 className="text-lg font-bold text-white">Creer un evenement</h2>
+            <h2 className="text-lg font-bold text-white">{t('focusRoom.createEvent.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -139,7 +142,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           {/* Emoji Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Emoji
+              {t('focusRoom.emoji')}
             </label>
             <div className="flex flex-wrap gap-2">
               {EMOJIS.map(emoji => (
@@ -163,13 +166,13 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Nom de l'evenement *
+              {t('focusRoom.createEvent.nameLabel')}
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Marathon de revision Physique"
+              placeholder={t('focusRoom.createEvent.namePlaceholder')}
               className="w-full px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -178,12 +181,12 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description
+              {t('focusRoom.description')}
             </label>
             <textarea
               value={formData.description}
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Decris l'evenement..."
+              placeholder={t('focusRoom.createEvent.descriptionPlaceholder')}
               rows={2}
               className="w-full px-4 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
@@ -192,7 +195,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categorie
+              {t('focusRoom.category')}
             </label>
             <select
               value={formData.category}
@@ -210,7 +213,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Clock className="h-4 w-4 inline mr-1" />
-                Debut *
+                {t('focusRoom.createEvent.startLabel')}
               </label>
               <input
                 type="datetime-local"
@@ -223,7 +226,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Clock className="h-4 w-4 inline mr-1" />
-                Fin *
+                {t('focusRoom.createEvent.endLabel')}
               </label>
               <input
                 type="datetime-local"
@@ -238,7 +241,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           {/* Quick Duration */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Duree rapide
+              {t('focusRoom.createEvent.quickDuration')}
             </label>
             <div className="flex flex-wrap gap-2">
               {QUICK_DURATIONS.map(dur => (
@@ -258,7 +261,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               <Users className="h-4 w-4 inline mr-1" />
-              Participants max
+              {t('focusRoom.createEvent.maxParticipants')}
             </label>
             <input
               type="number"
@@ -280,10 +283,10 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
               )}
               <div>
                 <p className="font-medium text-white">
-                  {formData.is_private ? 'Evenement prive' : 'Evenement public'}
+                  {formData.is_private ? t('focusRoom.createEvent.privateEvent') : t('focusRoom.createEvent.publicEvent')}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {formData.is_private ? 'Sur invitation uniquement' : 'Visible par tous'}
+                  {formData.is_private ? t('focusRoom.createEvent.privateDesc') : t('focusRoom.createEvent.publicDesc')}
                 </p>
               </div>
             </div>
@@ -311,7 +314,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
               onClick={onClose}
               className="flex-1 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition"
             >
-              Annuler
+              {t('focusRoom.createEvent.cancel')}
             </button>
             <button
               type="submit"
@@ -323,7 +326,7 @@ export default function CreateEventModal({ isOpen, onClose, onCreated }: CreateE
               ) : (
                 <>
                   <Plus className="h-5 w-5" />
-                  Creer l'evenement
+                  {t('focusRoom.createEvent.submit')}
                 </>
               )}
             </button>

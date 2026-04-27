@@ -539,7 +539,7 @@ export default function AIHubPage() {
                       <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                     </div>
                     <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hidden sm:inline">{t('nav.flashcards')}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">Flash</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">{t('ai.mobileFlash')}</span>
                   </div>
                   <span className="font-semibold text-blue-600 text-sm">
                     {quota.usage_stats?.flashcard_generations || 0}
@@ -552,7 +552,7 @@ export default function AIHubPage() {
                       <Brain className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                     </div>
                     <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hidden sm:inline">{t('nav.quizzes')}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">Quiz</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">{t('ai.mobileQuiz')}</span>
                   </div>
                   <span className="font-semibold text-green-600 text-sm">
                     {quota.usage_stats?.quiz_generations || 0}
@@ -565,7 +565,7 @@ export default function AIHubPage() {
                       <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
                     </div>
                     <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hidden sm:inline">{t('ai.summaries')}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">Résumés</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">{t('ai.mobileSummaries')}</span>
                   </div>
                   <span className="font-semibold text-yellow-600 text-sm">
                     {quota.usage_stats?.note_summaries || 0}
@@ -578,7 +578,7 @@ export default function AIHubPage() {
                       <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600" />
                     </div>
                     <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hidden sm:inline">{t('ai.explanations')}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">Explic.</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 sm:hidden">{t('ai.mobileExplanations')}</span>
                   </div>
                   <span className="font-semibold text-indigo-600 text-sm">
                     {quota.usage_stats?.explanations || 0}
@@ -596,17 +596,17 @@ export default function AIHubPage() {
           <TabsTrigger value="generate" className="text-xs sm:text-sm py-2 sm:py-2.5 flex items-center justify-center gap-1 sm:gap-2">
             <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">{t('ai.generate')}</span>
-            <span className="sm:hidden">Générer</span>
+            <span className="sm:hidden">{t('ai.mobileGenerate')}</span>
           </TabsTrigger>
           <TabsTrigger value="analyze" className="text-xs sm:text-sm py-2 sm:py-2.5 flex items-center justify-center gap-1 sm:gap-2">
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">{t('ai.analyze')}</span>
-            <span className="sm:hidden">Analyser</span>
+            <span className="sm:hidden">{t('ai.mobileAnalyze')}</span>
           </TabsTrigger>
           <TabsTrigger value="explain" className="text-xs sm:text-sm py-2 sm:py-2.5 flex items-center justify-center gap-1 sm:gap-2">
             <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">{t('ai.explain')}</span>
-            <span className="sm:hidden">Expliquer</span>
+            <span className="sm:hidden">{t('ai.mobileExplain')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -688,7 +688,7 @@ export default function AIHubPage() {
                     <>
                       <Sparkles className="h-4 w-4 mr-1.5 sm:mr-2" />
                       <span className="hidden sm:inline">{t('ai.generateFlashcardsBtn')}</span>
-                      <span className="sm:hidden">Générer</span>
+                      <span className="sm:hidden">{t('ai.mobileGenerate')}</span>
                     </>
                   )}
                 </Button>
@@ -770,7 +770,7 @@ export default function AIHubPage() {
                     <>
                       <Sparkles className="h-4 w-4 mr-1.5 sm:mr-2" />
                       <span className="hidden sm:inline">{t('ai.generateQuizBtn')}</span>
-                      <span className="sm:hidden">Générer</span>
+                      <span className="sm:hidden">{t('ai.mobileGenerate')}</span>
                     </>
                   )}
                 </Button>
@@ -840,7 +840,7 @@ export default function AIHubPage() {
                     <>
                       <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
                       <span className="hidden sm:inline">{t('ai.summarizeBtn')}</span>
-                      <span className="sm:hidden">Résumer</span>
+                      <span className="sm:hidden">{t('ai.mobileSummarize')}</span>
                     </>
                   )}
                 </Button>
@@ -904,7 +904,7 @@ export default function AIHubPage() {
                     <>
                       <Key className="h-4 w-4 mr-1.5 sm:mr-2" />
                       <span className="hidden sm:inline">{t('ai.extractBtn')}</span>
-                      <span className="sm:hidden">Extraire</span>
+                      <span className="sm:hidden">{t('ai.mobileExtract')}</span>
                     </>
                   )}
                 </Button>
@@ -978,7 +978,7 @@ export default function AIHubPage() {
                   <>
                     <Lightbulb className="h-4 w-4 mr-1.5 sm:mr-2" />
                     <span className="hidden sm:inline">{t('ai.explainBtn')}</span>
-                    <span className="sm:hidden">Expliquer</span>
+                    <span className="sm:hidden">{t('ai.mobileExplain')}</span>
                   </>
                 )}
               </Button>

@@ -5,6 +5,7 @@ import { Brain, Play, Square, Bell, BellOff, Clock, Award, AlertCircle, Sparkles
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface DeepWorkModeProps {
   roomId: number
@@ -22,15 +23,17 @@ interface DeepWorkStatus {
   notifications_blocked: boolean
 }
 
-const DURATION_OPTIONS = [
-  { minutes: 30, label: '30 min', description: 'Session courte' },
-  { minutes: 60, label: '1h', description: 'Session standard' },
-  { minutes: 90, label: '90 min', description: 'Deep Work classique' },
-  { minutes: 120, label: '2h', description: 'Session longue' },
-]
-
 export default function DeepWorkMode({ roomId, onStart, onEnd, className }: DeepWorkModeProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
+
+  const DURATION_OPTIONS = [
+    { minutes: 30, label: '30 min', description: t('focusRoom.deepWork.duration30Desc') },
+    { minutes: 60, label: '1h', description: t('focusRoom.deepWork.duration60Desc') },
+    { minutes: 90, label: '90 min', description: t('focusRoom.deepWork.duration90Desc') },
+    { minutes: 120, label: '2h', description: t('focusRoom.deepWork.duration120Desc') },
+  ]
+
   const [status, setStatus] = useState<DeepWorkStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDuration, setSelectedDuration] = useState(90)
@@ -78,8 +81,8 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
     try {
       await api.post(`/focus-rooms/${roomId}/deep-work/end`)
       toast({
-        title: 'Session Deep Work terminee! +50 XP',
-        description: 'Felicitations pour ta concentration!',
+        title: t('focusRoom.deepWork.completedToast'),
+        description: t('focusRoom.deepWork.completedDesc'),
       })
       onEnd?.(true)
       fetchStatus()
@@ -95,15 +98,15 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
         duration_minutes: selectedDuration
       })
       toast({
-        title: `Mode Deep Work active pour ${selectedDuration} min`,
-        description: 'Les notifications sont bloquees. Concentre-toi!',
+        title: t('focusRoom.deepWork.activatedToast', { minutes: selectedDuration }),
+        description: t('focusRoom.deepWork.notifBlockedDesc'),
       })
       onStart?.()
       fetchStatus()
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors du demarrage',
+        title: t('focusRoom.deepWork.errorGeneric'),
+        description: error.response?.data?.detail || t('focusRoom.deepWork.startError'),
         variant: 'destructive',
       })
     } finally {
@@ -119,13 +122,13 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
 
       if (wasCompleted) {
         toast({
-          title: 'Session Deep Work terminee!',
-          description: 'Felicitations!',
+          title: t('focusRoom.deepWork.endedTitle'),
+          description: t('focusRoom.deepWork.endedDesc'),
         })
       } else {
         toast({
-          title: 'Session Deep Work interrompue',
-          description: 'Tu peux toujours recommencer quand tu veux.',
+          title: t('focusRoom.deepWork.interruptedTitle'),
+          description: t('focusRoom.deepWork.interruptedDesc'),
         })
       }
 
@@ -134,8 +137,8 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
       fetchStatus()
     } catch (error: any) {
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur',
+        title: t('focusRoom.deepWork.errorGeneric'),
+        description: error.response?.data?.detail || t('focusRoom.deepWork.errorGeneric'),
         variant: 'destructive',
       })
     } finally {
@@ -181,13 +184,13 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
                 <Brain className="h-6 w-6 text-purple-400" />
               </div>
               <div>
-                <h3 className="font-bold text-white">Mode Deep Work</h3>
-                <p className="text-sm text-purple-300">Concentration maximale</p>
+                <h3 className="font-bold text-white">{t('focusRoom.deepWork.title')}</h3>
+                <p className="text-sm text-purple-300">{t('focusRoom.deepWork.maxConcentration')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30">
               <BellOff className="h-4 w-4 text-red-400" />
-              <span className="text-sm text-red-300">Notifications OFF</span>
+              <span className="text-sm text-red-300">{t('focusRoom.deepWork.notificationsOff')}</span>
             </div>
           </div>
 
@@ -225,7 +228,7 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
                 <span className="text-5xl font-mono font-bold text-white">
                   {formatTime(timeRemaining)}
                 </span>
-                <span className="text-sm text-purple-300 mt-1">restant</span>
+                <span className="text-sm text-purple-300 mt-1">{t('focusRoom.deepWork.remaining')}</span>
               </div>
             </div>
 
@@ -233,12 +236,12 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
             <div className="flex gap-6 mt-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{Math.round(progress)}%</p>
-                <p className="text-xs text-purple-300">Complete</p>
+                <p className="text-xs text-purple-300">{t('focusRoom.deepWork.complete')}</p>
               </div>
               <div className="w-px bg-purple-500/30" />
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{status.sessions_completed}</p>
-                <p className="text-xs text-purple-300">Sessions</p>
+                <p className="text-xs text-purple-300">{t('focusRoom.deepWork.sessions')}</p>
               </div>
             </div>
           </div>
@@ -250,7 +253,7 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
               className="w-full py-3 rounded-xl bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition flex items-center justify-center gap-2"
             >
               <Square className="h-4 w-4" />
-              Terminer la session
+              {t('focusRoom.deepWork.endSession')}
             </button>
           ) : (
             <div className="flex gap-2">
@@ -258,7 +261,7 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
                 onClick={() => setShowConfirmEnd(false)}
                 className="flex-1 py-3 rounded-xl bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 transition"
               >
-                Annuler
+                {t('focusRoom.deepWork.cancel')}
               </button>
               <button
                 onClick={endDeepWork}
@@ -266,14 +269,14 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
                 className="flex-1 py-3 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition flex items-center justify-center gap-2"
               >
                 <AlertCircle className="h-4 w-4" />
-                Confirmer
+                {t('focusRoom.deepWork.confirm')}
               </button>
             </div>
           )}
 
           {/* Motivation */}
           <p className="text-center text-sm text-purple-300/70 mt-4">
-            "La concentration est le secret de la force." - Ralph Waldo Emerson
+            {t('focusRoom.deepWork.quote')}
           </p>
         </div>
       </div>
@@ -289,8 +292,8 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
           <Brain className="h-6 w-6 text-purple-400" />
         </div>
         <div>
-          <h3 className="font-bold text-white">Mode Deep Work</h3>
-          <p className="text-sm text-gray-400">Bloque les notifications pour une concentration maximale</p>
+          <h3 className="font-bold text-white">{t('focusRoom.deepWork.title')}</h3>
+          <p className="text-sm text-gray-400">{t('focusRoom.deepWork.subtitle')}</p>
         </div>
       </div>
 
@@ -311,7 +314,7 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
               <span className="font-bold text-lg">{option.label}</span>
               {option.minutes === 90 && (
                 <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/30 text-purple-300">
-                  Recommande
+                  {t('focusRoom.deepWork.recommended')}
                 </span>
               )}
             </div>
@@ -324,15 +327,15 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
       <div className="flex flex-wrap gap-2 mb-6">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 text-xs text-gray-300">
           <BellOff className="h-3.5 w-3.5" />
-          Notifications bloquees
+          {t('focusRoom.deepWork.featNotifBlocked')}
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 text-xs text-gray-300">
           <Award className="h-3.5 w-3.5" />
-          +50 XP bonus
+          {t('focusRoom.deepWork.featXpBonus')}
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 text-xs text-gray-300">
           <Sparkles className="h-3.5 w-3.5" />
-          Achievement special
+          {t('focusRoom.deepWork.featAchievement')}
         </div>
       </div>
 
@@ -341,7 +344,9 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
         <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
           <Award className="h-5 w-5 text-green-400" />
           <span className="text-sm text-green-300">
-            {status.sessions_completed} session{status.sessions_completed > 1 ? 's' : ''} Deep Work completee{status.sessions_completed > 1 ? 's' : ''} aujourd'hui!
+            {status.sessions_completed > 1
+              ? t('focusRoom.deepWork.sessionsTodayPlural', { count: status.sessions_completed })
+              : t('focusRoom.deepWork.sessionsTodaySingular', { count: status.sessions_completed })}
           </span>
         </div>
       )}
@@ -357,14 +362,14 @@ export default function DeepWorkMode({ roomId, onStart, onEnd, className }: Deep
         ) : (
           <>
             <Play className="h-5 w-5" />
-            Commencer {selectedDuration} min de Deep Work
+            {t('focusRoom.deepWork.startSession', { minutes: selectedDuration })}
           </>
         )}
       </button>
 
       {/* Tip */}
       <p className="text-center text-xs text-gray-500 mt-4">
-        Conseil: Le Deep Work de 90 min correspond au cycle naturel d'attention ultradian
+        {t('focusRoom.deepWork.tip')}
       </p>
     </div>
   )

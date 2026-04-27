@@ -3,23 +3,13 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface Reaction {
   emoji: string
   label: string
   color: string
 }
-
-const REACTIONS: Reaction[] = [
-  { emoji: '👏', label: 'Bravo', color: 'from-yellow-400 to-yellow-500' },
-  { emoji: '🔥', label: 'En feu', color: 'from-orange-500 to-red-500' },
-  { emoji: '💪', label: 'Force', color: 'from-blue-500 to-blue-600' },
-  { emoji: '❤️', label: 'Coeur', color: 'from-pink-500 to-rose-500' },
-  { emoji: '🚀', label: 'Rocket', color: 'from-purple-500 to-purple-600' },
-  { emoji: '⭐', label: 'Star', color: 'from-amber-400 to-yellow-500' },
-  { emoji: '🎯', label: 'Focus', color: 'from-green-500 to-emerald-500' },
-  { emoji: '☕', label: 'Cafe', color: 'from-amber-600 to-amber-700' },
-]
 
 interface FloatingReaction {
   id: number
@@ -35,8 +25,20 @@ interface QuickReactionsProps {
 }
 
 export default function QuickReactions({ onReact, incomingReaction, className }: QuickReactionsProps) {
+  const { t } = useTranslation()
   const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([])
   const [lastClicked, setLastClicked] = useState<string | null>(null)
+
+  const REACTIONS: Reaction[] = [
+    { emoji: '👏', label: t('focusRoom.reactions.bravo'), color: 'from-yellow-400 to-yellow-500' },
+    { emoji: '🔥', label: t('focusRoom.reactions.fire'), color: 'from-orange-500 to-red-500' },
+    { emoji: '💪', label: t('focusRoom.reactions.strength'), color: 'from-blue-500 to-blue-600' },
+    { emoji: '❤️', label: t('focusRoom.reactions.heart'), color: 'from-pink-500 to-rose-500' },
+    { emoji: '🚀', label: t('focusRoom.reactions.rocket'), color: 'from-purple-500 to-purple-600' },
+    { emoji: '⭐', label: t('focusRoom.reactions.star'), color: 'from-amber-400 to-yellow-500' },
+    { emoji: '🎯', label: t('focusRoom.reactions.focus'), color: 'from-green-500 to-emerald-500' },
+    { emoji: '☕', label: t('focusRoom.reactions.coffee'), color: 'from-amber-600 to-amber-700' },
+  ]
 
   // Handle incoming reactions from other users
   useEffect(() => {

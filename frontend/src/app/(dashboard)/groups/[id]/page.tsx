@@ -20,6 +20,7 @@ import GroupActivityTab from '@/components/groups/GroupActivityTab'
 import api from '@/lib/api'
 import { studyGroupsService } from '@/services/studyGroups'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface Member {
   id: number
@@ -49,6 +50,7 @@ export default function GroupDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const groupId = params.id as string
 
   const [loading, setLoading] = useState(true)
@@ -85,8 +87,8 @@ export default function GroupDetailPage() {
     } catch (error: any) {
       console.error('Error fetching group:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de charger le groupe',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.loadGroupError'),
         variant: 'destructive'
       })
       router.push('/groups')
@@ -96,20 +98,20 @@ export default function GroupDetailPage() {
   }
 
   const handleLeaveGroup = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir quitter ce groupe ?')) return
+    if (!confirm(t('groups.leaveConfirm'))) return
 
     try {
       await studyGroupsService.leave(parseInt(groupId))
       toast({
-        title: 'Groupe quitté',
-        description: 'Vous avez quitté le groupe avec succès',
+        title: t('groups.groupLeft'),
+        description: t('groups.leaveSuccess'),
       })
       router.push('/groups')
     } catch (error: any) {
       console.error('Error leaving group:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de quitter le groupe',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.leaveError'),
         variant: 'destructive'
       })
     }
@@ -132,15 +134,15 @@ export default function GroupDetailPage() {
       setInvitingUserId(userId)
       await studyGroupsService.inviteUser(parseInt(groupId), userId, inviteMessage || undefined)
       toast({
-        title: 'Invitation envoyée',
-        description: 'L\'utilisateur recevra une notification',
+        title: t('groups.invitationSent'),
+        description: t('groups.invitationSentDesc'),
       })
       setInviteDialogOpen(false)
     } catch (error: any) {
       console.error('Error inviting user:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible d\'envoyer l\'invitation',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.invitationSendError'),
         variant: 'destructive'
       })
     } finally {
@@ -159,9 +161,9 @@ export default function GroupDetailPage() {
 
   const getRoleBadge = (role: string) => {
     const roles: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      owner: { label: 'Créateur', variant: 'default' },
-      admin: { label: 'Admin', variant: 'secondary' },
-      member: { label: 'Membre', variant: 'outline' }
+      owner: { label: t('groups.roleOwner'), variant: 'default' },
+      admin: { label: t('groups.roleAdmin'), variant: 'secondary' },
+      member: { label: t('groups.roleMember'), variant: 'outline' }
     }
     const roleConfig = roles[role.toLowerCase()] || roles.member
     return <Badge variant={roleConfig.variant}>{roleConfig.label}</Badge>
@@ -189,21 +191,21 @@ export default function GroupDetailPage() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux groupes
+          {t('groups.backToGroups')}
         </Button>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2">{group.name}</h1>
-            <p className="text-gray-600 text-sm sm:text-base">{group.description || 'Pas de description'}</p>
+            <p className="text-gray-600 text-sm sm:text-base">{group.description || t('groups.noDescription')}</p>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-sm text-gray-500">
               <span className="flex items-center">
                 <Users className="h-4 w-4 mr-1" />
-                {group.current_members}/{group.max_members} membres
+                {t('groups.membersCount', { current: group.current_members, max: group.max_members })}
               </span>
               <span className="flex items-center">
                 <MessageCircle className="h-4 w-4 mr-1" />
-                {group.total_shared_notes} notes partagées
+                {t('groups.sharedNotesCount', { count: group.total_shared_notes })}
               </span>
             </div>
           </div>
@@ -216,8 +218,8 @@ export default function GroupDetailPage() {
               size="sm"
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Inviter un ami</span>
-              <span className="sm:hidden">Inviter</span>
+              <span className="hidden sm:inline">{t('groups.inviteFriend')}</span>
+              <span className="sm:hidden">{t('groups.inviteFriendShort')}</span>
             </Button>
             <Button
               variant="destructive"
@@ -227,7 +229,7 @@ export default function GroupDetailPage() {
               size="sm"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Quitter
+              {t('groups.leaveShort')}
             </Button>
           </div>
         </div>
@@ -239,21 +241,21 @@ export default function GroupDetailPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Inviter un ami
+              {t('groups.inviteFriendTitle')}
             </DialogTitle>
             <DialogDescription>
-              Recherchez un utilisateur pour l'inviter à rejoindre ce groupe.
+              {t('groups.inviteFriendDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Search Input */}
             <div className="space-y-2">
-              <Label>Rechercher un utilisateur</Label>
+              <Label>{t('groups.searchUserLabel')}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Rechercher par nom d'utilisateur..."
+                  placeholder={t('groups.searchUserPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -271,9 +273,9 @@ export default function GroupDetailPage() {
 
             {/* Message Input */}
             <div className="space-y-2">
-              <Label>Message (optionnel)</Label>
+              <Label>{t('groups.inviteMessage')}</Label>
               <Input
-                placeholder="Ex: Viens réviser avec nous !"
+                placeholder={t('groups.inviteMessagePlaceholder')}
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
               />
@@ -294,7 +296,7 @@ export default function GroupDetailPage() {
                       </Avatar>
                       <div>
                         <p className="font-medium text-gray-900">{user.username}</p>
-                        <p className="text-sm text-gray-500">Niveau {user.level}</p>
+                        <p className="text-sm text-gray-500">{t('groups.userLevel', { level: user.level })}</p>
                       </div>
                     </div>
                     <Button
@@ -305,15 +307,15 @@ export default function GroupDetailPage() {
                       {invitingUserId === user.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        'Inviter'
+                        t('groups.invite')
                       )}
                     </Button>
                   </div>
                 ))
               ) : searchQuery ? (
-                <p className="text-center text-gray-500 py-4">Aucun utilisateur trouvé</p>
+                <p className="text-center text-gray-500 py-4">{t('groups.noUserFound')}</p>
               ) : (
-                <p className="text-center text-gray-500 py-4">Tapez pour rechercher des utilisateurs</p>
+                <p className="text-center text-gray-500 py-4">{t('groups.typeToSearch')}</p>
               )}
             </div>
           </div>
@@ -327,27 +329,27 @@ export default function GroupDetailPage() {
             <TabsList className="flex w-full overflow-x-auto">
               <TabsTrigger value="messages" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <MessageCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Messages</span>
+                <span className="hidden sm:inline">{t('groups.tabMessages')}</span>
               </TabsTrigger>
               <TabsTrigger value="notes" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Notes</span>
+                <span className="hidden sm:inline">{t('groups.tabNotes')}</span>
               </TabsTrigger>
               <TabsTrigger value="flashcards" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <CreditCard className="h-4 w-4" />
-                <span className="hidden sm:inline">Flashcards</span>
+                <span className="hidden sm:inline">{t('groups.tabFlashcards')}</span>
               </TabsTrigger>
               <TabsTrigger value="sessions" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Sessions</span>
+                <span className="hidden sm:inline">{t('groups.tabSessions')}</span>
               </TabsTrigger>
               <TabsTrigger value="quizzes" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Brain className="h-4 w-4" />
-                <span className="hidden sm:inline">Quiz</span>
+                <span className="hidden sm:inline">{t('groups.tabQuizzes')}</span>
               </TabsTrigger>
               <TabsTrigger value="activity" className="flex items-center gap-1 flex-shrink-0 flex-1 sm:flex-initial">
                 <Activity className="h-4 w-4" />
-                <span className="hidden sm:inline">Activité</span>
+                <span className="hidden sm:inline">{t('groups.tabActivity')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -393,7 +395,7 @@ export default function GroupDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="h-5 w-5 mr-2" />
-                Membres ({group.members.length})
+                {t('groups.membersTitle', { count: group.members.length })}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
@@ -428,19 +430,19 @@ export default function GroupDetailPage() {
           {/* Group Stats */}
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-sm">Statistiques</CardTitle>
+              <CardTitle className="text-sm">{t('groups.statisticsTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Heures d'étude</span>
+                <span className="text-gray-600">{t('groups.studyHours')}</span>
                 <span className="font-semibold">{group.total_study_hours}h</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Notes partagées</span>
+                <span className="text-gray-600">{t('groups.sharedNotesLabel')}</span>
                 <span className="font-semibold">{group.total_shared_notes}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Membres</span>
+                <span className="text-gray-600">{t('groups.membersLabel')}</span>
                 <span className="font-semibold">{group.members.length}</span>
               </div>
             </CardContent>

@@ -148,7 +148,7 @@ export default function SettingsPage() {
       })
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error)
-      toast.error('Impossible de charger le profil')
+      toast.error(t('settings.loadError'))
     } finally {
       setLoading(false)
     }
@@ -196,10 +196,10 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       await api.put('/users/me', profileData)
-      toast.success('Profil mis à jour avec succès!')
+      toast.success(t('settings.profileUpdatedSuccess'))
       fetchProfile()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la mise à jour')
+      toast.error(error.response?.data?.detail || t('settings.profileUpdateError'))
     } finally {
       setSaving(false)
     }
@@ -211,10 +211,10 @@ export default function SettingsPage() {
       await api.put('/users/me', {
         email: accountData.email,
       })
-      toast.success('Compte mis à jour avec succès!')
+      toast.success(t('settings.accountUpdatedSuccess'))
       fetchProfile()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la mise à jour')
+      toast.error(error.response?.data?.detail || t('settings.profileUpdateError'))
     } finally {
       setSaving(false)
     }
@@ -224,7 +224,7 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       await api.put('/users/me', preferencesData)
-      toast.success('Préférences mises à jour!')
+      toast.success(t('settings.preferencesUpdated'))
 
       // Appliquer le thème immédiatement
       if (preferencesData.theme === 'dark') {
@@ -237,7 +237,7 @@ export default function SettingsPage() {
 
       fetchProfile()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la mise à jour')
+      toast.error(error.response?.data?.detail || t('settings.profileUpdateError'))
     } finally {
       setSaving(false)
     }
@@ -245,12 +245,12 @@ export default function SettingsPage() {
 
   const handleChangePassword = async () => {
     if (passwordData.new_password !== passwordData.confirm_password) {
-      toast.error('Les mots de passe ne correspondent pas')
+      toast.error(t('settings.passwordsDoNotMatch'))
       return
     }
 
     if (passwordData.new_password.length < 8) {
-      toast.error('Le mot de passe doit faire au moins 8 caractères')
+      toast.error(t('settings.passwordMin8'))
       return
     }
 
@@ -261,10 +261,10 @@ export default function SettingsPage() {
         new_password: passwordData.new_password,
         confirm_password: passwordData.confirm_password,
       })
-      toast.success('Mot de passe modifié avec succès!')
+      toast.success(t('settings.passwordChangedSuccess'))
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la modification du mot de passe')
+      toast.error(error.response?.data?.detail || t('settings.passwordChangeError'))
     } finally {
       setSaving(false)
     }
@@ -274,12 +274,12 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       await api.delete('/users/me')
-      toast.success('Compte supprimé')
+      toast.success(t('settings.accountDeleted'))
       wsService.disconnect()
       localStorage.clear()
       router.push('/login')
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression')
+      toast.error(error.response?.data?.detail || t('settings.deleteError'))
     } finally {
       setSaving(false)
       setShowDeleteConfirm(false)
@@ -349,42 +349,42 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nom complet
+                  {t('settings.fullName')}
                 </label>
                 <input
                   type="text"
                   value={profileData.full_name}
                   onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Votre nom complet"
+                  placeholder={t('settings.fullNamePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Phone className="w-4 h-4 inline mr-1" />
-                  Téléphone
+                  {t('settings.phone')}
                 </label>
                 <input
                   type="tel"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="+33 6 12 34 56 78"
+                  placeholder={t('settings.phonePlaceholder')}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Bio
+                {t('settings.bio')}
               </label>
               <textarea
                 value={profileData.bio}
                 onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                placeholder="Parlez de vous..."
+                placeholder={t('settings.bioPlaceholder')}
               />
             </div>
 
@@ -392,7 +392,7 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <GraduationCap className="w-4 h-4 inline mr-1" />
-                  Université
+                  {t('settings.university')}
                 </label>
                 <UniversitySelect
                   value={profileData.university}
@@ -402,7 +402,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Filière
+                  {t('settings.major')}
                 </label>
                 <MajorCombobox
                   value={profileData.major}
@@ -412,54 +412,54 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Promotion
+                  {t('settings.promotion')}
                 </label>
                 <input
                   type="text"
                   value={profileData.promotion}
                   onChange={(e) => setProfileData({ ...profileData, promotion: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: 2024"
+                  placeholder={t('settings.promotionPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  N° Étudiant
+                  {t('settings.studentId')}
                 </label>
                 <input
                   type="text"
                   value={profileData.student_id}
                   onChange={(e) => setProfileData({ ...profileData, student_id: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Votre numéro étudiant"
+                  placeholder={t('settings.studentIdPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
-                  Pays
+                  {t('settings.country')}
                 </label>
                 <input
                   type="text"
                   value={profileData.country}
                   onChange={(e) => setProfileData({ ...profileData, country: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: France"
+                  placeholder={t('settings.countryPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Ville
+                  {t('settings.city')}
                 </label>
                 <input
                   type="text"
                   value={profileData.city}
                   onChange={(e) => setProfileData({ ...profileData, city: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: Paris"
+                  placeholder={t('settings.cityPlaceholder')}
                 />
               </div>
             </div>
@@ -471,7 +471,7 @@ export default function SettingsPage() {
                 className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 disabled:opacity-50"
               >
                 <Save className="w-5 h-5" />
-                <span>{saving ? 'Enregistrement...' : 'Enregistrer les modifications'}</span>
+                <span>{saving ? t('settings.savingButton') : t('settings.saveChanges')}</span>
               </button>
             </div>
           </div>
@@ -481,9 +481,9 @@ export default function SettingsPage() {
         {activeTab === 'account' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Informations du compte</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('settings.accountInfo')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Gérez vos informations de connexion
+                {t('settings.manageLogin')}
               </p>
             </div>
 
@@ -492,12 +492,12 @@ export default function SettingsPage() {
                 <Crown className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div>
                   <p className="font-medium text-blue-900 dark:text-blue-100">
-                    Abonnement: {profile?.subscription_type === 'premium' ? 'Premium' : 'Gratuit'}
+                    {t('settings.subscriptionLabel', { type: profile?.subscription_type === 'premium' ? t('settings.subscriptionPremium') : t('settings.subscriptionFree') })}
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                     {profile?.subscription_type === 'free'
-                      ? 'Passez à Premium pour débloquer toutes les fonctionnalités IA !'
-                      : 'Merci de votre soutien ! 🎉'}
+                      ? t('settings.upgradeMessage')
+                      : t('settings.thanksForSupport')}
                   </p>
                 </div>
               </div>
@@ -506,7 +506,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nom d'utilisateur
+                  {t('settings.username')}
                 </label>
                 <input
                   type="text"
@@ -515,13 +515,13 @@ export default function SettingsPage() {
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Le nom d'utilisateur ne peut pas être modifié
+                  {t('settings.usernameCannotChange')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email
+                  {t('settings.email')}
                 </label>
                 <input
                   type="email"
@@ -539,7 +539,7 @@ export default function SettingsPage() {
                 className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 disabled:opacity-50"
               >
                 <Save className="w-5 h-5" />
-                <span>{saving ? 'Enregistrement...' : 'Enregistrer'}</span>
+                <span>{saving ? t('settings.savingButton') : t('settings.saveButton')}</span>
               </button>
             </div>
           </div>
@@ -613,12 +613,12 @@ export default function SettingsPage() {
 
             {/* Canaux */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Canaux</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('settings.notifChannels')}</h3>
               <div className="space-y-3 mt-3">
                 {([
-                  { key: 'email_enabled', label: 'Emails', desc: 'Recevoir les notifications par email' },
-                  { key: 'push_enabled', label: 'Push', desc: 'Notifications push dans le navigateur' },
-                  { key: 'in_app_enabled', label: 'In-app', desc: 'Notifications dans l\'application' },
+                  { key: 'email_enabled', label: t('settings.channelEmail'), desc: t('settings.channelEmailDesc') },
+                  { key: 'push_enabled', label: t('settings.channelPush'), desc: t('settings.channelPushDesc') },
+                  { key: 'in_app_enabled', label: t('settings.channelInApp'), desc: t('settings.channelInAppDesc') },
                 ] as const).map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div>
@@ -641,15 +641,15 @@ export default function SettingsPage() {
 
             {/* Catégories */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Catégories</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('settings.notifCategories')}</h3>
               <div className="space-y-3 mt-3">
                 {([
-                  { key: 'duel_notifications', label: 'Duels', desc: 'Défis, résultats de duels' },
-                  { key: 'calendar_notifications', label: 'Calendrier', desc: 'Rappels d\'événements et examens' },
-                  { key: 'streak_notifications', label: 'Séries', desc: 'Rappels de streak quotidien' },
-                  { key: 'study_reminders', label: 'Révisions', desc: 'Rappels de flashcards et quiz' },
-                  { key: 'achievement_notifications', label: 'Succès', desc: 'Succès débloqués et niveaux' },
-                  { key: 'social_notifications', label: 'Social', desc: 'Groupes d\'étude, invitations' },
+                  { key: 'duel_notifications', label: t('settings.catDuels'), desc: t('settings.catDuelsDesc') },
+                  { key: 'calendar_notifications', label: t('settings.catCalendar'), desc: t('settings.catCalendarDesc') },
+                  { key: 'streak_notifications', label: t('settings.catStreak'), desc: t('settings.catStreakDesc') },
+                  { key: 'study_reminders', label: t('settings.catReviews'), desc: t('settings.catReviewsDesc') },
+                  { key: 'achievement_notifications', label: t('settings.catAchievements'), desc: t('settings.catAchievementsDesc') },
+                  { key: 'social_notifications', label: t('settings.catSocial'), desc: t('settings.catSocialDesc') },
                 ] as const).map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div>
@@ -672,12 +672,12 @@ export default function SettingsPage() {
 
             {/* Email Digest */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Résumé quotidien</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('settings.dailyDigest')}</h3>
               <div className="mt-3">
                 <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Email digest</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Recevoir un résumé quotidien au lieu d'emails individuels</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('settings.emailDigest')}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.emailDigestDesc')}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -692,7 +692,7 @@ export default function SettingsPage() {
                 {notifPrefs.email_digest && (
                   <div className="py-3">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Heure d'envoi du résumé
+                      {t('settings.digestSendTime')}
                     </label>
                     <select
                       value={notifPrefs.email_digest_hour}
@@ -710,11 +710,11 @@ export default function SettingsPage() {
 
             {/* Heures de silence */}
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Heures de silence</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pas de notifications pendant ces heures</p>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('settings.quietHours')}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.quietHoursDesc')}</p>
               <div className="grid grid-cols-2 gap-4 mt-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Début</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.quietStart')}</label>
                   <select
                     value={notifPrefs.quiet_hours_start}
                     onChange={(e) => setNotifPrefs({ ...notifPrefs, quiet_hours_start: parseInt(e.target.value) })}
@@ -726,7 +726,7 @@ export default function SettingsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fin</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.quietEnd')}</label>
                   <select
                     value={notifPrefs.quiet_hours_end}
                     onChange={(e) => setNotifPrefs({ ...notifPrefs, quiet_hours_end: parseInt(e.target.value) })}

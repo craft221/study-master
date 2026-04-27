@@ -13,20 +13,15 @@ import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { useTranslation } from '@/contexts/LanguageContext'
 
-const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  username: z.string().min(3, 'Minimum 3 caractères').max(50),
-  full_name: z.string().min(2, 'Minimum 2 caractères'),
-  password: z.string().min(8, 'Minimum 8 caractères'),
-  password_confirm: z.string(),
-  university: z.string().optional(),
-  major: z.string().optional(),
-}).refine((data) => data.password === data.password_confirm, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["password_confirm"],
-})
-
-type RegisterForm = z.infer<typeof registerSchema>
+type RegisterForm = {
+  email: string
+  username: string
+  full_name: string
+  password: string
+  password_confirm: string
+  university?: string
+  major?: string
+}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -38,6 +33,19 @@ export default function RegisterPage() {
   const [majorQuery, setMajorQuery] = useState('')
   const [majorSuggestions, setMajorSuggestions] = useState<Major[]>([])
   const [showMajorDropdown, setShowMajorDropdown] = useState(false)
+
+  const registerSchema = z.object({
+    email: z.string().email(t('auth.emailInvalid')),
+    username: z.string().min(3, t('auth.usernameMin3')).max(50),
+    full_name: z.string().min(2, t('auth.fullNameMin2')),
+    password: z.string().min(8, t('auth.passwordMin8')),
+    password_confirm: z.string(),
+    university: z.string().optional(),
+    major: z.string().optional(),
+  }).refine((data) => data.password === data.password_confirm, {
+    message: t('auth.passwordsDontMatch'),
+    path: ["password_confirm"],
+  })
 
   const {
     register,
@@ -242,7 +250,7 @@ export default function RegisterPage() {
                   }}
                   onFocus={() => majorQuery.length >= 2 && setShowMajorDropdown(true)}
                   onBlur={() => setTimeout(() => setShowMajorDropdown(false), 200)}
-                  placeholder="Ex: Informatique, Médecine..."
+                  placeholder={t('auth.majorPlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 {showMajorDropdown && majorSuggestions.length > 0 && (

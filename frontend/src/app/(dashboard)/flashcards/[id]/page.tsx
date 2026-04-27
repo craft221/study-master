@@ -20,6 +20,7 @@ import api from '@/lib/api'
 import { toast } from 'react-hot-toast'
 import LaTeXEditor from '@/components/LaTeXEditor'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Flashcard {
   id: string
@@ -55,7 +56,11 @@ interface Deck {
 export default function FlashcardDeckPage() {
   const params = useParams()
   const router = useRouter()
+  const { t, locale } = useLanguage()
   const deckId = decodeURIComponent(params.id as string)
+
+  const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
+  const dateLocale = localeMap[locale] || 'fr-FR'
 
   const [deck, setDeck] = useState<Deck | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,7 +76,7 @@ export default function FlashcardDeckPage() {
       const response = await api.get(`/flashcards/decks/${encodeURIComponent(deckId)}`)
       setDeck(response.data)
     } catch (error) {
-      toast.error('Erreur lors du chargement du deck')
+      toast.error(t('flashcardsPage.detail.errorLoad'))
       router.push('/flashcards')
     } finally {
       setLoading(false)
@@ -80,42 +85,42 @@ export default function FlashcardDeckPage() {
 
   const addCard = async () => {
     if (!newCard.front.trim() || !newCard.back.trim()) {
-      toast.error('Remplissez les deux côtés de la carte')
+      toast.error(t('flashcardsPage.detail.fillBothSides'))
       return
     }
 
     try {
       await api.post(`/flashcards/decks/${encodeURIComponent(deckId)}/cards`, newCard)
-      toast.success('Carte ajoutée!')
+      toast.success(t('flashcardsPage.detail.cardAdded'))
       setNewCard({ front: '', back: '' })
       setShowAddCard(false)
       fetchDeck()
     } catch (error) {
-      toast.error('Erreur lors de l\'ajout')
+      toast.error(t('flashcardsPage.detail.errorAdd'))
     }
   }
 
   const deleteCard = async (cardId: string) => {
-    if (!confirm('Supprimer cette carte?')) return
+    if (!confirm(t('flashcardsPage.detail.confirmDeleteCard'))) return
 
     try {
       await api.delete(`/flashcards/${cardId}`)
-      toast.success('Carte supprimée')
+      toast.success(t('flashcardsPage.detail.cardDeleted'))
       fetchDeck()
     } catch (error) {
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('flashcardsPage.detail.errorDelete'))
     }
   }
 
   const deleteDeck = async () => {
-    if (!confirm('Supprimer ce deck et toutes ses cartes?')) return
+    if (!confirm(t('flashcardsPage.detail.confirmDeleteDeck'))) return
 
     try {
       await api.delete(`/flashcards/decks/${encodeURIComponent(deckId)}`)
-      toast.success('Deck supprimé')
+      toast.success(t('flashcardsPage.detail.deckDeleted'))
       router.push('/flashcards')
     } catch (error) {
-      toast.error('Erreur')
+      toast.error(t('flashcardsPage.detail.errorGeneric'))
     }
   }
 
@@ -127,9 +132,9 @@ export default function FlashcardDeckPage() {
         is_public: newPublicState
       })
       setDeck({ ...deck, is_public: newPublicState })
-      toast.success(newPublicState ? 'Deck rendu public!' : 'Deck rendu privé')
+      toast.success(newPublicState ? t('flashcardsPage.detail.madePublic') : t('flashcardsPage.detail.madePrivate'))
     } catch (error) {
-      toast.error('Erreur lors du changement de visibilité')
+      toast.error(t('flashcardsPage.detail.errorVisibility'))
     }
   }
 
@@ -176,21 +181,21 @@ export default function FlashcardDeckPage() {
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="text-2xl font-bold text-gray-900 mb-1">{deck.total_cards}</div>
-          <div className="text-sm text-gray-600">Cartes totales</div>
+          <div className="text-sm text-gray-600">{t('flashcardsPage.detail.totalCards')}</div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="text-2xl font-bold text-orange-600 mb-1">{deck.cards_due}</div>
-          <div className="text-sm text-gray-600">À réviser</div>
+          <div className="text-sm text-gray-600">{t('flashcardsPage.detail.toReview')}</div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="text-2xl font-bold text-green-600 mb-1">{deck.mastered_cards}</div>
-          <div className="text-sm text-gray-600">Maîtrisées</div>
+          <div className="text-sm text-gray-600">{t('flashcardsPage.detail.mastered')}</div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="text-2xl font-bold text-blue-600 mb-1">
             {deck.total_cards > 0 ? Math.round((deck.mastered_cards / deck.total_cards) * 100) : 0}%
           </div>
-          <div className="text-sm text-gray-600">Progression</div>
+          <div className="text-sm text-gray-600">{t('flashcardsPage.detail.progress')}</div>
         </div>
       </div>
 
@@ -202,7 +207,7 @@ export default function FlashcardDeckPage() {
             className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold flex items-center space-x-2"
           >
             <Play className="h-5 w-5" />
-            <span>Réviser ({deck.cards_due})</span>
+            <span>{t('flashcardsPage.detail.reviewBtn', { count: deck.cards_due })}</span>
           </button>
         )}
         <button
@@ -210,14 +215,14 @@ export default function FlashcardDeckPage() {
           className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center space-x-2"
         >
           <Plus className="h-5 w-5" />
-          <span>Ajouter une carte</span>
+          <span>{t('flashcardsPage.detail.addCard')}</span>
         </button>
         <button
           onClick={deleteDeck}
           className="px-6 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition font-semibold flex items-center space-x-2"
         >
           <Trash2 className="h-5 w-5" />
-          <span>Supprimer le deck</span>
+          <span>{t('flashcardsPage.detail.deleteDeck')}</span>
         </button>
         <button
           onClick={togglePublic}
@@ -230,12 +235,12 @@ export default function FlashcardDeckPage() {
           {deck.is_public ? (
             <>
               <Globe className="h-5 w-5" />
-              <span>Public</span>
+              <span>{t('flashcardsPage.detail.public')}</span>
             </>
           ) : (
             <>
               <Lock className="h-5 w-5" />
-              <span>Rendre public</span>
+              <span>{t('flashcardsPage.detail.makePublic')}</span>
             </>
           )}
         </button>
@@ -244,27 +249,27 @@ export default function FlashcardDeckPage() {
       {/* Add Card Form */}
       {showAddCard && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Nouvelle Carte</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('flashcardsPage.detail.newCard')}</h3>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Recto (Question)
+                {t('flashcardsPage.detail.frontLabel')}
               </label>
               <LaTeXEditor
                 value={newCard.front}
                 onChange={(front) => setNewCard({ ...newCard, front })}
-                placeholder="Quelle est la capitale de la France? (Markdown et LaTeX supportés)"
+                placeholder={t('flashcardsPage.detail.frontPlaceholder')}
                 rows={4}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Verso (Réponse)
+                {t('flashcardsPage.detail.backLabel')}
               </label>
               <LaTeXEditor
                 value={newCard.back}
                 onChange={(back) => setNewCard({ ...newCard, back })}
-                placeholder="Paris (Markdown et LaTeX supportés)"
+                placeholder={t('flashcardsPage.detail.backPlaceholder')}
                 rows={4}
               />
             </div>
@@ -273,7 +278,7 @@ export default function FlashcardDeckPage() {
                 onClick={addCard}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
               >
-                Ajouter
+                {t('flashcardsPage.detail.add')}
               </button>
               <button
                 onClick={() => {
@@ -282,7 +287,7 @@ export default function FlashcardDeckPage() {
                 }}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
               >
-                Annuler
+                {t('flashcardsPage.detail.cancel')}
               </button>
             </div>
           </div>
@@ -293,7 +298,7 @@ export default function FlashcardDeckPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
-            Toutes les cartes ({deck.cards?.length || 0})
+            {t('flashcardsPage.detail.allCards', { count: deck.cards?.length || 0 })}
           </h2>
         </div>
         <div className="divide-y divide-gray-200">
@@ -302,8 +307,7 @@ export default function FlashcardDeckPage() {
               const isMastered = card.mastery_percentage >= 80
               const isDue = !card.next_review_at || new Date(card.next_review_at) <= new Date()
 
-              // Determine status label and color
-              const statusLabel = isMastered ? 'Maîtrisée' : (isDue ? 'À réviser' : 'En cours')
+              const statusLabel = isMastered ? t('flashcardsPage.detail.statusMastered') : (isDue ? t('flashcardsPage.detail.statusToReview') : t('flashcardsPage.detail.statusInProgress'))
               const statusColor = isMastered ? 'bg-green-100 text-green-700' :
                                   (isDue ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700')
 
@@ -312,11 +316,11 @@ export default function FlashcardDeckPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 grid md:grid-cols-2 gap-6">
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">RECTO</div>
+                        <div className="text-xs text-gray-500 mb-1">{t('flashcardsPage.detail.front')}</div>
                         <MarkdownRenderer content={card.front} />
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">VERSO</div>
+                        <div className="text-xs text-gray-500 mb-1">{t('flashcardsPage.detail.back')}</div>
                         <MarkdownRenderer content={card.back} />
                       </div>
                     </div>
@@ -333,14 +337,14 @@ export default function FlashcardDeckPage() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center space-x-4 text-xs text-gray-500">
-                    <span>Répétitions: {card.repetitions}</span>
-                    <span>Intervalle: {card.interval} jours</span>
-                    <span>Facteur: {card.easiness_factor.toFixed(2)}</span>
+                    <span>{t('flashcardsPage.detail.repetitions', { count: card.repetitions })}</span>
+                    <span>{t('flashcardsPage.detail.interval', { days: card.interval })}</span>
+                    <span>{t('flashcardsPage.detail.factor', { value: card.easiness_factor.toFixed(2) })}</span>
                     <span className={card.mastery_percentage >= 80 ? 'text-green-600 font-medium' : ''}>
-                      Maîtrise: {Math.round(card.mastery_percentage)}%
+                      {t('flashcardsPage.detail.mastery', { percent: Math.round(card.mastery_percentage) })}
                     </span>
                     <span>
-                      Prochaine révision: {card.next_review_at ? new Date(card.next_review_at).toLocaleDateString('fr-FR') : 'Maintenant'}
+                      {t('flashcardsPage.detail.nextReview', { date: card.next_review_at ? new Date(card.next_review_at).toLocaleDateString(dateLocale) : t('flashcardsPage.detail.now') })}
                     </span>
                   </div>
                 </div>
@@ -349,12 +353,12 @@ export default function FlashcardDeckPage() {
           ) : (
             <div className="p-12 text-center text-gray-500">
               <CreditCard className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-              <p>Aucune carte dans ce deck</p>
+              <p>{t('flashcardsPage.detail.noCards')}</p>
               <button
                 onClick={() => setShowAddCard(true)}
                 className="mt-4 text-primary-600 hover:text-primary-700 font-medium"
               >
-                Ajouter votre première carte
+                {t('flashcardsPage.detail.addFirstCard')}
               </button>
             </div>
           )}

@@ -172,7 +172,7 @@ export default function NotesPage() {
           >
             <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">{t('notesPage.newNote')}</span>
-            <span className="sm:hidden">Créer</span>
+            <span className="sm:hidden">{t('notesPage.mobileCreate')}</span>
           </Link>
         </div>
       </div>

@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import studyGroupsService, { StudyGroupInvitation } from '@/services/studyGroups'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface Group {
   id: number
@@ -51,6 +52,7 @@ interface CreateGroupData {
 export default function GroupsPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t, locale } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filter, setFilter] = useState<'all' | 'my_groups' | 'discover'>('all')
@@ -109,8 +111,8 @@ export default function GroupsPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les groupes',
+        title: t('common.error'),
+        description: t('groups.loadError'),
         variant: 'destructive'
       })
     } finally {
@@ -121,8 +123,8 @@ export default function GroupsPage() {
   const handleCreateGroup = async () => {
     if (!newGroup.name.trim()) {
       toast({
-        title: 'Erreur',
-        description: 'Le nom du groupe est requis',
+        title: t('common.error'),
+        description: t('groups.nameRequired'),
         variant: 'destructive'
       })
       return
@@ -133,8 +135,8 @@ export default function GroupsPage() {
       await api.post('/study-groups/', newGroup)
 
       toast({
-        title: 'Succès',
-        description: 'Groupe créé avec succès (+50 XP)',
+        title: t('common.success'),
+        description: t('groups.createSuccess'),
       })
 
       setCreateDialogOpen(false)
@@ -150,8 +152,8 @@ export default function GroupsPage() {
     } catch (error: any) {
       console.error('Error creating group:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de créer le groupe',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.createError'),
         variant: 'destructive'
       })
     } finally {
@@ -164,16 +166,16 @@ export default function GroupsPage() {
       await api.post(`/study-groups/${groupId}/join`)
 
       toast({
-        title: 'Succès',
-        description: 'Vous avez rejoint le groupe (+10 XP)',
+        title: t('common.success'),
+        description: t('groups.joinSuccess'),
       })
 
       fetchData()
     } catch (error: any) {
       console.error('Error joining group:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Impossible de rejoindre le groupe',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.joinError'),
         variant: 'destructive'
       })
     }
@@ -185,8 +187,8 @@ export default function GroupsPage() {
       await studyGroupsService.acceptInvitation(invitation.id)
 
       toast({
-        title: 'Invitation acceptée',
-        description: `Vous rejoignez ${invitation.group_name}...`,
+        title: t('groups.invitationAccepted'),
+        description: t('groups.joiningGroup', { name: invitation.group_name }),
       })
 
       setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id))
@@ -196,8 +198,8 @@ export default function GroupsPage() {
     } catch (error: any) {
       console.error('Error accepting invitation:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors du traitement de l\'invitation',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.invitationProcessError'),
         variant: 'destructive'
       })
     } finally {
@@ -211,16 +213,16 @@ export default function GroupsPage() {
       await studyGroupsService.declineInvitation(invitation.id)
 
       toast({
-        title: 'Invitation refusée',
-        description: 'L\'invitation a été refusée',
+        title: t('groups.invitationDeclined'),
+        description: t('groups.invitationDeclinedDesc'),
       })
 
       setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id))
     } catch (error: any) {
       console.error('Error declining invitation:', error)
       toast({
-        title: 'Erreur',
-        description: error.response?.data?.detail || 'Erreur lors du traitement de l\'invitation',
+        title: t('common.error'),
+        description: error.response?.data?.detail || t('groups.invitationProcessError'),
         variant: 'destructive'
       })
     } finally {
@@ -241,6 +243,8 @@ export default function GroupsPage() {
     return matchesSearch
   })
 
+  const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
+
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -249,10 +253,10 @@ export default function GroupsPage() {
     const diffHours = Math.floor(diffMins / 60)
     const diffDays = Math.floor(diffHours / 24)
 
-    if (diffMins < 60) return `Il y a ${diffMins} min`
-    if (diffHours < 24) return `Il y a ${diffHours}h`
-    if (diffDays < 7) return `Il y a ${diffDays}j`
-    return date.toLocaleDateString('fr-FR')
+    if (diffMins < 60) return t('groups.timeAgoMin', { count: diffMins })
+    if (diffHours < 24) return t('groups.timeAgoHour', { count: diffHours })
+    if (diffDays < 7) return t('groups.timeAgoDay', { count: diffDays })
+    return date.toLocaleDateString(localeMap[locale] || 'fr-FR')
   }
 
   if (loading) {
@@ -270,31 +274,31 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Groupes d'Étude</h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">Collaborez et apprenez ensemble</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('groups.title')}</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">{t('groups.subtitle')}</p>
         </div>
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="h-5 w-5 mr-2" />
-              Créer un groupe
+              {t('groups.createGroup')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">Créer un groupe</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">{t('groups.createGroup')}</DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
-                Créez un groupe pour collaborer avec d'autres étudiants
+                {t('groups.createGroupDesc')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 sm:space-y-4">
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="name" className="text-sm">Nom du groupe *</Label>
+                <Label htmlFor="name" className="text-sm">{t('groups.groupNameRequired')}</Label>
                 <Input
                   id="name"
-                  placeholder="Ex: Préparation Examen Math"
+                  placeholder={t('groups.groupNamePlaceholder')}
                   value={newGroup.name}
                   onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
                   className="text-sm sm:text-base"
@@ -302,10 +306,10 @@ export default function GroupsPage() {
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="description" className="text-sm">Description</Label>
+                <Label htmlFor="description" className="text-sm">{t('subjects.description')}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Décrivez l'objectif du groupe..."
+                  placeholder={t('groups.descriptionPlaceholder')}
                   value={newGroup.description}
                   onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
                   rows={2}
@@ -314,16 +318,16 @@ export default function GroupsPage() {
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="subject" className="text-sm">Matière (optionnel)</Label>
+                <Label htmlFor="subject" className="text-sm">{t('groups.subjectOptional')}</Label>
                 <Select
                   value={newGroup.subject_id?.toString() || ''}
                   onValueChange={(value) => setNewGroup({ ...newGroup, subject_id: value && value !== 'none' ? parseInt(value) : null })}
                 >
                   <SelectTrigger id="subject" className="text-sm sm:text-base">
-                    <SelectValue placeholder="Sélectionner une matière" />
+                    <SelectValue placeholder={t('groups.selectSubject')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Aucune matière</SelectItem>
+                    <SelectItem value="none">{t('groups.noSubject')}</SelectItem>
                     {subjects.map(subject => (
                       <SelectItem key={subject.id} value={subject.id.toString()}>
                         {subject.name}
@@ -334,7 +338,7 @@ export default function GroupsPage() {
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="max_members" className="text-sm">Max. membres</Label>
+                <Label htmlFor="max_members" className="text-sm">{t('groups.maxMembers')}</Label>
                 <Input
                   id="max_members"
                   type="number"
@@ -353,23 +357,23 @@ export default function GroupsPage() {
                   onCheckedChange={(checked) => setNewGroup({ ...newGroup, is_private: checked as boolean })}
                 />
                 <Label htmlFor="is_private" className="cursor-pointer text-xs sm:text-sm">
-                  Groupe privé (sur invitation)
+                  {t('groups.privateGroup')}
                 </Label>
               </div>
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
               <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="w-full sm:w-auto order-2 sm:order-1">
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateGroup} disabled={creating} className="w-full sm:w-auto order-1 sm:order-2">
                 {creating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Création...
+                    {t('groups.creating')}
                   </>
                 ) : (
-                  'Créer le groupe'
+                  t('groups.createGroupButton')
                 )}
               </Button>
             </DialogFooter>
@@ -383,7 +387,7 @@ export default function GroupsPage() {
           <CardHeader className="pb-2 px-4 sm:px-6">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              Invitations ({pendingInvitations.length})
+              {t('groups.invitationsTitle')} ({pendingInvitations.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
@@ -401,7 +405,7 @@ export default function GroupsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground truncate">{invitation.group_name}</p>
                       <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                        Invité par {invitation.inviter_username}
+                        {t('groups.invitedBy', { username: invitation.inviter_username })}
                       </p>
                       {invitation.message && (
                         <p className="text-xs text-muted-foreground italic truncate">"{invitation.message}"</p>
@@ -446,7 +450,7 @@ export default function GroupsPage() {
               </div>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">{myGroupIds.length}</h3>
-            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Mes groupes</p>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">{t('groups.statMyGroups')}</p>
           </CardContent>
         </Card>
 
@@ -458,7 +462,7 @@ export default function GroupsPage() {
               </div>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">{groups.length}</h3>
-            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Disponibles</p>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">{t('groups.statAvailable')}</p>
           </CardContent>
         </Card>
 
@@ -472,7 +476,7 @@ export default function GroupsPage() {
             <h3 className="text-xl sm:text-2xl font-bold text-foreground text-center sm:text-left">
               {groups.reduce((acc, g) => acc + g.total_study_hours, 0)}
             </h3>
-            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">Heures</p>
+            <p className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left truncate">{t('groups.statHours')}</p>
           </CardContent>
         </Card>
       </div>
@@ -486,7 +490,7 @@ export default function GroupsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder={t('groups.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 sm:pl-10 text-sm sm:text-base"
@@ -501,7 +505,7 @@ export default function GroupsPage() {
                 size="sm"
                 className="flex-shrink-0 text-xs sm:text-sm"
               >
-                Tous
+                {t('groups.filterAll')}
               </Button>
               <Button
                 variant={filter === 'my_groups' ? 'default' : 'outline'}
@@ -509,7 +513,7 @@ export default function GroupsPage() {
                 size="sm"
                 className="flex-shrink-0 text-xs sm:text-sm whitespace-nowrap"
               >
-                Mes groupes
+                {t('groups.filterMyGroups')}
               </Button>
               <Button
                 variant={filter === 'discover' ? 'default' : 'outline'}
@@ -517,7 +521,7 @@ export default function GroupsPage() {
                 size="sm"
                 className="flex-shrink-0 text-xs sm:text-sm"
               >
-                Découvrir
+                {t('groups.filterDiscover')}
               </Button>
             </div>
           </div>
@@ -530,17 +534,17 @@ export default function GroupsPage() {
           <CardContent className="p-8 sm:p-12 text-center">
             <Users className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
-              {searchQuery ? 'Aucun groupe trouvé' : 'Aucun groupe disponible'}
+              {searchQuery ? t('groups.noGroupsFound') : t('groups.noGroupsAvailable')}
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
               {searchQuery
-                ? 'Essayez de modifier votre recherche'
-                : 'Créez votre premier groupe pour commencer'}
+                ? t('groups.tryModifySearch')
+                : t('groups.createFirst')}
             </p>
             {!searchQuery && (
               <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-5 w-5 mr-2" />
-                Créer un groupe
+                {t('groups.createGroup')}
               </Button>
             )}
           </CardContent>
@@ -568,12 +572,12 @@ export default function GroupsPage() {
                         )}
                         {isMember && (
                           <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 text-primary text-[10px] sm:text-xs font-medium rounded flex-shrink-0">
-                            Membre
+                            {t('groups.memberBadge')}
                           </span>
                         )}
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {group.description || 'Pas de description'}
+                        {group.description || t('groups.noDescription')}
                       </p>
                       {subjectName && (
                         <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs font-medium rounded">
@@ -593,7 +597,7 @@ export default function GroupsPage() {
                     </div>
                     <div className="flex items-center space-x-1.5 sm:space-x-2 text-muted-foreground">
                       <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="text-xs sm:text-sm">{group.total_shared_notes} notes</span>
+                      <span className="text-xs sm:text-sm">{group.total_shared_notes} {t('groups.notesCount')}</span>
                     </div>
                   </div>
 
@@ -604,10 +608,10 @@ export default function GroupsPage() {
                     </span>
                     {isMember ? (
                       <Link href={`/groups/${group.id}`}>
-                        <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">Ouvrir</Button>
+                        <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">{t('groups.openButton')}</Button>
                       </Link>
                     ) : group.is_private ? (
-                      <Badge variant="outline" className="text-xs">Privé</Badge>
+                      <Badge variant="outline" className="text-xs">{t('groups.privateBadge')}</Badge>
                     ) : (
                       <Button
                         size="sm"
@@ -616,7 +620,7 @@ export default function GroupsPage() {
                         disabled={group.current_members >= group.max_members}
                         className="text-xs sm:text-sm h-8 sm:h-9"
                       >
-                        {group.current_members >= group.max_members ? 'Complet' : 'Rejoindre'}
+                        {group.current_members >= group.max_members ? t('groups.fullBadge') : t('groups.joinButton')}
                       </Button>
                     )}
                   </div>
@@ -636,13 +640,13 @@ export default function GroupsPage() {
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base">
-                Pourquoi rejoindre un groupe ?
+                {t('groups.whyJoinTitle')}
               </h3>
               <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                <li>• Partagez vos notes et ressources</li>
-                <li>• Posez des questions et obtenez de l'aide</li>
-                <li>• Organisez des sessions d'étude</li>
-                <li>• Motivez-vous mutuellement</li>
+                <li>• {t('groups.whyJoin1')}</li>
+                <li>• {t('groups.whyJoin2')}</li>
+                <li>• {t('groups.whyJoin3')}</li>
+                <li>• {t('groups.whyJoin4')}</li>
               </ul>
             </div>
           </div>

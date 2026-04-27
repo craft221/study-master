@@ -81,7 +81,7 @@ function VerifyEmailContent() {
     const codeToSubmit = fullCode || code.join('')
 
     if (codeToSubmit.length !== 6) {
-      setError('Veuillez entrer le code complet à 6 chiffres')
+      setError(t('auth.enterFullCode'))
       return
     }
 
@@ -100,14 +100,14 @@ function VerifyEmailContent() {
       localStorage.setItem('access_token', response.data.access_token)
       localStorage.setItem('refresh_token', response.data.refresh_token)
 
-      toast.success('Email vérifié avec succès !')
+      toast.success(t('auth.emailVerifiedSuccess'))
 
       // Rediriger vers le dashboard après 2 secondes
       setTimeout(() => {
         router.push('/dashboard')
       }, 2000)
     } catch (err: any) {
-      const message = err.response?.data?.detail || 'Code invalide ou expiré'
+      const message = err.response?.data?.detail || t('auth.codeInvalid')
       setError(message)
       setCode(['', '', '', '', '', ''])
       inputRefs.current[0]?.focus()
@@ -124,12 +124,12 @@ function VerifyEmailContent() {
 
     try {
       await api.post('/auth/resend-verification', { email })
-      toast.success('Nouveau code envoyé !')
+      toast.success(t('auth.newCodeSent'))
       setCountdown(60) // 60 secondes avant de pouvoir renvoyer
       setCode(['', '', '', '', '', ''])
       inputRefs.current[0]?.focus()
     } catch (err: any) {
-      const message = err.response?.data?.detail || 'Erreur lors de l\'envoi'
+      const message = err.response?.data?.detail || t('auth.sendError')
       setError(message)
     } finally {
       setIsResending(false)
@@ -141,10 +141,10 @@ function VerifyEmailContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4">
         <div className="text-center">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Email manquant</h1>
-          <p className="text-gray-600 mb-4">Aucun email à vérifier.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.emailMissing')}</h1>
+          <p className="text-gray-600 mb-4">{t('auth.noEmailToVerify')}</p>
           <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold">
-            Retour à l'inscription
+            {t('auth.backToRegister')}
           </Link>
         </div>
       </div>
@@ -166,17 +166,17 @@ function VerifyEmailContent() {
               <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-12 w-12 text-green-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Email vérifié !</h1>
-              <p className="text-gray-600">Redirection vers le dashboard...</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.emailVerified')}</h1>
+              <p className="text-gray-600">{t('auth.redirectingToDashboard')}</p>
             </>
           ) : (
             <>
               <div className="bg-primary-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
                 <Mail className="h-12 w-12 text-primary-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Vérifiez votre email</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.verifyYourEmail')}</h1>
               <p className="text-gray-600">
-                Nous avons envoyé un code à 6 chiffres à
+                {t('auth.codeSentTo')}
               </p>
               <p className="text-primary-600 font-semibold">{email}</p>
             </>
@@ -218,10 +218,10 @@ function VerifyEmailContent() {
               className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <span>Vérification...</span>
+                <span>{t('auth.verifying')}</span>
               ) : (
                 <>
-                  <span>Vérifier</span>
+                  <span>{t('auth.verify')}</span>
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -229,7 +229,7 @@ function VerifyEmailContent() {
 
             {/* Resend code */}
             <div className="mt-6 text-center">
-              <p className="text-gray-600 text-sm mb-2">Vous n'avez pas reçu de code ?</p>
+              <p className="text-gray-600 text-sm mb-2">{t('auth.noCodeReceived')}</p>
               <button
                 onClick={handleResendCode}
                 disabled={isResending || countdown > 0}
@@ -238,10 +238,10 @@ function VerifyEmailContent() {
                 <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
                 <span>
                   {countdown > 0
-                    ? `Renvoyer dans ${countdown}s`
+                    ? t('auth.resendIn', { seconds: countdown })
                     : isResending
-                      ? 'Envoi...'
-                      : 'Renvoyer le code'
+                      ? t('auth.sending')
+                      : t('auth.resendCode')
                   }
                 </span>
               </button>
@@ -253,7 +253,7 @@ function VerifyEmailContent() {
                 href="/register"
                 className="text-gray-500 hover:text-gray-700 text-sm"
               >
-                Utiliser une autre adresse email
+                {t('auth.useDifferentEmail')}
               </Link>
             </div>
           </div>

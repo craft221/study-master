@@ -35,6 +35,7 @@ import { toast } from 'react-hot-toast'
 import { offlineStorage, STORES } from '@/lib/offlineStorage'
 import { syncService } from '@/services/syncService'
 import { useOfflineContext } from '@/components/providers/OfflineProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Subject {
   id: number
@@ -99,6 +100,9 @@ const FILE_TYPE_COLORS: Record<string, string> = {
 
 export default function DocumentsPage() {
   const { isOnline } = useOfflineContext()
+  const { t, locale } = useLanguage()
+  const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', ar: 'ar-SA' }
+  const dateLocale = localeMap[locale] || 'fr-FR'
   const searchParams = useSearchParams()
   const subjectFromUrl = searchParams.get('subject')
 
@@ -202,10 +206,10 @@ export default function DocumentsPage() {
             setDocuments(cachedDocs)
             setSubjects(cachedSubjects || [])
             setIsFromCache(true)
-            toast('Documents chargés depuis le cache', { icon: '📦' })
+            toast(t('documentsPage.cacheLoaded'), { icon: '📦' })
           } else {
             console.error('Erreur lors du chargement:', error)
-            toast.error('Erreur lors du chargement des documents')
+            toast.error(t('documentsPage.errorLoad'))
           }
         }
       } else {
@@ -219,7 +223,7 @@ export default function DocumentsPage() {
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
-      toast.error('Erreur lors du chargement des documents')
+      toast.error(t('documentsPage.errorLoad'))
     } finally {
       setLoading(false)
     }
@@ -230,7 +234,7 @@ export default function DocumentsPage() {
     if (!file) return
 
     if (!uploadSubjectId) {
-      toast.error('Veuillez sélectionner une matière')
+      toast.error(t('documentsPage.selectSubject'))
       return
     }
 
@@ -246,7 +250,7 @@ export default function DocumentsPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
 
-      toast.success(`Document uploadé! +${response.data.xp_earned} XP`)
+      toast.success(t('documentsPage.uploadedXp', { xp: response.data.xp_earned }))
       setShowUploadModal(false)
       setUploadSubjectId(null)
       setUploadTitle('')
@@ -254,14 +258,14 @@ export default function DocumentsPage() {
       if (fileInputRef.current) fileInputRef.current.value = ''
       fetchData()
     } catch (error: any) {
-      const message = error.response?.data?.detail || 'Erreur lors de l\'upload'
+      const message = error.response?.data?.detail || t('documentsPage.errorUpload')
       // Vérifier si c'est une erreur de quota de stockage
       if (error.response?.status === 403 && message.includes('Quota de stockage')) {
         toast.error(
           <div>
             <span>{message}</span>
             <Link href="/pricing" className="block mt-1 text-primary-600 underline">
-              Voir les plans
+              {t('documentsPage.viewPlans')}
             </Link>
           </div>,
           { duration: 6000 }
@@ -285,7 +289,7 @@ export default function DocumentsPage() {
     try {
       if (isOnline) {
         await api.post(`/documents/${docId}/favorite`)
-        toast.success('Favori mis à jour')
+        toast.success(t('documentsPage.favoriteUpdated'))
       } else {
         // Queue pour sync offline
         await syncService.queueAction(
@@ -295,17 +299,17 @@ export default function DocumentsPage() {
           'POST',
           {}
         )
-        toast.success('Favori mis à jour (sera synchronisé)')
+        toast.success(t('documentsPage.favoriteUpdatedSync'))
       }
     } catch (error) {
       // Rollback en cas d'erreur
       setDocuments(documents.map(d => d.id === docId ? doc : d))
-      toast.error('Erreur lors de la mise à jour')
+      toast.error(t('documentsPage.errorUpdate'))
     }
   }
 
   const deleteDocument = async (docId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce document?')) return
+    if (!confirm(t('documentsPage.confirmDelete'))) return
 
     const docToDelete = documents.find(d => d.id === docId)
     // Mise à jour optimiste
@@ -314,7 +318,7 @@ export default function DocumentsPage() {
     try {
       if (isOnline) {
         await api.delete(`/documents/${docId}`)
-        toast.success('Document supprimé')
+        toast.success(t('documentsPage.docDeleted'))
         fetchData() // Refresh stats
       } else {
         // Queue pour sync offline
@@ -325,14 +329,14 @@ export default function DocumentsPage() {
           'DELETE',
           { id: docId }
         )
-        toast.success('Document supprimé (sera synchronisé)')
+        toast.success(t('documentsPage.docDeletedSync'))
       }
     } catch (error) {
       // Rollback en cas d'erreur
       if (docToDelete) {
         setDocuments([...documents, docToDelete])
       }
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('documentsPage.errorDelete'))
     }
   }
 
@@ -356,7 +360,7 @@ export default function DocumentsPage() {
         d.id === doc.id ? { ...d, download_count: d.download_count + 1 } : d
       ))
     } catch (error) {
-      toast.error('Erreur lors du téléchargement')
+      toast.error(t('documentsPage.errorDownload'))
     }
   }
 
@@ -389,11 +393,11 @@ export default function DocumentsPage() {
           d.id === doc.id ? { ...d, view_count: d.view_count + 1 } : d
         ))
       } catch (error) {
-        toast.error('Erreur lors de l\'ouverture du document')
+        toast.error(t('documentsPage.errorOpen'))
       }
     } else {
       // Pour les autres types (Word, Excel, etc.), télécharger
-      toast('Ce type de fichier ne peut pas être visualisé directement. Téléchargement...', { icon: '📥' })
+      toast(t('documentsPage.cantViewDirectly'), { icon: '📥' })
       downloadDocument(doc)
     }
   }
@@ -431,7 +435,7 @@ export default function DocumentsPage() {
           if (task.status === 'completed') {
             resolve(task)
           } else if (task.status === 'failed') {
-            reject(new Error(task.error_message || 'La tâche a échoué'))
+            reject(new Error(task.error_message || t('documentsPage.taskFailed')))
           } else {
             // Continuer à vérifier toutes les 2 secondes
             setTimeout(poll, 2000)
@@ -451,7 +455,7 @@ export default function DocumentsPage() {
     setAiGenerating(true)
     setAiTaskProgress(0)
     setAiTaskStatus('pending')
-    setAiTaskMessage('Lancement de la génération...')
+    setAiTaskMessage(t('documentsPage.launchingGen'))
 
     try {
       // Utiliser les endpoints async pour traitement en arrière-plan
@@ -480,7 +484,7 @@ export default function DocumentsPage() {
       const startResponse = await api.post(endpoint, payload)
       const taskId = startResponse.data.task_id
       setAiTaskId(taskId)
-      setAiTaskMessage('Tâche démarrée, traitement en cours...')
+      setAiTaskMessage(t('documentsPage.taskStarted'))
 
       // Polling pour suivre la progression
       const completedTask = await pollTaskStatus(taskId)
@@ -488,13 +492,13 @@ export default function DocumentsPage() {
       // Succès!
       if (aiType === 'flashcards') {
         const count = completedTask.result_count || completedTask.flashcards?.length || 0
-        toast.success(`${count} flashcards générées avec succès!`, {
+        toast.success(t('documentsPage.flashcardsGenerated', { count }), {
           icon: '🎴',
           duration: 5000
         })
       } else {
         const quiz = completedTask.quiz
-        toast.success(`Quiz "${quiz?.title || 'Quiz'}" créé avec ${completedTask.result_count || 0} questions!`, {
+        toast.success(t('documentsPage.quizCreated', { title: quiz?.title || 'Quiz', count: completedTask.result_count || 0 }), {
           icon: '📝',
           duration: 5000
         })
@@ -512,7 +516,7 @@ export default function DocumentsPage() {
 
     } catch (error: any) {
       console.error('Erreur génération IA:', error)
-      const message = error.response?.data?.detail || error.message || 'Erreur lors de la génération'
+      const message = error.response?.data?.detail || error.message || t('documentsPage.genError')
       toast.error(message)
     } finally {
       setAiGenerating(false)
@@ -534,7 +538,7 @@ export default function DocumentsPage() {
 
   const getSubjectName = (subjectId: number) => {
     const subject = subjects.find(s => s.id === subjectId)
-    return subject?.name || 'Inconnu'
+    return subject?.name || t('documentsPage.unknown')
   }
 
   const getSubjectColor = (subjectId: number) => {
@@ -575,17 +579,17 @@ export default function DocumentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Documents</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('documentsPage.title')}</h1>
             {isFromCache && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 <CloudOff className="w-3 h-3 mr-1" />
-                Cache
+                {t('documentsPage.cache')}
               </span>
             )}
           </div>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {stats?.total_documents || documents.length} documents ({stats?.total_size_formatted || '0 B'})
-            {isFromCache && !isOnline && ' • Mode hors-ligne'}
+            {t('documentsPage.docsCount', { count: stats?.total_documents || documents.length, size: stats?.total_size_formatted || '0 B' })}
+            {isFromCache && !isOnline && ` ${t('documentsPage.offlineMode')}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -593,7 +597,7 @@ export default function DocumentsPage() {
             <button
               onClick={() => fetchData(true)}
               className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-              title="Actualiser les données"
+              title={t('documentsPage.refresh')}
             >
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -601,7 +605,7 @@ export default function DocumentsPage() {
           <button
             onClick={() => {
               if (!isOnline) {
-                toast.error('Upload non disponible hors-ligne')
+                toast.error(t('documentsPage.uploadOffline'))
                 return
               }
               setShowUploadModal(true)
@@ -610,7 +614,7 @@ export default function DocumentsPage() {
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="h-5 w-5 mr-2" />
-            Uploader un document
+            {t('documentsPage.uploadDoc')}
           </button>
         </div>
       </div>
@@ -624,22 +628,22 @@ export default function DocumentsPage() {
                 <HardDrive className="h-5 w-5 text-gray-600" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Espace de stockage</h3>
+                <h3 className="text-sm font-medium text-gray-900">{t('documentsPage.storageTitle')}</h3>
                 <p className="text-xs text-gray-500">
-                  {formatStorageSize(storageQuota.storage_used_mb)} / {formatStorageSize(storageQuota.storage_limit_mb)} utilisé
+                  {t('documentsPage.storageUsed', { used: formatStorageSize(storageQuota.storage_used_mb), total: formatStorageSize(storageQuota.storage_limit_mb) })}
                 </p>
               </div>
             </div>
             {getStoragePercentage() >= 90 && (
               <div className="flex items-center text-red-600 text-sm">
                 <AlertTriangle className="h-4 w-4 mr-1" />
-                <span>Presque plein</span>
+                <span>{t('documentsPage.almostFull')}</span>
               </div>
             )}
             {getStoragePercentage() >= 75 && getStoragePercentage() < 90 && (
               <div className="flex items-center text-yellow-600 text-sm">
                 <AlertTriangle className="h-4 w-4 mr-1" />
-                <span>Espace limité</span>
+                <span>{t('documentsPage.limitedSpace')}</span>
               </div>
             )}
             {getStoragePercentage() < 75 && (
@@ -647,7 +651,7 @@ export default function DocumentsPage() {
                 href="/pricing"
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
-                Augmenter
+                {t('documentsPage.increase')}
               </Link>
             )}
           </div>
@@ -658,8 +662,8 @@ export default function DocumentsPage() {
             />
           </div>
           <div className="flex justify-between mt-2 text-xs text-gray-500">
-            <span>{getStoragePercentage().toFixed(1)}% utilisé</span>
-            <span>{formatStorageSize(storageQuota.storage_limit_mb - storageQuota.storage_used_mb)} disponible</span>
+            <span>{t('documentsPage.storagePercent', { percent: getStoragePercentage().toFixed(1) })}</span>
+            <span>{t('documentsPage.storageAvail', { size: formatStorageSize(storageQuota.storage_limit_mb - storageQuota.storage_used_mb) })}</span>
           </div>
         </div>
       )}
@@ -697,7 +701,7 @@ export default function DocumentsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher dans vos documents..."
+              placeholder={t('documentsPage.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -711,7 +715,7 @@ export default function DocumentsPage() {
               onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : null)}
               className="appearance-none px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
             >
-              <option value="">Toutes les matières</option>
+              <option value="">{t('documentsPage.allSubjects')}</option>
               {subjects.map(subject => (
                 <option key={subject.id} value={subject.id}>{subject.name}</option>
               ))}
@@ -729,7 +733,7 @@ export default function DocumentsPage() {
             }`}
           >
             <Star className={`h-5 w-5 ${showFavorites ? 'fill-yellow-400' : ''}`} />
-            <span className="hidden sm:inline">Favoris</span>
+            <span className="hidden sm:inline">{t('documentsPage.favorites')}</span>
           </button>
 
           {/* Clear Filters */}
@@ -754,16 +758,16 @@ export default function DocumentsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Créez d'abord une matière
+            {t('documentsPage.createSubjectFirst')}
           </h3>
           <p className="text-gray-600 mb-6">
-            Vous devez créer au moins une matière avant de pouvoir uploader des documents
+            {t('documentsPage.createSubjectDesc')}
           </p>
           <Link
             href="/subjects"
             className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
           >
-            Créer une matière
+            {t('documentsPage.createSubject')}
           </Link>
         </div>
       ) : filteredDocuments.length === 0 ? (
@@ -771,13 +775,13 @@ export default function DocumentsPage() {
           <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             {searchQuery || selectedSubject || selectedFileType || showFavorites
-              ? 'Aucun document trouvé'
-              : 'Aucun document pour le moment'}
+              ? t('documentsPage.noDocsFound')
+              : t('documentsPage.noDocsYet')}
           </h3>
           <p className="text-gray-600 mb-6">
             {searchQuery || selectedSubject || selectedFileType || showFavorites
-              ? 'Essayez de modifier vos filtres'
-              : 'Uploadez vos premiers cours PDF, Word, Excel ou PowerPoint'}
+              ? t('documentsPage.tryFilters')
+              : t('documentsPage.uploadFirstDesc')}
           </p>
           {!searchQuery && !selectedSubject && !selectedFileType && !showFavorites && (
             <button
@@ -785,7 +789,7 @@ export default function DocumentsPage() {
               className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               <Upload className="h-5 w-5 mr-2" />
-              Uploader mon premier document
+              {t('documentsPage.uploadFirst')}
             </button>
           )}
         </div>
@@ -850,7 +854,7 @@ export default function DocumentsPage() {
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                    {new Date(doc.created_at).toLocaleDateString(dateLocale)}
                   </div>
                 </div>
 
@@ -862,18 +866,18 @@ export default function DocumentsPage() {
                       <button
                         onClick={() => openAIModal(doc, 'flashcards')}
                         className="flex-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-medium flex items-center justify-center"
-                        title="Générer des flashcards avec l'IA"
+                        title={t('documentsPage.genFlashcardsAi')}
                       >
                         <Brain className="h-4 w-4 mr-1" />
-                        Flashcards
+                        {t('documentsPage.flashcardsLabel')}
                       </button>
                       <button
                         onClick={() => openAIModal(doc, 'quiz')}
                         className="flex-1 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition text-sm font-medium flex items-center justify-center"
-                        title="Générer un quiz avec l'IA"
+                        title={t('documentsPage.genQuizAi')}
                       >
                         <HelpCircle className="h-4 w-4 mr-1" />
-                        Quiz
+                        {t('documentsPage.quizLabel')}
                       </button>
                     </div>
                   )}
@@ -887,7 +891,7 @@ export default function DocumentsPage() {
                         className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-medium flex items-center justify-center"
                       >
                         <ExternalLink className="h-4 w-4 mr-1" />
-                        Ouvrir
+                        {t('documentsPage.open')}
                       </button>
                     )}
                     <button
@@ -895,7 +899,7 @@ export default function DocumentsPage() {
                       className={`${canViewInBrowser(doc.file_type) ? 'flex-1' : 'flex-1'} px-3 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition text-sm font-medium flex items-center justify-center`}
                     >
                       <Download className="h-4 w-4 mr-1" />
-                      Télécharger
+                      {t('documentsPage.download')}
                     </button>
                     <button
                       onClick={() => deleteDocument(doc.id)}
@@ -922,7 +926,7 @@ export default function DocumentsPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Générer {aiType === 'flashcards' ? 'des Flashcards' : 'un Quiz'}
+                    {aiType === 'flashcards' ? t('documentsPage.aiModalTitleFlashcards') : t('documentsPage.aiModalTitleQuiz')}
                   </h2>
                   <p className="text-sm text-gray-500 truncate max-w-[200px]">
                     {selectedDocForAI.title || selectedDocForAI.original_filename}
@@ -944,7 +948,7 @@ export default function DocumentsPage() {
               {/* Type de génération */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type de contenu
+                  {t('documentsPage.contentType')}
                 </label>
                 <div className="flex space-x-2">
                   <button
@@ -956,7 +960,7 @@ export default function DocumentsPage() {
                     }`}
                   >
                     <Brain className="h-5 w-5" />
-                    <span>Flashcards</span>
+                    <span>{t('documentsPage.flashcardsLabel')}</span>
                   </button>
                   <button
                     onClick={() => setAiType('quiz')}
@@ -967,7 +971,7 @@ export default function DocumentsPage() {
                     }`}
                   >
                     <HelpCircle className="h-5 w-5" />
-                    <span>Quiz</span>
+                    <span>{t('documentsPage.quizLabel')}</span>
                   </button>
                 </div>
               </div>
@@ -975,7 +979,7 @@ export default function DocumentsPage() {
               {/* Nombre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {aiType === 'flashcards' ? 'Nombre de flashcards' : 'Nombre de questions'}
+                  {aiType === 'flashcards' ? t('documentsPage.flashcardsCount') : t('documentsPage.questionsCount')}
                 </label>
                 <input
                   type="range"
@@ -995,7 +999,7 @@ export default function DocumentsPage() {
               {/* Difficulté */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Difficulté
+                  {t('documentsPage.difficulty')}
                 </label>
                 <div className="flex space-x-2">
                   {(['easy', 'medium', 'hard'] as const).map((diff) => (
@@ -1012,7 +1016,7 @@ export default function DocumentsPage() {
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      {diff === 'easy' ? 'Facile' : diff === 'medium' ? 'Moyen' : 'Difficile'}
+                      {diff === 'easy' ? t('documentsPage.difficultyEasy') : diff === 'medium' ? t('documentsPage.difficultyMedium') : t('documentsPage.difficultyHard')}
                     </button>
                   ))}
                 </div>
@@ -1024,13 +1028,13 @@ export default function DocumentsPage() {
                   {/* Types de questions */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Types de questions
+                      {t('documentsPage.questionTypes')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { value: 'multiple_choice', label: 'Choix multiple', icon: '🔘' },
-                        { value: 'true_false', label: 'Vrai/Faux', icon: '✓✗' },
-                        { value: 'short_answer', label: 'Réponse courte', icon: '✏️' }
+                        { value: 'multiple_choice', label: t('documentsPage.qtMultipleChoice'), icon: '🔘' },
+                        { value: 'true_false', label: t('documentsPage.qtTrueFalse'), icon: '✓✗' },
+                        { value: 'short_answer', label: t('documentsPage.qtShortAnswer'), icon: '✏️' }
                       ].map((type) => (
                         <button
                           key={type.value}
@@ -1063,7 +1067,7 @@ export default function DocumentsPage() {
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        Quiz chronométré
+                        {t('documentsPage.timedQuiz')}
                       </label>
                       <button
                         type="button"
@@ -1089,7 +1093,7 @@ export default function DocumentsPage() {
                           onChange={(e) => setQuizTimeLimit(Math.max(5, Math.min(180, parseInt(e.target.value) || 30)))}
                           className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-center"
                         />
-                        <span className="text-sm text-gray-600">minutes</span>
+                        <span className="text-sm text-gray-600">{t('documentsPage.minutes')}</span>
                       </div>
                     )}
                   </div>
@@ -1101,7 +1105,7 @@ export default function DocumentsPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
                   <p className="flex items-center">
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Le texte sera extrait automatiquement du document (OCR)
+                    {t('documentsPage.ocrInfo')}
                   </p>
                 </div>
               )}
@@ -1111,10 +1115,10 @@ export default function DocumentsPage() {
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">
-                      {aiTaskStatus === 'extracting_text' ? 'Extraction du texte...' :
-                       aiTaskStatus === 'generating' ? 'Génération en cours...' :
-                       aiTaskStatus === 'processing' ? 'Traitement...' :
-                       'Démarrage...'}
+                      {aiTaskStatus === 'extracting_text' ? t('documentsPage.extractingText') :
+                       aiTaskStatus === 'generating' ? t('documentsPage.generating') :
+                       aiTaskStatus === 'processing' ? t('documentsPage.processing') :
+                       t('documentsPage.starting')}
                     </span>
                     <span className="text-sm font-bold text-primary-600">{aiTaskProgress}%</span>
                   </div>
@@ -1125,10 +1129,10 @@ export default function DocumentsPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 text-center">
-                    {aiTaskMessage || 'Veuillez patienter...'}
+                    {aiTaskMessage || t('documentsPage.pleaseWait')}
                   </p>
                   <p className="text-xs text-gray-400 text-center">
-                    Les gros documents peuvent prendre quelques minutes
+                    {t('documentsPage.largeDocsHint')}
                   </p>
                 </div>
               )}
@@ -1146,7 +1150,7 @@ export default function DocumentsPage() {
                 disabled={aiGenerating}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {aiGenerating ? 'Traitement...' : 'Annuler'}
+                {aiGenerating ? t('documentsPage.processingBtn') : t('documentsPage.cancel')}
               </button>
               <button
                 onClick={generateFromDocument}
@@ -1156,12 +1160,12 @@ export default function DocumentsPage() {
                 {aiGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    {aiTaskProgress > 0 ? `${aiTaskProgress}%` : 'Lancement...'}
+                    {aiTaskProgress > 0 ? `${aiTaskProgress}%` : t('documentsPage.launching')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5 mr-2" />
-                    Générer
+                    {t('documentsPage.generate')}
                   </>
                 )}
               </button>
@@ -1175,7 +1179,7 @@ export default function DocumentsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Uploader un document</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('documentsPage.uploadDoc')}</h2>
               <button
                 onClick={() => {
                   setShowUploadModal(false)
@@ -1193,7 +1197,7 @@ export default function DocumentsPage() {
               {/* Subject Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Matière <span className="text-red-500">*</span>
+                  {t('documentsPage.subject')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={uploadSubjectId || ''}
@@ -1201,7 +1205,7 @@ export default function DocumentsPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   required
                 >
-                  <option value="">Sélectionner une matière</option>
+                  <option value="">{t('documentsPage.selectSubjectOption')}</option>
                   {subjects.map(subject => (
                     <option key={subject.id} value={subject.id}>{subject.name}</option>
                   ))}
@@ -1211,13 +1215,13 @@ export default function DocumentsPage() {
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titre (optionnel)
+                  {t('documentsPage.titleOptional')}
                 </label>
                 <input
                   type="text"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
-                  placeholder="Nom du document..."
+                  placeholder={t('documentsPage.titlePlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -1225,12 +1229,12 @@ export default function DocumentsPage() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (optionnel)
+                  {t('documentsPage.descriptionOptional')}
                 </label>
                 <textarea
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
-                  placeholder="Description du document..."
+                  placeholder={t('documentsPage.descriptionPlaceholder')}
                   rows={2}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
@@ -1242,9 +1246,9 @@ export default function DocumentsPage() {
                   <div className="flex items-center text-red-700">
                     <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
                     <span className="text-sm">
-                      Attention: votre espace de stockage est presque plein ({getStoragePercentage().toFixed(0)}%).
+                      {t('documentsPage.storageWarning', { percent: getStoragePercentage().toFixed(0) })}
                       <Link href="/pricing" className="ml-1 underline font-medium">
-                        Passez à un plan supérieur
+                        {t('documentsPage.upgradePlan')}
                       </Link>
                     </span>
                   </div>
@@ -1255,7 +1259,7 @@ export default function DocumentsPage() {
                   <div className="flex items-center text-yellow-700">
                     <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
                     <span className="text-sm">
-                      Espace limité: {formatStorageSize(storageQuota.storage_limit_mb - storageQuota.storage_used_mb)} restant
+                      {t('documentsPage.limitedSpaceWarning', { size: formatStorageSize(storageQuota.storage_limit_mb - storageQuota.storage_used_mb) })}
                     </span>
                   </div>
                 </div>
@@ -1264,7 +1268,7 @@ export default function DocumentsPage() {
               {/* File Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fichier <span className="text-red-500">*</span>
+                  {t('documentsPage.fileLabel')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -1277,14 +1281,14 @@ export default function DocumentsPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  PDF, Word, Excel, PowerPoint, Images (max 50 MB)
+                  {t('documentsPage.fileFormats')}
                 </p>
               </div>
 
               {uploading && (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                  <span className="ml-3 text-gray-600">Upload en cours...</span>
+                  <span className="ml-3 text-gray-600">{t('documentsPage.uploading')}</span>
                 </div>
               )}
             </div>

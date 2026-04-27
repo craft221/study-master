@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Flame, Zap, Trophy, Star, Gift } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,17 +21,6 @@ interface Milestone {
   color: string
 }
 
-const MILESTONES: Milestone[] = [
-  { minutes: 15, label: '15 min', emoji: '🌱', xpBonus: 10, color: 'from-green-400 to-green-500' },
-  { minutes: 30, label: '30 min', emoji: '🌟', xpBonus: 25, color: 'from-yellow-400 to-yellow-500' },
-  { minutes: 45, label: '45 min', emoji: '💫', xpBonus: 40, color: 'from-amber-400 to-orange-500' },
-  { minutes: 60, label: '1 heure', emoji: '⭐', xpBonus: 60, color: 'from-orange-500 to-red-500' },
-  { minutes: 90, label: '1h30', emoji: '🔥', xpBonus: 100, color: 'from-red-500 to-pink-500' },
-  { minutes: 120, label: '2 heures', emoji: '💎', xpBonus: 150, color: 'from-purple-500 to-purple-600' },
-  { minutes: 180, label: '3 heures', emoji: '🏆', xpBonus: 250, color: 'from-yellow-500 to-amber-600' },
-  { minutes: 240, label: '4 heures', emoji: '👑', xpBonus: 400, color: 'from-amber-500 to-yellow-400' },
-]
-
 interface Achievement {
   id: number
   milestone: Milestone
@@ -43,6 +32,17 @@ export default function StreakTracker({ focusMinutes, isActive, onMilestone, cla
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [showCelebration, setShowCelebration] = useState<Milestone | null>(null)
   const [lastMilestoneIndex, setLastMilestoneIndex] = useState(-1)
+
+  const MILESTONES: Milestone[] = useMemo(() => [
+    { minutes: 15, label: '15 min', emoji: '🌱', xpBonus: 10, color: 'from-green-400 to-green-500' },
+    { minutes: 30, label: '30 min', emoji: '🌟', xpBonus: 25, color: 'from-yellow-400 to-yellow-500' },
+    { minutes: 45, label: '45 min', emoji: '💫', xpBonus: 40, color: 'from-amber-400 to-orange-500' },
+    { minutes: 60, label: t('focusRoom.streak.dur1h'), emoji: '⭐', xpBonus: 60, color: 'from-orange-500 to-red-500' },
+    { minutes: 90, label: t('focusRoom.streak.dur1h30'), emoji: '🔥', xpBonus: 100, color: 'from-red-500 to-pink-500' },
+    { minutes: 120, label: t('focusRoom.streak.dur2h'), emoji: '💎', xpBonus: 150, color: 'from-purple-500 to-purple-600' },
+    { minutes: 180, label: t('focusRoom.streak.dur3h'), emoji: '🏆', xpBonus: 250, color: 'from-yellow-500 to-amber-600' },
+    { minutes: 240, label: t('focusRoom.streak.dur4h'), emoji: '👑', xpBonus: 400, color: 'from-amber-500 to-yellow-400' },
+  ], [t])
 
   // Check for new milestones
   useEffect(() => {

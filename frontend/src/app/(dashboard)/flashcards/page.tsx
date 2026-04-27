@@ -157,7 +157,7 @@ export default function FlashcardsPage() {
           >
             <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">{t('flashcardsPage.newDeck')}</span>
-            <span className="sm:hidden">Créer</span>
+            <span className="sm:hidden">{t('flashcardsPage.mobileCreate')}</span>
           </Link>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function FlashcardsPage() {
             >
               <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               <span className="hidden sm:inline">{t('flashcardsPage.startReview')}</span>
-              <span className="sm:hidden">Réviser</span>
+              <span className="sm:hidden">{t('flashcardsPage.mobileReview')}</span>
             </Link>
           )}
         </div>

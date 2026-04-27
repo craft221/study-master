@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import { format, formatDistanceToNow, isBefore, isAfter } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useTranslation } from '@/contexts/LanguageContext'
 
 interface EventRoom {
   id: number
@@ -33,6 +34,7 @@ interface EventRoomsProps {
 
 export default function EventRooms({ onJoinRoom, onCreateEvent, className }: EventRoomsProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [activeEvents, setActiveEvents] = useState<EventRoom[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<EventRoom[]>([])
   const [loading, setLoading] = useState(true)
@@ -113,10 +115,10 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
   const handleJoinEvent = async (eventId: number) => {
     try {
       await api.post(`/focus-rooms/${eventId}/join`)
-      toast({ title: 'Tu as rejoint l\'evenement!' })
+      toast({ title: t('focusRoom.events.joined') })
       onJoinRoom?.(eventId)
     } catch (error: any) {
-      toast({ title: error.response?.data?.detail || 'Erreur lors de la connexion', variant: 'destructive' })
+      toast({ title: error.response?.data?.detail || t('focusRoom.events.joinError'), variant: 'destructive' })
     }
   }
 
@@ -136,7 +138,7 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
         {isActive && (
           <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-medium text-green-300">En cours</span>
+            <span className="text-xs font-medium text-green-300">{t('focusRoom.events.live')}</span>
           </div>
         )}
 
@@ -149,7 +151,7 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
               <p className="text-sm text-gray-400 line-clamp-1">{event.description}</p>
             )}
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-gray-500">par {event.creator_username}</span>
+              <span className="text-xs text-gray-500">{t('focusRoom.events.byCreator', { username: event.creator_username || '' })}</span>
             </div>
           </div>
         </div>
@@ -178,9 +180,9 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
           )}>
             <Timer className={cn("h-4 w-4", isActive ? "text-green-400" : "text-blue-400")} />
             <span className={cn("font-mono font-medium", isActive ? "text-green-300" : "text-blue-300")}>
-              {countdown.status === 'upcoming' && `Commence dans ${formatCountdown(countdown.remaining)}`}
-              {countdown.status === 'active' && `Termine dans ${formatCountdown(countdown.remaining)}`}
-              {countdown.status === 'ended' && 'Termine'}
+              {countdown.status === 'upcoming' && t('focusRoom.events.startsIn', { time: formatCountdown(countdown.remaining) })}
+              {countdown.status === 'active' && t('focusRoom.events.endsIn', { time: formatCountdown(countdown.remaining) })}
+              {countdown.status === 'ended' && t('focusRoom.events.ended')}
             </span>
           </div>
         )}
@@ -207,14 +209,14 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
             {isActive ? (
               <>
                 <Play className="h-4 w-4" />
-                Rejoindre
+                {t('focusRoom.events.join')}
               </>
             ) : countdown?.status === 'ended' ? (
-              'Termine'
+              t('focusRoom.events.ended')
             ) : (
               <>
                 <ChevronRight className="h-4 w-4" />
-                Voir
+                {t('focusRoom.events.view')}
               </>
             )}
           </button>
@@ -242,8 +244,8 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
             <Calendar className="h-5 w-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="font-bold text-white">Evenements</h3>
-            <p className="text-sm text-gray-400">Sessions d'etude temporaires</p>
+            <h3 className="font-bold text-white">{t('focusRoom.events.title')}</h3>
+            <p className="text-sm text-gray-400">{t('focusRoom.events.subtitle')}</p>
           </div>
         </div>
 
@@ -252,23 +254,23 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition"
         >
           <Plus className="h-4 w-4" />
-          Creer un evenement
+          {t('focusRoom.events.create')}
         </button>
       </div>
 
       {!hasEvents ? (
         <div className="text-center py-12 bg-gray-800/30 rounded-xl border border-gray-700">
           <Calendar className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-400 mb-2">Aucun evenement prevu</p>
+          <p className="text-gray-400 mb-2">{t('focusRoom.events.noUpcoming')}</p>
           <p className="text-sm text-gray-500 mb-4">
-            Cree un evenement pour etudier avec d'autres personnes!
+            {t('focusRoom.events.noUpcomingDesc')}
           </p>
           <button
             onClick={onCreateEvent}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition"
           >
             <Plus className="h-4 w-4" />
-            Creer le premier evenement
+            {t('focusRoom.events.createFirst')}
           </button>
         </div>
       ) : (
@@ -278,7 +280,7 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <h4 className="font-medium text-green-300">En cours maintenant</h4>
+                <h4 className="font-medium text-green-300">{t('focusRoom.events.activeNow')}</h4>
                 <span className="text-sm text-gray-500">({activeEvents.length})</span>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -294,7 +296,7 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-4 w-4 text-blue-400" />
-                <h4 className="font-medium text-blue-300">A venir</h4>
+                <h4 className="font-medium text-blue-300">{t('focusRoom.events.upcoming')}</h4>
                 <span className="text-sm text-gray-500">({upcomingEvents.length})</span>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -312,8 +314,7 @@ export default function EventRooms({ onJoinRoom, onCreateEvent, className }: Eve
         <Sparkles className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-sm text-gray-300">
-            <strong>Astuce:</strong> Les evenements sont parfaits pour organiser des sessions d'etude en groupe
-            avant les examens ou pour des marathons de revision!
+            <strong>{t('focusRoom.events.tipLabel')}</strong> {t('focusRoom.events.tipText')}
           </p>
         </div>
       </div>

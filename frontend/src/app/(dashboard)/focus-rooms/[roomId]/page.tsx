@@ -1056,7 +1056,7 @@ export default function FocusRoomPage() {
                         {p.username}
                       </p>
                       <p className="text-[10px] sm:text-xs text-white/50">
-                        {p.focus_minutes} min
+                        {t('focusRoom.minutesShort', { count: p.focus_minutes })}
                       </p>
                     </div>
                     {p.milestones_reached && p.milestones_reached.length > 0 && (
