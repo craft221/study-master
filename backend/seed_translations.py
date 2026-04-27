@@ -11,9 +11,10 @@ Usage:
 """
 
 import sys
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.database import SessionLocal
+from app.core.config import settings
 from app.models.gamification import Achievement, AchievementTranslation
 from app.models.daily_quest import (
     QuestTemplateTranslation,
@@ -456,7 +457,19 @@ def main(prompt: bool = True) -> None:
             print("Aborted.")
             return
 
-    db = SessionLocal()
+    # Build a synchronous engine from the configured async URL.
+    # The app uses AsyncSession everywhere; for one-shot seeding we want a sync
+    # session, so we strip the async driver suffix.
+    db_url = str(settings.DATABASE_URL)
+    sync_url = (
+        db_url.replace("+asyncpg", "")
+        .replace("postgresql+asyncpg", "postgresql")
+        .replace("sqlite+aiosqlite", "sqlite")
+    )
+    engine = create_engine(sync_url, pool_pre_ping=True)
+    SessionLocalSync = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+    db: Session = SessionLocalSync()
     try:
         n_ach = upsert_achievement_translations(db)
         print(f"  [+] {n_ach} new achievement translation rows")
@@ -465,6 +478,7 @@ def main(prompt: bool = True) -> None:
         print("Done.")
     finally:
         db.close()
+        engine.dispose()
 
 
 if __name__ == "__main__":
