@@ -1962,7 +1962,7 @@ export default function ExamModePage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.hours_per_day') || 'Heures'}</p>
-                    <p className="font-medium">{t('exam_mode.preview_hours_per_day', { hours: formData.study_hours_per_day })}</p>
+                    <p className="font-medium">{t('exam_mode.preview_hours_per_day', { hours: formData.study_hours_per_day ?? 0 })}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-[10px] sm:text-xs">{t('exam_mode.difficulty') || 'Difficulté'}</p>
